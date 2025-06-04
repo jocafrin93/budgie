@@ -472,7 +472,7 @@
                     const data = JSON.parse(savedData);
                     expenses = data.expenses || [];
                     currentPay = data.currentPay || 2800;
-                    categories = data.categories || [  // ← ADD THESE LINES
+                    categories = data.categories || [
                         { id: 1, name: 'Personal Care', color: '#9333ea' },
                         { id: 2, name: 'Pet Care', color: '#059669' },
                         { id: 3, name: 'Household', color: '#dc2626' }
@@ -526,7 +526,7 @@
             }
         }
 
-        // Update the expenses list display
+        // Update the expenses list display (FIXED VERSION)
         function updateExpensesList() {
             const container = document.getElementById('categoriesList');
             container.innerHTML = '';
@@ -534,43 +534,55 @@
             // Group expenses by category
             categories.forEach(category => {
                 const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
-                // Group expenses by category
-                categories.forEach(category => {
-                    const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
+                
+                // Always show category, even if it has no expenses
+                const categoryDiv = document.createElement('div');
+                categoryDiv.style.marginBottom = '20px';
 
-                    // Always show category, even if it has no expenses
-                    // Create category header
-                    const categoryDiv = document.createElement('div');
-                    categoryDiv.style.marginBottom = '20px';
+                const categoryHeader = document.createElement('div');
+                categoryHeader.style.cssText = `
+                    background-color: ${category.color};
+                    color: white;
+                    padding: 10px;
+                    border-radius: 5px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                `;
+                categoryHeader.innerHTML = `
+                    <span>${category.name} (${categoryExpenses.length} items)</span>
+                    <button onclick="deleteCategory(${category.id})" class="btn-danger" style="margin: 0;">Delete</button>
+                `;
 
-                    const categoryHeader = document.createElement('div');
-                    categoryHeader.style.cssText = `
-                        background-color: ${category.color};
-                        color: white;
-                        padding: 10px;
-                        border-radius: 5px;
-                        font-weight: bold;
-                        margin-bottom: 10px;
-                     `;
-                    categoryHeader.textContent = `${category.name} (${categoryExpenses.length} items)`;
+                categoryDiv.appendChild(categoryHeader);
 
-                    categoryDiv.appendChild(categoryHeader);
-
-                    // Add expenses for this category (if any)
-                    categoryExpenses.forEach(expense => {
-                        // ... existing expense creation code stays the same
-                    });
-
-                    // Always add the category, even if empty
-                    container.appendChild(categoryDiv);
+                // Add expenses for this category (if any)
+                categoryExpenses.forEach(expense => {
+                    const expenseDiv = document.createElement('div');
+                    expenseDiv.className = 'expense-item';
+                    expenseDiv.style.marginLeft = '20px'; // Indent under category
+                    expenseDiv.innerHTML = `
+                        <div>
+                            <strong>${expense.name}</strong><br>
+                            $${expense.amount} ${expense.frequency}
+                        </div>
+                        <div>
+                            $${expense.biweeklyAmount.toFixed(2)}/bi-weekly
+                            <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
+                        </div>
+                    `;
+                    categoryDiv.appendChild(expenseDiv);
                 });
 
-
+                // Always add the category, even if empty
+                container.appendChild(categoryDiv);
             });
 
-            // Show message if no expenses
-            if (expenses.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666;">No expenses yet. Add one above!</p>';
+            // Show message if no categories
+            if (categories.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No categories yet. Add one above!</p>';
             }
         }
 
@@ -604,43 +616,6 @@
             });
         }
 
-        // Update the categories management list
-        function updateCategoriesList() {
-            const container = document.getElementById('categoriesList');
-            console.log('container found:', container);
-
-            if (!container) {
-                return;
-            }
-
-            container.innerHTML = '';
-
-            categories.forEach(category => {
-                const div = document.createElement('div');
-                div.style.cssText = `
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            margin: 8px 0;
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            border-left: 4px solid ${category.color};
-        `;
-
-                div.innerHTML = `
-            <div>
-                <strong style="color: var(--text-color);">${category.name}</strong>
-                <span style="margin-left: 10px; padding: 4px 8px; background-color: ${category.color}; color: white; border-radius: 4px; font-size: 12px;">●</span>
-            </div>
-            <button onclick="deleteCategory(${category.id})" class="btn-danger">Delete</button>
-        `;
-
-                container.appendChild(div);
-            });
-        }
-
         // Delete a category
         function deleteCategory(categoryId) {
             if (categories.length <= 1) {
@@ -661,9 +636,8 @@
 
                 categories = remainingCategories;
 
-                updateCategoriesList();
-                updateCategoryDropdown();
                 updateExpensesList();
+                populateTransactionCategoryDropdown();
                 saveData();
             }
         }
@@ -802,11 +776,6 @@
                     content.style.maxHeight = content.scrollHeight + 'px';
                 }
             });
-
-            // Only update these lists (not categories)
-            updateAccountsList();
-            updateExpensesList();
-            updateTransactionsList();
         }
 
         // Toggle section collapse
@@ -856,6 +825,7 @@
                 closeModal();
             }
         });
+        
         // Open category modal
         function openCategoryModal() {
             const modalContent = `
@@ -905,6 +875,7 @@
                 alert('Please enter a category name');
             }
         }
+        
         // Open expense modal
         function openExpenseModal() {
             const modalContent = `
@@ -970,6 +941,7 @@
                 alert('Please enter both expense name and amount');
             }
         }
+        
         // Load saved data when page starts
         if (loadData()) {
             document.getElementById('payAmount').value = currentPay;
@@ -981,14 +953,16 @@
         populateTransactionCategoryDropdown();
         updateAccountDropdown();
         setDefaultDate();
-        // Update the expenses list (which includes categories)
+        
+        // Update all lists FIRST
         updateExpensesList();
+        updateAccountsList();
+        updateTransactionsList();
 
-        // THEN initialize sections (so categories section knows its proper height)
+        // THEN initialize sections (so they know their proper height)
         initializeSections();
 
         console.log("Budget calculator loaded!");
-
 
     </script>
     <!-- Modal Overlay -->
