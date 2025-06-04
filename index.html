@@ -89,14 +89,49 @@
     </div>
 
     <script>
-        // Our data storage
-        let expenses = [];
-        let currentPay = 2800;
+        // Storage key for our app
+const STORAGE_KEY = 'my-budget-data';
+
+// Functions to save and load data
+function saveData() {
+    const dataToSave = {
+        expenses: expenses,
+        currentPay: currentPay
+    };
+    
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+        console.log('Data saved successfully');
+    } catch (error) {
+        console.error('Failed to save data:', error);
+    }
+}
+
+function loadData() {
+    try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            expenses = data.expenses || [];
+            currentPay = data.currentPay || 2800;
+            console.log('Data loaded successfully');
+            return true;
+        }
+    } catch (error) {
+        console.error('Failed to load data:', error);
+    }
+    return false;
+}
+
+// Our data storage (will be loaded from localStorage)
+let expenses = [];
+let currentPay = 2800;
 
         // Update pay when input changes
         document.getElementById('payAmount').addEventListener('input', function() {
             currentPay = parseFloat(this.value) || 0;
             updateSummary();
+            saveData();
         });
 
         // Add a new expense
@@ -122,6 +157,7 @@
                 
                 updateExpensesList();
                 updateSummary();
+                saveData();
             }
         }
 
@@ -164,6 +200,7 @@
             expenses = expenses.filter(expense => expense.id !== id);
             updateExpensesList();
             updateSummary();
+            saveData();
         }
 
         // Update the summary totals
@@ -175,7 +212,17 @@
             document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
         }
 
-        console.log("Budget calculator loaded!");
+        // Load saved data when page starts
+if (loadData()) {
+    // Update the pay input to show loaded value
+    document.getElementById('payAmount').value = currentPay;
+    // Update displays
+    updateExpensesList();
+    updateSummary();
+}
+
+console.log("Budget calculator loaded!");
+
     </script>
 </body>
 </html>
