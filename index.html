@@ -304,20 +304,27 @@
     </div>
 </div>
 <div class="container">
-    <h3>Add Expense</h3>
-    <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
-    <input type="number" id="expenseAmount" placeholder="Amount">
-    <select id="expenseCategory">
-        <!-- Categories will be populated by JavaScript -->
-    </select>
-    <select id="expenseFrequency">
-        <option value="weekly">Weekly</option>
-        <option value="bi-weekly">Bi-weekly</option>
-        <option value="monthly">Monthly</option>
-        <option value="every-6-weeks">Every 6 weeks</option>
-        <option value="every-8-weeks">Every 8 weeks</option>
-    </select>
-    <button onclick="addExpense()">Add Expense</button>
+    <div class="section-header" onclick="toggleSection('addExpense')">
+        <h3><span class="collapse-icon">▼</span>Add Expense</h3>
+        <small>Plan for irregular expenses</small>
+    </div>
+    <div class="section-content" id="addExpense-content">
+        <div class="form-row">
+            <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
+            <input type="number" id="expenseAmount" placeholder="Amount">
+            <select id="expenseCategory">
+                <!-- Categories will be populated by JavaScript -->
+            </select>
+            <select id="expenseFrequency">
+                <option value="weekly">Weekly</option>
+                <option value="bi-weekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="every-6-weeks">Every 6 weeks</option>
+                <option value="every-8-weeks">Every 8 weeks</option>
+            </select>
+            <button onclick="addExpense()">Add Expense</button>
+        </div>
+    </div>
 </div>
 
     <div class="container">
