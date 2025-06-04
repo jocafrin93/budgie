@@ -393,27 +393,18 @@
             </div>
         </div>
     </div>
-
     <div class="container"><!-- Add Expense-->
         <div class="section-header" onclick="toggleSection('addExpense')">
             <h3><span class="collapse-icon">▼</span>Add Expense</h3>
             <small>Plan for irregular expenses</small>
         </div>
         <div class="section-content" id="addExpense-content">
-            <div class="form-row">
-                <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
-                <input type="number" id="expenseAmount" placeholder="Amount">
-                <select id="expenseCategory">
-                    <!-- Categories will be populated by JavaScript -->
-                </select>
-                <select id="expenseFrequency">
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="every-6-weeks">Every 6 weeks</option>
-                    <option value="every-8-weeks">Every 8 weeks</option>
-                </select>
-                <button onclick="addExpense()">Add Expense</button>
+            <div style="margin-bottom: 15px;">
+                <button onclick="openExpenseModal()">+ Add Expense</button>
+            </div>
+
+            <div style="text-align: center; color: var(--text-secondary); font-style: italic;">
+                Your planned expenses appear in the "Your Expenses" section below
             </div>
         </div>
     </div>
@@ -545,34 +536,6 @@
             updateSummary();
             saveData();
         });
-
-        // Add a new expense
-        function addExpense() {
-            const name = document.getElementById('expenseName').value;
-            const amount = parseFloat(document.getElementById('expenseAmount').value);
-            const frequency = document.getElementById('expenseFrequency').value;
-            const categoryId = parseInt(document.getElementById('expenseCategory').value); // ← NEW LINE
-
-            if (name && amount) {
-                const expense = {
-                    id: Date.now(),
-                    name: name,
-                    amount: amount,
-                    frequency: frequency,
-                    categoryId: categoryId, // ← NEW LINE
-                    biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
-                };
-
-                expenses.push(expense);
-
-                document.getElementById('expenseName').value = '';
-                document.getElementById('expenseAmount').value = '';
-
-                updateExpensesList();
-                updateSummary();
-                saveData();
-            }
-        }
 
         // Calculate how much to save bi-weekly for each frequency
         function calculateBiweeklyAmount(amount, frequency) {
@@ -987,7 +950,71 @@
                 alert('Please enter a category name');
             }
         }
+// Open expense modal
+function openExpenseModal() {
+    const modalContent = `
+        <div class="form-row">
+            <input type="text" id="modalExpenseName" placeholder="Expense name (e.g., Hair cut)" style="flex: 1;">
+            <input type="number" id="modalExpenseAmount" placeholder="Amount">
+        </div>
+        <div class="form-row">
+            <select id="modalExpenseCategory" style="flex: 1;">
+                ${categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+            </select>
+            <select id="modalExpenseFrequency" style="flex: 1;">
+                <option value="weekly">Weekly</option>
+                <option value="bi-weekly">Bi-weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="every-6-weeks">Every 6 weeks</option>
+                <option value="every-8-weeks">Every 8 weeks</option>
+            </select>
+        </div>
+        <div style="margin-top: 20px; text-align: right;">
+            <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
+            <button onclick="addExpenseFromModal()">Add Expense</button>
+        </div>
+    `;
+    
+    openModal('Add New Expense', modalContent);
+    
+    // Focus on the name input
+    setTimeout(() => {
+        document.getElementById('modalExpenseName').focus();
+    }, 100);
+}
 
+// Add expense from modal
+function addExpenseFromModal() {
+    const name = document.getElementById('modalExpenseName').value;
+    const amount = parseFloat(document.getElementById('modalExpenseAmount').value);
+    const categoryId = parseInt(document.getElementById('modalExpenseCategory').value);
+    const frequency = document.getElementById('modalExpenseFrequency').value;
+
+    if (name && amount) {
+        const expense = {
+            id: Date.now(),
+            name: name,
+            amount: amount,
+            frequency: frequency,
+            categoryId: categoryId,
+            biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
+        };
+
+        expenses.push(expense);
+
+        updateExpensesList();
+        updateSummary();
+        
+        // Re-expand the expenses section to show the updated list
+        const expensesContent = document.getElementById('expenses-content');
+        expensesContent.style.maxHeight = expensesContent.scrollHeight + 'px';
+        
+        saveData();
+        closeModal();
+    } else {
+        alert('Please enter both expense name and amount');
+    }
+}
         // Load saved data when page starts
         if (loadData()) {
             document.getElementById('payAmount').value = currentPay;
