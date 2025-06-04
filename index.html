@@ -775,7 +775,22 @@ function toggleTheme() {
     // Save theme preference
     localStorage.setItem('theme-preference', newTheme);
 }
-
+// Toggle section collapse
+function toggleSection(sectionId) {
+    const content = document.getElementById(sectionId + '-content');
+    const header = content.previousElementSibling;
+    const icon = header.querySelector('.collapse-icon');
+    
+    if (content.style.maxHeight === '0px' || content.style.maxHeight === '') {
+        content.style.maxHeight = content.scrollHeight + 'px';
+        icon.textContent = '▼';
+        header.parentElement.classList.remove('collapsed');
+    } else {
+        content.style.maxHeight = '0px';
+        icon.textContent = '▶';
+        header.parentElement.classList.add('collapsed');
+    }
+}
 // Load saved theme on page load
 function loadTheme() {
     const savedTheme = localStorage.getItem('theme-preference') || 'light';
