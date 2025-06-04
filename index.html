@@ -3,10 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Budget App</title>
+    <title>My Budget Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .container {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background-color: #333;
+            color: white;
+        }
+        button {
+            background-color: #0066cc;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0052a3;
+        }
+        .expense-item {
+            background-color: #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .summary {
+            background-color: #0066cc;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello from VSCode</h1>
-    <p>My budget app will go here</p>
+    <h1>My Budget Calculator</h1>
+    
+    <div class="container">
+        <h3>Income</h3>
+        <label>Bi-weekly Take-home Pay: $</label>
+        <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
+    </div>
+
+    <div class="container">
+        <h3>Add Expense</h3>
+        <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
+        <input type="number" id="expenseAmount" placeholder="Amount">
+        <select id="expenseFrequency">
+            <option value="weekly">Weekly</option>
+            <option value="bi-weekly">Bi-weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="every-6-weeks">Every 6 weeks</option>
+            <option value="every-8-weeks">Every 8 weeks</option>
+        </select>
+        <button onclick="addExpense()">Add Expense</button>
+    </div>
+
+    <div class="container">
+        <h3>Your Expenses</h3>
+        <div id="expensesList">
+            <!-- Expenses will appear here -->
+        </div>
+    </div>
+
+    <div class="container summary">
+        <div>Total Bi-weekly Allocation: $<span id="totalAllocation">0</span></div>
+        <div>Remaining Income: $<span id="remainingIncome">2800</span></div>
+    </div>
+
+    <script>
+        // Our data storage
+        let expenses = [];
+        let currentPay = 2800;
+
+        // Update pay when input changes
+        document.getElementById('payAmount').addEventListener('input', function() {
+            currentPay = parseFloat(this.value) || 0;
+            updateSummary();
+        });
+
+        // Add a new expense
+        function addExpense() {
+            const name = document.getElementById('expenseName').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const frequency = document.getElementById('expenseFrequency').value;
+
+            if (name && amount) {
+                const expense = {
+                    id: Date.now(), // Simple ID
+                    name: name,
+                    amount: amount,
+                    frequency: frequency,
+                    biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
+                };
+
+                expenses.push(expense);
+                
+                // Clear the form
+                document.getElementById('expenseName').value = '';
+                document.getElementById('expenseAmount').value = '';
+                
+                updateExpensesList();
+                updateSummary();
+            }
+        }
+
+        // Calculate how much to save bi-weekly for each frequency
+        function calculateBiweeklyAmount(amount, frequency) {
+            switch(frequency) {
+                case 'weekly': return amount * 2;
+                case 'bi-weekly': return amount;
+                case 'monthly': return amount * 12 / 26;
+                case 'every-6-weeks': return amount * 8.67 / 26;
+                case 'every-8-weeks': return amount * 6.5 / 26;
+                default: return amount;
+            }
+        }
+
+        // Update the expenses list display
+        function updateExpensesList() {
+            const container = document.getElementById('expensesList');
+            container.innerHTML = '';
+
+            expenses.forEach(expense => {
+                const div = document.createElement('div');
+                div.className = 'expense-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${expense.name}</strong><br>
+                        $${expense.amount} ${expense.frequency}
+                    </div>
+                    <div>
+                        $${expense.biweeklyAmount.toFixed(2)}/bi-weekly
+                        <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // Delete an expense
+        function deleteExpense(id) {
+            expenses = expenses.filter(expense => expense.id !== id);
+            updateExpensesList();
+            updateSummary();
+        }
+
+        // Update the summary totals
+        function updateSummary() {
+            const total = expenses.reduce((sum, expense) => sum + expense.biweeklyAmount, 0);
+            const remaining = currentPay - total;
+
+            document.getElementById('totalAllocation').textContent = total.toFixed(2);
+            document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
+        }
+
+        console.log("Budget calculator loaded!");
+    </script>
 </body>
 </html>
