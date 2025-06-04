@@ -297,7 +297,7 @@
             </div>
         </div>
     </div>
-    <div class="container">
+    <div class="container"> <!-- Manage Categories-->
         <div class="section-header" onclick="toggleSection('categories')">
             <h3><span class="collapse-icon">▼</span>Manage Categories</h3>
             <small>Add, edit, and organize your budget categories</small>
@@ -314,7 +314,7 @@
             </div>
         </div>
     </div>
-    <div class="container">
+    <div class="container"><!-- Add Expense-->
         <div class="section-header" onclick="toggleSection('addExpense')">
             <h3><span class="collapse-icon">▼</span>Add Expense</h3>
             <small>Plan for irregular expenses</small>
@@ -337,8 +337,7 @@
             </div>
         </div>
     </div>
-
-   <div class="container">
+    <div class="container"><!--Your Expenses-->
     <div class="section-header" onclick="toggleSection('expenses')">
         <h3><span class="collapse-icon">▼</span>Your Expenses</h3>
         <small>Planned expenses grouped by category</small>
@@ -348,8 +347,8 @@
             <!-- Expenses will appear here -->
         </div>
     </div>
-</div>
-   <div class="container">
+    </div>
+    <div class="container"><!--Accounts-->
     <div class="section-header" onclick="toggleSection('accounts')">
         <h3><span class="collapse-icon">▼</span>Accounts</h3>
         <small>Track balances across your accounts</small>
@@ -359,8 +358,8 @@
             <!-- Accounts will appear here -->
         </div>
     </div>
-</div>
-<div class="container">
+    </div>
+    <div class="container"><!--Add Transaction-->
     <div class="section-header" onclick="toggleSection('addTransaction')">
         <h3><span class="collapse-icon">▼</span>Add Transaction</h3>
         <small>Record your spending and transfers</small>
@@ -379,13 +378,17 @@
             <button onclick="addTransaction()">Add Transaction</button>
         </div>
     </div>
-</div>
-
-    <div class="container">
-        <h3>Recent Transactions</h3>
+    </div>
+    <div class="container"><!--Recent Transactions-->
+    <div class="section-header" onclick="toggleSection('transactions')">
+        <h3><span class="collapse-icon">▼</span>Recent Transactions</h3>
+        <small>Your latest spending activity</small>
+    </div>
+    <div class="section-content" id="transactions-content">
         <div id="transactionsList">
             <!-- Transactions will appear here -->
         </div>
+    </div>
     </div>
     <div class="container summary">
         <div>Total Bi-weekly Allocation: $<span id="totalAllocation">0</span></div>
@@ -805,7 +808,7 @@
         }
         // Initialize all sections as expanded on page load 
         function initializeSections() {
-            const sections = ['categories', 'income', 'addExpense', 'expenses', 'accounts', 'addTransaction'];
+            const sections = ['categories', 'income', 'addExpense', 'expenses', 'accounts', 'addTransaction','transactions'];
     
         sections.forEach(sectionId => {
             const content = document.getElementById(sectionId + '-content');
