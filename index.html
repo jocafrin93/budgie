@@ -684,47 +684,18 @@
             });
         }
 
-        // Add a new category
-        function addCategory() {
-            const name = document.getElementById('categoryName').value;
-            const color = document.getElementById('categoryColor').value;
-
-            if (name) {
-                const newCategory = {
-                    id: Date.now(),
-                    name: name,
-                    color: color
-                };
-
-                categories.push(newCategory);
-
-                // Clear form
-                document.getElementById('categoryName').value = '';
-                document.getElementById('categoryColor').value = '#9333ea';
-
-                updateCategoriesList();
-                updateCategoryDropdown();
-                saveData();
-            }
-        }
-
         // Update the categories management list
         function updateCategoriesList() {
-            console.log('updateCategoriesList called');
-            console.log('categories:', categories);
-
             const container = document.getElementById('categoriesList');
             console.log('container found:', container);
 
             if (!container) {
-                console.log('ERROR: categoriesList container not found!');
                 return;
             }
 
             container.innerHTML = '';
 
             categories.forEach(category => {
-                console.log('Adding category:', category.name);
                 const div = document.createElement('div');
                 div.style.cssText = `
             display: flex;
@@ -748,8 +719,6 @@
 
                 container.appendChild(div);
             });
-
-            console.log('Final container HTML:', container.innerHTML);
         }
 
         // Delete a category
