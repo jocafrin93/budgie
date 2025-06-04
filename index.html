@@ -588,19 +588,20 @@ function updateCategoriesList() {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            margin: 5px 0;
-            background-color: #333;
-            border-radius: 5px;
+            padding: 16px;
+            margin: 8px 0;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
             border-left: 4px solid ${category.color};
         `;
         
         div.innerHTML = `
             <div>
-                <strong>${category.name}</strong>
-                <span style="margin-left: 10px; padding: 2px 6px; background-color: ${category.color}; color: white; border-radius: 3px; font-size: 12px;">●</span>
+                <strong style="color: var(--text-color);">${category.name}</strong>
+                <span style="margin-left: 10px; padding: 4px 8px; background-color: ${category.color}; color: white; border-radius: 4px; font-size: 12px;">●</span>
             </div>
-            <button onclick="deleteCategory(${category.id})" style="background-color: #cc0000; padding: 5px 10px;">Delete</button>
+            <button onclick="deleteCategory(${category.id})" class="btn-danger">Delete</button>
         `;
         
         container.appendChild(div);
@@ -744,7 +745,27 @@ function deleteTransaction(id) {
     updateTransactionsList();
     saveData();
 }
+// Theme toggle functionality
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    const toggleButton = document.getElementById('themeToggle');
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    toggleButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    
+    // Save theme preference
+    localStorage.setItem('theme-preference', newTheme);
+}
 
+// Load saved theme on page load
+function loadTheme() {
+    const savedTheme = localStorage.getItem('theme-preference') || 'light';
+    const toggleButton = document.getElementById('themeToggle');
+    
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    toggleButton.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+}
         // Load saved data when page starts
 if (loadData()) {
     // Update the pay input to show loaded value
@@ -753,6 +774,7 @@ if (loadData()) {
     updateExpensesList();
     updateSummary();
 }
+loadTheme();
 updateCategoryDropdown();
 populateTransactionCategoryDropdown();
 updateCategoriesList();
