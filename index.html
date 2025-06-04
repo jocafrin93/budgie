@@ -390,14 +390,9 @@
                 <button onclick="openExpenseModal()">+ Add Expense</button>
             </div>
 
-            <!-- Categories list -->
+            <!-- Categories and their expenses -->
             <div id="categoriesList">
-                <!-- Categories will appear here -->
-            </div>
-
-            <!-- Expenses list -->
-            <div id="expensesList">
-                <!-- Expenses will appear here -->
+                <!-- Categories with their expenses will appear here -->
             </div>
         </div>
     </div>
@@ -908,7 +903,7 @@
                 populateTransactionCategoryDropdown();
 
                 // Re-expand the categories section to show the updated list
-const categoriesContent = document.getElementById('budget-content');
+                const categoriesContent = document.getElementById('budget-content');
                 categoriesContent.style.maxHeight = categoriesContent.scrollHeight + 'px';
 
                 saveData();
