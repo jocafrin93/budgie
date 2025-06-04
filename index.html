@@ -621,19 +621,6 @@
             document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
         }
 
-        // Update the category dropdown
-        function updateCategoryDropdown() {
-            const dropdown = document.getElementById('expenseCategory');
-            dropdown.innerHTML = '';
-
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                dropdown.appendChild(option);
-            });
-        }
-
         // Also populate transaction category dropdown
         function populateTransactionCategoryDropdown() {
             const dropdown = document.getElementById('transactionCategory');
@@ -950,9 +937,9 @@
                 alert('Please enter a category name');
             }
         }
-// Open expense modal
-function openExpenseModal() {
-    const modalContent = `
+        // Open expense modal
+        function openExpenseModal() {
+            const modalContent = `
         <div class="form-row">
             <input type="text" id="modalExpenseName" placeholder="Expense name (e.g., Hair cut)" style="flex: 1;">
             <input type="number" id="modalExpenseAmount" placeholder="Amount">
@@ -974,47 +961,47 @@ function openExpenseModal() {
             <button onclick="addExpenseFromModal()">Add Expense</button>
         </div>
     `;
-    
-    openModal('Add New Expense', modalContent);
-    
-    // Focus on the name input
-    setTimeout(() => {
-        document.getElementById('modalExpenseName').focus();
-    }, 100);
-}
 
-// Add expense from modal
-function addExpenseFromModal() {
-    const name = document.getElementById('modalExpenseName').value;
-    const amount = parseFloat(document.getElementById('modalExpenseAmount').value);
-    const categoryId = parseInt(document.getElementById('modalExpenseCategory').value);
-    const frequency = document.getElementById('modalExpenseFrequency').value;
+            openModal('Add New Expense', modalContent);
 
-    if (name && amount) {
-        const expense = {
-            id: Date.now(),
-            name: name,
-            amount: amount,
-            frequency: frequency,
-            categoryId: categoryId,
-            biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
-        };
+            // Focus on the name input
+            setTimeout(() => {
+                document.getElementById('modalExpenseName').focus();
+            }, 100);
+        }
 
-        expenses.push(expense);
+        // Add expense from modal
+        function addExpenseFromModal() {
+            const name = document.getElementById('modalExpenseName').value;
+            const amount = parseFloat(document.getElementById('modalExpenseAmount').value);
+            const categoryId = parseInt(document.getElementById('modalExpenseCategory').value);
+            const frequency = document.getElementById('modalExpenseFrequency').value;
 
-        updateExpensesList();
-        updateSummary();
-        
-        // Re-expand the expenses section to show the updated list
-        const expensesContent = document.getElementById('expenses-content');
-        expensesContent.style.maxHeight = expensesContent.scrollHeight + 'px';
-        
-        saveData();
-        closeModal();
-    } else {
-        alert('Please enter both expense name and amount');
-    }
-}
+            if (name && amount) {
+                const expense = {
+                    id: Date.now(),
+                    name: name,
+                    amount: amount,
+                    frequency: frequency,
+                    categoryId: categoryId,
+                    biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
+                };
+
+                expenses.push(expense);
+
+                updateExpensesList();
+                updateSummary();
+
+                // Re-expand the expenses section to show the updated list
+                const expensesContent = document.getElementById('expenses-content');
+                expensesContent.style.maxHeight = expensesContent.scrollHeight + 'px';
+
+                saveData();
+                closeModal();
+            } else {
+                alert('Please enter both expense name and amount');
+            }
+        }
         // Load saved data when page starts
         if (loadData()) {
             document.getElementById('payAmount').value = currentPay;
@@ -1023,7 +1010,6 @@ function addExpenseFromModal() {
 
         // Initialize everything in the right order
         loadTheme();
-        updateCategoryDropdown();
         populateTransactionCategoryDropdown();
         updateAccountDropdown();
         setDefaultDate();
