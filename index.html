@@ -96,7 +96,32 @@
             <!-- Expenses will appear here -->
         </div>
     </div>
+<div class="container">
+    <h3>Accounts</h3>
+    <div id="accountsList">
+        <!-- Accounts will appear here -->
+    </div>
+</div>
+<div class="container">
+    <h3>Add Transaction</h3>
+    <input type="date" id="transactionDate" value="">
+    <input type="text" id="transactionPayee" placeholder="Payee (e.g., Grocery Store)">
+    <input type="number" id="transactionAmount" placeholder="Amount" step="0.01">
+    <select id="transactionAccount">
+        <!-- Accounts will be populated by JavaScript -->
+    </select>
+    <select id="transactionCategory">
+        <!-- Categories will be populated by JavaScript -->
+    </select>
+    <button onclick="addTransaction()">Add Transaction</button>
+</div>
 
+<div class="container">
+    <h3>Recent Transactions</h3>
+    <div id="transactionsList">
+        <!-- Transactions will appear here -->
+    </div>
+</div>
     <div class="container summary">
         <div>Total Bi-weekly Allocation: $<span id="totalAllocation">0</span></div>
         <div>Remaining Income: $<span id="remainingIncome">2800</span></div>
@@ -286,8 +311,9 @@ function updateSummary() {
 }
 
 // Update the category dropdown
-function updateCategoryDropdown() {
-    const dropdown = document.getElementById('expenseCategory');
+// Also populate transaction category dropdown
+function populateTransactionCategoryDropdown() {
+    const dropdown = document.getElementById('transactionCategory');
     dropdown.innerHTML = '';
     
     categories.forEach(category => {
@@ -377,7 +403,117 @@ function deleteCategory(categoryId) {
         saveData();
     }
 }
+// Update accounts display
+function updateAccountsList() {
+    const container = document.getElementById('accountsList');
+    container.innerHTML = '';
+    
+    accounts.forEach(account => {
+        const div = document.createElement('div');
+        div.className = 'expense-item'; // Reuse existing styling
+        
+        const balanceColor = account.balance >= 0 ? '#059669' : '#dc2626';
+        
+        div.innerHTML = `
+            <div>
+                <strong>${account.name}</strong><br>
+                <small>${account.type}</small>
+            </div>
+            <div style="color: ${balanceColor}; font-weight: bold;">
+                $${Math.abs(account.balance).toFixed(2)}
+                ${account.type === 'credit' && account.balance < 0 ? ' owed' : ''}
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
 
+// Update account dropdown for transactions
+function updateAccountDropdown() {
+    const dropdown = document.getElementById('transactionAccount');
+    dropdown.innerHTML = '';
+    
+    accounts.forEach(account => {
+        const option = document.createElement('option');
+        option.value = account.id;
+        option.textContent = account.name;
+        dropdown.appendChild(option);
+    });
+}
+
+// Set today's date as default
+function setDefaultDate() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('transactionDate').value = today;
+}
+
+// Add a new transaction
+function addTransaction() {
+    const date = document.getElementById('transactionDate').value;
+    const payee = document.getElementById('transactionPayee').value;
+    const amount = parseFloat(document.getElementById('transactionAmount').value);
+    const accountId = parseInt(document.getElementById('transactionAccount').value);
+    const categoryId = parseInt(document.getElementById('transactionCategory').value);
+    
+    if (date && payee && amount && accountId && categoryId) {
+        const transaction = {
+            id: Date.now(),
+            date: date,
+            payee: payee,
+            amount: amount,
+            accountId: accountId,
+            categoryId: categoryId
+        };
+        
+        transactions.push(transaction);
+        
+        // Clear form
+        document.getElementById('transactionPayee').value = '';
+        document.getElementById('transactionAmount').value = '';
+        
+        updateTransactionsList();
+        saveData();
+    }
+}
+
+// Update transactions display
+function updateTransactionsList() {
+    const container = document.getElementById('transactionsList');
+    container.innerHTML = '';
+    
+    // Show last 10 transactions
+    const recentTransactions = transactions.slice(-10).reverse();
+    
+    recentTransactions.forEach(transaction => {
+        const account = accounts.find(acc => acc.id === transaction.accountId);
+        const category = categories.find(cat => cat.id === transaction.categoryId);
+        
+        const div = document.createElement('div');
+        div.className = 'expense-item';
+        div.innerHTML = `
+            <div>
+                <strong>${transaction.payee}</strong><br>
+                <small>${transaction.date} • ${account?.name} • ${category?.name}</small>
+            </div>
+            <div>
+                $${transaction.amount.toFixed(2)}
+                <button onclick="deleteTransaction(${transaction.id})" style="margin-left: 10px; background-color: #cc0000; padding: 2px 6px; font-size: 12px;">Delete</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+    
+    if (transactions.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">No transactions yet.</p>';
+    }
+}
+
+// Delete a transaction
+function deleteTransaction(id) {
+    transactions = transactions.filter(transaction => transaction.id !== id);
+    updateTransactionsList();
+    saveData();
+}
 
         // Load saved data when page starts
 if (loadData()) {
@@ -388,7 +524,13 @@ if (loadData()) {
     updateSummary();
 }
 updateCategoryDropdown();
+populateTransactionCategoryDropdown();
 updateCategoriesList();
+updateAccountsList();
+updateAccountDropdown(); 
+updateTransactionsList();
+setDefaultDate();
+
 console.log("Budget calculator loaded!");
 
     </script>
