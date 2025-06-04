@@ -274,84 +274,86 @@
                 padding: 16px;
             }
         }
-            /* Modal Styles */
-            .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
         }
 
-            .modal-overlay.show {
-                display: flex;
+        .modal-overlay.show {
+            display: flex;
         }
 
-            .modal-content {
-                background: var(--surface-color);
-                border-radius: 12px;
-                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-                max-width: 500px;
-                width: 90%;
-                max-height: 80vh;
-                overflow-y: auto;
-                animation: modalSlideIn 0.3s ease-out;
+        .modal-content {
+            background: var(--surface-color);
+            border-radius: 12px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease-out;
         }
 
-            @keyframes modalSlideIn {
-                from {
-                    opacity: 0;
-                    transform: translateY(-50px) scale(0.9);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0) scale(1);
-                }
-         }
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
 
-            .modal-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 20px 24px 0 24px;
-                border-bottom: 1px solid var(--border-color);
-                margin-bottom: 20px;
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
-            .modal-header h3 {
-                margin: 0;
-                color: var(--text-color);
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px 0 24px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
         }
 
-            .modal-close {
-                background: none;
-                border: none;
-                font-size: 24px;
-                cursor: pointer;
-                color: var(--text-secondary);
-                padding: 0;
-                margin: 0;
-                width: 30px;
-                height: 30px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 4px;
-         }
+        .modal-header h3 {
+            margin: 0;
+            color: var(--text-color);
+        }
 
-            .modal-close:hover {
-                background: var(--border-color);
-                color: var(--text-color);
-         }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            margin: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
 
-            .modal-body {
-                padding: 0 24px 24px 24px;
+        .modal-close:hover {
+            background: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .modal-body {
+            padding: 0 24px 24px 24px;
         }
     </style>
 </head>
@@ -376,16 +378,14 @@
             </div>
         </div>
     </div>
-    <div class="container"> <!-- Manage Categories-->
+    <div class="container"> <!--Manage Categories-->
         <div class="section-header" onclick="toggleSection('categories')">
-            <h3><span class="collapse-icon">▼</span>Manage Categories</h3>
-            <small>Add, edit, and organize your budget categories</small>
+            <h3><span class="collapse-icon">▼</span>Categories</h3>
+            <small>Organize your budget with custom categories</small>
         </div>
         <div class="section-content" id="categories-content">
-            <div class="form-row">
-                <input type="text" id="categoryName" placeholder="Category name" style="flex: 1;">
-                <input type="color" id="categoryColor" value="#9333ea" style="width: 50px;">
-                <button onclick="addCategory()">Add Category</button>
+            <div style="margin-bottom: 15px;">
+                <button onclick="openCategoryModal()">+ Add Category</button>
             </div>
 
             <div id="categoriesList">
@@ -393,6 +393,7 @@
             </div>
         </div>
     </div>
+
     <div class="container"><!-- Add Expense-->
         <div class="section-header" onclick="toggleSection('addExpense')">
             <h3><span class="collapse-icon">▼</span>Add Expense</h3>
@@ -417,57 +418,57 @@
         </div>
     </div>
     <div class="container"><!--Your Expenses-->
-    <div class="section-header" onclick="toggleSection('expenses')">
-        <h3><span class="collapse-icon">▼</span>Your Expenses</h3>
-        <small>Planned expenses grouped by category</small>
-    </div>
-    <div class="section-content" id="expenses-content">
-        <div id="expensesList">
-            <!-- Expenses will appear here -->
+        <div class="section-header" onclick="toggleSection('expenses')">
+            <h3><span class="collapse-icon">▼</span>Your Expenses</h3>
+            <small>Planned expenses grouped by category</small>
         </div>
-    </div>
+        <div class="section-content" id="expenses-content">
+            <div id="expensesList">
+                <!-- Expenses will appear here -->
+            </div>
+        </div>
     </div>
     <div class="container"><!--Accounts-->
-    <div class="section-header" onclick="toggleSection('accounts')">
-        <h3><span class="collapse-icon">▼</span>Accounts</h3>
-        <small>Track balances across your accounts</small>
-    </div>
-    <div class="section-content" id="accounts-content">
-        <div id="accountsList">
-            <!-- Accounts will appear here -->
+        <div class="section-header" onclick="toggleSection('accounts')">
+            <h3><span class="collapse-icon">▼</span>Accounts</h3>
+            <small>Track balances across your accounts</small>
         </div>
-    </div>
+        <div class="section-content" id="accounts-content">
+            <div id="accountsList">
+                <!-- Accounts will appear here -->
+            </div>
+        </div>
     </div>
     <div class="container"><!--Add Transaction-->
-    <div class="section-header" onclick="toggleSection('addTransaction')">
-        <h3><span class="collapse-icon">▼</span>Add Transaction</h3>
-        <small>Record your spending and transfers</small>
-    </div>
-    <div class="section-content" id="addTransaction-content">
-        <div class="form-row">
-            <input type="date" id="transactionDate" value="">
-            <input type="text" id="transactionPayee" placeholder="Payee (e.g., Grocery Store)">
-            <input type="number" id="transactionAmount" placeholder="Amount" step="0.01">
-            <select id="transactionAccount">
-                <!-- Accounts will be populated by JavaScript -->
-            </select>
-            <select id="transactionCategory">
-                <!-- Categories will be populated by JavaScript -->
-            </select>
-            <button onclick="addTransaction()">Add Transaction</button>
+        <div class="section-header" onclick="toggleSection('addTransaction')">
+            <h3><span class="collapse-icon">▼</span>Add Transaction</h3>
+            <small>Record your spending and transfers</small>
         </div>
-    </div>
+        <div class="section-content" id="addTransaction-content">
+            <div class="form-row">
+                <input type="date" id="transactionDate" value="">
+                <input type="text" id="transactionPayee" placeholder="Payee (e.g., Grocery Store)">
+                <input type="number" id="transactionAmount" placeholder="Amount" step="0.01">
+                <select id="transactionAccount">
+                    <!-- Accounts will be populated by JavaScript -->
+                </select>
+                <select id="transactionCategory">
+                    <!-- Categories will be populated by JavaScript -->
+                </select>
+                <button onclick="addTransaction()">Add Transaction</button>
+            </div>
+        </div>
     </div>
     <div class="container"><!--Recent Transactions-->
-    <div class="section-header" onclick="toggleSection('transactions')">
-        <h3><span class="collapse-icon">▼</span>Recent Transactions</h3>
-        <small>Your latest spending activity</small>
-    </div>
-    <div class="section-content" id="transactions-content">
-        <div id="transactionsList">
-            <!-- Transactions will appear here -->
+        <div class="section-header" onclick="toggleSection('transactions')">
+            <h3><span class="collapse-icon">▼</span>Recent Transactions</h3>
+            <small>Your latest spending activity</small>
         </div>
-    </div>
+        <div class="section-content" id="transactions-content">
+            <div id="transactionsList">
+                <!-- Transactions will appear here -->
+            </div>
+        </div>
     </div>
     <div class="container summary">
         <div>Total Bi-weekly Allocation: $<span id="totalAllocation">0</span></div>
@@ -669,6 +670,7 @@
                 dropdown.appendChild(option);
             });
         }
+
         // Also populate transaction category dropdown
         function populateTransactionCategoryDropdown() {
             const dropdown = document.getElementById('transactionCategory');
@@ -681,6 +683,7 @@
                 dropdown.appendChild(option);
             });
         }
+
         // Add a new category
         function addCategory() {
             const name = document.getElementById('categoryName').value;
@@ -762,6 +765,7 @@
                 saveData();
             }
         }
+
         // Update accounts display
         function updateAccountsList() {
             const container = document.getElementById('accountsList');
@@ -873,6 +877,7 @@
             updateTransactionsList();
             saveData();
         }
+
         // Theme toggle functionality
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -885,17 +890,19 @@
             // Save theme preference
             localStorage.setItem('theme-preference', newTheme);
         }
+
         // Initialize all sections as expanded on page load 
         function initializeSections() {
-            const sections = ['categories', 'income', 'addExpense', 'expenses', 'accounts', 'addTransaction','transactions'];
-    
-        sections.forEach(sectionId => {
-            const content = document.getElementById(sectionId + '-content');
-            if (content) {
-                content.style.maxHeight = content.scrollHeight + 'px';
-            }
+            const sections = ['categories', 'income', 'addExpense', 'expenses', 'accounts', 'addTransaction', 'transactions'];
+
+            sections.forEach(sectionId => {
+                const content = document.getElementById(sectionId + '-content');
+                if (content) {
+                    content.style.maxHeight = content.scrollHeight + 'px';
+                }
             });
         }
+
         // Toggle section collapse
         function toggleSection(sectionId) {
             const content = document.getElementById(sectionId + '-content');
@@ -912,6 +919,7 @@
                 header.parentElement.classList.add('collapsed');
             }
         }
+
         // Load saved theme on page load
         function loadTheme() {
             const savedTheme = localStorage.getItem('theme-preference') || 'light';
@@ -920,6 +928,73 @@
             document.documentElement.setAttribute('data-theme', savedTheme);
             toggleButton.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
         }
+
+        // Modal functionality
+        function openModal(title, contentHtml) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalBody').innerHTML = contentHtml;
+            document.getElementById('modalOverlay').classList.add('show');
+
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal when pressing Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+        // Open category modal
+        function openCategoryModal() {
+            const modalContent = `
+        <div class="form-row">
+            <input type="text" id="modalCategoryName" placeholder="Category name" style="flex: 1;">
+            <input type="color" id="modalCategoryColor" value="#3b82f6" style="width: 60px;">
+        </div>
+        <div style="margin-top: 20px; text-align: right;">
+            <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
+            <button onclick="addCategoryFromModal()">Add Category</button>
+        </div>
+    `;
+
+            openModal('Add New Category', modalContent);
+
+            // Focus on the name input
+            setTimeout(() => {
+                document.getElementById('modalCategoryName').focus();
+            }, 100);
+        }
+
+        // Add category from modal
+        function addCategoryFromModal() {
+            const name = document.getElementById('modalCategoryName').value;
+            const color = document.getElementById('modalCategoryColor').value;
+
+            if (name) {
+                const newCategory = {
+                    id: Date.now(),
+                    name: name,
+                    color: color
+                };
+
+                categories.push(newCategory);
+
+                updateCategoriesList();
+                updateCategoryDropdown();
+                populateTransactionCategoryDropdown();
+                saveData();
+                closeModal();
+            } else {
+                alert('Please enter a category name');
+            }
+        }
+
         // Load saved data when page starts
         if (loadData()) {
             // Update the pay input to show loaded value
@@ -942,17 +1017,17 @@
 
     </script>
     <!-- Modal Overlay -->
-<div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div class="modal-header">
-            <h3 id="modalTitle">Modal Title</h3>
-            <button class="modal-close" onclick="closeModal()">✕</button>
-        </div>
-        <div class="modal-body" id="modalBody">
-            <!-- Modal content will be inserted here -->
+    <div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Modal content will be inserted here -->
+            </div>
         </div>
     </div>
-</div>
 </body>
 
 </html>
