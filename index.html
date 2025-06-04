@@ -62,19 +62,22 @@
         <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
     </div>
 
-    <div class="container">
-        <h3>Add Expense</h3>
-        <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
-        <input type="number" id="expenseAmount" placeholder="Amount">
-        <select id="expenseFrequency">
-            <option value="weekly">Weekly</option>
-            <option value="bi-weekly">Bi-weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="every-6-weeks">Every 6 weeks</option>
-            <option value="every-8-weeks">Every 8 weeks</option>
-        </select>
-        <button onclick="addExpense()">Add Expense</button>
-    </div>
+<div class="container">
+    <h3>Add Expense</h3>
+    <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
+    <input type="number" id="expenseAmount" placeholder="Amount">
+    <select id="expenseCategory">
+        <!-- Categories will be populated by JavaScript -->
+    </select>
+    <select id="expenseFrequency">
+        <option value="weekly">Weekly</option>
+        <option value="bi-weekly">Bi-weekly</option>
+        <option value="monthly">Monthly</option>
+        <option value="every-6-weeks">Every 6 weeks</option>
+        <option value="every-8-weeks">Every 8 weeks</option>
+    </select>
+    <button onclick="addExpense()">Add Expense</button>
+</div>
 
     <div class="container">
         <h3>Your Expenses</h3>
@@ -215,13 +218,27 @@ let categories = [
         }
 
         // Update the summary totals
-        function updateSummary() {
-            const total = expenses.reduce((sum, expense) => sum + expense.biweeklyAmount, 0);
-            const remaining = currentPay - total;
+function updateSummary() {
+    const total = expenses.reduce((sum, expense) => sum + expense.biweeklyAmount, 0);
+    const remaining = currentPay - total;
 
-            document.getElementById('totalAllocation').textContent = total.toFixed(2);
-            document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
-        }
+    document.getElementById('totalAllocation').textContent = total.toFixed(2);
+    document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
+}
+
+// Update the category dropdown
+function updateCategoryDropdown() {
+    const dropdown = document.getElementById('expenseCategory');
+    dropdown.innerHTML = '';
+    
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        dropdown.appendChild(option);
+    });
+}
+
 
         // Load saved data when page starts
 if (loadData()) {
@@ -231,7 +248,7 @@ if (loadData()) {
     updateExpensesList();
     updateSummary();
 }
-
+updateCategoryDropdown();
 console.log("Budget calculator loaded!");
 
     </script>
