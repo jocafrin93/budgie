@@ -987,7 +987,7 @@
                 alert('Please enter a category name');
             }
         }
-        // Load saved data when page starts
+
         // Load saved data when page starts
         if (loadData()) {
             document.getElementById('payAmount').value = currentPay;
@@ -1001,15 +1001,14 @@
         updateAccountDropdown();
         setDefaultDate();
 
-        // Initialize sections 
+        // Update the categories list FIRST
+        updateCategoriesList();
+
+        // THEN initialize sections (so categories section knows its proper height)
         initializeSections();
 
-        // Update the categories list AFTER everything else is done
-        setTimeout(() => {
-            updateCategoriesList();
-        }, 200);
-
         console.log("Budget calculator loaded!");
+
 
     </script>
     <!-- Modal Overlay -->
