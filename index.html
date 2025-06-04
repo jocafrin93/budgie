@@ -149,31 +149,32 @@ let categories = [
         });
 
         // Add a new expense
-        function addExpense() {
-            const name = document.getElementById('expenseName').value;
-            const amount = parseFloat(document.getElementById('expenseAmount').value);
-            const frequency = document.getElementById('expenseFrequency').value;
+      function addExpense() {
+    const name = document.getElementById('expenseName').value;
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    const frequency = document.getElementById('expenseFrequency').value;
+    const categoryId = parseInt(document.getElementById('expenseCategory').value); // ← NEW LINE
 
-            if (name && amount) {
-                const expense = {
-                    id: Date.now(), // Simple ID
-                    name: name,
-                    amount: amount,
-                    frequency: frequency,
-                    biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
-                };
+    if (name && amount) {
+        const expense = {
+            id: Date.now(),
+            name: name,
+            amount: amount,
+            frequency: frequency,
+            categoryId: categoryId, // ← NEW LINE
+            biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
+        };
 
-                expenses.push(expense);
-                
-                // Clear the form
-                document.getElementById('expenseName').value = '';
-                document.getElementById('expenseAmount').value = '';
-                
-                updateExpensesList();
-                updateSummary();
-                saveData();
-            }
-        }
+        expenses.push(expense);
+        
+        document.getElementById('expenseName').value = '';
+        document.getElementById('expenseAmount').value = '';
+        
+        updateExpensesList();
+        updateSummary();
+        saveData();
+    }
+}
 
         // Calculate how much to save bi-weekly for each frequency
         function calculateBiweeklyAmount(amount, frequency) {
@@ -188,26 +189,33 @@ let categories = [
         }
 
         // Update the expenses list display
-        function updateExpensesList() {
-            const container = document.getElementById('expensesList');
-            container.innerHTML = '';
+function updateExpensesList() {
+    const container = document.getElementById('expensesList');
+    container.innerHTML = '';
 
-            expenses.forEach(expense => {
-                const div = document.createElement('div');
-                div.className = 'expense-item';
-                div.innerHTML = `
-                    <div>
-                        <strong>${expense.name}</strong><br>
-                        $${expense.amount} ${expense.frequency}
-                    </div>
-                    <div>
-                        $${expense.biweeklyAmount.toFixed(2)}/bi-weekly
-                        <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
+    expenses.forEach(expense => {
+        // Find the category name
+        const category = categories.find(cat => cat.id === expense.categoryId);
+        const categoryName = category ? category.name : 'Unknown';
+        const categoryColor = category ? category.color : '#666';
+        
+        const div = document.createElement('div');
+        div.className = 'expense-item';
+        div.style.borderLeft = `4px solid ${categoryColor}`; // ← Color coding!
+        div.innerHTML = `
+            <div>
+                <strong>${expense.name}</strong><br>
+                <small style="color: ${categoryColor};">${categoryName}</small><br>
+                $${expense.amount} ${expense.frequency}
+            </div>
+            <div>
+                $${expense.biweeklyAmount.toFixed(2)}/bi-weekly
+                <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
 
         // Delete an expense
         function deleteExpense(id) {
