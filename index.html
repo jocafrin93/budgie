@@ -1,364 +1,392 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Budget Calculator</title>
-<style>
-    * {
-        box-sizing: border-box;
-    }
-    
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        transition: all 0.3s ease;
-    }
-    
-    /* CSS Variables for theming */
-    :root {
-        --bg-color: #f3f4f6;
-        --surface-color: #ffffff;
-        --text-color: #1f2937;
-        --text-secondary: #6b7280;
-        --border-color: #d1d5db;
-        --primary-color: #3b82f6;
-        --primary-hover: #2563eb;
-        --danger-color: #ef4444;
-        --success-color: #10b981;
-    }
-    
-    [data-theme="dark"] {
-        --bg-color: #111827;
-        --surface-color: #1f2937;
-        --text-color: #f9fafb;
-        --text-secondary: #9ca3af;
-        --border-color: #374151;
-        --primary-color: #60a5fa;
-        --primary-hover: #3b82f6;
-    }
-    
-    .header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid var(--border-color);
-    }
-    
-    .header h1 {
-        margin: 0;
-        color: var(--primary-color);
-        font-size: 2.5rem;
-        font-weight: 700;
-    }
-    
-    .header p {
-        margin: 5px 0 0 0;
-        color: var(--text-secondary);
-    }
-    
-    .theme-toggle {
-        background: var(--surface-color);
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        padding: 10px;
-        cursor: pointer;
-        font-size: 18px;
-        transition: all 0.3s ease;
-    }
-    
-    .theme-toggle:hover {
-        background: var(--primary-color);
-        border-color: var(--primary-color);
-        color: white;
-    }
-    
-    .container {
-        background: var(--surface-color);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .container:hover {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transform: translateY(-1px);
-    }
-    
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-        cursor: pointer;
-        user-select: none;
-    }
-    
-    .section-header h3 {
-        margin: 0;
-        display: flex;
-        align-items: center;
-        font-size: 1.25rem;
-        color: var(--text-color);
-    }
-    
-    .collapse-icon {
-        transition: transform 0.3s ease;
-        font-size: 14px;
-        margin-right: 8px;
-    }
-    
-    .collapsed .collapse-icon {
-        transform: rotate(-90deg);
-    }
-    
-    .section-content {
-        max-height: 2000px;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-    }
-    
-    .collapsed .section-content {
-        max-height: 0;
-    }
-    
-    input, select, button {
-        padding: 12px 16px;
-        margin: 6px;
-        border: 2px solid var(--border-color);
-        border-radius: 8px;
-        background: var(--surface-color);
-        color: var(--text-color);
-        font-size: 14px;
-        transition: all 0.3s ease;
-    }
-    
-    input:focus, select:focus {
-        outline: none;
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-    
-    button {
-        background: var(--primary-color);
-        color: white;
-        border: 2px solid var(--primary-color);
-        cursor: pointer;
-        font-weight: 600;
-    }
-    
-    button:hover {
-        background: var(--primary-hover);
-        border-color: var(--primary-hover);
-        transform: translateY(-1px);
-    }
-    
-    .btn-danger {
-        background: var(--danger-color);
-        border-color: var(--danger-color);
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-    
-    .expense-item, .account-item, .transaction-item {
-        background: var(--surface-color);
-        border: 1px solid var(--border-color);
-        padding: 16px;
-        margin: 8px 0;
-        border-radius: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: all 0.3s ease;
-    }
-    
-    .expense-item:hover, .account-item:hover, .transaction-item:hover {
-        background: var(--bg-color);
-        transform: translateX(4px);
-    }
-    
-    .category-header {
-        background: linear-gradient(135deg, var(--category-color, #3b82f6), var(--category-color, #3b82f6));
-        color: white;
-        padding: 16px;
-        border-radius: 8px;
-        font-weight: 600;
-        margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .form-row {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-    
-    .form-row input, .form-row select {
-        flex: 1;
-        min-width: 150px;
-    }
-    
-    .summary {
-        background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-        color: white;
-        padding: 24px;
-        border-radius: 12px;
-        text-align: center;
-        font-size: 18px;
-        font-weight: 600;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .summary-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
-        margin-top: 16px;
-    }
-    
-    .summary-item {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 12px;
-        border-radius: 8px;
-        backdrop-filter: blur(10px);
-    }
-    
-    .balance-positive {
-        color: var(--success-color);
-        font-weight: 600;
-    }
-    
-    .balance-negative {
-        color: var(--danger-color);
-        font-weight: 600;
-    }
-    
-    @media (max-width: 768px) {
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            padding: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
         }
-        
+
+        /* CSS Variables for theming */
+        :root {
+            --bg-color: #f3f4f6;
+            --surface-color: #ffffff;
+            --text-color: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #d1d5db;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #111827;
+            --surface-color: #1f2937;
+            --text-color: #f9fafb;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --primary-color: #60a5fa;
+            --primary-hover: #3b82f6;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
         .header h1 {
-            font-size: 2rem;
+            margin: 0;
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: 700;
         }
-        
-        .form-row {
-            flex-direction: column;
+
+        .header p {
+            margin: 5px 0 0 0;
+            color: var(--text-secondary);
         }
-        
-        .form-row input, .form-row select {
-            min-width: 100%;
+
+        .theme-toggle {
+            background: var(--surface-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
         }
-        
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
         .container {
-            padding: 16px;
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
-    }
-</style>
+
+        .container:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            font-size: 1.25rem;
+            color: var(--text-color);
+        }
+
+        .collapse-icon {
+            transition: transform 0.3s ease;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .collapsed .collapse-icon {
+            transform: rotate(-90deg);
+        }
+
+        .section-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsed .section-content {
+            max-height: 0;
+        }
+
+        input,
+        select,
+        button {
+            padding: 12px 16px;
+            margin: 6px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--surface-color);
+            color: var(--text-color);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: 2px solid var(--primary-color);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .expense-item,
+        .account-item,
+        .transaction-item {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: 16px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .expense-item:hover,
+        .account-item:hover,
+        .transaction-item:hover {
+            background: var(--bg-color);
+            transform: translateX(4px);
+        }
+
+        .category-header {
+            background: linear-gradient(135deg, var(--category-color, #3b82f6), var(--category-color, #3b82f6));
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .form-row input,
+        .form-row select {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .summary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .summary-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .balance-positive {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+
+        .balance-negative {
+            color: var(--danger-color);
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .form-row input,
+            .form-row select {
+                min-width: 100%;
+            }
+
+            .container {
+                padding: 16px;
+            }
+        }
+    </style>
 </head>
+
 <body>
-   <div class="header">
-    <div>
-        <h1>Budgie</h1>
-        <p>Professional budget planning made simple</p>
+    <div class="header">
+        <div>
+            <h1>Budgie</h1>
+            <p>Professional budget planning made simple</p>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
     </div>
-    <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
+    <div class="container">
+        <div class="section-header" onclick="toggleSection('income')">
+            <h3><span class="collapse-icon">▼</span>Income Settings</h3>
+            <small>Configure your bi-weekly take-home pay</small>
+        </div>
+        <div class="section-content" id="income-content">
+            <div class="form-row">
+                <label>Bi-weekly Take-home Pay: $</label>
+                <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="section-header" onclick="toggleSection('categories')">
+            <h3><span class="collapse-icon">▼</span>Manage Categories</h3>
+            <small>Add, edit, and organize your budget categories</small>
+        </div>
+        <div class="section-content" id="categories-content">
+            <div class="form-row">
+                <input type="text" id="categoryName" placeholder="Category name" style="flex: 1;">
+                <input type="color" id="categoryColor" value="#9333ea" style="width: 50px;">
+                <button onclick="addCategory()">Add Category</button>
+            </div>
+
+            <div id="categoriesList">
+                <!-- Categories will appear here -->
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="section-header" onclick="toggleSection('addExpense')">
+            <h3><span class="collapse-icon">▼</span>Add Expense</h3>
+            <small>Plan for irregular expenses</small>
+        </div>
+        <div class="section-content" id="addExpense-content">
+            <div class="form-row">
+                <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
+                <input type="number" id="expenseAmount" placeholder="Amount">
+                <select id="expenseCategory">
+                    <!-- Categories will be populated by JavaScript -->
+                </select>
+                <select id="expenseFrequency">
+                    <option value="weekly">Weekly</option>
+                    <option value="bi-weekly">Bi-weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="every-6-weeks">Every 6 weeks</option>
+                    <option value="every-8-weeks">Every 8 weeks</option>
+                </select>
+                <button onclick="addExpense()">Add Expense</button>
+            </div>
+        </div>
+    </div>
+
+   <div class="container">
+    <div class="section-header" onclick="toggleSection('expenses')">
+        <h3><span class="collapse-icon">▼</span>Your Expenses</h3>
+        <small>Planned expenses grouped by category</small>
+    </div>
+    <div class="section-content" id="expenses-content">
+        <div id="expensesList">
+            <!-- Expenses will appear here -->
+        </div>
+    </div>
 </div>
    <div class="container">
-    <div class="section-header" onclick="toggleSection('income')">
-        <h3><span class="collapse-icon">▼</span>Income Settings</h3>
-        <small>Configure your bi-weekly take-home pay</small>
+    <div class="section-header" onclick="toggleSection('accounts')">
+        <h3><span class="collapse-icon">▼</span>Accounts</h3>
+        <small>Track balances across your accounts</small>
     </div>
-    <div class="section-content" id="income-content">
-        <div class="form-row">
-            <label>Bi-weekly Take-home Pay: $</label>
-            <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
+    <div class="section-content" id="accounts-content">
+        <div id="accountsList">
+            <!-- Accounts will appear here -->
         </div>
     </div>
 </div>
 <div class="container">
-    <div class="section-header" onclick="toggleSection('categories')">
-        <h3><span class="collapse-icon">▼</span>Manage Categories</h3>
-        <small>Add, edit, and organize your budget categories</small>
+    <div class="section-header" onclick="toggleSection('addTransaction')">
+        <h3><span class="collapse-icon">▼</span>Add Transaction</h3>
+        <small>Record your spending and transfers</small>
     </div>
-    <div class="section-content" id="categories-content">
+    <div class="section-content" id="addTransaction-content">
         <div class="form-row">
-            <input type="text" id="categoryName" placeholder="Category name" style="flex: 1;">
-            <input type="color" id="categoryColor" value="#9333ea" style="width: 50px;">
-            <button onclick="addCategory()">Add Category</button>
-        </div>
-        
-        <div id="categoriesList">
-            <!-- Categories will appear here -->
-        </div>
-    </div>
-</div>
-<div class="container">
-    <div class="section-header" onclick="toggleSection('addExpense')">
-        <h3><span class="collapse-icon">▼</span>Add Expense</h3>
-        <small>Plan for irregular expenses</small>
-    </div>
-    <div class="section-content" id="addExpense-content">
-        <div class="form-row">
-            <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
-            <input type="number" id="expenseAmount" placeholder="Amount">
-            <select id="expenseCategory">
+            <input type="date" id="transactionDate" value="">
+            <input type="text" id="transactionPayee" placeholder="Payee (e.g., Grocery Store)">
+            <input type="number" id="transactionAmount" placeholder="Amount" step="0.01">
+            <select id="transactionAccount">
+                <!-- Accounts will be populated by JavaScript -->
+            </select>
+            <select id="transactionCategory">
                 <!-- Categories will be populated by JavaScript -->
             </select>
-            <select id="expenseFrequency">
-                <option value="weekly">Weekly</option>
-                <option value="bi-weekly">Bi-weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="every-6-weeks">Every 6 weeks</option>
-                <option value="every-8-weeks">Every 8 weeks</option>
-            </select>
-            <button onclick="addExpense()">Add Expense</button>
+            <button onclick="addTransaction()">Add Transaction</button>
         </div>
     </div>
 </div>
 
     <div class="container">
-        <h3>Your Expenses</h3>
-        <div id="expensesList">
-            <!-- Expenses will appear here -->
+        <h3>Recent Transactions</h3>
+        <div id="transactionsList">
+            <!-- Transactions will appear here -->
         </div>
     </div>
-<div class="container">
-    <h3>Accounts</h3>
-    <div id="accountsList">
-        <!-- Accounts will appear here -->
-    </div>
-</div>
-<div class="container">
-    <h3>Add Transaction</h3>
-    <input type="date" id="transactionDate" value="">
-    <input type="text" id="transactionPayee" placeholder="Payee (e.g., Grocery Store)">
-    <input type="number" id="transactionAmount" placeholder="Amount" step="0.01">
-    <select id="transactionAccount">
-        <!-- Accounts will be populated by JavaScript -->
-    </select>
-    <select id="transactionCategory">
-        <!-- Categories will be populated by JavaScript -->
-    </select>
-    <button onclick="addTransaction()">Add Transaction</button>
-</div>
-
-<div class="container">
-    <h3>Recent Transactions</h3>
-    <div id="transactionsList">
-        <!-- Transactions will appear here -->
-    </div>
-</div>
     <div class="container summary">
         <div>Total Bi-weekly Allocation: $<span id="totalAllocation">0</span></div>
         <div>Remaining Income: $<span id="remainingIncome">2800</span></div>
@@ -366,106 +394,106 @@
 
     <script>
         // Storage key for our app
-const STORAGE_KEY = 'my-budget-data';
+        const STORAGE_KEY = 'my-budget-data';
 
-// Functions to save and load data
-function saveData() {
-    const dataToSave = {
-        expenses: expenses,
-        currentPay: currentPay,
-        categories: categories,
-          accounts: accounts,
-        transactions: transactions
-    };
-    
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-        console.log('Data saved successfully');
-    } catch (error) {
-        console.error('Failed to save data:', error);
-    }
-}
+        // Functions to save and load data
+        function saveData() {
+            const dataToSave = {
+                expenses: expenses,
+                currentPay: currentPay,
+                categories: categories,
+                accounts: accounts,
+                transactions: transactions
+            };
 
-function loadData() {
-    try {
-        const savedData = localStorage.getItem(STORAGE_KEY);
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            expenses = data.expenses || [];
-            currentPay = data.currentPay || 2800;
-             categories = data.categories || [  // ← ADD THESE LINES
-                { id: 1, name: 'Personal Care', color: '#9333ea' },
-                { id: 2, name: 'Pet Care', color: '#059669' },
-                { id: 3, name: 'Household', color: '#dc2626' }
-            ];  
-             accounts = data.accounts || [           
-                { id: 1, name: 'Main Checking', type: 'checking', balance: 3500 },
-                { id: 2, name: 'Savings', type: 'savings', balance: 8200 },
-                { id: 3, name: 'Credit Card', type: 'credit', balance: -450 }
-            ];
-            transactions = data.transactions || [];
-            console.log('Data loaded successfully');
-            return true;
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+                console.log('Data saved successfully');
+            } catch (error) {
+                console.error('Failed to save data:', error);
+            }
         }
-    } catch (error) {
-        console.error('Failed to load data:', error);
-    }
-    return false;
-}
 
-// Our data storage (will be loaded from localStorage)
-let expenses = [];
-let currentPay = 2800;
-let categories = [
-    { id: 1, name: 'Personal Care', color: '#9333ea' },
-    { id: 2, name: 'Pet Care', color: '#059669' },
-    { id: 3, name: 'Household', color: '#dc2626' }
-];
-let accounts = [
-    { id: 1, name: 'Main Checking', type: 'checking', balance: 3500 },
-    { id: 2, name: 'Savings', type: 'savings', balance: 8200 },
-    { id: 3, name: 'Credit Card', type: 'credit', balance: -450 }
-];
-let transactions = [];
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem(STORAGE_KEY);
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    expenses = data.expenses || [];
+                    currentPay = data.currentPay || 2800;
+                    categories = data.categories || [  // ← ADD THESE LINES
+                        { id: 1, name: 'Personal Care', color: '#9333ea' },
+                        { id: 2, name: 'Pet Care', color: '#059669' },
+                        { id: 3, name: 'Household', color: '#dc2626' }
+                    ];
+                    accounts = data.accounts || [
+                        { id: 1, name: 'Main Checking', type: 'checking', balance: 3500 },
+                        { id: 2, name: 'Savings', type: 'savings', balance: 8200 },
+                        { id: 3, name: 'Credit Card', type: 'credit', balance: -450 }
+                    ];
+                    transactions = data.transactions || [];
+                    console.log('Data loaded successfully');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Failed to load data:', error);
+            }
+            return false;
+        }
+
+        // Our data storage (will be loaded from localStorage)
+        let expenses = [];
+        let currentPay = 2800;
+        let categories = [
+            { id: 1, name: 'Personal Care', color: '#9333ea' },
+            { id: 2, name: 'Pet Care', color: '#059669' },
+            { id: 3, name: 'Household', color: '#dc2626' }
+        ];
+        let accounts = [
+            { id: 1, name: 'Main Checking', type: 'checking', balance: 3500 },
+            { id: 2, name: 'Savings', type: 'savings', balance: 8200 },
+            { id: 3, name: 'Credit Card', type: 'credit', balance: -450 }
+        ];
+        let transactions = [];
 
         // Update pay when input changes
-        document.getElementById('payAmount').addEventListener('input', function() {
+        document.getElementById('payAmount').addEventListener('input', function () {
             currentPay = parseFloat(this.value) || 0;
             updateSummary();
             saveData();
         });
 
         // Add a new expense
-      function addExpense() {
-    const name = document.getElementById('expenseName').value;
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
-    const frequency = document.getElementById('expenseFrequency').value;
-    const categoryId = parseInt(document.getElementById('expenseCategory').value); // ← NEW LINE
+        function addExpense() {
+            const name = document.getElementById('expenseName').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const frequency = document.getElementById('expenseFrequency').value;
+            const categoryId = parseInt(document.getElementById('expenseCategory').value); // ← NEW LINE
 
-    if (name && amount) {
-        const expense = {
-            id: Date.now(),
-            name: name,
-            amount: amount,
-            frequency: frequency,
-            categoryId: categoryId, // ← NEW LINE
-            biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
-        };
+            if (name && amount) {
+                const expense = {
+                    id: Date.now(),
+                    name: name,
+                    amount: amount,
+                    frequency: frequency,
+                    categoryId: categoryId, // ← NEW LINE
+                    biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
+                };
 
-        expenses.push(expense);
-        
-        document.getElementById('expenseName').value = '';
-        document.getElementById('expenseAmount').value = '';
-        
-        updateExpensesList();
-        updateSummary();
-        saveData();
-    }
-}
+                expenses.push(expense);
+
+                document.getElementById('expenseName').value = '';
+                document.getElementById('expenseAmount').value = '';
+
+                updateExpensesList();
+                updateSummary();
+                saveData();
+            }
+        }
 
         // Calculate how much to save bi-weekly for each frequency
         function calculateBiweeklyAmount(amount, frequency) {
-            switch(frequency) {
+            switch (frequency) {
                 case 'weekly': return amount * 2;
                 case 'bi-weekly': return amount;
                 case 'monthly': return amount * 12 / 26;
@@ -476,21 +504,21 @@ let transactions = [];
         }
 
         // Update the expenses list display
-function updateExpensesList() {
-    const container = document.getElementById('expensesList');
-    container.innerHTML = '';
+        function updateExpensesList() {
+            const container = document.getElementById('expensesList');
+            container.innerHTML = '';
 
-    // Group expenses by category
-    categories.forEach(category => {
-        const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
-        
-        if (categoryExpenses.length > 0) {
-            // Create category header
-            const categoryDiv = document.createElement('div');
-            categoryDiv.style.marginBottom = '20px';
-            
-            const categoryHeader = document.createElement('div');
-            categoryHeader.style.cssText = `
+            // Group expenses by category
+            categories.forEach(category => {
+                const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
+
+                if (categoryExpenses.length > 0) {
+                    // Create category header
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.style.marginBottom = '20px';
+
+                    const categoryHeader = document.createElement('div');
+                    categoryHeader.style.cssText = `
                 background-color: ${category.color};
                 color: white;
                 padding: 10px;
@@ -498,16 +526,16 @@ function updateExpensesList() {
                 font-weight: bold;
                 margin-bottom: 10px;
             `;
-            categoryHeader.textContent = `${category.name} (${categoryExpenses.length} items)`;
-            
-            categoryDiv.appendChild(categoryHeader);
-            
-            // Add expenses for this category
-            categoryExpenses.forEach(expense => {
-                const expenseDiv = document.createElement('div');
-                expenseDiv.className = 'expense-item';
-                expenseDiv.style.marginLeft = '20px'; // Indent under category
-                expenseDiv.innerHTML = `
+                    categoryHeader.textContent = `${category.name} (${categoryExpenses.length} items)`;
+
+                    categoryDiv.appendChild(categoryHeader);
+
+                    // Add expenses for this category
+                    categoryExpenses.forEach(expense => {
+                        const expenseDiv = document.createElement('div');
+                        expenseDiv.className = 'expense-item';
+                        expenseDiv.style.marginLeft = '20px'; // Indent under category
+                        expenseDiv.innerHTML = `
                     <div>
                         <strong>${expense.name}</strong><br>
                         $${expense.amount} ${expense.frequency}
@@ -517,18 +545,18 @@ function updateExpensesList() {
                         <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
                     </div>
                 `;
-                categoryDiv.appendChild(expenseDiv);
+                        categoryDiv.appendChild(expenseDiv);
+                    });
+
+                    container.appendChild(categoryDiv);
+                }
             });
-            
-            container.appendChild(categoryDiv);
+
+            // Show message if no expenses
+            if (expenses.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No expenses yet. Add one above!</p>';
+            }
         }
-    });
-    
-    // Show message if no expenses
-    if (expenses.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #666;">No expenses yet. Add one above!</p>';
-    }
-}
 
         // Delete an expense
         function deleteExpense(id) {
@@ -539,70 +567,70 @@ function updateExpensesList() {
         }
 
         // Update the summary totals
-function updateSummary() {
-    const total = expenses.reduce((sum, expense) => sum + expense.biweeklyAmount, 0);
-    const remaining = currentPay - total;
+        function updateSummary() {
+            const total = expenses.reduce((sum, expense) => sum + expense.biweeklyAmount, 0);
+            const remaining = currentPay - total;
 
-    document.getElementById('totalAllocation').textContent = total.toFixed(2);
-    document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
-}
+            document.getElementById('totalAllocation').textContent = total.toFixed(2);
+            document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
+        }
 
-// Update the category dropdown
-function updateCategoryDropdown() {
-    const dropdown = document.getElementById('expenseCategory');
-    dropdown.innerHTML = '';
-    
-    categories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category.id;
-        option.textContent = category.name;
-        dropdown.appendChild(option);
-    });
-}
-// Also populate transaction category dropdown
-function populateTransactionCategoryDropdown() {
-    const dropdown = document.getElementById('transactionCategory');
-    dropdown.innerHTML = '';
-    
-    categories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category.id;
-        option.textContent = category.name;
-        dropdown.appendChild(option);
-    });
-}
-// Add a new category
-function addCategory() {
-    const name = document.getElementById('categoryName').value;
-    const color = document.getElementById('categoryColor').value;
-    
-    if (name) {
-        const newCategory = {
-            id: Date.now(),
-            name: name,
-            color: color
-        };
-        
-        categories.push(newCategory);
-        
-        // Clear form
-        document.getElementById('categoryName').value = '';
-        document.getElementById('categoryColor').value = '#9333ea';
-        
-        updateCategoriesList();
-        updateCategoryDropdown();
-        saveData();
-    }
-}
+        // Update the category dropdown
+        function updateCategoryDropdown() {
+            const dropdown = document.getElementById('expenseCategory');
+            dropdown.innerHTML = '';
 
-// Update the categories management list
-function updateCategoriesList() {
-    const container = document.getElementById('categoriesList');
-    container.innerHTML = '';
-    
-    categories.forEach(category => {
-        const div = document.createElement('div');
-        div.style.cssText = `
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                dropdown.appendChild(option);
+            });
+        }
+        // Also populate transaction category dropdown
+        function populateTransactionCategoryDropdown() {
+            const dropdown = document.getElementById('transactionCategory');
+            dropdown.innerHTML = '';
+
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                dropdown.appendChild(option);
+            });
+        }
+        // Add a new category
+        function addCategory() {
+            const name = document.getElementById('categoryName').value;
+            const color = document.getElementById('categoryColor').value;
+
+            if (name) {
+                const newCategory = {
+                    id: Date.now(),
+                    name: name,
+                    color: color
+                };
+
+                categories.push(newCategory);
+
+                // Clear form
+                document.getElementById('categoryName').value = '';
+                document.getElementById('categoryColor').value = '#9333ea';
+
+                updateCategoriesList();
+                updateCategoryDropdown();
+                saveData();
+            }
+        }
+
+        // Update the categories management list
+        function updateCategoriesList() {
+            const container = document.getElementById('categoriesList');
+            container.innerHTML = '';
+
+            categories.forEach(category => {
+                const div = document.createElement('div');
+                div.style.cssText = `
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -613,57 +641,57 @@ function updateCategoriesList() {
             border-radius: 8px;
             border-left: 4px solid ${category.color};
         `;
-        
-        div.innerHTML = `
+
+                div.innerHTML = `
             <div>
                 <strong style="color: var(--text-color);">${category.name}</strong>
                 <span style="margin-left: 10px; padding: 4px 8px; background-color: ${category.color}; color: white; border-radius: 4px; font-size: 12px;">●</span>
             </div>
             <button onclick="deleteCategory(${category.id})" class="btn-danger">Delete</button>
         `;
-        
-        container.appendChild(div);
-    });
-}
 
-// Delete a category
-function deleteCategory(categoryId) {
-    if (categories.length <= 1) {
-        alert('You must have at least one category!');
-        return;
-    }
-    
-    if (confirm('Delete this category? Expenses will be moved to the first category.')) {
-        // Move expenses to first remaining category
-        const remainingCategories = categories.filter(cat => cat.id !== categoryId);
-        const firstCategoryId = remainingCategories[0].id;
-        
-        expenses.forEach(expense => {
-            if (expense.categoryId === categoryId) {
-                expense.categoryId = firstCategoryId;
+                container.appendChild(div);
+            });
+        }
+
+        // Delete a category
+        function deleteCategory(categoryId) {
+            if (categories.length <= 1) {
+                alert('You must have at least one category!');
+                return;
             }
-        });
-        
-        categories = remainingCategories;
-        
-        updateCategoriesList();
-        updateCategoryDropdown();
-        updateExpensesList();
-        saveData();
-    }
-}
-// Update accounts display
-function updateAccountsList() {
-    const container = document.getElementById('accountsList');
-    container.innerHTML = '';
-    
-    accounts.forEach(account => {
-        const div = document.createElement('div');
-        div.className = 'expense-item'; // Reuse existing styling
-        
-        const balanceColor = account.balance >= 0 ? '#059669' : '#dc2626';
-        
-        div.innerHTML = `
+
+            if (confirm('Delete this category? Expenses will be moved to the first category.')) {
+                // Move expenses to first remaining category
+                const remainingCategories = categories.filter(cat => cat.id !== categoryId);
+                const firstCategoryId = remainingCategories[0].id;
+
+                expenses.forEach(expense => {
+                    if (expense.categoryId === categoryId) {
+                        expense.categoryId = firstCategoryId;
+                    }
+                });
+
+                categories = remainingCategories;
+
+                updateCategoriesList();
+                updateCategoryDropdown();
+                updateExpensesList();
+                saveData();
+            }
+        }
+        // Update accounts display
+        function updateAccountsList() {
+            const container = document.getElementById('accountsList');
+            container.innerHTML = '';
+
+            accounts.forEach(account => {
+                const div = document.createElement('div');
+                div.className = 'expense-item'; // Reuse existing styling
+
+                const balanceColor = account.balance >= 0 ? '#059669' : '#dc2626';
+
+                div.innerHTML = `
             <div>
                 <strong>${account.name}</strong><br>
                 <small>${account.type}</small>
@@ -673,73 +701,73 @@ function updateAccountsList() {
                 ${account.type === 'credit' && account.balance < 0 ? ' owed' : ''}
             </div>
         `;
-        container.appendChild(div);
-    });
-}
+                container.appendChild(div);
+            });
+        }
 
-// Update account dropdown for transactions
-function updateAccountDropdown() {
-    const dropdown = document.getElementById('transactionAccount');
-    dropdown.innerHTML = '';
-    
-    accounts.forEach(account => {
-        const option = document.createElement('option');
-        option.value = account.id;
-        option.textContent = account.name;
-        dropdown.appendChild(option);
-    });
-}
+        // Update account dropdown for transactions
+        function updateAccountDropdown() {
+            const dropdown = document.getElementById('transactionAccount');
+            dropdown.innerHTML = '';
 
-// Set today's date as default
-function setDefaultDate() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('transactionDate').value = today;
-}
+            accounts.forEach(account => {
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = account.name;
+                dropdown.appendChild(option);
+            });
+        }
 
-// Add a new transaction
-function addTransaction() {
-    const date = document.getElementById('transactionDate').value;
-    const payee = document.getElementById('transactionPayee').value;
-    const amount = parseFloat(document.getElementById('transactionAmount').value);
-    const accountId = parseInt(document.getElementById('transactionAccount').value);
-    const categoryId = parseInt(document.getElementById('transactionCategory').value);
-    
-    if (date && payee && amount && accountId && categoryId) {
-        const transaction = {
-            id: Date.now(),
-            date: date,
-            payee: payee,
-            amount: amount,
-            accountId: accountId,
-            categoryId: categoryId
-        };
-        
-        transactions.push(transaction);
-        
-        // Clear form
-        document.getElementById('transactionPayee').value = '';
-        document.getElementById('transactionAmount').value = '';
-        
-        updateTransactionsList();
-        saveData();
-    }
-}
+        // Set today's date as default
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('transactionDate').value = today;
+        }
 
-// Update transactions display
-function updateTransactionsList() {
-    const container = document.getElementById('transactionsList');
-    container.innerHTML = '';
-    
-    // Show last 10 transactions
-    const recentTransactions = transactions.slice(-10).reverse();
-    
-    recentTransactions.forEach(transaction => {
-        const account = accounts.find(acc => acc.id === transaction.accountId);
-        const category = categories.find(cat => cat.id === transaction.categoryId);
-        
-        const div = document.createElement('div');
-        div.className = 'expense-item';
-        div.innerHTML = `
+        // Add a new transaction
+        function addTransaction() {
+            const date = document.getElementById('transactionDate').value;
+            const payee = document.getElementById('transactionPayee').value;
+            const amount = parseFloat(document.getElementById('transactionAmount').value);
+            const accountId = parseInt(document.getElementById('transactionAccount').value);
+            const categoryId = parseInt(document.getElementById('transactionCategory').value);
+
+            if (date && payee && amount && accountId && categoryId) {
+                const transaction = {
+                    id: Date.now(),
+                    date: date,
+                    payee: payee,
+                    amount: amount,
+                    accountId: accountId,
+                    categoryId: categoryId
+                };
+
+                transactions.push(transaction);
+
+                // Clear form
+                document.getElementById('transactionPayee').value = '';
+                document.getElementById('transactionAmount').value = '';
+
+                updateTransactionsList();
+                saveData();
+            }
+        }
+
+        // Update transactions display
+        function updateTransactionsList() {
+            const container = document.getElementById('transactionsList');
+            container.innerHTML = '';
+
+            // Show last 10 transactions
+            const recentTransactions = transactions.slice(-10).reverse();
+
+            recentTransactions.forEach(transaction => {
+                const account = accounts.find(acc => acc.id === transaction.accountId);
+                const category = categories.find(cat => cat.id === transaction.categoryId);
+
+                const div = document.createElement('div');
+                div.className = 'expense-item';
+                div.innerHTML = `
             <div>
                 <strong>${transaction.payee}</strong><br>
                 <small>${transaction.date} • ${account?.name} • ${category?.name}</small>
@@ -749,75 +777,76 @@ function updateTransactionsList() {
                 <button onclick="deleteTransaction(${transaction.id})" style="margin-left: 10px; background-color: #cc0000; padding: 2px 6px; font-size: 12px;">Delete</button>
             </div>
         `;
-        container.appendChild(div);
-    });
-    
-    if (transactions.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #666;">No transactions yet.</p>';
-    }
-}
+                container.appendChild(div);
+            });
 
-// Delete a transaction
-function deleteTransaction(id) {
-    transactions = transactions.filter(transaction => transaction.id !== id);
-    updateTransactionsList();
-    saveData();
-}
-// Theme toggle functionality
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    const toggleButton = document.getElementById('themeToggle');
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    toggleButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-    
-    // Save theme preference
-    localStorage.setItem('theme-preference', newTheme);
-}
-// Toggle section collapse
-function toggleSection(sectionId) {
-    const content = document.getElementById(sectionId + '-content');
-    const header = content.previousElementSibling;
-    const icon = header.querySelector('.collapse-icon');
-    
-    if (content.style.maxHeight === '0px' || content.style.maxHeight === '') {
-        content.style.maxHeight = content.scrollHeight + 'px';
-        icon.textContent = '▼';
-        header.parentElement.classList.remove('collapsed');
-    } else {
-        content.style.maxHeight = '0px';
-        icon.textContent = '▶';
-        header.parentElement.classList.add('collapsed');
-    }
-}
-// Load saved theme on page load
-function loadTheme() {
-    const savedTheme = localStorage.getItem('theme-preference') || 'light';
-    const toggleButton = document.getElementById('themeToggle');
-    
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    toggleButton.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-}
+            if (transactions.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">No transactions yet.</p>';
+            }
+        }
+
+        // Delete a transaction
+        function deleteTransaction(id) {
+            transactions = transactions.filter(transaction => transaction.id !== id);
+            updateTransactionsList();
+            saveData();
+        }
+        // Theme toggle functionality
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const toggleButton = document.getElementById('themeToggle');
+
+            document.documentElement.setAttribute('data-theme', newTheme);
+            toggleButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+
+            // Save theme preference
+            localStorage.setItem('theme-preference', newTheme);
+        }
+        // Toggle section collapse
+        function toggleSection(sectionId) {
+            const content = document.getElementById(sectionId + '-content');
+            const header = content.previousElementSibling;
+            const icon = header.querySelector('.collapse-icon');
+
+            if (content.style.maxHeight === '0px' || content.style.maxHeight === '') {
+                content.style.maxHeight = content.scrollHeight + 'px';
+                icon.textContent = '▼';
+                header.parentElement.classList.remove('collapsed');
+            } else {
+                content.style.maxHeight = '0px';
+                icon.textContent = '▶';
+                header.parentElement.classList.add('collapsed');
+            }
+        }
+        // Load saved theme on page load
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme-preference') || 'light';
+            const toggleButton = document.getElementById('themeToggle');
+
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            toggleButton.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        }
         // Load saved data when page starts
-if (loadData()) {
-    // Update the pay input to show loaded value
-    document.getElementById('payAmount').value = currentPay;
-    // Update displays
-    updateExpensesList();
-    updateSummary();
-}
-loadTheme();
-updateCategoryDropdown();
-populateTransactionCategoryDropdown();
-updateCategoriesList();
-updateAccountsList();
-updateAccountDropdown(); 
-updateTransactionsList();
-setDefaultDate();
+        if (loadData()) {
+            // Update the pay input to show loaded value
+            document.getElementById('payAmount').value = currentPay;
+            // Update displays
+            updateExpensesList();
+            updateSummary();
+        }
+        loadTheme();
+        updateCategoryDropdown();
+        populateTransactionCategoryDropdown();
+        updateCategoriesList();
+        updateAccountsList();
+        updateAccountDropdown();
+        updateTransactionsList();
+        setDefaultDate();
 
-console.log("Budget calculator loaded!");
+        console.log("Budget calculator loaded!");
 
     </script>
 </body>
+
 </html>
