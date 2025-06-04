@@ -193,28 +193,54 @@ function updateExpensesList() {
     const container = document.getElementById('expensesList');
     container.innerHTML = '';
 
-    expenses.forEach(expense => {
-        // Find the category name
-        const category = categories.find(cat => cat.id === expense.categoryId);
-        const categoryName = category ? category.name : 'Unknown';
-        const categoryColor = category ? category.color : '#666';
+    // Group expenses by category
+    categories.forEach(category => {
+        const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
         
-        const div = document.createElement('div');
-        div.className = 'expense-item';
-        div.style.borderLeft = `4px solid ${categoryColor}`; // ← Color coding!
-        div.innerHTML = `
-            <div>
-                <strong>${expense.name}</strong><br>
-                <small style="color: ${categoryColor};">${categoryName}</small><br>
-                $${expense.amount} ${expense.frequency}
-            </div>
-            <div>
-                $${expense.biweeklyAmount.toFixed(2)}/bi-weekly
-                <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
-            </div>
-        `;
-        container.appendChild(div);
+        if (categoryExpenses.length > 0) {
+            // Create category header
+            const categoryDiv = document.createElement('div');
+            categoryDiv.style.marginBottom = '20px';
+            
+            const categoryHeader = document.createElement('div');
+            categoryHeader.style.cssText = `
+                background-color: ${category.color};
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-weight: bold;
+                margin-bottom: 10px;
+            `;
+            categoryHeader.textContent = `${category.name} (${categoryExpenses.length} items)`;
+            
+            categoryDiv.appendChild(categoryHeader);
+            
+            // Add expenses for this category
+            categoryExpenses.forEach(expense => {
+                const expenseDiv = document.createElement('div');
+                expenseDiv.className = 'expense-item';
+                expenseDiv.style.marginLeft = '20px'; // Indent under category
+                expenseDiv.innerHTML = `
+                    <div>
+                        <strong>${expense.name}</strong><br>
+                        $${expense.amount} ${expense.frequency}
+                    </div>
+                    <div>
+                        $${expense.biweeklyAmount.toFixed(2)}/bi-weekly
+                        <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
+                    </div>
+                `;
+                categoryDiv.appendChild(expenseDiv);
+            });
+            
+            container.appendChild(categoryDiv);
+        }
     });
+    
+    // Show message if no expenses
+    if (expenses.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">No expenses yet. Add one above!</p>';
+    }
 }
 
         // Delete an expense
