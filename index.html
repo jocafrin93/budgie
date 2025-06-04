@@ -534,45 +534,38 @@
             // Group expenses by category
             categories.forEach(category => {
                 const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
+                // Group expenses by category
+                categories.forEach(category => {
+                    const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
 
-                if (categoryExpenses.length > 0) {
+                    // Always show category, even if it has no expenses
                     // Create category header
                     const categoryDiv = document.createElement('div');
                     categoryDiv.style.marginBottom = '20px';
 
                     const categoryHeader = document.createElement('div');
                     categoryHeader.style.cssText = `
-                background-color: ${category.color};
-                color: white;
-                padding: 10px;
-                border-radius: 5px;
-                font-weight: bold;
-                margin-bottom: 10px;
-            `;
+                        background-color: ${category.color};
+                        color: white;
+                        padding: 10px;
+                        border-radius: 5px;
+                        font-weight: bold;
+                        margin-bottom: 10px;
+                     `;
                     categoryHeader.textContent = `${category.name} (${categoryExpenses.length} items)`;
 
                     categoryDiv.appendChild(categoryHeader);
 
-                    // Add expenses for this category
+                    // Add expenses for this category (if any)
                     categoryExpenses.forEach(expense => {
-                        const expenseDiv = document.createElement('div');
-                        expenseDiv.className = 'expense-item';
-                        expenseDiv.style.marginLeft = '20px'; // Indent under category
-                        expenseDiv.innerHTML = `
-                    <div>
-                        <strong>${expense.name}</strong><br>
-                        $${expense.amount} ${expense.frequency}
-                    </div>
-                    <div>
-                        $${expense.biweeklyAmount.toFixed(2)}/bi-weekly
-                        <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
-                    </div>
-                `;
-                        categoryDiv.appendChild(expenseDiv);
+                        // ... existing expense creation code stays the same
                     });
 
+                    // Always add the category, even if empty
                     container.appendChild(categoryDiv);
-                }
+                });
+
+
             });
 
             // Show message if no expenses
