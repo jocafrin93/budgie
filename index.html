@@ -97,6 +97,7 @@ function saveData() {
     const dataToSave = {
         expenses: expenses,
         currentPay: currentPay
+        categories: categories
     };
     
     try {
@@ -114,6 +115,10 @@ function loadData() {
             const data = JSON.parse(savedData);
             expenses = data.expenses || [];
             currentPay = data.currentPay || 2800;
+             categories = data.categories || [  // ← ADD THESE LINES
+                { id: 1, name: 'Personal Care', color: '#9333ea' },
+                { id: 2, name: 'Pet Care', color: '#059669' },
+                { id: 3, name: 'Household', color: '#dc2626' }
             console.log('Data loaded successfully');
             return true;
         }
@@ -126,6 +131,11 @@ function loadData() {
 // Our data storage (will be loaded from localStorage)
 let expenses = [];
 let currentPay = 2800;
+let categories = [
+    { id: 1, name: 'Personal Care', color: '#9333ea' },
+    { id: 2, name: 'Pet Care', color: '#059669' },
+    { id: 3, name: 'Household', color: '#dc2626' }
+];
 
         // Update pay when input changes
         document.getElementById('payAmount').addEventListener('input', function() {
