@@ -311,6 +311,17 @@ function updateSummary() {
 }
 
 // Update the category dropdown
+function updateCategoryDropdown() {
+    const dropdown = document.getElementById('expenseCategory');
+    dropdown.innerHTML = '';
+    
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        dropdown.appendChild(option);
+    });
+}
 // Also populate transaction category dropdown
 function populateTransactionCategoryDropdown() {
     const dropdown = document.getElementById('transactionCategory');
