@@ -111,7 +111,9 @@ function saveData() {
     const dataToSave = {
         expenses: expenses,
         currentPay: currentPay,
-        categories: categories
+        categories: categories,
+          accounts: accounts,
+        transactions: transactions
     };
     
     try {
@@ -134,6 +136,12 @@ function loadData() {
                 { id: 2, name: 'Pet Care', color: '#059669' },
                 { id: 3, name: 'Household', color: '#dc2626' }
             ];  
+             accounts = data.accounts || [           
+                { id: 1, name: 'Main Checking', type: 'checking', balance: 3500 },
+                { id: 2, name: 'Savings', type: 'savings', balance: 8200 },
+                { id: 3, name: 'Credit Card', type: 'credit', balance: -450 }
+            ];
+            transactions = data.transactions || [];
             console.log('Data loaded successfully');
             return true;
         }
@@ -151,6 +159,12 @@ let categories = [
     { id: 2, name: 'Pet Care', color: '#059669' },
     { id: 3, name: 'Household', color: '#dc2626' }
 ];
+let accounts = [
+    { id: 1, name: 'Main Checking', type: 'checking', balance: 3500 },
+    { id: 2, name: 'Savings', type: 'savings', balance: 8200 },
+    { id: 3, name: 'Credit Card', type: 'credit', balance: -450 }
+];
+let transactions = [];
 
         // Update pay when input changes
         document.getElementById('payAmount').addEventListener('input', function() {
