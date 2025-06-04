@@ -281,15 +281,20 @@
         <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
     </div>
 <div class="container">
-    <h3>Manage Categories</h3>
-    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <input type="text" id="categoryName" placeholder="Category name" style="flex: 1;">
-        <input type="color" id="categoryColor" value="#9333ea" style="width: 50px;">
-        <button onclick="addCategory()">Add Category</button>
+    <div class="section-header" onclick="toggleSection('categories')">
+        <h3><span class="collapse-icon">▼</span>Manage Categories</h3>
+        <small>Add, edit, and organize your budget categories</small>
     </div>
-    
-    <div id="categoriesList">
-        <!-- Categories will appear here -->
+    <div class="section-content" id="categories-content">
+        <div class="form-row">
+            <input type="text" id="categoryName" placeholder="Category name" style="flex: 1;">
+            <input type="color" id="categoryColor" value="#9333ea" style="width: 50px;">
+            <button onclick="addCategory()">Add Category</button>
+        </div>
+        
+        <div id="categoriesList">
+            <!-- Categories will appear here -->
+        </div>
     </div>
 </div>
 <div class="container">
