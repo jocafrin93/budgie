@@ -709,13 +709,24 @@
         }
 
         // Update the categories management list
-        function updateCategoriesList() {
-            const container = document.getElementById('categoriesList');
-            container.innerHTML = '';
+function updateCategoriesList() {
+    console.log('updateCategoriesList called');
+    console.log('categories:', categories);
+    
+    const container = document.getElementById('categoriesList');
+    console.log('container found:', container);
+    
+    if (!container) {
+        console.log('ERROR: categoriesList container not found!');
+        return;
+    }
+    
+    container.innerHTML = '';
 
-            categories.forEach(category => {
-                const div = document.createElement('div');
-                div.style.cssText = `
+    categories.forEach(category => {
+        console.log('Adding category:', category.name);
+        const div = document.createElement('div');
+        div.style.cssText = `
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -727,7 +738,7 @@
             border-left: 4px solid ${category.color};
         `;
 
-                div.innerHTML = `
+        div.innerHTML = `
             <div>
                 <strong style="color: var(--text-color);">${category.name}</strong>
                 <span style="margin-left: 10px; padding: 4px 8px; background-color: ${category.color}; color: white; border-radius: 4px; font-size: 12px;">●</span>
@@ -735,9 +746,11 @@
             <button onclick="deleteCategory(${category.id})" class="btn-danger">Delete</button>
         `;
 
-                container.appendChild(div);
-            });
-        }
+        container.appendChild(div);
+    });
+    
+    console.log('Final container HTML:', container.innerHTML);
+}
 
         // Delete a category
         function deleteCategory(categoryId) {
@@ -908,7 +921,6 @@
             updateExpensesList();
             updateTransactionsList();
         }
-
 
         // Toggle section collapse
         function toggleSection(sectionId) {
