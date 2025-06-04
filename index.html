@@ -378,42 +378,24 @@
             </div>
         </div>
     </div>
-    <div class="container"> <!--Manage Categories-->
-        <div class="section-header" onclick="toggleSection('categories')">
-            <h3><span class="collapse-icon">▼</span>Categories</h3>
-            <small>Organize your budget with custom categories</small>
+    <div class="container"><!-- Budget Items -->
+        <div class="section-header" onclick="toggleSection('budget')">
+            <h3><span class="collapse-icon">▼</span>Budget Items</h3>
+            <small>Manage your categories and planned expenses</small>
         </div>
-        <div class="section-content" id="categories-content">
-            <div style="margin-bottom: 15px;">
+        <div class="section-content" id="budget-content">
+            <!-- Action buttons -->
+            <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                 <button onclick="openCategoryModal()">+ Add Category</button>
-            </div>
-
-            <div id="categoriesList">
-                <!-- Categories will appear here -->
-            </div>
-        </div>
-    </div>
-    <div class="container"><!-- Add Expense-->
-        <div class="section-header" onclick="toggleSection('addExpense')">
-            <h3><span class="collapse-icon">▼</span>Add Expense</h3>
-            <small>Plan for irregular expenses</small>
-        </div>
-        <div class="section-content" id="addExpense-content">
-            <div style="margin-bottom: 15px;">
                 <button onclick="openExpenseModal()">+ Add Expense</button>
             </div>
 
-            <div style="text-align: center; color: var(--text-secondary); font-style: italic;">
-                Your planned expenses appear in the "Your Expenses" section below
+            <!-- Categories list -->
+            <div id="categoriesList">
+                <!-- Categories will appear here -->
             </div>
-        </div>
-    </div>
-    <div class="container"><!--Your Expenses-->
-        <div class="section-header" onclick="toggleSection('expenses')">
-            <h3><span class="collapse-icon">▼</span>Your Expenses</h3>
-            <small>Planned expenses grouped by category</small>
-        </div>
-        <div class="section-content" id="expenses-content">
+
+            <!-- Expenses list -->
             <div id="expensesList">
                 <!-- Expenses will appear here -->
             </div>
@@ -825,8 +807,7 @@
 
         // Initialize all sections as expanded on page load 
         function initializeSections() {
-            const sections = ['categories', 'income', 'addExpense', 'expenses', 'accounts', 'addTransaction', 'transactions'];
-
+            const sections = ['budget', 'income', 'accounts', 'addTransaction', 'transactions'];
             sections.forEach(sectionId => {
                 const content = document.getElementById(sectionId + '-content');
                 if (content) {
@@ -927,7 +908,7 @@
                 populateTransactionCategoryDropdown();
 
                 // Re-expand the categories section to show the updated list
-                const categoriesContent = document.getElementById('categories-content');
+const categoriesContent = document.getElementById('budget-content');
                 categoriesContent.style.maxHeight = categoriesContent.scrollHeight + 'px';
 
                 saveData();
@@ -992,7 +973,7 @@
                 updateSummary();
 
                 // Re-expand the expenses section to show the updated list
-                const expensesContent = document.getElementById('expenses-content');
+                const expensesContent = document.getElementById('budget-content');
                 expensesContent.style.maxHeight = expensesContent.scrollHeight + 'px';
 
                 saveData();
