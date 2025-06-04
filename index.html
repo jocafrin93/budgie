@@ -803,6 +803,17 @@
             // Save theme preference
             localStorage.setItem('theme-preference', newTheme);
         }
+        // Initialize all sections as expanded on page load 
+        function initializeSections() {
+            const sections = ['categories', 'income', 'addExpense', 'expenses', 'accounts', 'addTransaction'];
+    
+        sections.forEach(sectionId => {
+            const content = document.getElementById(sectionId + '-content');
+            if (content) {
+                content.style.maxHeight = content.scrollHeight + 'px';
+            }
+            });
+        }
         // Toggle section collapse
         function toggleSection(sectionId) {
             const content = document.getElementById(sectionId + '-content');
@@ -836,6 +847,7 @@
             updateSummary();
         }
         loadTheme();
+        initializeSections();
         updateCategoryDropdown();
         populateTransactionCategoryDropdown();
         updateCategoriesList();
