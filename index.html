@@ -901,7 +901,16 @@
                     content.style.maxHeight = content.scrollHeight + 'px';
                 }
             });
+
+            // Make sure lists are populated after sections are initialized
+            setTimeout(() => {
+                updateCategoriesList();
+                updateAccountsList();
+                updateExpensesList();
+                updateTransactionsList();
+            }, 100);
         }
+
 
         // Toggle section collapse
         function toggleSection(sectionId) {
@@ -985,16 +994,21 @@
 
                 categories.push(newCategory);
 
+                // Update all the displays
                 updateCategoriesList();
                 updateCategoryDropdown();
                 populateTransactionCategoryDropdown();
+
+                // Re-expand the categories section to show the updated list
+                const categoriesContent = document.getElementById('categories-content');
+                categoriesContent.style.maxHeight = categoriesContent.scrollHeight + 'px';
+
                 saveData();
                 closeModal();
             } else {
                 alert('Please enter a category name');
             }
         }
-
         // Load saved data when page starts
         if (loadData()) {
             // Update the pay input to show loaded value
