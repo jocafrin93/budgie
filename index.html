@@ -274,12 +274,18 @@
     </div>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
 </div>
-    
-    <div class="container">
-        <h3>Income</h3>
-        <label>Bi-weekly Take-home Pay: $</label>
-        <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
+   <div class="container">
+    <div class="section-header" onclick="toggleSection('income')">
+        <h3><span class="collapse-icon">▼</span>Income Settings</h3>
+        <small>Configure your bi-weekly take-home pay</small>
     </div>
+    <div class="section-content" id="income-content">
+        <div class="form-row">
+            <label>Bi-weekly Take-home Pay: $</label>
+            <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
+        </div>
+    </div>
+</div>
 <div class="container">
     <div class="section-header" onclick="toggleSection('categories')">
         <h3><span class="collapse-icon">▼</span>Manage Categories</h3>
