@@ -366,6 +366,7 @@
         </div>
         <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
     </div>
+    
     <div class="container">
         <div class="section-header" onclick="toggleSection('income')">
             <h3><span class="collapse-icon">▼</span>Income Settings</h3>
@@ -378,76 +379,52 @@
             </div>
         </div>
     </div>
-    <div class="container"><!-- Budget Items -->
+    
+    <div class="container">
         <div class="section-header" onclick="toggleSection('budget')">
             <h3><span class="collapse-icon">▼</span>Budget Items</h3>
             <small>Manage your categories and planned expenses</small>
         </div>
         <div class="section-content" id="budget-content">
-            <!-- Action buttons -->
             <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                 <button onclick="openCategoryModal()">+ Add Category</button>
                 <button onclick="openExpenseModal()">+ Add Expense</button>
             </div>
-
-            <!-- Categories and their expenses -->
-            <div id="categoriesList">
-                <!-- Categories with their expenses will appear here -->
-            </div>
+            <div id="categoriesList"></div>
         </div>
     </div>
-    <div class="container"><!--Accounts-->
+    
+    <div class="container">
         <div class="section-header" onclick="toggleSection('accounts')">
             <h3><span class="collapse-icon">▼</span>Accounts</h3>
             <small>Track balances across your accounts</small>
         </div>
         <div class="section-content" id="accounts-content">
-            <div id="accountsList">
-                <!-- Accounts will appear here -->
-            </div>
+            <div id="accountsList"></div>
         </div>
     </div>
-    <div class="container"><!--Add Transaction-->
-        <div class="section-header" onclick="toggleSection('addTransaction')">
-            <h3><span class="collapse-icon">▼</span>Add Transaction</h3>
-            <small>Record your spending and transfers</small>
-        </div>
-        <div class="section-content" id="addTransaction-content">
-            <div class="form-row">
-                <input type="date" id="transactionDate" value="">
-                <input type="text" id="transactionPayee" placeholder="Payee (e.g., Grocery Store)">
-                <input type="number" id="transactionAmount" placeholder="Amount" step="0.01">
-                <select id="transactionAccount">
-                    <!-- Accounts will be populated by JavaScript -->
-                </select>
-                <select id="transactionCategory">
-                    <!-- Categories will be populated by JavaScript -->
-                </select>
-                <button onclick="addTransaction()">Add Transaction</button>
-            </div>
-        </div>
-    </div>
-    <div class="container"><!--Recent Transactions-->
+    
+    <div class="container">
         <div class="section-header" onclick="toggleSection('transactions')">
-            <h3><span class="collapse-icon">▼</span>Recent Transactions</h3>
-            <small>Your latest spending activity</small>
+            <h3><span class="collapse-icon">▼</span>Transactions</h3>
+            <small>Record your spending and track activity</small>
         </div>
         <div class="section-content" id="transactions-content">
-            <div id="transactionsList">
-                <!-- Transactions will appear here -->
+            <div style="margin-bottom: 20px;">
+                <button onclick="openTransactionModal()">+ Add Transaction</button>
             </div>
+            <div id="transactionsList"></div>
         </div>
     </div>
+    
     <div class="container summary">
         <div>Total Bi-weekly Allocation: $<span id="totalAllocation">0</span></div>
         <div>Remaining Income: $<span id="remainingIncome">2800</span></div>
     </div>
 
     <script>
-        // Storage key for our app
         const STORAGE_KEY = 'my-budget-data';
 
-        // Functions to save and load data
         function saveData() {
             const dataToSave = {
                 expenses: expenses,
@@ -456,7 +433,6 @@
                 accounts: accounts,
                 transactions: transactions
             };
-
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
                 console.log('Data saved successfully');
@@ -492,7 +468,6 @@
             return false;
         }
 
-        // Our data storage (will be loaded from localStorage)
         let expenses = [];
         let currentPay = 2800;
         let categories = [
@@ -507,14 +482,12 @@
         ];
         let transactions = [];
 
-        // Update pay when input changes
         document.getElementById('payAmount').addEventListener('input', function () {
             currentPay = parseFloat(this.value) || 0;
             updateSummary();
             saveData();
         });
 
-        // Calculate how much to save bi-weekly for each frequency
         function calculateBiweeklyAmount(amount, frequency) {
             switch (frequency) {
                 case 'weekly': return amount * 2;
@@ -526,16 +499,13 @@
             }
         }
 
-        // Update the expenses list display (FIXED VERSION)
         function updateExpensesList() {
             const container = document.getElementById('categoriesList');
             container.innerHTML = '';
 
-            // Group expenses by category
             categories.forEach(category => {
                 const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
                 
-                // Always show category, even if it has no expenses
                 const categoryDiv = document.createElement('div');
                 categoryDiv.style.marginBottom = '20px';
 
@@ -558,11 +528,10 @@
 
                 categoryDiv.appendChild(categoryHeader);
 
-                // Add expenses for this category (if any)
                 categoryExpenses.forEach(expense => {
                     const expenseDiv = document.createElement('div');
                     expenseDiv.className = 'expense-item';
-                    expenseDiv.style.marginLeft = '20px'; // Indent under category
+                    expenseDiv.style.marginLeft = '20px';
                     expenseDiv.innerHTML = `
                         <div>
                             <strong>${expense.name}</strong><br>
@@ -576,17 +545,14 @@
                     categoryDiv.appendChild(expenseDiv);
                 });
 
-                // Always add the category, even if empty
                 container.appendChild(categoryDiv);
             });
 
-            // Show message if no categories
             if (categories.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #666;">No categories yet. Add one above!</p>';
             }
         }
 
-        // Delete an expense
         function deleteExpense(id) {
             expenses = expenses.filter(expense => expense.id !== id);
             updateExpensesList();
@@ -594,29 +560,26 @@
             saveData();
         }
 
-        // Update the summary totals
         function updateSummary() {
             const total = expenses.reduce((sum, expense) => sum + expense.biweeklyAmount, 0);
             const remaining = currentPay - total;
-
             document.getElementById('totalAllocation').textContent = total.toFixed(2);
             document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
         }
 
-        // Also populate transaction category dropdown
         function populateTransactionCategoryDropdown() {
             const dropdown = document.getElementById('transactionCategory');
-            dropdown.innerHTML = '';
-
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category.id;
-                option.textContent = category.name;
-                dropdown.appendChild(option);
-            });
+            if (dropdown) {
+                dropdown.innerHTML = '';
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    dropdown.appendChild(option);
+                });
+            }
         }
 
-        // Delete a category
         function deleteCategory(categoryId) {
             if (categories.length <= 1) {
                 alert('You must have at least one category!');
@@ -624,7 +587,6 @@
             }
 
             if (confirm('Delete this category? Expenses will be moved to the first category.')) {
-                // Move expenses to first remaining category
                 const remainingCategories = categories.filter(cat => cat.id !== categoryId);
                 const firstCategoryId = remainingCategories[0].id;
 
@@ -635,58 +597,56 @@
                 });
 
                 categories = remainingCategories;
-
                 updateExpensesList();
                 populateTransactionCategoryDropdown();
                 saveData();
             }
         }
 
-        // Update accounts display
         function updateAccountsList() {
             const container = document.getElementById('accountsList');
             container.innerHTML = '';
 
             accounts.forEach(account => {
                 const div = document.createElement('div');
-                div.className = 'expense-item'; // Reuse existing styling
-
+                div.className = 'expense-item';
                 const balanceColor = account.balance >= 0 ? '#059669' : '#dc2626';
 
                 div.innerHTML = `
-            <div>
-                <strong>${account.name}</strong><br>
-                <small>${account.type}</small>
-            </div>
-            <div style="color: ${balanceColor}; font-weight: bold;">
-                $${Math.abs(account.balance).toFixed(2)}
-                ${account.type === 'credit' && account.balance < 0 ? ' owed' : ''}
-            </div>
-        `;
+                    <div>
+                        <strong>${account.name}</strong><br>
+                        <small>${account.type}</small>
+                    </div>
+                    <div style="color: ${balanceColor}; font-weight: bold;">
+                        $${Math.abs(account.balance).toFixed(2)}
+                        ${account.type === 'credit' && account.balance < 0 ? ' owed' : ''}
+                    </div>
+                `;
                 container.appendChild(div);
             });
         }
 
-        // Update account dropdown for transactions
         function updateAccountDropdown() {
             const dropdown = document.getElementById('transactionAccount');
-            dropdown.innerHTML = '';
-
-            accounts.forEach(account => {
-                const option = document.createElement('option');
-                option.value = account.id;
-                option.textContent = account.name;
-                dropdown.appendChild(option);
-            });
+            if (dropdown) {
+                dropdown.innerHTML = '';
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account.id;
+                    option.textContent = account.name;
+                    dropdown.appendChild(option);
+                });
+            }
         }
 
-        // Set today's date as default
         function setDefaultDate() {
             const today = new Date().toISOString().split('T')[0];
-            document.getElementById('transactionDate').value = today;
+            const dateInput = document.getElementById('transactionDate');
+            if (dateInput) {
+                dateInput.value = today;
+            }
         }
 
-        // Add a new transaction
         function addTransaction() {
             const date = document.getElementById('transactionDate').value;
             const payee = document.getElementById('transactionPayee').value;
@@ -705,22 +665,17 @@
                 };
 
                 transactions.push(transaction);
-
-                // Clear form
                 document.getElementById('transactionPayee').value = '';
                 document.getElementById('transactionAmount').value = '';
-
                 updateTransactionsList();
                 saveData();
             }
         }
 
-        // Update transactions display
         function updateTransactionsList() {
             const container = document.getElementById('transactionsList');
             container.innerHTML = '';
 
-            // Show last 10 transactions
             const recentTransactions = transactions.slice(-10).reverse();
 
             recentTransactions.forEach(transaction => {
@@ -730,15 +685,15 @@
                 const div = document.createElement('div');
                 div.className = 'expense-item';
                 div.innerHTML = `
-            <div>
-                <strong>${transaction.payee}</strong><br>
-                <small>${transaction.date} • ${account?.name} • ${category?.name}</small>
-            </div>
-            <div>
-                $${transaction.amount.toFixed(2)}
-                <button onclick="deleteTransaction(${transaction.id})" style="margin-left: 10px; background-color: #cc0000; padding: 2px 6px; font-size: 12px;">Delete</button>
-            </div>
-        `;
+                    <div>
+                        <strong>${transaction.payee}</strong><br>
+                        <small>${transaction.date} • ${account?.name} • ${category?.name}</small>
+                    </div>
+                    <div>
+                        $${transaction.amount.toFixed(2)}
+                        <button onclick="deleteTransaction(${transaction.id})" style="margin-left: 10px; background-color: #cc0000; padding: 2px 6px; font-size: 12px;">Delete</button>
+                    </div>
+                `;
                 container.appendChild(div);
             });
 
@@ -747,14 +702,12 @@
             }
         }
 
-        // Delete a transaction
         function deleteTransaction(id) {
             transactions = transactions.filter(transaction => transaction.id !== id);
             updateTransactionsList();
             saveData();
         }
 
-        // Theme toggle functionality
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -762,14 +715,11 @@
 
             document.documentElement.setAttribute('data-theme', newTheme);
             toggleButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-
-            // Save theme preference
             localStorage.setItem('theme-preference', newTheme);
         }
 
-        // Initialize all sections as expanded on page load 
         function initializeSections() {
-            const sections = ['budget', 'income', 'accounts', 'addTransaction', 'transactions'];
+            const sections = ['budget', 'income', 'accounts', 'transactions'];
             sections.forEach(sectionId => {
                 const content = document.getElementById(sectionId + '-content');
                 if (content) {
@@ -778,7 +728,6 @@
             });
         }
 
-        // Toggle section collapse
         function toggleSection(sectionId) {
             const content = document.getElementById(sectionId + '-content');
             const header = content.previousElementSibling;
@@ -795,22 +744,17 @@
             }
         }
 
-        // Load saved theme on page load
         function loadTheme() {
             const savedTheme = localStorage.getItem('theme-preference') || 'light';
             const toggleButton = document.getElementById('themeToggle');
-
             document.documentElement.setAttribute('data-theme', savedTheme);
             toggleButton.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
         }
 
-        // Modal functionality
         function openModal(title, contentHtml) {
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('modalBody').innerHTML = contentHtml;
             document.getElementById('modalOverlay').classList.add('show');
-
-            // Prevent body scroll when modal is open
             document.body.style.overflow = 'hidden';
         }
 
@@ -819,35 +763,30 @@
             document.body.style.overflow = 'auto';
         }
 
-        // Close modal when pressing Escape key
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 closeModal();
             }
         });
         
-        // Open category modal
         function openCategoryModal() {
             const modalContent = `
-        <div class="form-row">
-            <input type="text" id="modalCategoryName" placeholder="Category name" style="flex: 1;">
-            <input type="color" id="modalCategoryColor" value="#3b82f6" style="width: 60px;">
-        </div>
-        <div style="margin-top: 20px; text-align: right;">
-            <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
-            <button onclick="addCategoryFromModal()">Add Category</button>
-        </div>
-    `;
+                <div class="form-row">
+                    <input type="text" id="modalCategoryName" placeholder="Category name" style="flex: 1;">
+                    <input type="color" id="modalCategoryColor" value="#3b82f6" style="width: 60px;">
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
+                    <button onclick="addCategoryFromModal()">Add Category</button>
+                </div>
+            `;
 
             openModal('Add New Category', modalContent);
-
-            // Focus on the name input
             setTimeout(() => {
                 document.getElementById('modalCategoryName').focus();
             }, 100);
         }
 
-        // Add category from modal
         function addCategoryFromModal() {
             const name = document.getElementById('modalCategoryName').value;
             const color = document.getElementById('modalCategoryColor').value;
@@ -860,12 +799,9 @@
                 };
 
                 categories.push(newCategory);
-
-                // Update all the displays
                 updateExpensesList();
                 populateTransactionCategoryDropdown();
 
-                // Re-expand the categories section to show the updated list
                 const categoriesContent = document.getElementById('budget-content');
                 categoriesContent.style.maxHeight = categoriesContent.scrollHeight + 'px';
 
@@ -876,40 +812,36 @@
             }
         }
         
-        // Open expense modal
         function openExpenseModal() {
             const modalContent = `
-        <div class="form-row">
-            <input type="text" id="modalExpenseName" placeholder="Expense name (e.g., Hair cut)" style="flex: 1;">
-            <input type="number" id="modalExpenseAmount" placeholder="Amount">
-        </div>
-        <div class="form-row">
-            <select id="modalExpenseCategory" style="flex: 1;">
-                ${categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
-            </select>
-            <select id="modalExpenseFrequency" style="flex: 1;">
-                <option value="weekly">Weekly</option>
-                <option value="bi-weekly">Bi-weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="every-6-weeks">Every 6 weeks</option>
-                <option value="every-8-weeks">Every 8 weeks</option>
-            </select>
-        </div>
-        <div style="margin-top: 20px; text-align: right;">
-            <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
-            <button onclick="addExpenseFromModal()">Add Expense</button>
-        </div>
-    `;
+                <div class="form-row">
+                    <input type="text" id="modalExpenseName" placeholder="Expense name (e.g., Hair cut)" style="flex: 1;">
+                    <input type="number" id="modalExpenseAmount" placeholder="Amount">
+                </div>
+                <div class="form-row">
+                    <select id="modalExpenseCategory" style="flex: 1;">
+                        ${categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+                    </select>
+                    <select id="modalExpenseFrequency" style="flex: 1;">
+                        <option value="weekly">Weekly</option>
+                        <option value="bi-weekly">Bi-weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="every-6-weeks">Every 6 weeks</option>
+                        <option value="every-8-weeks">Every 8 weeks</option>
+                    </select>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
+                    <button onclick="addExpenseFromModal()">Add Expense</button>
+                </div>
+            `;
 
             openModal('Add New Expense', modalContent);
-
-            // Focus on the name input
             setTimeout(() => {
                 document.getElementById('modalExpenseName').focus();
             }, 100);
         }
 
-        // Add expense from modal
         function addExpenseFromModal() {
             const name = document.getElementById('modalExpenseName').value;
             const amount = parseFloat(document.getElementById('modalExpenseAmount').value);
@@ -927,11 +859,9 @@
                 };
 
                 expenses.push(expense);
-
                 updateExpensesList();
                 updateSummary();
 
-                // Re-expand the expenses section to show the updated list
                 const expensesContent = document.getElementById('budget-content');
                 expensesContent.style.maxHeight = expensesContent.scrollHeight + 'px';
 
@@ -942,29 +872,84 @@
             }
         }
         
-        // Load saved data when page starts
+        function openTransactionModal() {
+            const modalContent = `
+                <div class="form-row">
+                    <input type="date" id="modalTransactionDate" value="${new Date().toISOString().split('T')[0]}">
+                    <input type="text" id="modalTransactionPayee" placeholder="Payee (e.g., Grocery Store)" style="flex: 1;">
+                </div>
+                <div class="form-row">
+                    <input type="number" id="modalTransactionAmount" placeholder="Amount" step="0.01" style="flex: 1;">
+                    <select id="modalTransactionAccount" style="flex: 1;">
+                        ${accounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <select id="modalTransactionCategory" style="flex: 1;">
+                        ${categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
+                    <button onclick="addTransactionFromModal()">Add Transaction</button>
+                </div>
+            `;
+
+            openModal('Add New Transaction', modalContent);
+            setTimeout(() => {
+                document.getElementById('modalTransactionPayee').focus();
+            }, 100);
+        }
+
+        function addTransactionFromModal() {
+            const date = document.getElementById('modalTransactionDate').value;
+            const payee = document.getElementById('modalTransactionPayee').value;
+            const amount = parseFloat(document.getElementById('modalTransactionAmount').value);
+            const accountId = parseInt(document.getElementById('modalTransactionAccount').value);
+            const categoryId = parseInt(document.getElementById('modalTransactionCategory').value);
+
+            if (date && payee && amount && accountId && categoryId) {
+                const transaction = {
+                    id: Date.now(),
+                    date: date,
+                    payee: payee,
+                    amount: amount,
+                    accountId: accountId,
+                    categoryId: categoryId
+                };
+
+                transactions.push(transaction);
+                updateTransactionsList();
+
+                const transactionsContent = document.getElementById('transactions-content');
+                transactionsContent.style.maxHeight = transactionsContent.scrollHeight + 'px';
+
+                saveData();
+                closeModal();
+            } else {
+                alert('Please fill in all fields');
+            }
+        }
+        
+        // Initialize everything
         if (loadData()) {
             document.getElementById('payAmount').value = currentPay;
             updateSummary();
         }
 
-        // Initialize everything in the right order
         loadTheme();
         populateTransactionCategoryDropdown();
         updateAccountDropdown();
         setDefaultDate();
         
-        // Update all lists FIRST
         updateExpensesList();
         updateAccountsList();
         updateTransactionsList();
-
-        // THEN initialize sections (so they know their proper height)
         initializeSections();
 
         console.log("Budget calculator loaded!");
-
     </script>
+    
     <!-- Modal Overlay -->
     <div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
