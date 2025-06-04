@@ -899,7 +899,7 @@
                 categories.push(newCategory);
 
                 // Update all the displays
-                updateCategoriesList();
+                updateExpensesList();
                 populateTransactionCategoryDropdown();
 
                 // Re-expand the categories section to show the updated list
@@ -988,9 +988,8 @@
         populateTransactionCategoryDropdown();
         updateAccountDropdown();
         setDefaultDate();
-
-        // Update the categories list FIRST
-        updateCategoriesList();
+        // Update the expenses list (which includes categories)
+        updateExpensesList();
 
         // THEN initialize sections (so categories section knows its proper height)
         initializeSections();
