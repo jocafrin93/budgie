@@ -4,57 +4,276 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Budget Calculator</title>
-    <style>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        transition: all 0.3s ease;
+    }
+    
+    /* CSS Variables for theming */
+    :root {
+        --bg-color: #f3f4f6;
+        --surface-color: #ffffff;
+        --text-color: #1f2937;
+        --text-secondary: #6b7280;
+        --border-color: #d1d5db;
+        --primary-color: #3b82f6;
+        --primary-hover: #2563eb;
+        --danger-color: #ef4444;
+        --success-color: #10b981;
+    }
+    
+    [data-theme="dark"] {
+        --bg-color: #111827;
+        --surface-color: #1f2937;
+        --text-color: #f9fafb;
+        --text-secondary: #9ca3af;
+        --border-color: #374151;
+        --primary-color: #60a5fa;
+        --primary-hover: #3b82f6;
+    }
+    
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .header h1 {
+        margin: 0;
+        color: var(--primary-color);
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    
+    .header p {
+        margin: 5px 0 0 0;
+        color: var(--text-secondary);
+    }
+    
+    .theme-toggle {
+        background: var(--surface-color);
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px;
+        cursor: pointer;
+        font-size: 18px;
+        transition: all 0.3s ease;
+    }
+    
+    .theme-toggle:hover {
+        background: var(--primary-color);
+        border-color: var(--primary-color);
+        color: white;
+    }
+    
+    .container {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .container:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+    }
+    
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .section-header h3 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        font-size: 1.25rem;
+        color: var(--text-color);
+    }
+    
+    .collapse-icon {
+        transition: transform 0.3s ease;
+        font-size: 14px;
+        margin-right: 8px;
+    }
+    
+    .collapsed .collapse-icon {
+        transform: rotate(-90deg);
+    }
+    
+    .section-content {
+        max-height: 2000px;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .collapsed .section-content {
+        max-height: 0;
+    }
+    
+    input, select, button {
+        padding: 12px 16px;
+        margin: 6px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--surface-color);
+        color: var(--text-color);
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    
+    input:focus, select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    button {
+        background: var(--primary-color);
+        color: white;
+        border: 2px solid var(--primary-color);
+        cursor: pointer;
+        font-weight: 600;
+    }
+    
+    button:hover {
+        background: var(--primary-hover);
+        border-color: var(--primary-hover);
+        transform: translateY(-1px);
+    }
+    
+    .btn-danger {
+        background: var(--danger-color);
+        border-color: var(--danger-color);
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+    
+    .expense-item, .account-item, .transaction-item {
+        background: var(--surface-color);
+        border: 1px solid var(--border-color);
+        padding: 16px;
+        margin: 8px 0;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+    
+    .expense-item:hover, .account-item:hover, .transaction-item:hover {
+        background: var(--bg-color);
+        transform: translateX(4px);
+    }
+    
+    .category-header {
+        background: linear-gradient(135deg, var(--category-color, #3b82f6), var(--category-color, #3b82f6));
+        color: white;
+        padding: 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    
+    .form-row input, .form-row select {
+        flex: 1;
+        min-width: 150px;
+    }
+    
+    .summary {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+        color: white;
+        padding: 24px;
+        border-radius: 12px;
+        text-align: center;
+        font-size: 18px;
+        font-weight: 600;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+    
+    .summary-item {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 12px;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .balance-positive {
+        color: var(--success-color);
+        font-weight: 600;
+    }
+    
+    .balance-negative {
+        color: var(--danger-color);
+        font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #1a1a1a;
-            color: white;
+            padding: 12px;
         }
+        
+        .header h1 {
+            font-size: 2rem;
+        }
+        
+        .form-row {
+            flex-direction: column;
+        }
+        
+        .form-row input, .form-row select {
+            min-width: 100%;
+        }
+        
         .container {
-            background-color: #2a2a2a;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 16px;
         }
-        input, button {
-            padding: 10px;
-            margin: 5px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            background-color: #333;
-            color: white;
-        }
-        button {
-            background-color: #0066cc;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0052a3;
-        }
-        .expense-item {
-            background-color: #333;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .summary {
-            background-color: #0066cc;
-            padding: 15px;
-            border-radius: 5px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-        }
-    </style>
+    }
+</style>
 </head>
 <body>
-    <h1>My Budget Calculator</h1>
+   <div class="header">
+    <div>
+        <h1>Budgie</h1>
+        <p>Professional budget planning made simple</p>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
+</div>
     
     <div class="container">
         <h3>Income</h3>
