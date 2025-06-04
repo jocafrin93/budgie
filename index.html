@@ -902,13 +902,11 @@
                 }
             });
 
-            // Make sure lists are populated after sections are initialized
-            setTimeout(() => {
-                updateCategoriesList();
-                updateAccountsList();
-                updateExpensesList();
-                updateTransactionsList();
-            }, 100);
+            // Populate all the lists AFTER sections are set up
+            updateCategoriesList();
+            updateAccountsList();
+            updateExpensesList();
+            updateTransactionsList();
         }
 
 
@@ -1011,21 +1009,19 @@
         }
         // Load saved data when page starts
         if (loadData()) {
-            // Update the pay input to show loaded value
             document.getElementById('payAmount').value = currentPay;
-            // Update displays
-            updateExpensesList();
             updateSummary();
         }
+
+        // Initialize everything in the right order
         loadTheme();
-        initializeSections();
         updateCategoryDropdown();
         populateTransactionCategoryDropdown();
-        updateCategoriesList();
-        updateAccountsList();
         updateAccountDropdown();
-        updateTransactionsList();
         setDefaultDate();
+
+        // Initialize sections last (this calls the update functions)
+        initializeSections();
 
         console.log("Budget calculator loaded!");
 
