@@ -61,7 +61,18 @@
         <label>Bi-weekly Take-home Pay: $</label>
         <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
     </div>
-
+<div class="container">
+    <h3>Manage Categories</h3>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <input type="text" id="categoryName" placeholder="Category name" style="flex: 1;">
+        <input type="color" id="categoryColor" value="#9333ea" style="width: 50px;">
+        <button onclick="addCategory()">Add Category</button>
+    </div>
+    
+    <div id="categoriesList">
+        <!-- Categories will appear here -->
+    </div>
+</div>
 <div class="container">
     <h3>Add Expense</h3>
     <input type="text" id="expenseName" placeholder="Expense name (e.g., Hair cut)">
@@ -272,6 +283,86 @@ function updateCategoryDropdown() {
         dropdown.appendChild(option);
     });
 }
+// Add a new category
+function addCategory() {
+    const name = document.getElementById('categoryName').value;
+    const color = document.getElementById('categoryColor').value;
+    
+    if (name) {
+        const newCategory = {
+            id: Date.now(),
+            name: name,
+            color: color
+        };
+        
+        categories.push(newCategory);
+        
+        // Clear form
+        document.getElementById('categoryName').value = '';
+        document.getElementById('categoryColor').value = '#9333ea';
+        
+        updateCategoriesList();
+        updateCategoryDropdown();
+        saveData();
+    }
+}
+
+// Update the categories management list
+function updateCategoriesList() {
+    const container = document.getElementById('categoriesList');
+    container.innerHTML = '';
+    
+    categories.forEach(category => {
+        const div = document.createElement('div');
+        div.style.cssText = `
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #333;
+            border-radius: 5px;
+            border-left: 4px solid ${category.color};
+        `;
+        
+        div.innerHTML = `
+            <div>
+                <strong>${category.name}</strong>
+                <span style="margin-left: 10px; padding: 2px 6px; background-color: ${category.color}; color: white; border-radius: 3px; font-size: 12px;">●</span>
+            </div>
+            <button onclick="deleteCategory(${category.id})" style="background-color: #cc0000; padding: 5px 10px;">Delete</button>
+        `;
+        
+        container.appendChild(div);
+    });
+}
+
+// Delete a category
+function deleteCategory(categoryId) {
+    if (categories.length <= 1) {
+        alert('You must have at least one category!');
+        return;
+    }
+    
+    if (confirm('Delete this category? Expenses will be moved to the first category.')) {
+        // Move expenses to first remaining category
+        const remainingCategories = categories.filter(cat => cat.id !== categoryId);
+        const firstCategoryId = remainingCategories[0].id;
+        
+        expenses.forEach(expense => {
+            if (expense.categoryId === categoryId) {
+                expense.categoryId = firstCategoryId;
+            }
+        });
+        
+        categories = remainingCategories;
+        
+        updateCategoriesList();
+        updateCategoryDropdown();
+        updateExpensesList();
+        saveData();
+    }
+}
 
 
         // Load saved data when page starts
@@ -283,6 +374,7 @@ if (loadData()) {
     updateSummary();
 }
 updateCategoryDropdown();
+updateCategoriesList();
 console.log("Budget calculator loaded!");
 
     </script>
