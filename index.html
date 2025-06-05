@@ -707,30 +707,33 @@
             );
         };
 
-        const generatePaycheckDates = (paySchedule) => {  // Note: pass paySchedule as parameter
-            console.log("generatePaycheckDates called");
-            console.log("paySchedule.startDate:", paySchedule.startDate);
+        const generatePaycheckDates = (paySchedule) => {
+            console.log("generatePaycheckDates called with:", paySchedule.startDate);
 
-            try {
-                const [year, month, day] = paySchedule.startDate.split('-').map(Number);
-                console.log("Parsed:", year, month, day);
+            const dates = [];
+            const [year, month, day] = paySchedule.startDate.split('-').map(Number);
+            const startDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
 
-                const startDate = new Date(year, month - 1, day);
-                console.log("Start date:", startDate);
+            let currentDate = new Date(startDate);
+            const daysBetween = paySchedule.frequency === 'bi-weekly' ? 14 : 30;
 
-                const today = new Date();
-                console.log("Today:", today);
-
-                // Just return a simple test array for now
-                return [
-                    new Date('2025-06-15'),
-                    new Date('2025-06-29'),
-                    new Date('2025-07-13')
-                ];
-            } catch (error) {
-                console.error("Error in generatePaycheckDates:", error);
-                return [];
+            // Move currentDate to first future paycheck
+            let safetyCount = 0;
+            while (currentDate < today && safetyCount < 100) {
+                currentDate.setDate(currentDate.getDate() + daysBetween);
+                safetyCount++;
             }
+
+            // Generate next 10 paychecks
+            for (let i = 0; i < 10; i++) {
+                dates.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + daysBetween);
+            }
+
+            console.log(`Generated ${dates.length} paycheck dates`);
+            return dates;
         };
 
         const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
