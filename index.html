@@ -1061,131 +1061,132 @@
         };
         // Calendar View Component
         const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
-    return (
-        <div className="space-y-4">
-            <h4>Calendar Debug Test</h4>
-            <p>Events: {events.length}</p>
-            <p>Dark mode: {darkMode ? 'true' : 'false'}</p>
-            <p>Current pay: {currentPay}</p>
-            <p>Pay schedule: {paySchedule ? 'exists' : 'missing'}</p>
-        </div>
-    );
-};
-       /*const CalendarView = ({ events, darkMode, currentPay }) => {
-            const [calendarView, setCalendarView] = useState('timeline');
-
-            const formatDate = (date) => {
-                return date.toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-                });
-            };
-
-            const getEventIcon = (type) => {
-                switch (type) {
-                    case 'paycheck': return '💰';
-                    case 'goal-deadline': return '🎯';
-                    case 'expense-due': return '⏰';
-                    default: return '📅';
-                }
-            };
-
-            const getEventColor = (type, subtype) => {
-                if (type === 'paycheck') {
-                    return subtype === 'secondary'
-                        ? 'border-blue-400 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
-                        : 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100';
-                }
-                switch (type) {
-                    case 'goal-deadline': return 'border-purple-400 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100';
-                    case 'expense-due': return 'border-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100';
-                    default: return 'border-gray-400 bg-gray-100 dark:bg-gray-900/30';
-                }
-            };
-
-            // Group events by date for timeline view
-            const groupedEvents = events.reduce((acc, event) => {
-                const dateKey = event.date.toDateString();
-                if (!acc[dateKey]) acc[dateKey] = [];
-                acc[dateKey].push(event);
-                return acc;
-            }, {});
-
-            const sortedDates = Object.keys(groupedEvents).sort((a, b) => new Date(a) - new Date(b));
-
             return (
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h4 className="font-medium">Timeline View</h4>
-                        <div className="text-sm text-gray-500">
-                            Next 6 months
-                        </div>
-                    </div>
-
-                    <div className="space-y-3 max-h-96 overflow-y-auto">
-                        {sortedDates.slice(0, 30).map(dateKey => {
-                            const date = new Date(dateKey);
-                            const dayEvents = groupedEvents[dateKey];
-                            const isToday = date.toDateString() === new Date().toDateString();
-
-                            return (
-                                <div key={dateKey} className={`border-l-4 pl-4 ${isToday ? 'border-blue-500' : 'border-gray-300 dark:border-gray-600'}`}>
-                                    <div className={`font-medium text-sm ${isToday ? 'text-blue-600 dark:text-blue-400' : ''}`}>
-                                        {formatDate(date)} {isToday && '(Today)'}
-                                    </div>
-
-                                    <div className="space-y-2 mt-2">
-                                        {dayEvents.map((event, index) => (
-                                            <div key={index} className={`p-3 rounded border-l-4 ${getEventColor(event.type, event.subtype)}`}>
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center">
-                                                        <span className="mr-2 text-lg">{getEventIcon(event.type)}</span>
-                                                        <div>
-                                                            <div className="font-medium">{event.title}</div>
-                                                            <div className="text-sm">{event.description}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="font-semibold">${event.amount.toLocaleString()}</div>
-                                                        {event.category && (
-                                                            <div className="text-xs text-gray-500">{event.category}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Legend */}
-                    <div className="flex flex-wrap gap-4 text-sm border-t pt-4">
-                        <div className="flex items-center">
-                            <span className="mr-1">💰</span>
-                            <span>Primary Paycheck</span>
-                        </div>
-                        {paySchedule?.splitPaycheck && (
-                            <div className="flex items-center">
-                                <span className="mr-1">💰</span>
-                                <span className="text-blue-600">Early Deposit</span>
-                            </div>
-                        )}
-                        <div className="flex items-center">
-                            <span className="mr-1">🎯</span>
-                            <span>Goal Deadline</span>
-                        </div>
-                        <div className="flex items-center">
-                            <span className="mr-1">⏰</span>
-                            <span>Expense Due</span>
-                        </div>
-                    </div>
+                    <h4>Calendar Debug Test</h4>
+                    <p>Events: {events.length}</p>
+                    <p>Dark mode: {darkMode ? 'true' : 'false'}</p>
+                    <p>Current pay: {currentPay}</p>
+                    <p>Pay schedule: {paySchedule ? 'exists' : 'missing'}</p>
                 </div>
             );
-        };*/
+        };
+        /*const CalendarView = ({ events, darkMode, currentPay }) => {
+             const [calendarView, setCalendarView] = useState('timeline');
+ 
+             const formatDate = (date) => {
+                 return date.toLocaleDateString('en-US', {
+                     weekday: 'short',
+                     month: 'short',
+                     day: 'numeric',
+                     year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                 });
+             };
+ 
+             const getEventIcon = (type) => {
+                 switch (type) {
+                     case 'paycheck': return '💰';
+                     case 'goal-deadline': return '🎯';
+                     case 'expense-due': return '⏰';
+                     default: return '📅';
+                 }
+             };
+ 
+             const getEventColor = (type, subtype) => {
+                 if (type === 'paycheck') {
+                     return subtype === 'secondary'
+                         ? 'border-blue-400 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
+                         : 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100';
+                 }
+                 switch (type) {
+                     case 'goal-deadline': return 'border-purple-400 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100';
+                     case 'expense-due': return 'border-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100';
+                     default: return 'border-gray-400 bg-gray-100 dark:bg-gray-900/30';
+                 }
+             };
+ 
+             // Group events by date for timeline view
+             const groupedEvents = events.reduce((acc, event) => {
+                 const dateKey = event.date.toDateString();
+                 if (!acc[dateKey]) acc[dateKey] = [];
+                 acc[dateKey].push(event);
+                 return acc;
+             }, {});
+ 
+             const sortedDates = Object.keys(groupedEvents).sort((a, b) => new Date(a) - new Date(b));
+ 
+             return (
+                 <div className="space-y-4">
+                     <div className="flex justify-between items-center">
+                         <h4 className="font-medium">Timeline View</h4>
+                         <div className="text-sm text-gray-500">
+                             Next 6 months
+                         </div>
+                     </div>
+ 
+                     <div className="space-y-3 max-h-96 overflow-y-auto">
+                         {sortedDates.slice(0, 30).map(dateKey => {
+                             const date = new Date(dateKey);
+                             const dayEvents = groupedEvents[dateKey];
+                             const isToday = date.toDateString() === new Date().toDateString();
+ 
+                             return (
+                                 <div key={dateKey} className={`border-l-4 pl-4 ${isToday ? 'border-blue-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                                     <div className={`font-medium text-sm ${isToday ? 'text-blue-600 dark:text-blue-400' : ''}`}>
+                                         {formatDate(date)} {isToday && '(Today)'}
+                                     </div>
+ 
+                                     <div className="space-y-2 mt-2">
+                                         {dayEvents.map((event, index) => (
+                                             <div key={index} className={`p-3 rounded border-l-4 ${getEventColor(event.type, event.subtype)}`}>
+                                                 <div className="flex items-center justify-between">
+                                                     <div className="flex items-center">
+                                                         <span className="mr-2 text-lg">{getEventIcon(event.type)}</span>
+                                                         <div>
+                                                             <div className="font-medium">{event.title}</div>
+                                                             <div className="text-sm">{event.description}</div>
+                                                         </div>
+                                                     </div>
+                                                     <div className="text-right">
+                                                         <div className="font-semibold">${event.amount.toLocaleString()}</div>
+                                                         {event.category && (
+                                                             <div className="text-xs text-gray-500">{event.category}</div>
+                                                         )}
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         ))}
+                                     </div>
+                                 </div>
+                             );
+                         })}
+                     </div>
+ 
+                     {/* Legend */
+        <div className="flex flex-wrap gap-4 text-sm border-t pt-4">
+            <div className="flex items-center">
+                <span className="mr-1">💰</span>
+                <span>Primary Paycheck</span>
+            </div>
+            {paySchedule?.splitPaycheck && (
+                <div className="flex items-center">
+                    <span className="mr-1">💰</span>
+                    <span className="text-blue-600">Early Deposit</span>
+                </div>
+            )}
+            <div className="flex items-center">
+                <span className="mr-1">🎯</span>
+                <span>Goal Deadline</span>
+            </div>
+            <div className="flex items-center">
+                <span className="mr-1">⏰</span>
+                <span>Expense Due</span>
+            </div>
+        </div>
+
+
+
+
         // Main Component
         const BiweeklyBudgetCalculator = () => {
             const [darkMode, setDarkMode] = useLocalStorage('budgetCalc_darkMode', true);
@@ -1877,19 +1878,9 @@
                                 </>
                             )}
 
-                            <div>
-                                <label className="block text-sm font-medium mb-1">Buffer (%)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="20"
-                                    value={bufferPercentage}
-                                    onChange={(e) => setBufferPercentage(parseFloat(e.target.value) || 0)}
-                                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                />
-                            </div>
+
                         </div>
-                            )}
+                        )
                     </div>
 
                     {/* Summary Cards */}
@@ -2929,14 +2920,12 @@
                             </div>
                         </div>
                     )}
-                </div>
-                </div >
+                 </div > 
             );
         };
 
         // Render the app
         console.log("About to render React app");
-ReactDOM.render(<BiweeklyBudgetCalculator />, document.getElementById('root'));
         ReactDOM.render(<BiweeklyBudgetCalculator />, document.getElementById('root'));
     </script>
 </body>
