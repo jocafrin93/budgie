@@ -706,7 +706,48 @@
                 </div>
             );
         };
-        // Add this new GoalForm component after the AddExpenseForm component
+
+        const generatePaycheckDates = (paySchedule) => {  // Note: pass paySchedule as parameter
+            console.log("generatePaycheckDates called");
+            console.log("paySchedule.startDate:", paySchedule.startDate);
+
+            try {
+                const [year, month, day] = paySchedule.startDate.split('-').map(Number);
+                console.log("Parsed:", year, month, day);
+
+                const startDate = new Date(year, month - 1, day);
+                console.log("Start date:", startDate);
+
+                const today = new Date();
+                console.log("Today:", today);
+
+                // Just return a simple test array for now
+                return [
+                    new Date('2025-06-15'),
+                    new Date('2025-06-29'),
+                    new Date('2025-07-13')
+                ];
+            } catch (error) {
+                console.error("Error in generatePaycheckDates:", error);
+                return [];
+            }
+        };
+
+        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
+            const testDates = generatePaycheckDates(paySchedule);  // Pass paySchedule as argument
+
+            return (
+                <div className="space-y-4">
+                    <h4 className="font-medium">Calendar View</h4>
+                    <p>Events: {events ? events.length : 0}</p>
+                    <p>Generated dates: {testDates.length}</p>
+                    <p>First date: {testDates[0]?.toLocaleDateString()}</p>
+                </div>
+            );
+        };
+
+
+        // Add Goal Form
         const GoalForm = ({ onSave, onCancel, categories, darkMode, goal = null, currentPay, preselectedCategory }) => {
             const [formData, setFormData] = useState({
                 name: goal?.name || '',
@@ -1059,19 +1100,6 @@
                 </div>
             );
         };
-        // Minimal CalendarView Component
-        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
-            const testDates = generatePaycheckDates();
-
-            return (
-                <div className="space-y-4">
-                    <h4 className="font-medium">Calendar View</h4>
-                    <p>Events: {events ? events.length : 0}</p>
-                    <p>Generated dates: {testDates.length}</p>
-                    <p>First date: {testDates[0]?.toLocaleDateString()}</p>
-                </div>
-            );
-        };
 
         // Main Component
         const BiweeklyBudgetCalculator = () => {
@@ -1268,31 +1296,6 @@
 
                 if (roundingOption === 0) return biweeklyAmount;
                 return Math.ceil(biweeklyAmount / roundingOption) * roundingOption;
-            };
-            const generatePaycheckDates = () => {
-                console.log("generatePaycheckDates called");
-                console.log("paySchedule.startDate:", paySchedule.startDate);
-
-                try {
-                    const [year, month, day] = paySchedule.startDate.split('-').map(Number);
-                    console.log("Parsed:", year, month, day);
-
-                    const startDate = new Date(year, month - 1, day);
-                    console.log("Start date:", startDate);
-
-                    const today = new Date();
-                    console.log("Today:", today);
-
-                    // Just return a simple test array for now
-                    return [
-                        new Date('2025-06-15'),
-                        new Date('2025-06-29'),
-                        new Date('2025-07-13')
-                    ];
-                } catch (error) {
-                    console.error("Error in generatePaycheckDates:", error);
-                    return [];
-                }
             };
             const calculations = useMemo(() => {
                 const expenseAllocations = expenses.map(expense => {
