@@ -706,7 +706,7 @@
                 </div>
             );
         };
-       
+
         // Generate Paycheck Dates
         const generatePaycheckDates = (paySchedule) => {
             console.log("generatePaycheckDates called with:", paySchedule.startDate);
@@ -737,7 +737,7 @@
             return dates;
         };
 
-        // Your existing generatePaycheckEventsWithSplit function follows here...
+        // PaycheckEventsWithSplit
         const generatePaycheckEventsWithSplit = (paySchedule, currentPay) => {
             const events = [];
             const primaryDates = generatePaycheckDates(paySchedule);
@@ -783,37 +783,106 @@
             return events;
         };
 
-        {/* const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
-            const testEvents = generateCalendarEvents(paySchedule, currentPay, [], [], []);
+        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
+            const formatDate = (date) => {
+                return date.toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                });
+            };
+
+            const getEventIcon = (type) => {
+                switch (type) {
+                    case 'paycheck': return '💰';
+                    case 'goal-deadline': return '🎯';
+                    case 'expense-due': return '⏰';
+                    default: return '📅';
+                }
+            };
+
+            const getEventColor = (type, subtype) => {
+                if (type === 'paycheck') {
+                    return subtype === 'secondary'
+                        ? 'border-blue-400 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100'
+                        : 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100';
+                }
+                switch (type) {
+                    case 'goal-deadline': return 'border-purple-400 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100';
+                    case 'expense-due': return 'border-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100';
+                    default: return 'border-gray-400 bg-gray-100 dark:bg-gray-900/30';
+                }
+            };
+
+            // Generate the actual events
+            const calendarEvents = generateCalendarEvents(paySchedule, currentPay, [], [], []);
+
+            // Group events by date for timeline view
+            const groupedEvents = calendarEvents.reduce((acc, event) => {
+                const dateKey = event.date.toDateString();
+                if (!acc[dateKey]) acc[dateKey] = [];
+                acc[dateKey].push(event);
+                return acc;
+            }, {});
+
+            const sortedDates = Object.keys(groupedEvents).sort((a, b) => new Date(a) - new Date(b));
 
             return (
                 <div className="space-y-4">
-                    <h4 className="font-medium">Calendar View</h4>
-                    <p>Test events: {testEvents.length}</p>
-                    <p>First event: {testEvents[0]?.title}</p>
-                    <p>First event date: {testEvents[0]?.date.toLocaleDateString()}</p>
+                    <div className="flex justify-between items-center">
+                        <h4 className="font-medium">Timeline View</h4>
+                        <div className="text-sm text-gray-500">
+                            Next few months
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {sortedDates.slice(0, 20).map(dateKey => {
+                            const date = new Date(dateKey);
+                            const dayEvents = groupedEvents[dateKey];
+                            const isToday = date.toDateString() === new Date().toDateString();
+
+                            return (
+                                <div key={dateKey} className={`border-l-4 pl-4 ${isToday ? 'border-blue-500' : 'border-gray-300 dark:border-gray-600'}`}>
+                                    <div className={`font-medium text-sm ${isToday ? 'text-blue-600 dark:text-blue-400' : ''}`}>
+                                        {formatDate(date)} {isToday && '(Today)'}
+                                    </div>
+
+                                    <div className="space-y-2 mt-2">
+                                        {dayEvents.map((event, index) => (
+                                            <div key={index} className={`p-3 rounded border-l-4 ${getEventColor(event.type, event.subtype)}`}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center">
+                                                        <span className="mr-2 text-lg">{getEventIcon(event.type)}</span>
+                                                        <div>
+                                                            <div className="font-medium">{event.title}</div>
+                                                            <div className="text-sm">{event.description}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-semibold">${event.amount.toLocaleString()}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex flex-wrap gap-4 text-sm border-t pt-4">
+                        <div className="flex items-center">
+                            <span className="mr-1">💰</span>
+                            <span>Paycheck</span>
+                        </div>
+                    </div>
                 </div>
             );
-        }; */}
-        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
-            try {
-                const testEvents = generatePaycheckEventsWithSplit(paySchedule, currentPay);
-                return (
-                    <div className="space-y-4">
-                        <h4 className="font-medium">Calendar View</h4>
-                        <p>Test events: {testEvents.length}</p>
-                        <p>First event: {testEvents[0]?.title}</p>
-                    </div>
-                );
-            } catch (error) {
-                return (
-                    <div className="space-y-4">
-                        <h4 className="font-medium">Calendar View</h4>
-                        <p>Error: {error.message}</p>
-                    </div>
-                );
-            }
         };
+
 
         // Add Goal Form
         const GoalForm = ({ onSave, onCancel, categories, darkMode, goal = null, currentPay, preselectedCategory }) => {
