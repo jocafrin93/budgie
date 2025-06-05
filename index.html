@@ -1161,8 +1161,8 @@
                              );
                          })}
                      </div>*/
- 
-                     {/* Legend */}
+
+        {/* Legend */ }
         <div className="flex flex-wrap gap-4 text-sm border-t pt-4">
             <div className="flex items-center">
                 <span className="mr-1">💰</span>
@@ -1516,16 +1516,14 @@
             };
             const generateCalendarEvents = () => {
                 const events = [];
-                const paycheckEvents = generatePaycheckEventsWithSplit();
-
+                // const paycheckEvents = generatePaycheckEventsWithSplit();
                 // Add paycheck events (already includes split logic)
-                events.push(...paycheckEvents);
+                // events.push(...paycheckEvents);
 
                 // Add goal deadlines
                 savingsGoals.forEach(goal => {
                     const [year, month, day] = goal.targetDate.split('-').map(Number);
                     const deadline = new Date(year, month - 1, day);
-
                     events.push({
                         date: deadline,
                         type: 'goal-deadline',
@@ -1541,7 +1539,6 @@
                     if (expense.dueDate) {
                         const [year, month, day] = expense.dueDate.split('-').map(Number);
                         const dueDate = new Date(year, month - 1, day);
-
                         events.push({
                             date: dueDate,
                             type: 'expense-due',
@@ -2920,7 +2917,7 @@
                             </div>
                         </div>
                     )}
-                 </div > 
+                </div >
             );
         };
 
