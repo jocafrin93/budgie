@@ -764,16 +764,26 @@
                 </div>
             );
         }; */}
-
         const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
-            return (
-                <div className="space-y-4">
-                    <h4 className="font-medium">Calendar View</h4>
-                    <p>Events: {events ? events.length : 0}</p>
-                    <p>Safe mode - no function calls</p>
-                </div>
-            );
+            try {
+                const testEvents = generatePaycheckEventsWithSplit(paySchedule, currentPay);
+                return (
+                    <div className="space-y-4">
+                        <h4 className="font-medium">Calendar View</h4>
+                        <p>Test events: {testEvents.length}</p>
+                        <p>First event: {testEvents[0]?.title}</p>
+                    </div>
+                );
+            } catch (error) {
+                return (
+                    <div className="space-y-4">
+                        <h4 className="font-medium">Calendar View</h4>
+                        <p>Error: {error.message}</p>
+                    </div>
+                );
+            }
         };
+
         // Add Goal Form
         const GoalForm = ({ onSave, onCancel, categories, darkMode, goal = null, currentPay, preselectedCategory }) => {
             const [formData, setFormData] = useState({
