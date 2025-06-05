@@ -846,7 +846,7 @@
                                     events.push({
                                         date: new Date(currentDate),
                                         type: 'expense-due',
-                                        title: `${expense.name}${occurrenceCount > 1 ? ` (#${occurrenceCount})` : ''}`,
+                                        title: expense.name,
                                         amount: expense.amount,
                                         description: `$${expense.amount} due`,
                                         category: categories.find(c => c.id === expense.categoryId)?.name,
@@ -1016,8 +1016,8 @@
                                     <button
                                         onClick={() => setCalendarView('grid')}
                                         className={`px-3 py-1 rounded text-sm font-medium ${calendarView === 'grid'
-                                                ? 'bg-purple-500 text-white'
-                                                : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'bg-purple-500 text-white'
+                                            : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                             }`}
                                     >
                                         Grid
@@ -1025,8 +1025,8 @@
                                     <button
                                         onClick={() => setCalendarView('timeline')}
                                         className={`px-3 py-1 rounded text-sm font-medium ${calendarView === 'timeline'
-                                                ? 'bg-purple-500 text-white'
-                                                : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'bg-purple-500 text-white'
+                                            : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                             }`}
                                     >
                                         Timeline
@@ -1074,16 +1074,17 @@
                                     {dayData && (
                                         <>
                                             <div className={`text-sm font-medium ${dayData.isToday
-                                                    ? darkMode ? 'text-blue-300' : 'text-blue-600'
-                                                    : darkMode ? 'text-gray-100' : 'text-gray-900'
+                                                ? darkMode ? 'text-blue-300' : 'text-blue-600'
+                                                : darkMode ? 'text-gray-100' : 'text-gray-900'
                                                 }`}>
                                                 {dayData.day}
                                             </div>
                                             <div className="space-y-1 mt-1">
                                                 {dayData.events.slice(0, 3).map((event, eventIndex) => (
                                                     <div key={eventIndex} className={`text-xs p-1 rounded truncate ${getEventColor(event.type, event.subtype, event.warning)}`}>
-                                                        <span className="mr-1">{getEventIcon(event.type, event.isRecurring || event.occurrenceNumber > 1)}</span>
-                                                        {event.title}
+                                                        <span className="mr-1">{getEventIcon(event.type, event.isRecurring || (event.occurrenceNumber && event.occurrenceNumber > 1))}</span>
+                                                        {/* Remove occurrence number from title */}
+                                                        {event.title.replace(/ \(#\d+\)/, '')}
                                                     </div>
                                                 ))}
                                                 {dayData.events.length > 3 && (
@@ -1122,8 +1123,8 @@
                                 <button
                                     onClick={() => setCalendarView('grid')}
                                     className={`px-3 py-1 rounded text-sm font-medium ${calendarView === 'grid'
-                                            ? 'bg-purple-500 text-white'
-                                            : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        ? 'bg-purple-500 text-white'
+                                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         }`}
                                 >
                                     Grid
@@ -1131,8 +1132,8 @@
                                 <button
                                     onClick={() => setCalendarView('timeline')}
                                     className={`px-3 py-1 rounded text-sm font-medium ${calendarView === 'timeline'
-                                            ? 'bg-purple-500 text-white'
-                                            : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                        ? 'bg-purple-500 text-white'
+                                        : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                         }`}
                                 >
                                     Timeline
@@ -1161,9 +1162,10 @@
                                             <div key={index} className={`p-3 rounded border-l-4 ${getEventColor(event.type, event.subtype, event.warning)}`}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center">
-                                                        <span className="mr-2 text-lg">{getEventIcon(event.type, event.isRecurring || event.occurrenceNumber > 1)}</span>
+                                                        <span className="mr-2 text-lg">{getEventIcon(event.type, event.isRecurring || (event.occurrenceNumber && event.occurrenceNumber > 1))}</span>
                                                         <div>
-                                                            <div className="font-medium">{event.title}</div>
+                                                            {/* Remove occurrence number from title */}
+                                                            <div className="font-medium">{event.title.replace(/ \(#\d+\)/, '')}</div>
                                                             <div className="text-sm">{event.description}</div>
                                                         </div>
                                                         {event.warning && <span className="ml-2 text-red-500">⚠️</span>}
@@ -2937,16 +2939,22 @@
                         )}
                         {/* Calendar Modal */}
                         {showCalendar && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}>                                    <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold">Calendar Test</h3>
-                                    <button
-                                        onClick={() => setShowCalendar(false)}
-                                        className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
+                            <div
+                                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                                onClick={(e) => e.target === e.currentTarget && setShowCalendar(false)}
+                                onKeyDown={(e) => e.key === 'Escape' && setShowCalendar(false)}
+                                tabIndex={-1}
+                            >
+                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold">Calendar Test</h3>
+                                        <button
+                                            onClick={() => setShowCalendar(false)}
+                                            className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
 
                                     <CalendarView
                                         events={[]}
