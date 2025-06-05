@@ -787,7 +787,7 @@
             return events.sort((a, b) => a.date - b.date);
         };
 
-        const generateCalendarEvents = (paySchedule, currentPay, savingsGoals, expenses, categories) => {
+        const generateCalendarEvents = (paySchedule, currentPay, savingsGoals, expenses, categories, frequencyOptions) => {
             const events = [];
             const paycheckEvents = generatePaycheckEventsWithSplit(paySchedule, currentPay);
             events.push(...paycheckEvents);
