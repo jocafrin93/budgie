@@ -796,22 +796,51 @@
                 }
             });
 
-            // Add expense due dates
+            // Generate recurring expense due dates
             expenses.forEach(expense => {
                 if (expense.dueDate) {
                     const [year, month, day] = expense.dueDate.split('-').map(Number);
-                    const dueDate = new Date(year, month - 1, day);
+                    const firstDueDate = new Date(year, month - 1, day);
 
-                    events.push({
-                        date: dueDate,
-                        type: 'expense-due',
-                        title: expense.name,
-                        amount: expense.amount,
-                        description: `$${expense.amount} due`,
-                        category: categories.find(c => c.id === expense.categoryId)?.name
-                    });
+                    // Generate multiple instances based on frequency
+                    if (expense.frequency && expense.frequency !== 'per-paycheck') {
+                        const freqData = frequencyOptions.find(f => f.value === expense.frequency);
+                        if (freqData) {
+                            const daysBetween = Math.round(365 / freqData.weeksPerYear);
+                            let currentDate = new Date(firstDueDate);
+                            const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // Next year
+                            let occurrenceCount = 1;
+
+                            while (currentDate <= endDate && occurrenceCount <= 12) {
+                                events.push({
+                                    date: new Date(currentDate),
+                                    type: 'expense-due',
+                                    title: `${expense.name}${occurrenceCount > 1 ? ` (#${occurrenceCount})` : ''}`,
+                                    amount: expense.amount,
+                                    description: `$${expense.amount} due`,
+                                    category: categories.find(c => c.id === expense.categoryId)?.name,
+                                    isRecurring: occurrenceCount > 1,
+                                    occurrenceNumber: occurrenceCount
+                                });
+
+                                currentDate = new Date(currentDate.getTime() + (daysBetween * 24 * 60 * 60 * 1000));
+                                occurrenceCount++;
+                            }
+                        }
+                    } else {
+                        // Single occurrence for per-paycheck or no frequency
+                        events.push({
+                            date: firstDueDate,
+                            type: 'expense-due',
+                            title: expense.name,
+                            amount: expense.amount,
+                            description: `$${expense.amount} due`,
+                            category: categories.find(c => c.id === expense.categoryId)?.name
+                        });
+                    }
                 }
             });
+
 
             console.log(`Generated ${events.length} calendar events (${paycheckEvents.length} paychecks, ${savingsGoals.length} goals, ${expenses.filter(e => e.dueDate).length} expenses with due dates)`);
             return events.sort((a, b) => a.date - b.date);
