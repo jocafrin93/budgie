@@ -1262,806 +1262,864 @@
                                 </p>
                             </div>
                         </div>
+                        {/* Accounts Section */}
+                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 mb-8 shadow-lg`}>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold flex items-center">
+                                    🏦 <span className="ml-2">Accounts</span>
+                                </h2>
+                                <button
+                                    onClick={() => setShowAddAccount(true)}
+                                    className="bg-purple-600 text-white px-3 py-2 rounded text-sm hover:bg-purple-700 flex items-center"
+                                >
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Add Account
+                                </button>
+                            </div>
 
-                        {/* Categories and Expenses */}
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                            <div className="xl:col-span-2">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h2 className="text-xl font-semibold">Budget Items by Category</h2>
-                                    <div className="flex space-x-2">
-                                        <button
-                                            onClick={() => setShowAddCategory(true)}
-                                            className="bg-purple-600 text-white px-2 sm:px-3 py-1 rounded text-sm hover:bg-purple-700 flex items-center"
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            <span className="hidden sm:inline">Category</span>
-                                        </button>
-                                        <button
-                                            onClick={() => setShowAddExpense(true)}
-                                            className="bg-blue-600 text-white px-2 sm:px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center"
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            <span className="hidden sm:inline">Expense</span>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {categorizedExpenses.map((category) => (
-                                        <div key={category.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}>
-                                            <div className="p-4 relative">
-                                                <div className={`absolute left-0 top-0 bottom-0 w-2 ${category.color}`}></div>
-                                                <div className="flex items-center justify-between mb-3">
-                                                    <div
-                                                        className="flex items-center cursor-pointer flex-1"
-                                                        onClick={() => {
-                                                            setCategories(prev => prev.map(cat =>
-                                                                cat.id === category.id ? { ...cat, collapsed: !cat.collapsed } : cat
-                                                            ));
-                                                        }}
-                                                    >
-                                                        {category.collapsed ? <ChevronRight className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
-                                                        <div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-white`}></div>
-                                                        <h3 className="font-semibold">{category.name}</h3>
-                                                        <span className="ml-2 text-sm text-gray-500">
-                                                            {viewMode === 'amount' ? `$${category.total.toFixed(2)}/bi-weekly` : `${category.percentage.toFixed(1)}%`}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex space-x-1">
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setPreselectedCategory(category.id);
-                                                                setShowAddExpense(true);
-                                                            }}
-                                                            className="p-1 hover:bg-gray-700 rounded text-blue-400 hover:text-blue-300"
-                                                            title="Add expense to this category"
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setEditingCategory(category);
-                                                            }}
-                                                            className="p-1 hover:bg-gray-700 rounded"
-                                                        >
-                                                            <Edit2 className="w-4 h-4" />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setConfirmDelete({
-                                                                    type: 'category',
-                                                                    id: category.id,
-                                                                    name: category.name,
-                                                                    message: 'Delete this category? All items will be moved to the first category.'
-                                                                });
-                                                            }}
-                                                            className="p-1 hover:bg-gray-700 rounded text-red-400"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {accounts.map(account => (
+                                    <div key={account.id} className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex-1">
+                                                <div className="font-medium">{account.name}</div>
+                                                <div className="text-sm text-gray-500 capitalize">{account.type} • {account.bankName}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className={`font-semibold ${account.type === 'credit'
+                                                    ? (account.balance < 0 ? 'text-red-400' : 'text-green-400')
+                                                    : (account.balance >= 0 ? 'text-green-400' : 'text-red-400')
+                                                    }`}>
+                                                    ${Math.abs(account.balance).toFixed(2)}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                    {account.type === 'credit' ? (account.balance < 0 ? 'owed' : 'credit') : 'balance'}
                                                 </div>
                                             </div>
-                                            {!category.collapsed && (
-                                                <div className="space-y-2">
-                                                    {category.expenses.length === 0 && category.goals.length === 0 ? (
-                                                        <p className="text-gray-500 text-sm italic">No items in this category</p>
-                                                    ) : (
-                                                        <div className="space-y-2">
-                                                            {category.expenses.map((expense) => (
-                                                                <div key={`exp-${expense.id}`} className={`border-l-4 ${priorityColors[expense.priority]} ${expense.isFullyFunded ? 'opacity-75' : ''} ${expense.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
-                                                                    <div
-                                                                        className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                                                                        onClick={() => {
-                                                                            setExpenses(prev => prev.map(exp =>
-                                                                                exp.id === expense.id ? { ...exp, collapsed: !exp.collapsed } : exp
-                                                                            ));
-                                                                        }}
-                                                                    >
-                                                                        <div className="flex items-center justify-between">
-                                                                            <div className="flex items-center flex-1 min-w-0">
-                                                                                {expense.collapsed ? <ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 mr-2 flex-shrink-0" />}
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <div className="flex items-center">
-                                                                                        <span className="font-medium truncate">{expense.name}</span>
-                                                                                        <div className="flex items-center ml-2 space-x-1 flex-shrink-0">
-                                                                                            {expense.allocationPaused && (
-                                                                                                <span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">PAUSED</span>
-                                                                                            )}
-                                                                                            {expense.isFullyFunded && !expense.allocationPaused && (
-                                                                                                <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">FUNDED</span>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="flex items-center space-x-3 flex-shrink-0">
-                                                                                <div className="text-right">
-                                                                                    <div className="font-semibold">
-                                                                                        {viewMode === 'amount' ? `${expense.biweeklyAmount.toFixed(2)}` : `${expense.percentage.toFixed(1)}%`}
-                                                                                    </div>
-                                                                                    <div className="text-xs text-gray-500">bi-weekly</div>
-                                                                                </div>
-                                                                                <div className="flex space-x-1">
-                                                                                    <button
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            setEditingExpense(expense);
-                                                                                        }}
-                                                                                        className="p-1 hover:bg-gray-700 rounded"
-                                                                                    >
-                                                                                        <Edit2 className="w-3 h-3" />
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            setConfirmDelete({
-                                                                                                type: 'expense',
-                                                                                                id: expense.id,
-                                                                                                name: expense.name,
-                                                                                                message: `Delete "${expense.name}"?`
-                                                                                            });
-                                                                                        }}
-                                                                                        className="p-1 hover:bg-gray-700 rounded text-red-400"
-                                                                                    >
-                                                                                        <Trash2 className="w-3 h-3" />
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {!expense.collapsed && (
-                                                                        <div className="px-3 pb-3 bg-gray-50 dark:bg-gray-800/50">
-                                                                            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                                                                ${expense.amount} {frequencyOptions.find(f => f.value === expense.frequency)?.label.toLowerCase()}
-                                                                            </div>
-
-                                                                            {expense.remainingNeeded > 0 && (
-                                                                                <div className="text-xs text-blue-500">
-                                                                                    ${expense.remainingNeeded.toFixed(2)} remaining to save
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-
-                                                            {category.goals.map((goal) => (
-                                                                <div key={`goal-${goal.id}`} className={`border-l-4 border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 ${goal.isFullyFunded ? 'opacity-75' : ''} ${goal.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
-                                                                    <div
-                                                                        className="p-3 cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
-                                                                        onClick={() => {
-                                                                            setSavingsGoals(prev => prev.map(g =>
-                                                                                g.id === goal.id ? { ...g, collapsed: !g.collapsed } : g
-                                                                            ));
-                                                                        }}
-                                                                    >
-                                                                        <div className="flex items-center justify-between">
-                                                                            <div className="flex items-center flex-1 min-w-0">
-                                                                                {goal.collapsed ? <ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 mr-2 flex-shrink-0" />}
-                                                                                <Target className="w-4 h-4 mr-2 flex-shrink-0" />
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <div className="flex items-center">
-                                                                                        <span className="font-medium truncate">{goal.name}</span>
-                                                                                        <div className="flex items-center ml-2 space-x-1 flex-shrink-0">
-                                                                                            {goal.allocationPaused && (
-                                                                                                <span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">PAUSED</span>
-                                                                                            )}
-                                                                                            {goal.isFullyFunded && !goal.allocationPaused && (
-                                                                                                <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">COMPLETE</span>
-                                                                                            )}
-                                                                                            <span className="text-xs bg-green-600 text-white px-1.5 py-0.5 rounded">
-                                                                                                {goal.fundingProgress.toFixed(0)}%
-                                                                                            </span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </div>
-                                                                            <div className="flex items-center space-x-3 flex-shrink-0">
-                                                                                <div className="text-right">
-                                                                                    <div className="font-semibold">
-                                                                                        {viewMode === 'amount' ? `${goal.biweeklyAmount.toFixed(2)}` : `${goal.percentage.toFixed(1)}%`}
-                                                                                    </div>
-                                                                                    <div className="text-xs text-gray-500">bi-weekly</div>
-                                                                                </div>
-                                                                                <div className="flex space-x-1">
-                                                                                    <button
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            // We'll skip goal editing for simplicity in this version
-                                                                                            alert('Goal editing coming soon!');
-                                                                                        }}
-                                                                                        className="p-1 hover:bg-gray-700 rounded"
-                                                                                    >
-                                                                                        <Edit2 className="w-3 h-3" />
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            setConfirmDelete({
-                                                                                                type: 'goal',
-                                                                                                id: goal.id,
-                                                                                                name: goal.name,
-                                                                                                message: `Delete "${goal.name}" savings goal?`
-                                                                                            });
-                                                                                        }}
-                                                                                        className="p-1 hover:bg-gray-700 rounded text-red-400"
-                                                                                    >
-                                                                                        <Trash2 className="w-3 h-3" />
-                                                                                    </button>
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    {!goal.collapsed && (
-                                                                        <div className="px-3 pb-3 bg-green-200 dark:bg-green-900/20">
-                                                                            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                                                                Target: ${goal.targetAmount.toLocaleString()} by {goal.targetDate}
-                                                                            </div>
-
-                                                                            <div className="space-y-1">
-                                                                                <div className="flex justify-between text-xs">
-                                                                                    <span>Progress: ${goal.alreadySaved || 0} / ${goal.targetAmount.toLocaleString()}</span>
-                                                                                    <span>{goal.fundingProgress.toFixed(0)}%</span>
-                                                                                </div>
-                                                                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                                                                    <div
-                                                                                        className={`h-2 rounded-full ${goal.isFullyFunded ? 'bg-green-500' : 'bg-green-400'}`}
-                                                                                        style={{ width: `${Math.min(100, goal.fundingProgress)}%` }}
-                                                                                    ></div>
-                                                                                </div>
-
-                                                                                {goal.remainingNeeded > 0 && (
-                                                                                    <div className="text-xs text-green-600 dark:text-green-400">
-                                                                                        ${goal.remainingNeeded.toLocaleString()} remaining to save
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
+                                            <div className="flex space-x-1 ml-2">
+                                                <button
+                                                    onClick={() => setEditingAccount(account)}
+                                                    className="p-1 hover:bg-gray-600 rounded"
+                                                >
+                                                    <Edit2 className="w-3 h-3" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setConfirmDelete({
+                                                        type: 'account',
+                                                        id: account.id,
+                                                        name: account.name,
+                                                        message: `Delete "${account.name}"? All associated transactions will also be deleted.`
+                                                    })}
+                                                    className="p-1 hover:bg-gray-600 rounded text-red-400"
+                                                >
+                                                    <Trash2 className="w-3 h-3" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    ))}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Categories and Expenses */ }
+                            < div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        <div className="xl:col-span-2">
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold">Budget Items by Category</h2>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => setShowAddCategory(true)}
+                                        className="bg-purple-600 text-white px-2 sm:px-3 py-1 rounded text-sm hover:bg-purple-700 flex items-center"
+                                    >
+                                        <Plus className="w-4 h-4 mr-1" />
+                                        <span className="hidden sm:inline">Category</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setShowAddExpense(true)}
+                                        className="bg-blue-600 text-white px-2 sm:px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center"
+                                    >
+                                        <Plus className="w-4 h-4 mr-1" />
+                                        <span className="hidden sm:inline">Expense</span>
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Recent Transactions Section */}
-                            <div className="space-y-6">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-semibold flex items-center">
-                                            💳 Recent Transactions
-                                        </h3>
-                                        <div className="flex space-x-2">
-                                            <button
-                                                onClick={() => setShowAddTransaction(true)}
-                                                className="bg-blue-600 text-white px-2 py-1 rounded text-sm hover:bg-blue-700 flex items-center"
-                                            >
-                                                <Plus className="w-3 h-3 mr-1" />
-                                                Transaction
-                                            </button>
-                                            <button
-                                                onClick={() => setShowTransactions(true)}
-                                                className="bg-gray-600 text-white px-2 py-1 rounded text-sm hover:bg-gray-700"
-                                            >
-                                                View All
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        {transactions.slice(-5).reverse().map(transaction => {
-                                            const account = accounts.find(acc => acc.id === transaction.accountId);
-                                            const category = categories.find(cat => cat.id === transaction.categoryId);
-                                            const transferAccount = transaction.transferAccountId ? accounts.find(acc => acc.id === transaction.transferAccountId) : null;
-
-                                            return (
-                                                <div key={transaction.id} className={`p-3 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center">
-                                                                <span className="font-medium truncate">
-                                                                    {transaction.transfer ? `Transfer to ${transferAccount?.name}` : transaction.payee}
-                                                                </span>
-                                                                {transaction.cleared && <span className="ml-2 text-green-500">✓</span>}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {transaction.date} • {account?.name} {category && `• ${category.name}`}
-                                                            </div>
-                                                            {transaction.memo && (
-                                                                <div className="text-xs text-gray-400 truncate">{transaction.memo}</div>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-right ml-2">
-                                                            <div className="font-semibold">${transaction.amount.toFixed(2)}</div>
-                                                            <div className="flex space-x-1">
-                                                                <button
-                                                                    onClick={() => setEditingTransaction(transaction)}
-                                                                    className="p-1 hover:bg-gray-600 rounded"
-                                                                >
-                                                                    <Edit2 className="w-3 h-3" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setConfirmDelete({
-                                                                        type: 'transaction',
-                                                                        id: transaction.id,
-                                                                        name: transaction.transfer ? `Transfer to ${transferAccount?.name}` : transaction.payee,
-                                                                        message: `Delete this transaction?`
-                                                                    })}
-                                                                    className="p-1 hover:bg-gray-600 rounded text-red-400"
-                                                                >
-                                                                    <Trash2 className="w-3 h-3" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                            <div className="space-y-4">
+                                {categorizedExpenses.map((category) => (
+                                    <div key={category.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}>
+                                        <div className="p-4 relative">
+                                            <div className={`absolute left-0 top-0 bottom-0 w-2 ${category.color}`}></div>
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div
+                                                    className="flex items-center cursor-pointer flex-1"
+                                                    onClick={() => {
+                                                        setCategories(prev => prev.map(cat =>
+                                                            cat.id === category.id ? { ...cat, collapsed: !cat.collapsed } : cat
+                                                        ));
+                                                    }}
+                                                >
+                                                    {category.collapsed ? <ChevronRight className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+                                                    <div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-white`}></div>
+                                                    <h3 className="font-semibold">{category.name}</h3>
+                                                    <span className="ml-2 text-sm text-gray-500">
+                                                        {viewMode === 'amount' ? `$${category.total.toFixed(2)}/bi-weekly` : `${category.percentage.toFixed(1)}%`}
+                                                    </span>
                                                 </div>
-                                            );
-                                        })}
-                                        {transactions.length === 0 && (
-                                            <p className="text-gray-500 text-sm italic text-center py-4">No transactions yet</p>
+                                                <div className="flex space-x-1">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setPreselectedCategory(category.id);
+                                                            setShowAddExpense(true);
+                                                        }}
+                                                        className="p-1 hover:bg-gray-700 rounded text-blue-400 hover:text-blue-300"
+                                                        title="Add expense to this category"
+                                                    >
+                                                        <Plus className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setEditingCategory(category);
+                                                        }}
+                                                        className="p-1 hover:bg-gray-700 rounded"
+                                                    >
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setConfirmDelete({
+                                                                type: 'category',
+                                                                id: category.id,
+                                                                name: category.name,
+                                                                message: 'Delete this category? All items will be moved to the first category.'
+                                                            });
+                                                        }}
+                                                        className="p-1 hover:bg-gray-700 rounded text-red-400"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {!category.collapsed && (
+                                            <div className="space-y-2">
+                                                {category.expenses.length === 0 && category.goals.length === 0 ? (
+                                                    <p className="text-gray-500 text-sm italic">No items in this category</p>
+                                                ) : (
+                                                    <div className="space-y-2">
+                                                        {category.expenses.map((expense) => (
+                                                            <div key={`exp-${expense.id}`} className={`border-l-4 ${priorityColors[expense.priority]} ${expense.isFullyFunded ? 'opacity-75' : ''} ${expense.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
+                                                                <div
+                                                                    className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                                                                    onClick={() => {
+                                                                        setExpenses(prev => prev.map(exp =>
+                                                                            exp.id === expense.id ? { ...exp, collapsed: !exp.collapsed } : exp
+                                                                        ));
+                                                                    }}
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center flex-1 min-w-0">
+                                                                            {expense.collapsed ? <ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 mr-2 flex-shrink-0" />}
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="flex items-center">
+                                                                                    <span className="font-medium truncate">{expense.name}</span>
+                                                                                    <div className="flex items-center ml-2 space-x-1 flex-shrink-0">
+                                                                                        {expense.allocationPaused && (
+                                                                                            <span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">PAUSED</span>
+                                                                                        )}
+                                                                                        {expense.isFullyFunded && !expense.allocationPaused && (
+                                                                                            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">FUNDED</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center space-x-3 flex-shrink-0">
+                                                                            <div className="text-right">
+                                                                                <div className="font-semibold">
+                                                                                    {viewMode === 'amount' ? `${expense.biweeklyAmount.toFixed(2)}` : `${expense.percentage.toFixed(1)}%`}
+                                                                                </div>
+                                                                                <div className="text-xs text-gray-500">bi-weekly</div>
+                                                                            </div>
+                                                                            <div className="flex space-x-1">
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setEditingExpense(expense);
+                                                                                    }}
+                                                                                    className="p-1 hover:bg-gray-700 rounded"
+                                                                                >
+                                                                                    <Edit2 className="w-3 h-3" />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setConfirmDelete({
+                                                                                            type: 'expense',
+                                                                                            id: expense.id,
+                                                                                            name: expense.name,
+                                                                                            message: `Delete "${expense.name}"?`
+                                                                                        });
+                                                                                    }}
+                                                                                    className="p-1 hover:bg-gray-700 rounded text-red-400"
+                                                                                >
+                                                                                    <Trash2 className="w-3 h-3" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {!expense.collapsed && (
+                                                                    <div className="px-3 pb-3 bg-gray-50 dark:bg-gray-800/50">
+                                                                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                                                            ${expense.amount} {frequencyOptions.find(f => f.value === expense.frequency)?.label.toLowerCase()}
+                                                                        </div>
+
+                                                                        {expense.remainingNeeded > 0 && (
+                                                                            <div className="text-xs text-blue-500">
+                                                                                ${expense.remainingNeeded.toFixed(2)} remaining to save
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+
+                                                        {category.goals.map((goal) => (
+                                                            <div key={`goal-${goal.id}`} className={`border-l-4 border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 ${goal.isFullyFunded ? 'opacity-75' : ''} ${goal.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
+                                                                <div
+                                                                    className="p-3 cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                                                                    onClick={() => {
+                                                                        setSavingsGoals(prev => prev.map(g =>
+                                                                            g.id === goal.id ? { ...g, collapsed: !g.collapsed } : g
+                                                                        ));
+                                                                    }}
+                                                                >
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div className="flex items-center flex-1 min-w-0">
+                                                                            {goal.collapsed ? <ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" /> : <ChevronDown className="w-4 h-4 mr-2 flex-shrink-0" />}
+                                                                            <Target className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <div className="flex items-center">
+                                                                                    <span className="font-medium truncate">{goal.name}</span>
+                                                                                    <div className="flex items-center ml-2 space-x-1 flex-shrink-0">
+                                                                                        {goal.allocationPaused && (
+                                                                                            <span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">PAUSED</span>
+                                                                                        )}
+                                                                                        {goal.isFullyFunded && !goal.allocationPaused && (
+                                                                                            <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">COMPLETE</span>
+                                                                                        )}
+                                                                                        <span className="text-xs bg-green-600 text-white px-1.5 py-0.5 rounded">
+                                                                                            {goal.fundingProgress.toFixed(0)}%
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex items-center space-x-3 flex-shrink-0">
+                                                                            <div className="text-right">
+                                                                                <div className="font-semibold">
+                                                                                    {viewMode === 'amount' ? `${goal.biweeklyAmount.toFixed(2)}` : `${goal.percentage.toFixed(1)}%`}
+                                                                                </div>
+                                                                                <div className="text-xs text-gray-500">bi-weekly</div>
+                                                                            </div>
+                                                                            <div className="flex space-x-1">
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        // We'll skip goal editing for simplicity in this version
+                                                                                        alert('Goal editing coming soon!');
+                                                                                    }}
+                                                                                    className="p-1 hover:bg-gray-700 rounded"
+                                                                                >
+                                                                                    <Edit2 className="w-3 h-3" />
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setConfirmDelete({
+                                                                                            type: 'goal',
+                                                                                            id: goal.id,
+                                                                                            name: goal.name,
+                                                                                            message: `Delete "${goal.name}" savings goal?`
+                                                                                        });
+                                                                                    }}
+                                                                                    className="p-1 hover:bg-gray-700 rounded text-red-400"
+                                                                                >
+                                                                                    <Trash2 className="w-3 h-3" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {!goal.collapsed && (
+                                                                    <div className="px-3 pb-3 bg-green-200 dark:bg-green-900/20">
+                                                                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                                                            Target: ${goal.targetAmount.toLocaleString()} by {goal.targetDate}
+                                                                        </div>
+
+                                                                        <div className="space-y-1">
+                                                                            <div className="flex justify-between text-xs">
+                                                                                <span>Progress: ${goal.alreadySaved || 0} / ${goal.targetAmount.toLocaleString()}</span>
+                                                                                <span>{goal.fundingProgress.toFixed(0)}%</span>
+                                                                            </div>
+                                                                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                                                                <div
+                                                                                    className={`h-2 rounded-full ${goal.isFullyFunded ? 'bg-green-500' : 'bg-green-400'}`}
+                                                                                    style={{ width: `${Math.min(100, goal.fundingProgress)}%` }}
+                                                                                ></div>
+                                                                            </div>
+
+                                                                            {goal.remainingNeeded > 0 && (
+                                                                                <div className="text-xs text-green-600 dark:text-green-400">
+                                                                                    ${goal.remainingNeeded.toLocaleString()} remaining to save
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Recent Transactions Section */}
+                        <div className="space-y-6">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold flex items-center">
+                                        💳 Recent Transactions
+                                    </h3>
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={() => setShowAddTransaction(true)}
+                                            className="bg-blue-600 text-white px-2 py-1 rounded text-sm hover:bg-blue-700 flex items-center"
+                                        >
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            Transaction
+                                        </button>
+                                        <button
+                                            onClick={() => setShowTransactions(true)}
+                                            className="bg-gray-600 text-white px-2 py-1 rounded text-sm hover:bg-gray-700"
+                                        >
+                                            View All
+                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Summary Panel */}
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 shadow-lg h-fit`}>
-                                    <h3 className="text-lg font-semibold mb-4 flex items-center">
-                                        📊 Quick Summary
-                                    </h3>
+                                <div className="space-y-2">
+                                    {transactions.slice(-5).reverse().map(transaction => {
+                                        const account = accounts.find(acc => acc.id === transaction.accountId);
+                                        const category = categories.find(cat => cat.id === transaction.categoryId);
+                                        const transferAccount = transaction.transferAccountId ? accounts.find(acc => acc.id === transaction.transferAccountId) : null;
 
-                                    <div className="space-y-3 text-sm">
-                                        <div className="flex justify-between items-center">
-                                            <span className="flex items-center">💰 Paycheck:</span>
-                                            <span className="font-medium">${currentPay.toFixed(2)}</span>
-                                        </div>
-
-                                        <div className="flex justify-between">
-                                            <span>Allocations:</span>
-                                            <span className="font-medium">
-                                                {viewMode === 'amount' ? `${calculations.totalBiweeklyAllocation.toFixed(2)}` : `${(calculations.totalBiweeklyAllocation / currentPay * 100).toFixed(1)}%`}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex justify-between">
-                                            <span>Buffer ({bufferPercentage}%):</span>
-                                            <span className="font-medium">
-                                                {viewMode === 'amount' ? `${calculations.bufferAmount.toFixed(2)}` : `${bufferPercentage}%`}
-                                            </span>
-                                        </div>
-
-                                        <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'}`} />
-
-                                        <div className="flex justify-between font-semibold">
-                                            <span>Total Needed:</span>
-                                            <span>
-                                                {viewMode === 'amount' ? `${calculations.totalWithBuffer.toFixed(2)}` : `${calculations.allocationPercentage.toFixed(1)}%`}
-                                            </span>
-                                        </div>
-
-                                        <div className={`flex justify-between font-semibold ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                            <span>Remaining:</span>
-                                            <span>
-                                                {viewMode === 'amount' ? `${calculations.remainingIncome.toFixed(2)}` : `${((calculations.remainingIncome / currentPay) * 100).toFixed(1)}%`}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {whatIfMode && (
-                                        <div className="mt-6 p-3 bg-blue-100 dark:bg-blue-900/20 rounded">
-                                            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center">
-                                                🔮 What-If Analysis
-                                            </h4>
-                                            <div className="text-sm text-blue-800 dark:text-blue-200">
-                                                <div>💰 Current: ${takeHomePay.toFixed(2)}</div>
-                                                <div>🔍 What-If: ${whatIfPay.toFixed(2)}</div>
-                                                <div className={`font-medium ${whatIfPay > takeHomePay ? 'text-green-600' : 'text-red-600'}`}>
-                                                    📊 Difference: {whatIfPay > takeHomePay ? '+' : ''}${(whatIfPay - takeHomePay).toFixed(2)}
-                                                </div>
-                                                <div className="text-xs mt-1">
-                                                    📈 Annual impact: {whatIfPay > takeHomePay ? '+' : ''}${((whatIfPay - takeHomePay) * 26).toLocaleString()}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Quick Stats Grid */}
-                                    <div className="mt-4">
-                                        <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'} mb-3`} />
-                                        <div className="space-y-2">
-                                            <div className="flex items-center text-sm font-medium">
-                                                <span className="mr-2">📈</span>
-                                                <span>Quick Stats</span>
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-purple-800' : 'bg-purple-100'}`}>
-                                                    <div className="font-medium">{categorizedExpenses.length}</div>
-                                                    <div className="text-purple-600 dark:text-purple-400">Categories</div>
-                                                </div>
-                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-blue-800' : 'bg-blue-100'}`}>
-                                                    <div className="font-medium">{expenses.length}</div>
-                                                    <div className="text-blue-600 dark:text-blue-400">Expenses</div>
-                                                </div>
-                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-green-800' : 'bg-green-100'}`}>
-                                                    <div className="font-medium">{savingsGoals.length}</div>
-                                                    <div className="text-green-600 dark:text-green-400">Goals</div>
-                                                </div>
-                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-yellow-800' : 'bg-yellow-100'}`}>
-                                                    <div className="font-medium">
-                                                        {calculations.expenseAllocations.filter(e => e.isFullyFunded).length + calculations.goalAllocations.filter(g => g.isFullyFunded).length}
+                                        return (
+                                            <div key={transaction.id} className={`p-3 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex items-center">
+                                                            <span className="font-medium truncate">
+                                                                {transaction.transfer ? `Transfer to ${transferAccount?.name}` : transaction.payee}
+                                                            </span>
+                                                            {transaction.cleared && <span className="ml-2 text-green-500">✓</span>}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            {transaction.date} • {account?.name} {category && `• ${category.name}`}
+                                                        </div>
+                                                        {transaction.memo && (
+                                                            <div className="text-xs text-gray-400 truncate">{transaction.memo}</div>
+                                                        )}
                                                     </div>
-                                                    <div className="text-yellow-600 dark:text-yellow-400">Funded</div>
+                                                    <div className="text-right ml-2">
+                                                        <div className="font-semibold">${transaction.amount.toFixed(2)}</div>
+                                                        <div className="flex space-x-1">
+                                                            <button
+                                                                onClick={() => setEditingTransaction(transaction)}
+                                                                className="p-1 hover:bg-gray-600 rounded"
+                                                            >
+                                                                <Edit2 className="w-3 h-3" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => setConfirmDelete({
+                                                                    type: 'transaction',
+                                                                    id: transaction.id,
+                                                                    name: transaction.transfer ? `Transfer to ${transferAccount?.name}` : transaction.payee,
+                                                                    message: `Delete this transaction?`
+                                                                })}
+                                                                className="p-1 hover:bg-gray-600 rounded text-red-400"
+                                                            >
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {transactions.length === 0 && (
+                                        <p className="text-gray-500 text-sm italic text-center py-4">No transactions yet</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Summary Panel */}
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 shadow-lg h-fit`}>
+                                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                                    📊 Quick Summary
+                                </h3>
+
+                                <div className="space-y-3 text-sm">
+                                    <div className="flex justify-between items-center">
+                                        <span className="flex items-center">💰 Paycheck:</span>
+                                        <span className="font-medium">${currentPay.toFixed(2)}</span>
+                                    </div>
+
+                                    <div className="flex justify-between">
+                                        <span>Allocations:</span>
+                                        <span className="font-medium">
+                                            {viewMode === 'amount' ? `${calculations.totalBiweeklyAllocation.toFixed(2)}` : `${(calculations.totalBiweeklyAllocation / currentPay * 100).toFixed(1)}%`}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-between">
+                                        <span>Buffer ({bufferPercentage}%):</span>
+                                        <span className="font-medium">
+                                            {viewMode === 'amount' ? `${calculations.bufferAmount.toFixed(2)}` : `${bufferPercentage}%`}
+                                        </span>
+                                    </div>
+
+                                    <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'}`} />
+
+                                    <div className="flex justify-between font-semibold">
+                                        <span>Total Needed:</span>
+                                        <span>
+                                            {viewMode === 'amount' ? `${calculations.totalWithBuffer.toFixed(2)}` : `${calculations.allocationPercentage.toFixed(1)}%`}
+                                        </span>
+                                    </div>
+
+                                    <div className={`flex justify-between font-semibold ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        <span>Remaining:</span>
+                                        <span>
+                                            {viewMode === 'amount' ? `${calculations.remainingIncome.toFixed(2)}` : `${((calculations.remainingIncome / currentPay) * 100).toFixed(1)}%`}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {whatIfMode && (
+                                    <div className="mt-6 p-3 bg-blue-100 dark:bg-blue-900/20 rounded">
+                                        <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center">
+                                            🔮 What-If Analysis
+                                        </h4>
+                                        <div className="text-sm text-blue-800 dark:text-blue-200">
+                                            <div>💰 Current: ${takeHomePay.toFixed(2)}</div>
+                                            <div>🔍 What-If: ${whatIfPay.toFixed(2)}</div>
+                                            <div className={`font-medium ${whatIfPay > takeHomePay ? 'text-green-600' : 'text-red-600'}`}>
+                                                📊 Difference: {whatIfPay > takeHomePay ? '+' : ''}${(whatIfPay - takeHomePay).toFixed(2)}
+                                            </div>
+                                            <div className="text-xs mt-1">
+                                                📈 Annual impact: {whatIfPay > takeHomePay ? '+' : ''}${((whatIfPay - takeHomePay) * 26).toLocaleString()}
                                             </div>
                                         </div>
                                     </div>
+                                )}
 
-                                    {/* Annual Projections */}
-                                    <div className="mt-4">
-                                        <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'} mb-3`} />
-                                        <div className="space-y-2">
-                                            <div className="flex items-center text-sm font-medium">
-                                                <span className="mr-2">📅</span>
-                                                <span>Annual Projections</span>
+                                {/* Quick Stats Grid */}
+                                <div className="mt-4">
+                                    <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'} mb-3`} />
+                                    <div className="space-y-2">
+                                        <div className="flex items-center text-sm font-medium">
+                                            <span className="mr-2">📈</span>
+                                            <span>Quick Stats</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            <div className={`p-2 rounded text-center ${darkMode ? 'bg-purple-800' : 'bg-purple-100'}`}>
+                                                <div className="font-medium">{categorizedExpenses.length}</div>
+                                                <div className="text-purple-600 dark:text-purple-400">Categories</div>
                                             </div>
-                                            <div className="space-y-1 text-xs">
-                                                <div className="flex justify-between">
-                                                    <span>💰 Annual Income:</span>
-                                                    <span className="font-medium">${(currentPay * 26).toLocaleString()}</span>
+                                            <div className={`p-2 rounded text-center ${darkMode ? 'bg-blue-800' : 'bg-blue-100'}`}>
+                                                <div className="font-medium">{expenses.length}</div>
+                                                <div className="text-blue-600 dark:text-blue-400">Expenses</div>
+                                            </div>
+                                            <div className={`p-2 rounded text-center ${darkMode ? 'bg-green-800' : 'bg-green-100'}`}>
+                                                <div className="font-medium">{savingsGoals.length}</div>
+                                                <div className="text-green-600 dark:text-green-400">Goals</div>
+                                            </div>
+                                            <div className={`p-2 rounded text-center ${darkMode ? 'bg-yellow-800' : 'bg-yellow-100'}`}>
+                                                <div className="font-medium">
+                                                    {calculations.expenseAllocations.filter(e => e.isFullyFunded).length + calculations.goalAllocations.filter(g => g.isFullyFunded).length}
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span>💸 Annual Allocations:</span>
-                                                    <span className="font-medium">${(calculations.totalWithBuffer * 26).toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>💚 Annual Remaining:</span>
-                                                    <span className={`font-medium ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                                        ${(calculations.remainingIncome * 26).toLocaleString()}
-                                                    </span>
-                                                </div>
+                                                <div className="text-yellow-600 dark:text-yellow-400">Funded</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Annual Projections */}
+                                <div className="mt-4">
+                                    <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'} mb-3`} />
+                                    <div className="space-y-2">
+                                        <div className="flex items-center text-sm font-medium">
+                                            <span className="mr-2">📅</span>
+                                            <span>Annual Projections</span>
+                                        </div>
+                                        <div className="space-y-1 text-xs">
+                                            <div className="flex justify-between">
+                                                <span>💰 Annual Income:</span>
+                                                <span className="font-medium">${(currentPay * 26).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>💸 Annual Allocations:</span>
+                                                <span className="font-medium">${(calculations.totalWithBuffer * 26).toLocaleString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>💚 Annual Remaining:</span>
+                                                <span className={`font-medium ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                    ${(calculations.remainingIncome * 26).toLocaleString()}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Add Transaction Modal */}
-                        {showAddTransaction && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                                    <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
-                                    <AddTransactionForm
-                                        onSave={(transactionData, addAnother) => {
-                                            const newTransaction = {
-                                                ...transactionData,
-                                                id: Math.max(...transactions.map(t => t.id), 0) + 1
-                                            };
-                                            setTransactions(prev => [...prev, newTransaction]);
-                                            if (!addAnother) setShowAddTransaction(false);
-                                        }}
-                                        onCancel={() => setShowAddTransaction(false)}
-                                        categories={categories}
-                                        accounts={accounts}
-                                        darkMode={darkMode}
-                                    />
-                                </div>
+                    {/* Add Transaction Modal */}
+                    {showAddTransaction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
+                                <AddTransactionForm
+                                    onSave={(transactionData, addAnother) => {
+                                        const newTransaction = {
+                                            ...transactionData,
+                                            id: Math.max(...transactions.map(t => t.id), 0) + 1
+                                        };
+                                        setTransactions(prev => [...prev, newTransaction]);
+                                        if (!addAnother) setShowAddTransaction(false);
+                                    }}
+                                    onCancel={() => setShowAddTransaction(false)}
+                                    categories={categories}
+                                    accounts={accounts}
+                                    darkMode={darkMode}
+                                />
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {editingTransaction && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                                    <h3 className="text-lg font-semibold mb-4">Edit Transaction</h3>
-                                    <AddTransactionForm
-                                        transaction={editingTransaction}
-                                        onSave={(transactionData) => {
-                                            setTransactions(prev => prev.map(txn =>
-                                                txn.id === editingTransaction.id ? { ...txn, ...transactionData } : txn
-                                            ));
-                                            setEditingTransaction(null);
-                                        }}
-                                        onCancel={() => setEditingTransaction(null)}
-                                        categories={categories}
-                                        accounts={accounts}
-                                        darkMode={darkMode}
-                                    />
-                                </div>
+                    {editingTransaction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Transaction</h3>
+                                <AddTransactionForm
+                                    transaction={editingTransaction}
+                                    onSave={(transactionData) => {
+                                        setTransactions(prev => prev.map(txn =>
+                                            txn.id === editingTransaction.id ? { ...txn, ...transactionData } : txn
+                                        ));
+                                        setEditingTransaction(null);
+                                    }}
+                                    onCancel={() => setEditingTransaction(null)}
+                                    categories={categories}
+                                    accounts={accounts}
+                                    darkMode={darkMode}
+                                />
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {/* All Transactions Modal */}
-                        {showTransactions && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4"
-                                onClick={(e) => e.target === e.currentTarget && setShowTransactions(false)}
-                                onKeyDown={(e) => e.key === 'Escape' && setShowTransactions(false)}
-                                tabIndex={-1}>
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-4xl h-[95vh] sm:h-[85vh] overflow-hidden flex flex-col`}>
-                                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <h3 className="text-lg font-semibold flex items-center">
-                                                💳 All Transactions
-                                            </h3>
-                                            <button
-                                                onClick={() => setShowTransactions(false)}
-                                                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                                            >
-                                                ✕
-                                            </button>
-                                        </div>
-
-                                        <div className="flex space-x-4 items-center">
-                                            <select
-                                                value={selectedAccount}
-                                                onChange={(e) => setSelectedAccount(e.target.value)}
-                                                className={`p-2 border rounded text-sm ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                            >
-                                                <option value="all">All Accounts</option>
-                                                {accounts.map(account => (
-                                                    <option key={account.id} value={account.id}>{account.name}</option>
-                                                ))}
-                                            </select>
-                                            <button
-                                                onClick={() => setShowAddTransaction(true)}
-                                                className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 flex items-center"
-                                            >
-                                                <Plus className="w-4 h-4 mr-1" />
-                                                Add Transaction
-                                            </button>
-                                        </div>
+                    {/* All Transactions Modal */}
+                    {showTransactions && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4"
+                            onClick={(e) => e.target === e.currentTarget && setShowTransactions(false)}
+                            onKeyDown={(e) => e.key === 'Escape' && setShowTransactions(false)}
+                            tabIndex={-1}>
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-4xl h-[95vh] sm:h-[85vh] overflow-hidden flex flex-col`}>
+                                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className="text-lg font-semibold flex items-center">
+                                            💳 All Transactions
+                                        </h3>
+                                        <button
+                                            onClick={() => setShowTransactions(false)}
+                                            className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                                        >
+                                            ✕
+                                        </button>
                                     </div>
 
-                                    <div className="flex-1 overflow-y-auto p-4">
-                                        <div className="space-y-2">
-                                            {transactions
-                                                .filter(txn => selectedAccount === 'all' || txn.accountId === parseInt(selectedAccount))
-                                                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                                                .map(transaction => {
-                                                    const account = accounts.find(acc => acc.id === transaction.accountId);
-                                                    const category = categories.find(cat => cat.id === transaction.categoryId);
-                                                    const transferAccount = transaction.transferAccountId ? accounts.find(acc => acc.id === transaction.transferAccountId) : null;
+                                    <div className="flex space-x-4 items-center">
+                                        <select
+                                            value={selectedAccount}
+                                            onChange={(e) => setSelectedAccount(e.target.value)}
+                                            className={`p-2 border rounded text-sm ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                        >
+                                            <option value="all">All Accounts</option>
+                                            {accounts.map(account => (
+                                                <option key={account.id} value={account.id}>{account.name}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            onClick={() => setShowAddTransaction(true)}
+                                            className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 flex items-center"
+                                        >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            Add Transaction
+                                        </button>
+                                    </div>
+                                </div>
 
-                                                    return (
-                                                        <div key={transaction.id} className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center">
-                                                                        <span className="font-medium">
-                                                                            {transaction.transfer ? `Transfer to ${transferAccount?.name}` : transaction.payee}
-                                                                        </span>
-                                                                        {transaction.cleared && <span className="ml-2 text-green-500">✓</span>}
-                                                                    </div>
-                                                                    <div className="text-sm text-gray-500 mt-1">
-                                                                        {transaction.date} • {account?.name} {category && `• ${category.name}`}
-                                                                    </div>
-                                                                    {transaction.memo && (
-                                                                        <div className="text-sm text-gray-400 mt-1">{transaction.memo}</div>
-                                                                    )}
+                                <div className="flex-1 overflow-y-auto p-4">
+                                    <div className="space-y-2">
+                                        {transactions
+                                            .filter(txn => selectedAccount === 'all' || txn.accountId === parseInt(selectedAccount))
+                                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                            .map(transaction => {
+                                                const account = accounts.find(acc => acc.id === transaction.accountId);
+                                                const category = categories.find(cat => cat.id === transaction.categoryId);
+                                                const transferAccount = transaction.transferAccountId ? accounts.find(acc => acc.id === transaction.transferAccountId) : null;
+
+                                                return (
+                                                    <div key={transaction.id} className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center">
+                                                                    <span className="font-medium">
+                                                                        {transaction.transfer ? `Transfer to ${transferAccount?.name}` : transaction.payee}
+                                                                    </span>
+                                                                    {transaction.cleared && <span className="ml-2 text-green-500">✓</span>}
                                                                 </div>
-                                                                <div className="text-right ml-4">
-                                                                    <div className="font-semibold text-lg">${transaction.amount.toFixed(2)}</div>
-                                                                    <div className="flex space-x-1 mt-1">
-                                                                        <button
-                                                                            onClick={() => setEditingTransaction(transaction)}
-                                                                            className="p-1 hover:bg-gray-600 rounded"
-                                                                        >
-                                                                            <Edit2 className="w-4 h-4" />
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => setConfirmDelete({
-                                                                                type: 'transaction',
-                                                                                id: transaction.id,
-                                                                                name: transaction.transfer ? `Transfer to ${transferAccount?.name}` : transaction.payee,
-                                                                                message: `Delete this transaction?`
-                                                                            })}
-                                                                            className="p-1 hover:bg-gray-600 rounded text-red-400"
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4" />
-                                                                        </button>
-                                                                    </div>
+                                                                <div className="text-sm text-gray-500 mt-1">
+                                                                    {transaction.date} • {account?.name} {category && `• ${category.name}`}
+                                                                </div>
+                                                                {transaction.memo && (
+                                                                    <div className="text-sm text-gray-400 mt-1">{transaction.memo}</div>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-right ml-4">
+                                                                <div className="font-semibold text-lg">${transaction.amount.toFixed(2)}</div>
+                                                                <div className="flex space-x-1 mt-1">
+                                                                    <button
+                                                                        onClick={() => setEditingTransaction(transaction)}
+                                                                        className="p-1 hover:bg-gray-600 rounded"
+                                                                    >
+                                                                        <Edit2 className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setConfirmDelete({
+                                                                            type: 'transaction',
+                                                                            id: transaction.id,
+                                                                            name: transaction.transfer ? `Transfer to ${transferAccount?.name}` : transaction.payee,
+                                                                            message: `Delete this transaction?`
+                                                                        })}
+                                                                        className="p-1 hover:bg-gray-600 rounded text-red-400"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    );
-                                                })}
-                                            {transactions.length === 0 && (
-                                                <p className="text-gray-500 text-center py-8">No transactions yet. Add your first transaction to get started!</p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
-                                        <button
-                                            onClick={() => setShowTransactions(false)}
-                                            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                                        >
-                                            Done
-                                        </button>
+                                                    </div>
+                                                );
+                                            })}
+                                        {transactions.length === 0 && (
+                                            <p className="text-gray-500 text-center py-8">No transactions yet. Add your first transaction to get started!</p>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-                        )}
 
-                        {/* Add Expense Modal */}
-                        {showAddExpense && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                                    <h3 className="text-lg font-semibold mb-4">Add New Expense</h3>
-                                    <AddExpenseForm
-                                        onSave={(expenseData, addAnother) => {
-                                            const newExpense = {
-                                                ...expenseData,
-                                                id: Math.max(...expenses.map(e => e.id), 0) + 1,
-                                                collapsed: true
-                                            };
-                                            setExpenses(prev => [...prev, newExpense]);
-                                            if (!addAnother) {
-                                                setShowAddExpense(false);
-                                                setPreselectedCategory(null);
-                                            }
-                                        }}
-                                        onCancel={() => {
+                                <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
+                                    <button
+                                        onClick={() => setShowTransactions(false)}
+                                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                    >
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add Expense Modal */}
+                    {showAddExpense && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Add New Expense</h3>
+                                <AddExpenseForm
+                                    onSave={(expenseData, addAnother) => {
+                                        const newExpense = {
+                                            ...expenseData,
+                                            id: Math.max(...expenses.map(e => e.id), 0) + 1,
+                                            collapsed: true
+                                        };
+                                        setExpenses(prev => [...prev, newExpense]);
+                                        if (!addAnother) {
                                             setShowAddExpense(false);
                                             setPreselectedCategory(null);
-                                        }}
-                                        categories={categories}
-                                        darkMode={darkMode}
-                                        currentPay={currentPay}
-                                        preselectedCategory={preselectedCategory}
-                                    />
-                                </div>
+                                        }
+                                    }}
+                                    onCancel={() => {
+                                        setShowAddExpense(false);
+                                        setPreselectedCategory(null);
+                                    }}
+                                    categories={categories}
+                                    darkMode={darkMode}
+                                    currentPay={currentPay}
+                                    preselectedCategory={preselectedCategory}
+                                />
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {editingExpense && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                                    <h3 className="text-lg font-semibold mb-4">Edit Expense</h3>
-                                    <AddExpenseForm
-                                        expense={editingExpense}
-                                        onSave={(expenseData) => {
-                                            setExpenses(prev => prev.map(exp =>
-                                                exp.id === editingExpense.id ? { ...exp, ...expenseData } : exp
-                                            ));
-                                            setEditingExpense(null);
-                                        }}
-                                        onCancel={() => setEditingExpense(null)}
-                                        categories={categories}
-                                        darkMode={darkMode}
-                                        currentPay={currentPay}
-                                    />
-                                </div>
+                    {editingExpense && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Expense</h3>
+                                <AddExpenseForm
+                                    expense={editingExpense}
+                                    onSave={(expenseData) => {
+                                        setExpenses(prev => prev.map(exp =>
+                                            exp.id === editingExpense.id ? { ...exp, ...expenseData } : exp
+                                        ));
+                                        setEditingExpense(null);
+                                    }}
+                                    onCancel={() => setEditingExpense(null)}
+                                    categories={categories}
+                                    darkMode={darkMode}
+                                    currentPay={currentPay}
+                                />
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {showAddCategory && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                                    <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
-                                    <AddCategoryForm
-                                        onSave={(categoryData, addAnother) => {
-                                            const newCategory = {
-                                                ...categoryData,
-                                                id: Math.max(...categories.map(c => c.id), 0) + 1,
-                                                collapsed: false
-                                            };
-                                            setCategories(prev => [...prev, newCategory]);
-                                            if (!addAnother) setShowAddCategory(false);
-                                        }}
-                                        onCancel={() => setShowAddCategory(false)}
-                                        categoryColors={categoryColors}
-                                        darkMode={darkMode}
-                                    />
-                                </div>
+                    {showAddCategory && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
+                                <AddCategoryForm
+                                    onSave={(categoryData, addAnother) => {
+                                        const newCategory = {
+                                            ...categoryData,
+                                            id: Math.max(...categories.map(c => c.id), 0) + 1,
+                                            collapsed: false
+                                        };
+                                        setCategories(prev => [...prev, newCategory]);
+                                        if (!addAnother) setShowAddCategory(false);
+                                    }}
+                                    onCancel={() => setShowAddCategory(false)}
+                                    categoryColors={categoryColors}
+                                    darkMode={darkMode}
+                                />
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                        {editingCategory && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                                    <h3 className="text-lg font-semibold mb-4">Edit Category</h3>
-                                    <AddCategoryForm
-                                        category={editingCategory}
-                                        onSave={(categoryData) => {
-                                            setCategories(prev => prev.map(cat =>
-                                                cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
-                                            ));
-                                            setEditingCategory(null);
+                    {editingCategory && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Category</h3>
+                                <AddCategoryForm
+                                    category={editingCategory}
+                                    onSave={(categoryData) => {
+                                        setCategories(prev => prev.map(cat =>
+                                            cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
+                                        ));
+                                        setEditingCategory(null);
+                                    }}
+                                    onCancel={() => setEditingCategory(null)}
+                                    categoryColors={categoryColors}
+                                    darkMode={darkMode}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    {/* Add Account Modal */}
+                    {showAddAccount && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Add New Account</h3>
+                                <AddAccountForm
+                                    onSave={(accountData) => {
+                                        const newAccount = {
+                                            ...accountData,
+                                            id: Math.max(...accounts.map(a => a.id), 0) + 1
+                                        };
+                                        setAccounts(prev => [...prev, newAccount]);
+                                        setShowAddAccount(false);
+                                    }}
+                                    onCancel={() => setShowAddAccount(false)}
+                                    darkMode={darkMode}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    {editingAccount && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Account</h3>
+                                <AddAccountForm
+                                    account={editingAccount}
+                                    onSave={(accountData) => {
+                                        setAccounts(prev => prev.map(acc =>
+                                            acc.id === editingAccount.id ? { ...acc, ...accountData } : acc
+                                        ));
+                                        setEditingAccount(null);
+                                    }}
+                                    onCancel={() => setEditingAccount(null)}
+                                    darkMode={darkMode}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    {/* Custom Confirmation Dialog */}
+                    {confirmDelete && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+                                <p className="mb-6">{confirmDelete.message}</p>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => {
+                                            if (confirmDelete.type === 'expense') {
+                                                deleteExpense(confirmDelete.id);
+                                            } else if (confirmDelete.type === 'goal') {
+                                                setSavingsGoals(savingsGoals.filter(goal => goal.id !== confirmDelete.id));
+                                                setConfirmDelete(null);
+                                            } else if (confirmDelete.type === 'category') {
+                                                deleteCategory(confirmDelete.id);
+                                            } else if (confirmDelete.type === 'account') {
+                                                deleteAccount(confirmDelete.id);
+                                            } else if (confirmDelete.type === 'transaction') {
+                                                deleteTransaction(confirmDelete.id);
+                                            }
                                         }}
-                                        onCancel={() => setEditingCategory(null)}
-                                        categoryColors={categoryColors}
-                                        darkMode={darkMode}
-                                    />
+                                        className="flex-1 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+                                    >
+                                        Delete
+                                    </button>
+                                    <button
+                                        onClick={() => setConfirmDelete(null)}
+                                        className={`flex-1 py-2 px-4 rounded border ${darkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-50'}`}
+                                    >
+                                        Cancel
+                                    </button>
                                 </div>
                             </div>
-                        )}
-                        {/* Add Account Modal */}
-                        {showAddAccount && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                                    <h3 className="text-lg font-semibold mb-4">Add New Account</h3>
-                                    <AddAccountForm
-                                        onSave={(accountData) => {
-                                            const newAccount = {
-                                                ...accountData,
-                                                id: Math.max(...accounts.map(a => a.id), 0) + 1
-                                            };
-                                            setAccounts(prev => [...prev, newAccount]);
-                                            setShowAddAccount(false);
-                                        }}
-                                        onCancel={() => setShowAddAccount(false)}
-                                        darkMode={darkMode}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                        {editingAccount && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                                    <h3 className="text-lg font-semibold mb-4">Edit Account</h3>
-                                    <AddAccountForm
-                                        account={editingAccount}
-                                        onSave={(accountData) => {
-                                            setAccounts(prev => prev.map(acc =>
-                                                acc.id === editingAccount.id ? { ...acc, ...accountData } : acc
-                                            ));
-                                            setEditingAccount(null);
-                                        }}
-                                        onCancel={() => setEditingAccount(null)}
-                                        darkMode={darkMode}
-                                    />
-                                </div>
-                            </div>
-                        )}
-                        {/* Custom Confirmation Dialog */}
-                        {confirmDelete && (
-                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                                    <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-                                    <p className="mb-6">{confirmDelete.message}</p>
-                                    <div className="flex space-x-2">
-                                        <button
-                                            onClick={() => {
-                                                if (confirmDelete.type === 'expense') {
-                                                    deleteExpense(confirmDelete.id);
-                                                } else if (confirmDelete.type === 'goal') {
-                                                    setSavingsGoals(savingsGoals.filter(goal => goal.id !== confirmDelete.id));
-                                                    setConfirmDelete(null);
-                                                } else if (confirmDelete.type === 'category') {
-                                                    deleteCategory(confirmDelete.id);
-                                                } else if (confirmDelete.type === 'account') {
-                                                    deleteAccount(confirmDelete.id);
-                                                } else if (confirmDelete.type === 'transaction') {
-                                                    deleteTransaction(confirmDelete.id);
-                                                }
-                                            }}
-                                            className="flex-1 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
-                                        >
-                                            Delete
-                                        </button>
-                                        <button
-                                            onClick={() => setConfirmDelete(null)}
-                                            className={`flex-1 py-2 px-4 rounded border ${darkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-50'}`}
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
-            );
+                    </div >
+                    );
         };
 
         // Render the app
