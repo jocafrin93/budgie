@@ -1148,7 +1148,7 @@
                     transferAccountId: 2
                 }
             ]);
-
+            //State Variables
             const [showAddExpense, setShowAddExpense] = useState(false);
             const [showAddCategory, setShowAddCategory] = useState(false);
             const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -1164,6 +1164,17 @@
             const [editingAccount, setEditingAccount] = useState(null);
             const [showAddGoal, setShowAddGoal] = useState(false);
             const [editingGoal, setEditingGoal] = useState(null);
+            const [showCalendar, setShowCalendar] = useState(false);
+            const [paySchedule, setPaySchedule] = useState({
+                startDate: '2025-06-15',
+                frequency: 'bi-weekly',
+                splitPaycheck: false,
+                primaryAmount: 2200,
+                secondaryAmount: 600,
+                secondaryDaysEarly: 2,
+                primaryBankName: 'Primary Bank',
+                secondaryBankName: 'Secondary Bank'
+            });
 
             const frequencyOptions = [
                 { value: 'weekly', label: 'Weekly', weeksPerYear: 52 },
@@ -1407,6 +1418,13 @@
                                 >
                                     <Percent />
                                     <span className="text-sm hidden sm:inline">{viewMode === 'amount' ? 'Show %' : 'Show $'}</span>
+                                </button>
+                                <button
+                                    onClick={() => setShowCalendar(true)}
+                                    className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                                    title="Open calendar view"
+                                >
+                                    📅
                                 </button>
                                 <button
                                     onClick={() => {
