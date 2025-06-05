@@ -1473,7 +1473,7 @@
                                                                     </div>
 
                                                                     {!expense.collapsed && (
-                                                                        <div className="px-3 pb-3 bg-gray-50 dark:bg-gray-800/50">
+                                                                        <div className="px-3 pb-3 bg-gray-50">
                                                                             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                                                                 ${expense.amount} {frequencyOptions.find(f => f.value === expense.frequency)?.label.toLowerCase()}
                                                                             </div>
@@ -1556,7 +1556,7 @@
                                                                 </div>
 
                                                                     {!goal.collapsed && (
-                                                                        <div className="px-3 pb-3 bg-green-200 dark:bg-green-900/20">
+                                                                        <div className="px-3 pb-3 bg-green-200">
                                                                             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                                                                 Target: ${goal.targetAmount.toLocaleString()} by {goal.targetDate}
                                                                             </div>
