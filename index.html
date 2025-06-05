@@ -707,44 +707,60 @@
             );
         };
 
-        const generatePaycheckDates = (paySchedule) => {
-            console.log("generatePaycheckDates called with:", paySchedule.startDate);
+        const generatePaycheckEventsWithSplit = (paySchedule, currentPay) => {
+            const events = [];
+            const primaryDates = generatePaycheckDates(paySchedule);
 
-            const dates = [];
-            const [year, month, day] = paySchedule.startDate.split('-').map(Number);
-            const startDate = new Date(year, month - 1, day);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            primaryDates.forEach((date, index) => {
+                const primaryAmount = paySchedule.splitPaycheck ? paySchedule.primaryAmount : currentPay;
 
-            let currentDate = new Date(startDate);
-            const daysBetween = paySchedule.frequency === 'bi-weekly' ? 14 : 30;
+                // Add primary paycheck
+                events.push({
+                    date: new Date(date),
+                    type: 'paycheck',
+                    subtype: 'primary',
+                    title: paySchedule.splitPaycheck ? paySchedule.primaryBankName : `Paycheck #${index + 1}`,
+                    amount: primaryAmount,
+                    description: `${paySchedule.splitPaycheck ? 'Main deposit' : 'Bi-weekly income'}: $${primaryAmount.toFixed(2)}`
+                });
 
-            // Move currentDate to first future paycheck
-            let safetyCount = 0;
-            while (currentDate < today && safetyCount < 100) {
-                currentDate.setDate(currentDate.getDate() + daysBetween);
-                safetyCount++;
-            }
+                // Add secondary paycheck if split is enabled
+                if (paySchedule.splitPaycheck && paySchedule.secondaryAmount > 0) {
+                    const secondaryDate = new Date(date);
+                    secondaryDate.setDate(date.getDate() - paySchedule.secondaryDaysEarly);
 
-            // Generate next 10 paychecks
-            for (let i = 0; i < 10; i++) {
-                dates.push(new Date(currentDate));
-                currentDate.setDate(currentDate.getDate() + daysBetween);
-            }
+                    events.push({
+                        date: secondaryDate,
+                        type: 'paycheck',
+                        subtype: 'secondary',
+                        title: paySchedule.secondaryBankName,
+                        amount: paySchedule.secondaryAmount,
+                        description: `Early deposit: $${paySchedule.secondaryAmount.toFixed(2)} (${paySchedule.secondaryDaysEarly} days early)`
+                    });
+                }
+            });
 
-            console.log(`Generated ${dates.length} paycheck dates`);
-            return dates;
+            return events.sort((a, b) => a.date - b.date);
+        };
+
+        const generateCalendarEvents = (paySchedule, currentPay, savingsGoals, expenses, categories) => {
+            const events = [];
+            const paycheckEvents = generatePaycheckEventsWithSplit(paySchedule, currentPay);
+            events.push(...paycheckEvents);
+
+            console.log(`Generated ${events.length} calendar events`);
+            return events;
         };
 
         const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
-            const testDates = generatePaycheckDates(paySchedule);  // Pass paySchedule as argument
+            const testEvents = generateCalendarEvents(paySchedule, currentPay, [], [], []);
 
             return (
                 <div className="space-y-4">
                     <h4 className="font-medium">Calendar View</h4>
-                    <p>Events: {events ? events.length : 0}</p>
-                    <p>Generated dates: {testDates.length}</p>
-                    <p>First date: {testDates[0]?.toLocaleDateString()}</p>
+                    <p>Test events: {testEvents.length}</p>
+                    <p>First event: {testEvents[0]?.title}</p>
+                    <p>First event date: {testEvents[0]?.date.toLocaleDateString()}</p>
                 </div>
             );
         };
