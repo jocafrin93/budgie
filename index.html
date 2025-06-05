@@ -752,7 +752,7 @@
             return events;
         };
 
-        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
+        {/* const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
             const testEvents = generateCalendarEvents(paySchedule, currentPay, [], [], []);
 
             return (
@@ -763,9 +763,17 @@
                     <p>First event date: {testEvents[0]?.date.toLocaleDateString()}</p>
                 </div>
             );
+        }; */}
+
+        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
+            return (
+                <div className="space-y-4">
+                    <h4 className="font-medium">Calendar View</h4>
+                    <p>Events: {events ? events.length : 0}</p>
+                    <p>Safe mode - no function calls</p>
+                </div>
+            );
         };
-
-
         // Add Goal Form
         const GoalForm = ({ onSave, onCancel, categories, darkMode, goal = null, currentPay, preselectedCategory }) => {
             const [formData, setFormData] = useState({
