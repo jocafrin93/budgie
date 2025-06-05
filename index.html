@@ -895,11 +895,11 @@
                 });
             };
 
-            const getEventIcon = (type, isRecurring = false) => {
+            const getEventIcon = (type, isFirstOccurrence = true, isRecurring = false) => {
                 switch (type) {
                     case 'paycheck': return '💰';
                     case 'goal-deadline': return '🎯';
-                    case 'expense-due': return isRecurring ? '🔄' : '⏰';
+                    case 'expense-due': return (isRecurring && !isFirstOccurrence) ? '🔄' : '⏰';
                     case 'recurring-transaction': return '🔄';
                     default: return '📅';
                 }
@@ -1082,7 +1082,7 @@
                                             <div className="space-y-1 mt-1">
                                                 {dayData.events.slice(0, 3).map((event, eventIndex) => (
                                                     <div key={eventIndex} className={`text-xs p-1 rounded truncate ${getEventColor(event.type, event.subtype, event.warning)}`}>
-                                                        <span className="mr-1">{getEventIcon(event.type, event.isRecurring || (event.occurrenceNumber && event.occurrenceNumber > 1))}</span>
+                                                        <span className="mr-1">{getEventIcon(event.type, event.occurrenceNumber === 1, event.isRecurring)}</span>
                                                         {/* Remove occurrence number from title */}
                                                         {event.title.replace(/ \(#\d+\)/, '')}
                                                     </div>
@@ -1162,7 +1162,7 @@
                                             <div key={index} className={`p-3 rounded border-l-4 ${getEventColor(event.type, event.subtype, event.warning)}`}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center">
-                                                        <span className="mr-2 text-lg">{getEventIcon(event.type, event.isRecurring || (event.occurrenceNumber && event.occurrenceNumber > 1))}</span>
+                                                        <span className="mr-2 text-lg">{getEventIcon(event.type, event.occurrenceNumber === 1, event.isRecurring)}</span>
                                                         <div>
                                                             {/* Remove occurrence number from title */}
                                                             <div className="font-medium">{event.title.replace(/ \(#\d+\)/, '')}</div>
@@ -2942,10 +2942,13 @@
                             <div
                                 className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
                                 onClick={(e) => e.target === e.currentTarget && setShowCalendar(false)}
-                                onKeyDown={(e) => e.key === 'Escape' && setShowCalendar(false)}
-                                tabIndex={-1}
                             >
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}>
+                                <div
+                                    className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}
+                                    onKeyDown={(e) => e.key === 'Escape' && setShowCalendar(false)}
+                                    tabIndex={0}
+                                    autoFocus
+                                >
                                     <div className="flex justify-between items-center mb-4">
                                         <h3 className="text-lg font-semibold">Calendar Test</h3>
                                         <button
