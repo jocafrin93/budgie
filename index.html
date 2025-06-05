@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,23 +11,55 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Ensure dark mode works */
-        .dark { color-scheme: dark; }
-        
+        .dark {
+            color-scheme: dark;
+        }
+
         /* Custom gradient backgrounds for categories */
-        .bg-gradient-to-r.from-purple-500.to-pink-500 { background: linear-gradient(to right, #8b5cf6, #ec4899); }
-        .bg-gradient-to-r.from-pink-500.to-blue-500 { background: linear-gradient(to right, #ec4899, #3b82f6); }
-        .bg-gradient-to-r.from-orange-500.to-red-600 { background: linear-gradient(to right, #f97316, #dc2626); }
-        .bg-gradient-to-r.from-green-500.to-yellow-400 { background: linear-gradient(to right, #22c55e, #facc15); }
-        .bg-gradient-to-r.from-pink-500.to-red-500 { background: linear-gradient(to right, #ec4899, #ef4444); }
-        .bg-gradient-to-r.from-yellow-400.to-orange-500 { background: linear-gradient(to right, #facc15, #f97316); }
-        .bg-gradient-to-r.from-purple-600.to-teal-500 { background: linear-gradient(to right, #9333ea, #14b8a6); }
-        .bg-gradient-to-r.from-violet-600.to-purple-800 { background: linear-gradient(to right, #7c3aed, #6b21a8); }
-        
+        .bg-gradient-to-r.from-purple-500.to-pink-500 {
+            background: linear-gradient(to right, #8b5cf6, #ec4899);
+        }
+
+        .bg-gradient-to-r.from-pink-500.to-blue-500 {
+            background: linear-gradient(to right, #ec4899, #3b82f6);
+        }
+
+        .bg-gradient-to-r.from-orange-500.to-red-600 {
+            background: linear-gradient(to right, #f97316, #dc2626);
+        }
+
+        .bg-gradient-to-r.from-green-500.to-yellow-400 {
+            background: linear-gradient(to right, #22c55e, #facc15);
+        }
+
+        .bg-gradient-to-r.from-pink-500.to-red-500 {
+            background: linear-gradient(to right, #ec4899, #ef4444);
+        }
+
+        .bg-gradient-to-r.from-yellow-400.to-orange-500 {
+            background: linear-gradient(to right, #facc15, #f97316);
+        }
+
+        .bg-gradient-to-r.from-purple-600.to-teal-500 {
+            background: linear-gradient(to right, #9333ea, #14b8a6);
+        }
+
+        .bg-gradient-to-r.from-violet-600.to-purple-800 {
+            background: linear-gradient(to right, #7c3aed, #6b21a8);
+        }
+
         /* Fallback styling */
-        body { margin: 0; padding: 0; }
-        .container { max-width: 1200px; }
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+        }
     </style>
 </head>
+
 <body>
     <div id="root"></div>
 
@@ -41,13 +74,13 @@
         const Edit2 = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>;
         const Trash2 = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
         const Calculator = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>;
-        const Target = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
-        const DollarSign = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
-        const ChevronDown = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></svg>;
-        const ChevronRight = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg>;
-        const ChevronUp = () => <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="18,15 12,9 6,15"/></svg>;
-        const Eye = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
-        const Percent = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>;
+        const Target = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>;
+        const DollarSign = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>;
+        const ChevronDown = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9" /></svg>;
+        const ChevronRight = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6" /></svg>;
+        const ChevronUp = () => <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="18,15 12,9 6,15" /></svg>;
+        const Eye = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+        const Percent = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19" /><circle cx="6.5" cy="6.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /></svg>;
 
         // LocalStorage utilities
         const useLocalStorage = (key, initialValue) => {
@@ -110,7 +143,7 @@
                         accountId: parseInt(formData.accountId),
                         transferAccountId: formData.transfer ? parseInt(formData.transferAccountId) : null
                     }, addAnother);
-                    
+
                     if (addAnother) {
                         setFormData({
                             date: formData.date,
@@ -144,7 +177,7 @@
                                 style={darkMode ? { colorScheme: 'dark' } : {}}
                             />
                         </div>
-                        
+
                         <div>
                             <label className="block text-sm font-medium mb-1">Account</label>
                             <select
@@ -270,7 +303,7 @@
                             Cancel
                         </button>
                     </div>
-                    
+
                     <div className="text-xs text-gray-500 mt-2">
                         💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
                     </div>
@@ -318,17 +351,17 @@
 
             const handleSubmit = (addAnother = false) => {
                 if (formData.name && (formData.amount || formData.percentage)) {
-                    const finalAmount = formData.inputMode === 'percentage' 
+                    const finalAmount = formData.inputMode === 'percentage'
                         ? (parseFloat(formData.percentage) / 100) * currentPay
                         : parseFloat(formData.amount);
-                        
+
                     onSave({
                         ...formData,
                         amount: finalAmount,
                         categoryId: parseInt(formData.categoryId),
                         alreadySaved: parseFloat(formData.alreadySaved) || 0
                     }, addAnother);
-                    
+
                     if (addAnother) {
                         setFormData({
                             name: '',
@@ -363,33 +396,31 @@
                         className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
                         autoFocus
                     />
-                    
+
                     <div className="space-y-2">
                         <div className="flex space-x-2">
                             <button
                                 type="button"
                                 onClick={() => setFormData(prev => ({ ...prev, inputMode: 'amount', percentage: '' }))}
-                                className={`flex-1 py-1 px-3 rounded text-sm ${
-                                    formData.inputMode === 'amount' 
-                                        ? 'bg-blue-600 text-white' 
-                                        : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
-                                }`}
+                                className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === 'amount'
+                                    ? 'bg-blue-600 text-white'
+                                    : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                                    }`}
                             >
                                 $ Amount
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setFormData(prev => ({ ...prev, inputMode: 'percentage', amount: '' }))}
-                                className={`flex-1 py-1 px-3 rounded text-sm ${
-                                    formData.inputMode === 'percentage' 
-                                        ? 'bg-green-600 text-white' 
-                                        : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
-                                }`}
+                                className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === 'percentage'
+                                    ? 'bg-green-600 text-white'
+                                    : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                                    }`}
                             >
                                 % of Paycheck
                             </button>
                         </div>
-                        
+
                         {formData.inputMode === 'amount' ? (
                             <input
                                 type="number"
@@ -412,7 +443,7 @@
                                 <span className="absolute right-3 top-3 text-gray-400">%</span>
                             </div>
                         )}
-                        
+
                         {formData.percentage && formData.inputMode === 'percentage' && (
                             <div className="text-xs text-gray-500">
                                 ≈ ${((parseFloat(formData.percentage) / 100) * currentPay).toFixed(2)} per paycheck
@@ -445,7 +476,7 @@
 
                     <div className="space-y-3 p-4 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
                         <h4 className="font-medium text-gray-900 dark:text-gray-100">💰 Funding Status</h4>
-                        
+
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Already Saved</label>
@@ -458,7 +489,7 @@
                                     className={`w-full p-2 border rounded text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
                                 />
                             </div>
-                            
+
                             <div>
                                 <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Due Date (Optional)</label>
                                 <input
@@ -478,7 +509,7 @@
                                     <span className="font-medium">{fundingProgress.toFixed(0)}%</span>
                                 </div>
                                 <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
-                                    <div 
+                                    <div
                                         className={`h-2 rounded-full ${fundingProgress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                                         style={{ width: `${Math.min(100, fundingProgress)}%` }}
                                     ></div>
@@ -548,7 +579,7 @@
                             Cancel
                         </button>
                     </div>
-                    
+
                     <div className="text-xs text-gray-500 mt-2">
                         💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
                     </div>
@@ -602,7 +633,7 @@
                         className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
                         autoFocus
                     />
-                    
+
                     <div>
                         <label className="block text-sm font-medium mb-2">Color</label>
                         <div className="grid grid-cols-2 gap-3">
@@ -643,7 +674,7 @@
                             Cancel
                         </button>
                     </div>
-                    
+
                     <div className="text-xs text-gray-500 mt-2">
                         💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
                     </div>
@@ -660,7 +691,7 @@
             const [whatIfMode, setWhatIfMode] = useState(false);
             const [whatIfPay, setWhatIfPay] = useState(2800);
             const [viewMode, setViewMode] = useLocalStorage('budgetCalc_viewMode', 'amount');
-            
+
             const [categories, setCategories] = useLocalStorage('budgetCalc_categories', [
                 { id: 1, name: 'Personal Care', color: 'bg-gradient-to-r from-purple-500 to-pink-500', collapsed: false },
                 { id: 2, name: 'Pet Care', color: 'bg-gradient-to-r from-green-500 to-blue-500', collapsed: false },
@@ -668,24 +699,24 @@
             ]);
 
             const [expenses, setExpenses] = useLocalStorage('budgetCalc_expenses', [
-                { 
-                    id: 1, 
-                    name: 'Hair coloring', 
-                    amount: 180, 
-                    frequency: 'every-6-weeks', 
-                    categoryId: 1, 
+                {
+                    id: 1,
+                    name: 'Hair coloring',
+                    amount: 180,
+                    frequency: 'every-6-weeks',
+                    categoryId: 1,
                     priority: 'important',
                     alreadySaved: 0,
                     dueDate: '',
                     allocationPaused: false,
                     collapsed: true
                 },
-                { 
-                    id: 2, 
-                    name: 'Dog medications', 
-                    amount: 85, 
-                    frequency: 'every-8-weeks', 
-                    categoryId: 2, 
+                {
+                    id: 2,
+                    name: 'Dog medications',
+                    amount: 85,
+                    frequency: 'every-8-weeks',
+                    categoryId: 2,
                     priority: 'essential',
                     alreadySaved: 0,
                     dueDate: '',
@@ -695,12 +726,12 @@
             ]);
 
             const [savingsGoals, setSavingsGoals] = useLocalStorage('budgetCalc_savingsGoals', [
-                { 
-                    id: 1, 
-                    name: 'Emergency fund', 
-                    targetAmount: 10000, 
-                    monthlyContribution: 500, 
-                    targetDate: '2025-12-31', 
+                {
+                    id: 1,
+                    name: 'Emergency fund',
+                    targetAmount: 10000,
+                    monthlyContribution: 500,
+                    targetDate: '2025-12-31',
                     categoryId: 3,
                     alreadySaved: 0,
                     allocationPaused: false,
@@ -715,26 +746,26 @@
             ]);
 
             const [transactions, setTransactions] = useLocalStorage('budgetCalc_transactions', [
-                { 
-                    id: 1, 
-                    date: '2025-06-01', 
-                    payee: 'Grocery Store', 
-                    amount: 85.43, 
-                    categoryId: 1, 
-                    accountId: 1, 
-                    memo: 'Weekly groceries', 
+                {
+                    id: 1,
+                    date: '2025-06-01',
+                    payee: 'Grocery Store',
+                    amount: 85.43,
+                    categoryId: 1,
+                    accountId: 1,
+                    memo: 'Weekly groceries',
                     cleared: true,
                     transfer: false,
                     transferAccountId: null
                 },
-                { 
-                    id: 2, 
-                    date: '2025-06-01', 
-                    payee: '', 
-                    amount: 200, 
-                    categoryId: null, 
-                    accountId: 1, 
-                    memo: 'Emergency fund deposit', 
+                {
+                    id: 2,
+                    date: '2025-06-01',
+                    payee: '',
+                    amount: 200,
+                    categoryId: null,
+                    accountId: 1,
+                    memo: 'Emergency fund deposit',
                     cleared: true,
                     transfer: true,
                     transferAccountId: 2
@@ -767,9 +798,9 @@
             ];
 
             const priorityColors = {
-                essential: 'border-red-400 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100',
-                important: 'border-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100',
-                'nice-to-have': 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100'
+                essential: 'border-red-400 bg-red-100 dark:bg-red-800 text-red-900 dark:text-red-100',
+                important: 'border-yellow-400 bg-yellow-100 dark:bg-yellow-800 text-yellow-900 dark:text-yellow-100',
+                'nice-to-have': 'border-green-400 bg-green-100 dark:bg-green-800 text-green-900 dark:text-green-100'
             };
 
             const categoryColors = [
@@ -796,12 +827,12 @@
 
             const calculateBiweeklyAllocation = (expense) => {
                 if (expense.allocationPaused) return 0;
-                
+
                 const { amount, frequency, alreadySaved = 0 } = expense;
                 const remainingAmount = Math.max(0, amount - alreadySaved);
-                
+
                 if (remainingAmount <= 0) return 0;
-                
+
                 if (frequency === 'per-paycheck') {
                     if (roundingOption === 0) return remainingAmount;
                     return Math.ceil(remainingAmount / roundingOption) * roundingOption;
@@ -809,26 +840,26 @@
 
                 const freqData = frequencyOptions.find(f => f.value === frequency);
                 if (!freqData) return 0;
-                
+
                 const yearlyAmount = amount * freqData.weeksPerYear;
                 const biweeklyAmount = yearlyAmount / 26;
                 const adjustedBiweeklyAmount = (remainingAmount / amount) * biweeklyAmount;
-                
+
                 if (roundingOption === 0) return adjustedBiweeklyAmount;
                 return Math.ceil(adjustedBiweeklyAmount / roundingOption) * roundingOption;
             };
 
             const calculateGoalBiweeklyAllocation = (goal) => {
                 if (goal.allocationPaused) return 0;
-                
+
                 const { targetAmount, monthlyContribution, alreadySaved = 0 } = goal;
                 const remainingAmount = Math.max(0, targetAmount - alreadySaved);
-                
+
                 if (remainingAmount <= 0) return 0;
-                
+
                 const monthlyAmount = monthlyContribution;
                 const biweeklyAmount = (monthlyAmount * 12) / 26;
-                
+
                 if (roundingOption === 0) return biweeklyAmount;
                 return Math.ceil(biweeklyAmount / roundingOption) * roundingOption;
             };
@@ -839,7 +870,7 @@
                     const remainingNeeded = Math.max(0, expense.amount - (expense.alreadySaved || 0));
                     const fundingProgress = expense.amount > 0 ? ((expense.alreadySaved || 0) / expense.amount) * 100 : 0;
                     const isFullyFunded = fundingProgress >= 100;
-                    
+
                     return {
                         ...expense,
                         biweeklyAmount,
@@ -855,7 +886,7 @@
                     const remainingNeeded = Math.max(0, goal.targetAmount - (goal.alreadySaved || 0));
                     const fundingProgress = goal.targetAmount > 0 ? ((goal.alreadySaved || 0) / goal.targetAmount) * 100 : 0;
                     const isFullyFunded = fundingProgress >= 100;
-                    
+
                     return {
                         ...goal,
                         biweeklyAmount,
@@ -869,7 +900,7 @@
                 const totalExpenseAllocation = expenseAllocations.reduce((sum, exp) => sum + exp.biweeklyAmount, 0);
                 const totalGoalAllocation = goalAllocations.reduce((sum, goal) => sum + goal.biweeklyAmount, 0);
                 const totalBiweeklyAllocation = totalExpenseAllocation + totalGoalAllocation;
-                
+
                 const bufferAmount = totalBiweeklyAllocation * (bufferPercentage / 100);
                 const totalWithBuffer = totalBiweeklyAllocation + bufferAmount;
                 const remainingIncome = currentPay - totalWithBuffer;
@@ -897,14 +928,14 @@
                         .filter(exp => exp.categoryId === category.id)
                         .reduce((sum, exp) => sum + exp.biweeklyAmount, 0) +
                         calculations.goalAllocations
-                        .filter(goal => goal.categoryId === category.id)
-                        .reduce((sum, goal) => sum + goal.biweeklyAmount, 0),
+                            .filter(goal => goal.categoryId === category.id)
+                            .reduce((sum, goal) => sum + goal.biweeklyAmount, 0),
                     percentage: ((calculations.expenseAllocations
                         .filter(exp => exp.categoryId === category.id)
                         .reduce((sum, exp) => sum + exp.biweeklyAmount, 0) +
                         calculations.goalAllocations
-                        .filter(goal => goal.categoryId === category.id)
-                        .reduce((sum, goal) => sum + goal.biweeklyAmount, 0)) / currentPay) * 100
+                            .filter(goal => goal.categoryId === category.id)
+                            .reduce((sum, goal) => sum + goal.biweeklyAmount, 0)) / currentPay) * 100
                 }));
             }, [categories, calculations.expenseAllocations, calculations.goalAllocations, currentPay]);
 
@@ -921,20 +952,20 @@
             const deleteCategory = (categoryId) => {
                 const remainingCategories = categories.filter(cat => cat.id !== categoryId);
                 const firstCategoryId = remainingCategories[0]?.id;
-                
+
                 if (firstCategoryId) {
-                    setExpenses(expenses.map(exp => 
-                        exp.categoryId === categoryId 
+                    setExpenses(expenses.map(exp =>
+                        exp.categoryId === categoryId
                             ? { ...exp, categoryId: firstCategoryId }
                             : exp
                     ));
-                    setSavingsGoals(savingsGoals.map(goal => 
-                        goal.categoryId === categoryId 
+                    setSavingsGoals(savingsGoals.map(goal =>
+                        goal.categoryId === categoryId
                             ? { ...goal, categoryId: firstCategoryId }
                             : goal
                     ));
                 }
-                
+
                 setCategories(categories.filter(cat => cat.id !== categoryId));
                 setConfirmDelete(null);
             };
@@ -956,7 +987,7 @@
                     `Buffer (${bufferPercentage}%): ${calculations.bufferAmount.toFixed(2)}\n` +
                     `Total with buffer: ${calculations.totalWithBuffer.toFixed(2)} (${calculations.allocationPercentage.toFixed(1)}%)\n` +
                     `Remaining: ${calculations.remainingIncome.toFixed(2)} (${((calculations.remainingIncome / currentPay) * 100).toFixed(1)}%)\n\n` +
-                    exportData.map(cat => 
+                    exportData.map(cat =>
                         `${cat.category.toUpperCase()} - ${cat.biweeklyTotal.toFixed(2)}/paycheck (${cat.percentage.toFixed(1)}%)\n${cat.items.map(item => `• ${item}`).join('\n')}`
                     ).join('\n\n');
 
@@ -984,11 +1015,10 @@
                             <div className="flex space-x-2">
                                 <button
                                     onClick={() => setViewMode(viewMode === 'amount' ? 'percentage' : 'amount')}
-                                    className={`p-2 rounded-lg flex items-center space-x-2 ${
-                                        viewMode === 'percentage' 
-                                            ? 'bg-green-600 text-white' 
-                                            : `${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`
-                                    } transition-colors`}
+                                    className={`p-2 rounded-lg flex items-center space-x-2 ${viewMode === 'percentage'
+                                        ? 'bg-green-600 text-white'
+                                        : `${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`
+                                        } transition-colors`}
                                 >
                                     <Percent />
                                     <span className="text-sm hidden sm:inline">{viewMode === 'amount' ? 'Show %' : 'Show $'}</span>
@@ -998,11 +1028,10 @@
                                         setWhatIfMode(!whatIfMode);
                                         if (!whatIfMode) setWhatIfPay(takeHomePay);
                                     }}
-                                    className={`p-2 rounded-lg flex items-center space-x-2 ${
-                                        whatIfMode 
-                                            ? 'bg-blue-600 text-white' 
-                                            : `${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`
-                                    } transition-colors`}
+                                    className={`p-2 rounded-lg flex items-center space-x-2 ${whatIfMode
+                                        ? 'bg-blue-600 text-white'
+                                        : `${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`
+                                        } transition-colors`}
                                 >
                                     <Eye />
                                     <span className="text-sm hidden sm:inline">What-If</span>
@@ -1019,8 +1048,8 @@
                         {/* Configuration Panel */}
                         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 mb-8 shadow-lg`}>
                             <div className="flex justify-between items-center mb-4">
-                                <div 
-                                    className="flex items-center cursor-pointer flex-1" 
+                                <div
+                                    className="flex items-center cursor-pointer flex-1"
                                     onClick={() => setShowConfig(!showConfig)}
                                 >
                                     {showConfig ? <ChevronDown className="w-5 h-5 mr-2" /> : <ChevronRight className="w-5 h-5 mr-2" />}
@@ -1041,7 +1070,7 @@
                                     </button>
                                 </div>
                             </div>
-                            
+
                             {showConfig && (
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                     <div>
@@ -1058,7 +1087,7 @@
                                             />
                                         </div>
                                     </div>
-                                    
+
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Rounding</label>
                                         <select
@@ -1095,21 +1124,21 @@
                                     {viewMode === 'amount' ? `${calculations.totalBiweeklyAllocation.toFixed(2)}` : `${(calculations.totalBiweeklyAllocation / currentPay * 100).toFixed(1)}%`}
                                 </p>
                             </div>
-                            
+
                             <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
                                 <h3 className="text-sm font-medium text-gray-500 mb-1">Buffer Amount</h3>
                                 <p className="text-2xl font-bold text-purple-400">
                                     {viewMode === 'amount' ? `${calculations.bufferAmount.toFixed(2)}` : `${bufferPercentage}%`}
                                 </p>
                             </div>
-                            
+
                             <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
                                 <h3 className="text-sm font-medium text-gray-500 mb-1">Total with Buffer</h3>
                                 <p className="text-2xl font-bold text-pink-400">
                                     {viewMode === 'amount' ? `${calculations.totalWithBuffer.toFixed(2)}` : `${calculations.allocationPercentage.toFixed(1)}%`}
                                 </p>
                             </div>
-                            
+
                             <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
                                 <h3 className="text-sm font-medium text-gray-500 mb-1">Remaining Income</h3>
                                 <p className={`text-2xl font-bold ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -1145,10 +1174,10 @@
                                     {categorizedExpenses.map((category) => (
                                         <div key={category.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
                                             <div className="flex items-center justify-between mb-3">
-                                                <div 
-                                                    className="flex items-center cursor-pointer flex-1" 
+                                                <div
+                                                    className="flex items-center cursor-pointer flex-1"
                                                     onClick={() => {
-                                                        setCategories(prev => prev.map(cat => 
+                                                        setCategories(prev => prev.map(cat =>
                                                             cat.id === category.id ? { ...cat, collapsed: !cat.collapsed } : cat
                                                         ));
                                                     }}
@@ -1206,10 +1235,10 @@
                                                         <div className="space-y-2">
                                                             {category.expenses.map((expense) => (
                                                                 <div key={`exp-${expense.id}`} className={`border-l-4 ${priorityColors[expense.priority]} ${expense.isFullyFunded ? 'opacity-75' : ''} ${expense.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
-                                                                    <div 
+                                                                    <div
                                                                         className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                                                                         onClick={() => {
-                                                                            setExpenses(prev => prev.map(exp => 
+                                                                            setExpenses(prev => prev.map(exp =>
                                                                                 exp.id === expense.id ? { ...exp, collapsed: !exp.collapsed } : exp
                                                                             ));
                                                                         }}
@@ -1272,7 +1301,7 @@
                                                                             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                                                                 ${expense.amount} {frequencyOptions.find(f => f.value === expense.frequency)?.label.toLowerCase()}
                                                                             </div>
-                                                                            
+
                                                                             {expense.remainingNeeded > 0 && (
                                                                                 <div className="text-xs text-blue-500">
                                                                                     ${expense.remainingNeeded.toFixed(2)} remaining to save
@@ -1282,13 +1311,13 @@
                                                                     )}
                                                                 </div>
                                                             ))}
-                                                            
+
                                                             {category.goals.map((goal) => (
                                                                 <div key={`goal-${goal.id}`} className={`border-l-4 border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 ${goal.isFullyFunded ? 'opacity-75' : ''} ${goal.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
-                                                                    <div 
+                                                                    <div
                                                                         className="p-3 cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
                                                                         onClick={() => {
-                                                                            setSavingsGoals(prev => prev.map(g => 
+                                                                            setSavingsGoals(prev => prev.map(g =>
                                                                                 g.id === goal.id ? { ...g, collapsed: !g.collapsed } : g
                                                                             ));
                                                                         }}
@@ -1356,19 +1385,19 @@
                                                                             <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                                                                 Target: ${goal.targetAmount.toLocaleString()} by {goal.targetDate}
                                                                             </div>
-                                                                            
+
                                                                             <div className="space-y-1">
                                                                                 <div className="flex justify-between text-xs">
                                                                                     <span>Progress: ${goal.alreadySaved || 0} / ${goal.targetAmount.toLocaleString()}</span>
                                                                                     <span>{goal.fundingProgress.toFixed(0)}%</span>
                                                                                 </div>
                                                                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                                                                    <div 
+                                                                                    <div
                                                                                         className={`h-2 rounded-full ${goal.isFullyFunded ? 'bg-green-500' : 'bg-green-400'}`}
                                                                                         style={{ width: `${Math.min(100, goal.fundingProgress)}%` }}
                                                                                     ></div>
                                                                                 </div>
-                                                                                
+
                                                                                 {goal.remainingNeeded > 0 && (
                                                                                     <div className="text-xs text-green-600 dark:text-green-400">
                                                                                         ${goal.remainingNeeded.toLocaleString()} remaining to save
@@ -1411,13 +1440,13 @@
                                             </button>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="space-y-2">
                                         {transactions.slice(-5).reverse().map(transaction => {
                                             const account = accounts.find(acc => acc.id === transaction.accountId);
                                             const category = categories.find(cat => cat.id === transaction.categoryId);
                                             const transferAccount = transaction.transferAccountId ? accounts.find(acc => acc.id === transaction.transferAccountId) : null;
-                                            
+
                                             return (
                                                 <div key={transaction.id} className={`p-3 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
                                                     <div className="flex items-center justify-between">
@@ -1472,36 +1501,36 @@
                                     <h3 className="text-lg font-semibold mb-4 flex items-center">
                                         📊 Quick Summary
                                     </h3>
-                                    
+
                                     <div className="space-y-3 text-sm">
                                         <div className="flex justify-between items-center">
                                             <span className="flex items-center">💰 Paycheck:</span>
                                             <span className="font-medium">${currentPay.toFixed(2)}</span>
                                         </div>
-                                        
+
                                         <div className="flex justify-between">
                                             <span>Allocations:</span>
                                             <span className="font-medium">
                                                 {viewMode === 'amount' ? `${calculations.totalBiweeklyAllocation.toFixed(2)}` : `${(calculations.totalBiweeklyAllocation / currentPay * 100).toFixed(1)}%`}
                                             </span>
                                         </div>
-                                        
+
                                         <div className="flex justify-between">
                                             <span>Buffer ({bufferPercentage}%):</span>
                                             <span className="font-medium">
                                                 {viewMode === 'amount' ? `${calculations.bufferAmount.toFixed(2)}` : `${bufferPercentage}%`}
                                             </span>
                                         </div>
-                                        
+
                                         <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'}`} />
-                                        
+
                                         <div className="flex justify-between font-semibold">
                                             <span>Total Needed:</span>
                                             <span>
                                                 {viewMode === 'amount' ? `${calculations.totalWithBuffer.toFixed(2)}` : `${calculations.allocationPercentage.toFixed(1)}%`}
                                             </span>
                                         </div>
-                                        
+
                                         <div className={`flex justify-between font-semibold ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                                             <span>Remaining:</span>
                                             <span>
@@ -1537,19 +1566,19 @@
                                                 <span>Quick Stats</span>
                                             </div>
                                             <div className="grid grid-cols-2 gap-2 text-xs">
-                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-purple-900/30' : 'bg-purple-100'}`}>
+                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-purple-800' : 'bg-purple-100'}`}>
                                                     <div className="font-medium">{categorizedExpenses.length}</div>
                                                     <div className="text-purple-600 dark:text-purple-400">Categories</div>
                                                 </div>
-                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-blue-900/30' : 'bg-blue-100'}`}>
+                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-blue-800' : 'bg-blue-100'}`}>
                                                     <div className="font-medium">{expenses.length}</div>
                                                     <div className="text-blue-600 dark:text-blue-400">Expenses</div>
                                                 </div>
-                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-green-900/30' : 'bg-green-100'}`}>
+                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-green-800' : 'bg-green-100'}`}>
                                                     <div className="font-medium">{savingsGoals.length}</div>
                                                     <div className="text-green-600 dark:text-green-400">Goals</div>
                                                 </div>
-                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-yellow-900/30' : 'bg-yellow-100'}`}>
+                                                <div className={`p-2 rounded text-center ${darkMode ? 'bg-yellow-800' : 'bg-yellow-100'}`}>
                                                     <div className="font-medium">
                                                         {calculations.expenseAllocations.filter(e => e.isFullyFunded).length + calculations.goalAllocations.filter(g => g.isFullyFunded).length}
                                                     </div>
@@ -1594,7 +1623,7 @@
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                     <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
-                                    <AddTransactionForm 
+                                    <AddTransactionForm
                                         onSave={(transactionData, addAnother) => {
                                             const newTransaction = {
                                                 ...transactionData,
@@ -1616,10 +1645,10 @@
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                     <h3 className="text-lg font-semibold mb-4">Edit Transaction</h3>
-                                    <AddTransactionForm 
+                                    <AddTransactionForm
                                         transaction={editingTransaction}
                                         onSave={(transactionData) => {
-                                            setTransactions(prev => prev.map(txn => 
+                                            setTransactions(prev => prev.map(txn =>
                                                 txn.id === editingTransaction.id ? { ...txn, ...transactionData } : txn
                                             ));
                                             setEditingTransaction(null);
@@ -1636,9 +1665,9 @@
                         {/* All Transactions Modal */}
                         {showTransactions && (
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4"
-                                 onClick={(e) => e.target === e.currentTarget && setShowTransactions(false)}
-                                 onKeyDown={(e) => e.key === 'Escape' && setShowTransactions(false)}
-                                 tabIndex={-1}>
+                                onClick={(e) => e.target === e.currentTarget && setShowTransactions(false)}
+                                onKeyDown={(e) => e.key === 'Escape' && setShowTransactions(false)}
+                                tabIndex={-1}>
                                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-4xl h-[95vh] sm:h-[85vh] overflow-hidden flex flex-col`}>
                                     <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                                         <div className="flex justify-between items-center mb-3">
@@ -1652,7 +1681,7 @@
                                                 ✕
                                             </button>
                                         </div>
-                                        
+
                                         <div className="flex space-x-4 items-center">
                                             <select
                                                 value={selectedAccount}
@@ -1683,7 +1712,7 @@
                                                     const account = accounts.find(acc => acc.id === transaction.accountId);
                                                     const category = categories.find(cat => cat.id === transaction.categoryId);
                                                     const transferAccount = transaction.transferAccountId ? accounts.find(acc => acc.id === transaction.transferAccountId) : null;
-                                                    
+
                                                     return (
                                                         <div key={transaction.id} className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'}`}>
                                                             <div className="flex items-center justify-between">
@@ -1732,7 +1761,7 @@
                                             )}
                                         </div>
                                     </div>
-                                    
+
                                     <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
                                         <button
                                             onClick={() => setShowTransactions(false)}
@@ -1750,7 +1779,7 @@
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                     <h3 className="text-lg font-semibold mb-4">Add New Expense</h3>
-                                    <AddExpenseForm 
+                                    <AddExpenseForm
                                         onSave={(expenseData, addAnother) => {
                                             const newExpense = {
                                                 ...expenseData,
@@ -1780,10 +1809,10 @@
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                     <h3 className="text-lg font-semibold mb-4">Edit Expense</h3>
-                                    <AddExpenseForm 
+                                    <AddExpenseForm
                                         expense={editingExpense}
                                         onSave={(expenseData) => {
-                                            setExpenses(prev => prev.map(exp => 
+                                            setExpenses(prev => prev.map(exp =>
                                                 exp.id === editingExpense.id ? { ...exp, ...expenseData } : exp
                                             ));
                                             setEditingExpense(null);
@@ -1801,7 +1830,7 @@
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
                                     <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
-                                    <AddCategoryForm 
+                                    <AddCategoryForm
                                         onSave={(categoryData, addAnother) => {
                                             const newCategory = {
                                                 ...categoryData,
@@ -1823,10 +1852,10 @@
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                                 <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
                                     <h3 className="text-lg font-semibold mb-4">Edit Category</h3>
-                                    <AddCategoryForm 
+                                    <AddCategoryForm
                                         category={editingCategory}
                                         onSave={(categoryData) => {
-                                            setCategories(prev => prev.map(cat => 
+                                            setCategories(prev => prev.map(cat =>
                                                 cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
                                             ));
                                             setEditingCategory(null);
@@ -1882,4 +1911,5 @@
         ReactDOM.render(<BiweeklyBudgetCalculator />, document.getElementById('root'));
     </script>
 </body>
+
 </html>
