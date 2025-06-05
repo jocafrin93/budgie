@@ -2435,6 +2435,29 @@
                                 </div>
                             </div>
                         )}
+                        {/* Calendar Modal */}
+                        {showCalendar && (
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-96 p-6`}>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold">Calendar Test</h3>
+                                        <button
+                                            onClick={() => setShowCalendar(false)}
+                                            className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                    <p>Calendar modal is working!</p>
+                                    <button
+                                        onClick={() => setShowCalendar(false)}
+                                        className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                         {/* Custom Confirmation Dialog */}
                         {confirmDelete && (
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
