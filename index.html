@@ -810,53 +810,72 @@
             });
 
             // Generate recurring expense due dates
-            expenses.forEach(expense => {
-                if (expense.dueDate) {
-                    try {
-                        const [year, month, day] = expense.dueDate.split('-').map(Number);
-                        const firstDueDate = new Date(year, month - 1, day);
+expenses.forEach(expense => {
+  console.log('Processing expense:', expense.name, {
+    dueDate: expense.dueDate,
+    isRecurringExpense: expense.isRecurringExpense,
+    frequency: expense.frequency
+  });
+  
+  if (expense.dueDate) {
+    try {
+      const [year, month, day] = expense.dueDate.split('-').map(Number);
+      const firstDueDate = new Date(year, month - 1, day);
+      console.log('Parsed due date:', firstDueDate);
+      
+      if (expense.isRecurringExpense && expense.frequency && expense.frequency !== 'per-paycheck') {
+        console.log('Processing as recurring expense');
+        const freqData = frequencyOptions.find(f => f.value === expense.frequency);
+        console.log('Frequency data:', freqData);
+        
+        if (freqData && freqData.weeksPerYear > 0) {
+          const daysBetween = Math.round(365 / freqData.weeksPerYear);
+          console.log('Days between occurrences:', daysBetween);
+          
+          let currentDate = new Date(firstDueDate);
+          const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+          let occurrenceCount = 1;
 
-                        if (expense.isRecurringExpense && expense.frequency && expense.frequency !== 'per-paycheck') {
-                            const freqData = frequencyOptions.find(f => f.value === expense.frequency);
-                            if (freqData && freqData.weeksPerYear > 0) {
-                                const daysBetween = Math.round(365 / freqData.weeksPerYear);
-                                let currentDate = new Date(firstDueDate);
-                                const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
-                                let occurrenceCount = 1;
-
-                                // Generate occurrences starting from the original due date
-                                while (currentDate <= endDate && occurrenceCount <= 8) {
-                                    events.push({
-                                        date: new Date(currentDate),
-                                        type: 'expense-due',
-                                        title: `${expense.name}${occurrenceCount > 1 ? ` (#${occurrenceCount})` : ''}`,
-                                        amount: expense.amount,
-                                        description: `$${expense.amount} due`,
-                                        category: categories.find(c => c.id === expense.categoryId)?.name,
-                                        isRecurring: occurrenceCount > 1,
-                                        occurrenceNumber: occurrenceCount
-                                    });
-
-                                    currentDate = new Date(currentDate.getTime() + (daysBetween * 24 * 60 * 60 * 1000));
-                                    occurrenceCount++;
-                                }
-                            }
-                        } else {
-                            // Single occurrence
-                            events.push({
-                                date: firstDueDate,
-                                type: 'expense-due',
-                                title: expense.name,
-                                amount: expense.amount,
-                                description: `$${expense.amount} due`,
-                                category: categories.find(c => c.id === expense.categoryId)?.name
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Error processing expense date:', expense.name, error);
-                    }
-                }
+          while (currentDate <= endDate && occurrenceCount <= 8) {
+            console.log('Adding recurring event:', {
+              date: currentDate,
+              occurrence: occurrenceCount,
+              title: expense.name
             });
+            
+            events.push({
+              date: new Date(currentDate),
+              type: 'expense-due',
+              title: `${expense.name}${occurrenceCount > 1 ? ` (#${occurrenceCount})` : ''}`,
+              amount: expense.amount,
+              description: `$${expense.amount} due`,
+              category: categories.find(c => c.id === expense.categoryId)?.name,
+              isRecurring: occurrenceCount > 1,
+              occurrenceNumber: occurrenceCount
+            });
+
+            currentDate = new Date(currentDate.getTime() + (daysBetween * 24 * 60 * 60 * 1000));
+            occurrenceCount++;
+          }
+        } else {
+          console.log('No valid frequency data found');
+        }
+      } else {
+        console.log('Processing as single occurrence');
+        events.push({
+          date: firstDueDate,
+          type: 'expense-due',
+          title: expense.name,
+          amount: expense.amount,
+          description: `$${expense.amount} due`,
+          category: categories.find(c => c.id === expense.categoryId)?.name
+        });
+      }
+    } catch (error) {
+      console.error('Error processing expense date:', expense.name, error);
+    }
+  }
+});
 
 
             console.log(`Generated ${events.length} calendar events (${paycheckEvents.length} paychecks, ${savingsGoals.length} goals, ${expenses.filter(e => e.dueDate).length} expenses with due dates)`);
