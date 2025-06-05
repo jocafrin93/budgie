@@ -1489,7 +1489,9 @@
                                                             ))}
 
                                                             {category.goals.map((goal) => (
-<div key={`goal-${goal.id}`} className={`border-l-4 border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 ${goal.isFullyFunded ? 'opacity-75' : ''} ${goal.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
+                                                                <div key={`goal-${goal.id}`} className={`border-l-4 border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 ${goal.isFullyFunded ? 'opacity-75' : ''} ${goal.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
+                                                                    <div
+                                                                        className="p-3 cursor-pointer hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
                                                                         onClick={() => {
                                                                             setSavingsGoals(prev => prev.map(g =>
                                                                                 g.id === goal.id ? { ...g, collapsed: !g.collapsed } : g
