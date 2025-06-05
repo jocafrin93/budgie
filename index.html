@@ -48,7 +48,7 @@
             background: linear-gradient(to right, #7c3aed, #6b21a8);
         }
 
-        /* Custom pastel backgrounds for dark mode */
+        /* Custom pastel backgrounds for dark mode 
         .dark .bg-red-100 {
             background-color: #fecaca !important;
         }
@@ -63,7 +63,7 @@
 
         .dark .text-red-900 {
             color: #7f1d1d !important;
-        }
+        }*/
 
         .dark .text-yellow-900 {
             color: #78350f !important;
@@ -810,7 +810,6 @@
             });
 
             // Generate recurring expense due dates
-            // Generate recurring expense due dates
             expenses.forEach(expense => {
                 if (expense.dueDate) {
                     try {
@@ -861,8 +860,9 @@
             });
 
 
-            console.log(`Generated ${events.length} calendar events (${paycheckEvents.length} paychecks, ${savingsGoals.length} goals, ${expenses.filter(e => e.dueDate).length} expenses with due dates)`);
-            return events.sort((a, b) => a.date - b.date);
+            // Add this right after the expenses.forEach loop (around line 1080):
+            console.log('Generated events:', events.filter(e => e.type === 'expense-due'));
+            console.log('Expenses with due dates:', expenses.filter(e => e.dueDate));
         };
 
         const CalendarView = ({ events, darkMode, currentPay, paySchedule, savingsGoals, expenses, categories, frequencyOptions }) => {
