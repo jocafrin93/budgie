@@ -706,7 +706,92 @@
                 </div>
             );
         };
+        // Add Account Form Component
+        const AddAccountForm = ({ onSave, onCancel, darkMode, account = null }) => {
+            const [formData, setFormData] = useState({
+                name: account?.name || '',
+                type: account?.type || 'checking',
+                balance: account?.balance || '',
+                bankName: account?.bankName || ''
+            });
 
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSubmit();
+                } else if (e.key === 'Escape') {
+                    onCancel();
+                }
+            };
+
+            const handleSubmit = () => {
+                if (formData.name && formData.balance !== '') {
+                    onSave({
+                        ...formData,
+                        balance: parseFloat(formData.balance) || 0
+                    });
+                }
+            };
+
+            return (
+                <div className="space-y-4" onKeyDown={handleKeyDown}>
+                    <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Account name (e.g., 'Main Checking')"
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                        autoFocus
+                    />
+
+                    <select
+                        value={formData.type}
+                        onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                    >
+                        <option value="checking">Checking</option>
+                        <option value="savings">Savings</option>
+                        <option value="credit">Credit Card</option>
+                        <option value="cash">Cash</option>
+                        <option value="investment">Investment</option>
+                        <option value="loan">Loan</option>
+                    </select>
+
+                    <input
+                        type="text"
+                        value={formData.bankName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, bankName: e.target.value }))}
+                        placeholder="Bank name (optional)"
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                    />
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        value={formData.balance}
+                        onChange={(e) => setFormData(prev => ({ ...prev, balance: e.target.value }))}
+                        placeholder="Current balance"
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                    />
+
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={handleSubmit}
+                            className="flex-1 bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700"
+                            disabled={!formData.name || formData.balance === ''}
+                        >
+                            {account ? 'Update' : 'Add'} Account
+                        </button>
+                        <button
+                            onClick={onCancel}
+                            className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            );
+        };
         // Main Component
         const BiweeklyBudgetCalculator = () => {
             const [darkMode, setDarkMode] = useLocalStorage('budgetCalc_darkMode', true);
@@ -808,6 +893,8 @@
             const [confirmDelete, setConfirmDelete] = useState(null);
             const [preselectedCategory, setPreselectedCategory] = useState(null);
             const [selectedAccount, setSelectedAccount] = useState('all');
+            const [showAddAccount, setShowAddAccount] = useState(false);
+            const [editingAccount, setEditingAccount] = useState(null);
 
             const frequencyOptions = [
                 { value: 'weekly', label: 'Weekly', weeksPerYear: 52 },
@@ -973,7 +1060,11 @@
                 setExpenses(expenses.filter(exp => exp.id !== expenseId));
                 setConfirmDelete(null);
             };
-
+            const deleteAccount = (accountId) => {
+                setAccounts(accounts.filter(acc => acc.id !== accountId));
+                setTransactions(transactions.filter(txn => txn.accountId !== accountId && txn.transferAccountId !== accountId));
+                setConfirmDelete(null);
+            };
             const deleteCategory = (categoryId) => {
                 const remainingCategories = categories.filter(cat => cat.id !== categoryId);
                 const firstCategoryId = remainingCategories[0]?.id;
@@ -1894,7 +1985,44 @@
                                 </div>
                             </div>
                         )}
-
+                        {/* Add Account Modal */}
+                        {showAddAccount && (
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                    <h3 className="text-lg font-semibold mb-4">Add New Account</h3>
+                                    <AddAccountForm
+                                        onSave={(accountData) => {
+                                            const newAccount = {
+                                                ...accountData,
+                                                id: Math.max(...accounts.map(a => a.id), 0) + 1
+                                            };
+                                            setAccounts(prev => [...prev, newAccount]);
+                                            setShowAddAccount(false);
+                                        }}
+                                        onCancel={() => setShowAddAccount(false)}
+                                        darkMode={darkMode}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {editingAccount && (
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                    <h3 className="text-lg font-semibold mb-4">Edit Account</h3>
+                                    <AddAccountForm
+                                        account={editingAccount}
+                                        onSave={(accountData) => {
+                                            setAccounts(prev => prev.map(acc =>
+                                                acc.id === editingAccount.id ? { ...acc, ...accountData } : acc
+                                            ));
+                                            setEditingAccount(null);
+                                        }}
+                                        onCancel={() => setEditingAccount(null)}
+                                        darkMode={darkMode}
+                                    />
+                                </div>
+                            </div>
+                        )}
                         {/* Custom Confirmation Dialog */}
                         {confirmDelete && (
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -1911,6 +2039,8 @@
                                                     setConfirmDelete(null);
                                                 } else if (confirmDelete.type === 'category') {
                                                     deleteCategory(confirmDelete.id);
+                                                } else if (confirmDelete.type === 'account') {
+                                                    deleteAccount(confirmDelete.id);
                                                 } else if (confirmDelete.type === 'transaction') {
                                                     deleteTransaction(confirmDelete.id);
                                                 }
