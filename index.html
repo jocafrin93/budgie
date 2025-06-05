@@ -1,967 +1,1093 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Budget Calculator</title>
+    <title>Bi-weekly Budget Calculator</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {}
+            }
+        }
+    </script>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            transition: all 0.3s ease;
-        }
-
-        /* CSS Variables for theming */
-        :root {
-            --bg-color: #f3f4f6;
-            --surface-color: #ffffff;
-            --text-color: #1f2937;
-            --text-secondary: #6b7280;
-            --border-color: #d1d5db;
-            --primary-color: #3b82f6;
-            --primary-hover: #2563eb;
-            --danger-color: #ef4444;
-            --success-color: #10b981;
-        }
-
-        [data-theme="dark"] {
-            --bg-color: #111827;
-            --surface-color: #1f2937;
-            --text-color: #f9fafb;
-            --text-secondary: #9ca3af;
-            --border-color: #374151;
-            --primary-color: #60a5fa;
-            --primary-hover: #3b82f6;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        .header h1 {
-            margin: 0;
-            color: var(--primary-color);
-            font-size: 2.5rem;
-            font-weight: 700;
-        }
-
-        .header p {
-            margin: 5px 0 0 0;
-            color: var(--text-secondary);
-        }
-
-        .theme-toggle {
-            background: var(--surface-color);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.3s ease;
-        }
-
-        .theme-toggle:hover {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-            color: white;
-        }
-
-        .container {
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .container:hover {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transform: translateY(-1px);
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .section-header h3 {
-            margin: 0;
-            display: flex;
-            align-items: center;
-            font-size: 1.25rem;
-            color: var(--text-color);
-        }
-
-        .collapse-icon {
-            transition: transform 0.3s ease;
-            font-size: 14px;
-            margin-right: 8px;
-        }
-
-        .collapsed .collapse-icon {
-            transform: rotate(-90deg);
-        }
-
-        .section-content {
-            max-height: 2000px;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-
-        .collapsed .section-content {
-            max-height: 0;
-        }
-
-        input,
-        select,
-        button {
-            padding: 12px 16px;
-            margin: 6px;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--surface-color);
-            color: var(--text-color);
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        input:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        button {
-            background: var(--primary-color);
-            color: white;
-            border: 2px solid var(--primary-color);
-            cursor: pointer;
-            font-weight: 600;
-        }
-
-        button:hover {
-            background: var(--primary-hover);
-            border-color: var(--primary-hover);
-            transform: translateY(-1px);
-        }
-
-        .btn-danger {
-            background: var(--danger-color);
-            border-color: var(--danger-color);
-            padding: 6px 12px;
-            font-size: 12px;
-        }
-
-        .expense-item,
-        .account-item,
-        .transaction-item {
-            background: var(--surface-color);
-            border: 1px solid var(--border-color);
-            padding: 16px;
-            margin: 8px 0;
-            border-radius: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        .expense-item:hover,
-        .account-item:hover,
-        .transaction-item:hover {
-            background: var(--bg-color);
-            transform: translateX(4px);
-        }
-
-        .category-header {
-            background: linear-gradient(135deg, var(--category-color, #3b82f6), var(--category-color, #3b82f6));
-            color: white;
-            padding: 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .form-row {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .form-row input,
-        .form-row select {
-            flex: 1;
-            min-width: 150px;
-        }
-
-        .summary {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
-            color: white;
-            padding: 24px;
-            border-radius: 12px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
-        }
-
-        .summary-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 12px;
-            border-radius: 8px;
-            backdrop-filter: blur(10px);
-        }
-
-        .balance-positive {
-            color: var(--success-color);
-            font-weight: 600;
-        }
-
-        .balance-negative {
-            color: var(--danger-color);
-            font-weight: 600;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 12px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .form-row {
-                flex-direction: column;
-            }
-
-            .form-row input,
-            .form-row select {
-                min-width: 100%;
-            }
-
-            .container {
-                padding: 16px;
-            }
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-overlay.show {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--surface-color);
-            border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-            animation: modalSlideIn 0.3s ease-out;
-        }
-
-        @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-50px) scale(0.9);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 24px 0 24px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            color: var(--text-color);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: var(--text-secondary);
-            padding: 0;
-            margin: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-        }
-
-        .modal-close:hover {
-            background: var(--border-color);
-            color: var(--text-color);
-        }
-
-        .modal-body {
-            padding: 0 24px 24px 24px;
-        }
+        /* Custom gradient backgrounds for categories */
+        .bg-gradient-to-r.from-purple-500.to-pink-500 { background: linear-gradient(to right, #8b5cf6, #ec4899); }
+        .bg-gradient-to-r.from-pink-500.to-blue-500 { background: linear-gradient(to right, #ec4899, #3b82f6); }
+        .bg-gradient-to-r.from-orange-500.to-red-600 { background: linear-gradient(to right, #f97316, #dc2626); }
+        .bg-gradient-to-r.from-green-500.to-yellow-400 { background: linear-gradient(to right, #22c55e, #facc15); }
+        .bg-gradient-to-r.from-pink-500.to-red-500 { background: linear-gradient(to right, #ec4899, #ef4444); }
+        .bg-gradient-to-r.from-yellow-400.to-orange-500 { background: linear-gradient(to right, #facc15, #f97316); }
+        .bg-gradient-to-r.from-purple-600.to-teal-500 { background: linear-gradient(to right, #9333ea, #14b8a6); }
+        .bg-gradient-to-r.from-violet-600.to-purple-800 { background: linear-gradient(to right, #7c3aed, #6b21a8); }
     </style>
 </head>
-
 <body>
-    <div class="header">
-        <div>
-            <h1>Budgie</h1>
-            <p>Professional budget planning made simple</p>
-        </div>
-        <button class="theme-toggle" onclick="toggleTheme()" id="themeToggle">🌙</button>
-    </div>
-    
-    <div class="container">
-        <div class="section-header" onclick="toggleSection('income')">
-            <h3><span class="collapse-icon">▼</span>Income Settings</h3>
-            <small>Configure your bi-weekly take-home pay</small>
-        </div>
-        <div class="section-content" id="income-content">
-            <div class="form-row">
-                <label>Bi-weekly Take-home Pay: $</label>
-                <input type="number" id="payAmount" value="2800" placeholder="Enter your pay">
-            </div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="section-header" onclick="toggleSection('budget')">
-            <h3><span class="collapse-icon">▼</span>Budget Items</h3>
-            <small>Manage your categories and planned expenses</small>
-        </div>
-        <div class="section-content" id="budget-content">
-            <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="openCategoryModal()">+ Add Category</button>
-                <button onclick="openExpenseModal()">+ Add Expense</button>
-            </div>
-            <div id="categoriesList"></div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="section-header" onclick="toggleSection('accounts')">
-            <h3><span class="collapse-icon">▼</span>Accounts</h3>
-            <small>Track balances across your accounts</small>
-        </div>
-        <div class="section-content" id="accounts-content">
-            <div id="accountsList"></div>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div class="section-header" onclick="toggleSection('transactions')">
-            <h3><span class="collapse-icon">▼</span>Transactions</h3>
-            <small>Record your spending and track activity</small>
-        </div>
-        <div class="section-content" id="transactions-content">
-            <div style="margin-bottom: 20px;">
-                <button onclick="openTransactionModal()">+ Add Transaction</button>
-            </div>
-            <div id="transactionsList"></div>
-        </div>
-    </div>
-    
-    <div class="container summary">
-        <div>Total Bi-weekly Allocation: $<span id="totalAllocation">0</span></div>
-        <div>Remaining Income: $<span id="remainingIncome">2800</span></div>
-    </div>
+    <div id="root"></div>
 
-    <script>
-        const STORAGE_KEY = 'my-budget-data';
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
 
-        function saveData() {
-            const dataToSave = {
-                expenses: expenses,
-                currentPay: currentPay,
-                categories: categories,
-                accounts: accounts,
-                transactions: transactions
+        // Lucide React Icons (simplified)
+        const Plus = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>;
+        const Download = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>;
+        const Moon = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>;
+        const Sun = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>;
+        const Edit2 = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>;
+        const Trash2 = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>;
+        const Calculator = () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>;
+        const Target = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>;
+        const DollarSign = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>;
+        const ChevronDown = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="6,9 12,15 18,9"/></svg>;
+        const ChevronRight = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg>;
+        const ChevronUp = () => <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="18,15 12,9 6,15"/></svg>;
+        const Eye = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
+        const Percent = () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>;
+
+        // LocalStorage utilities
+        const useLocalStorage = (key, initialValue) => {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.error(`Error reading localStorage key "${key}":`, error);
+                    return initialValue;
+                }
+            });
+
+            const setValue = (value) => {
+                try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                } catch (error) {
+                    console.error(`Error setting localStorage key "${key}":`, error);
+                }
             };
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-                console.log('Data saved successfully');
-            } catch (error) {
-                console.error('Failed to save data:', error);
-            }
-        }
 
-        function loadData() {
-            try {
-                const savedData = localStorage.getItem(STORAGE_KEY);
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    expenses = data.expenses || [];
-                    currentPay = data.currentPay || 2800;
-                    categories = data.categories || [
-                        { id: 1, name: 'Personal Care', color: '#9333ea' },
-                        { id: 2, name: 'Pet Care', color: '#059669' },
-                        { id: 3, name: 'Household', color: '#dc2626' }
-                    ];
-                    accounts = data.accounts || [
-                        { id: 1, name: 'Main Checking', type: 'checking', balance: 3500 },
-                        { id: 2, name: 'Savings', type: 'savings', balance: 8200 },
-                        { id: 3, name: 'Credit Card', type: 'credit', balance: -450 }
-                    ];
-                    transactions = data.transactions || [];
-                    console.log('Data loaded successfully');
-                    return true;
-                }
-            } catch (error) {
-                console.error('Failed to load data:', error);
-            }
-            return false;
-        }
+            return [storedValue, setValue];
+        };
 
-        let expenses = [];
-        let currentPay = 2800;
-        let categories = [
-            { id: 1, name: 'Personal Care', color: '#9333ea' },
-            { id: 2, name: 'Pet Care', color: '#059669' },
-            { id: 3, name: 'Household', color: '#dc2626' }
-        ];
-        let accounts = [
-            { id: 1, name: 'Main Checking', type: 'checking', balance: 3500 },
-            { id: 2, name: 'Savings', type: 'savings', balance: 8200 },
-            { id: 3, name: 'Credit Card', type: 'credit', balance: -450 }
-        ];
-        let transactions = [];
-
-        document.getElementById('payAmount').addEventListener('input', function () {
-            currentPay = parseFloat(this.value) || 0;
-            updateSummary();
-            saveData();
-        });
-
-        function calculateBiweeklyAmount(amount, frequency) {
-            switch (frequency) {
-                case 'weekly': return amount * 2;
-                case 'bi-weekly': return amount;
-                case 'monthly': return amount * 12 / 26;
-                case 'every-6-weeks': return amount * 8.67 / 26;
-                case 'every-8-weeks': return amount * 6.5 / 26;
-                default: return amount;
-            }
-        }
-
-        function updateExpensesList() {
-            const container = document.getElementById('categoriesList');
-            container.innerHTML = '';
-
-            categories.forEach(category => {
-                const categoryExpenses = expenses.filter(expense => expense.categoryId === category.id);
-                
-                const categoryDiv = document.createElement('div');
-                categoryDiv.style.marginBottom = '20px';
-
-                const categoryHeader = document.createElement('div');
-                categoryHeader.style.cssText = `
-                    background-color: ${category.color};
-                    color: white;
-                    padding: 10px;
-                    border-radius: 5px;
-                    font-weight: bold;
-                    margin-bottom: 10px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                `;
-                categoryHeader.innerHTML = `
-                    <span>${category.name} (${categoryExpenses.length} items)</span>
-                    <button onclick="deleteCategory(${category.id})" class="btn-danger" style="margin: 0;">Delete</button>
-                `;
-
-                categoryDiv.appendChild(categoryHeader);
-
-                categoryExpenses.forEach(expense => {
-                    const expenseDiv = document.createElement('div');
-                    expenseDiv.className = 'expense-item';
-                    expenseDiv.style.marginLeft = '20px';
-                    expenseDiv.innerHTML = `
-                        <div>
-                            <strong>${expense.name}</strong><br>
-                            $${expense.amount} ${expense.frequency}
-                        </div>
-                        <div>
-                            $${expense.biweeklyAmount.toFixed(2)}/bi-weekly
-                            <button onclick="deleteExpense(${expense.id})" style="margin-left: 10px; background-color: #cc0000;">Delete</button>
-                        </div>
-                    `;
-                    categoryDiv.appendChild(expenseDiv);
-                });
-
-                container.appendChild(categoryDiv);
+        // Transaction Form Component
+        const AddTransactionForm = ({ onSave, onCancel, categories, accounts, darkMode, transaction = null }) => {
+            const [formData, setFormData] = useState({
+                date: transaction?.date || new Date().toISOString().split('T')[0],
+                payee: transaction?.payee || '',
+                amount: transaction?.amount || '',
+                categoryId: transaction?.categoryId || categories[0]?.id || 1,
+                accountId: transaction?.accountId || accounts[0]?.id || 1,
+                memo: transaction?.memo || '',
+                cleared: transaction?.cleared || false,
+                transfer: transaction?.transfer || false,
+                transferAccountId: transaction?.transferAccountId || ''
             });
 
-            if (categories.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666;">No categories yet. Add one above!</p>';
-            }
-        }
-
-        function deleteExpense(id) {
-            expenses = expenses.filter(expense => expense.id !== id);
-            updateExpensesList();
-            updateSummary();
-            saveData();
-        }
-
-        function updateSummary() {
-            const total = expenses.reduce((sum, expense) => sum + expense.biweeklyAmount, 0);
-            const remaining = currentPay - total;
-            document.getElementById('totalAllocation').textContent = total.toFixed(2);
-            document.getElementById('remainingIncome').textContent = remaining.toFixed(2);
-        }
-
-        function populateTransactionCategoryDropdown() {
-            const dropdown = document.getElementById('transactionCategory');
-            if (dropdown) {
-                dropdown.innerHTML = '';
-                categories.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category.id;
-                    option.textContent = category.name;
-                    dropdown.appendChild(option);
-                });
-            }
-        }
-
-        function deleteCategory(categoryId) {
-            if (categories.length <= 1) {
-                alert('You must have at least one category!');
-                return;
-            }
-
-            if (confirm('Delete this category? Expenses will be moved to the first category.')) {
-                const remainingCategories = categories.filter(cat => cat.id !== categoryId);
-                const firstCategoryId = remainingCategories[0].id;
-
-                expenses.forEach(expense => {
-                    if (expense.categoryId === categoryId) {
-                        expense.categoryId = firstCategoryId;
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        handleSubmit(true);
+                    } else {
+                        handleSubmit(false);
                     }
-                });
-
-                categories = remainingCategories;
-                updateExpensesList();
-                populateTransactionCategoryDropdown();
-                saveData();
-            }
-        }
-
-        function updateAccountsList() {
-            const container = document.getElementById('accountsList');
-            container.innerHTML = '';
-
-            accounts.forEach(account => {
-                const div = document.createElement('div');
-                div.className = 'expense-item';
-                const balanceColor = account.balance >= 0 ? '#059669' : '#dc2626';
-
-                div.innerHTML = `
-                    <div>
-                        <strong>${account.name}</strong><br>
-                        <small>${account.type}</small>
-                    </div>
-                    <div style="color: ${balanceColor}; font-weight: bold;">
-                        $${Math.abs(account.balance).toFixed(2)}
-                        ${account.type === 'credit' && account.balance < 0 ? ' owed' : ''}
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function updateAccountDropdown() {
-            const dropdown = document.getElementById('transactionAccount');
-            if (dropdown) {
-                dropdown.innerHTML = '';
-                accounts.forEach(account => {
-                    const option = document.createElement('option');
-                    option.value = account.id;
-                    option.textContent = account.name;
-                    dropdown.appendChild(option);
-                });
-            }
-        }
-
-        function setDefaultDate() {
-            const today = new Date().toISOString().split('T')[0];
-            const dateInput = document.getElementById('transactionDate');
-            if (dateInput) {
-                dateInput.value = today;
-            }
-        }
-
-        function addTransaction() {
-            const date = document.getElementById('transactionDate').value;
-            const payee = document.getElementById('transactionPayee').value;
-            const amount = parseFloat(document.getElementById('transactionAmount').value);
-            const accountId = parseInt(document.getElementById('transactionAccount').value);
-            const categoryId = parseInt(document.getElementById('transactionCategory').value);
-
-            if (date && payee && amount && accountId && categoryId) {
-                const transaction = {
-                    id: Date.now(),
-                    date: date,
-                    payee: payee,
-                    amount: amount,
-                    accountId: accountId,
-                    categoryId: categoryId
-                };
-
-                transactions.push(transaction);
-                document.getElementById('transactionPayee').value = '';
-                document.getElementById('transactionAmount').value = '';
-                updateTransactionsList();
-                saveData();
-            }
-        }
-
-        function updateTransactionsList() {
-            const container = document.getElementById('transactionsList');
-            container.innerHTML = '';
-
-            const recentTransactions = transactions.slice(-10).reverse();
-
-            recentTransactions.forEach(transaction => {
-                const account = accounts.find(acc => acc.id === transaction.accountId);
-                const category = categories.find(cat => cat.id === transaction.categoryId);
-
-                const div = document.createElement('div');
-                div.className = 'expense-item';
-                div.innerHTML = `
-                    <div>
-                        <strong>${transaction.payee}</strong><br>
-                        <small>${transaction.date} • ${account?.name} • ${category?.name}</small>
-                    </div>
-                    <div>
-                        $${transaction.amount.toFixed(2)}
-                        <button onclick="deleteTransaction(${transaction.id})" style="margin-left: 10px; background-color: #cc0000; padding: 2px 6px; font-size: 12px;">Delete</button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-
-            if (transactions.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666;">No transactions yet.</p>';
-            }
-        }
-
-        function deleteTransaction(id) {
-            transactions = transactions.filter(transaction => transaction.id !== id);
-            updateTransactionsList();
-            saveData();
-        }
-
-        function toggleTheme() {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            const toggleButton = document.getElementById('themeToggle');
-
-            document.documentElement.setAttribute('data-theme', newTheme);
-            toggleButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-            localStorage.setItem('theme-preference', newTheme);
-        }
-
-        function initializeSections() {
-            const sections = ['budget', 'income', 'accounts', 'transactions'];
-            sections.forEach(sectionId => {
-                const content = document.getElementById(sectionId + '-content');
-                if (content) {
-                    content.style.maxHeight = content.scrollHeight + 'px';
+                } else if (e.key === 'Escape') {
+                    onCancel();
                 }
+            };
+
+            const handleSubmit = (addAnother = false) => {
+                if (formData.date && formData.amount && (formData.payee || formData.transfer)) {
+                    onSave({
+                        ...formData,
+                        amount: parseFloat(formData.amount),
+                        categoryId: formData.transfer ? null : parseInt(formData.categoryId),
+                        accountId: parseInt(formData.accountId),
+                        transferAccountId: formData.transfer ? parseInt(formData.transferAccountId) : null
+                    }, addAnother);
+                    
+                    if (addAnother) {
+                        setFormData({
+                            date: formData.date,
+                            payee: '',
+                            amount: '',
+                            categoryId: formData.categoryId,
+                            accountId: formData.accountId,
+                            memo: '',
+                            cleared: false,
+                            transfer: false,
+                            transferAccountId: ''
+                        });
+                        setTimeout(() => {
+                            const payeeInput = document.querySelector('input[placeholder="Payee"]');
+                            if (payeeInput) payeeInput.focus();
+                        }, 100);
+                    }
+                }
+            };
+
+            return (
+                <div className="space-y-4" onKeyDown={handleKeyDown}>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Date</label>
+                            <input
+                                type="date"
+                                value={formData.date}
+                                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                style={darkMode ? { colorScheme: 'dark' } : {}}
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Account</label>
+                            <select
+                                value={formData.accountId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
+                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                            >
+                                {accounts.map(account => (
+                                    <option key={account.id} value={account.id}>{account.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center">
+                        <input
+                            type="checkbox"
+                            id="transferCheckbox"
+                            checked={formData.transfer}
+                            onChange={(e) => setFormData(prev => ({ ...prev, transfer: e.target.checked, payee: '', categoryId: categories[0]?.id }))}
+                            className="mr-2"
+                        />
+                        <label htmlFor="transferCheckbox" className="text-sm">This is a transfer between accounts</label>
+                    </div>
+
+                    {formData.transfer ? (
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Transfer To Account</label>
+                            <select
+                                value={formData.transferAccountId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, transferAccountId: e.target.value }))}
+                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                            >
+                                <option value="">Select account...</option>
+                                {accounts.filter(acc => acc.id !== parseInt(formData.accountId)).map(account => (
+                                    <option key={account.id} value={account.id}>{account.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Payee</label>
+                                <input
+                                    type="text"
+                                    value={formData.payee}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, payee: e.target.value }))}
+                                    placeholder="Payee"
+                                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                    autoFocus={!transaction}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1">Category</label>
+                                <select
+                                    value={formData.categoryId}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                >
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </>
+                    )}
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Amount</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            value={formData.amount}
+                            onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                            placeholder="0.00"
+                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1">Memo (Optional)</label>
+                        <input
+                            type="text"
+                            value={formData.memo}
+                            onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
+                            placeholder="Additional details..."
+                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                        />
+                    </div>
+
+                    <div className="flex items-center">
+                        <input
+                            type="checkbox"
+                            id="clearedCheckbox"
+                            checked={formData.cleared}
+                            onChange={(e) => setFormData(prev => ({ ...prev, cleared: e.target.checked }))}
+                            className="mr-2"
+                        />
+                        <label htmlFor="clearedCheckbox" className="text-sm">Cleared/Reconciled</label>
+                    </div>
+
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => handleSubmit(false)}
+                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                            disabled={!formData.date || !formData.amount || (!formData.payee && !formData.transfer)}
+                        >
+                            {transaction ? 'Update' : 'Add'} Transaction
+                        </button>
+                        <button
+                            onClick={() => handleSubmit(true)}
+                            className="bg-green-600 text-white py-2 px-3 rounded hover:bg-green-700"
+                            disabled={!formData.date || !formData.amount || (!formData.payee && !formData.transfer)}
+                            title="Save and add another (Shift+Enter)"
+                        >
+                            +
+                        </button>
+                        <button
+                            onClick={onCancel}
+                            className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                    
+                    <div className="text-xs text-gray-500 mt-2">
+                        💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
+                    </div>
+                </div>
+            );
+        };
+
+        // Add Expense Form Component
+        const AddExpenseForm = ({ onSave, onCancel, categories, darkMode, expense = null, currentPay, preselectedCategory }) => {
+            const [formData, setFormData] = useState({
+                name: expense?.name || '',
+                amount: expense?.amount || '',
+                percentage: '',
+                inputMode: 'amount',
+                frequency: expense?.frequency || 'monthly',
+                categoryId: expense?.categoryId || preselectedCategory || categories[0]?.id || 1,
+                priority: expense?.priority || 'important',
+                alreadySaved: expense?.alreadySaved || 0,
+                dueDate: expense?.dueDate || '',
+                allocationPaused: expense?.allocationPaused || false
             });
-        }
 
-        function toggleSection(sectionId) {
-            const content = document.getElementById(sectionId + '-content');
-            const header = content.previousElementSibling;
-            const icon = header.querySelector('.collapse-icon');
+            useEffect(() => {
+                if (formData.inputMode === 'percentage' && formData.percentage && !formData.amount) {
+                    const calculatedAmount = (parseFloat(formData.percentage) / 100) * currentPay;
+                    setFormData(prev => ({ ...prev, amount: calculatedAmount.toFixed(2) }));
+                } else if (formData.inputMode === 'amount' && formData.amount && !formData.percentage) {
+                    const calculatedPercentage = (parseFloat(formData.amount) / currentPay) * 100;
+                    setFormData(prev => ({ ...prev, percentage: calculatedPercentage.toFixed(2) }));
+                }
+            }, [formData.percentage, formData.amount, formData.inputMode, currentPay]);
 
-            if (content.style.maxHeight === '0px' || content.style.maxHeight === '') {
-                content.style.maxHeight = content.scrollHeight + 'px';
-                icon.textContent = '▼';
-                header.parentElement.classList.remove('collapsed');
-            } else {
-                content.style.maxHeight = '0px';
-                icon.textContent = '▶';
-                header.parentElement.classList.add('collapsed');
-            }
-        }
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        handleSubmit(true);
+                    } else {
+                        handleSubmit(false);
+                    }
+                } else if (e.key === 'Escape') {
+                    onCancel();
+                }
+            };
 
-        function loadTheme() {
-            const savedTheme = localStorage.getItem('theme-preference') || 'light';
-            const toggleButton = document.getElementById('themeToggle');
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            toggleButton.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-        }
+            const handleSubmit = (addAnother = false) => {
+                if (formData.name && (formData.amount || formData.percentage)) {
+                    const finalAmount = formData.inputMode === 'percentage' 
+                        ? (parseFloat(formData.percentage) / 100) * currentPay
+                        : parseFloat(formData.amount);
+                        
+                    onSave({
+                        ...formData,
+                        amount: finalAmount,
+                        categoryId: parseInt(formData.categoryId),
+                        alreadySaved: parseFloat(formData.alreadySaved) || 0
+                    }, addAnother);
+                    
+                    if (addAnother) {
+                        setFormData({
+                            name: '',
+                            amount: '',
+                            percentage: '',
+                            inputMode: formData.inputMode,
+                            frequency: formData.frequency,
+                            categoryId: formData.categoryId,
+                            priority: formData.priority,
+                            alreadySaved: 0,
+                            dueDate: '',
+                            allocationPaused: false
+                        });
+                        setTimeout(() => {
+                            const nameInput = document.querySelector('input[placeholder="Expense name"]');
+                            if (nameInput) nameInput.focus();
+                        }, 100);
+                    }
+                }
+            };
 
-        function openModal(title, contentHtml) {
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalBody').innerHTML = contentHtml;
-            document.getElementById('modalOverlay').classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
+            const remainingNeeded = Math.max(0, (parseFloat(formData.amount) || 0) - (parseFloat(formData.alreadySaved) || 0));
+            const fundingProgress = formData.amount > 0 ? ((parseFloat(formData.alreadySaved) || 0) / parseFloat(formData.amount)) * 100 : 0;
 
-        function closeModal() {
-            document.getElementById('modalOverlay').classList.remove('show');
-            document.body.style.overflow = 'auto';
-        }
+            return (
+                <div className="space-y-4" onKeyDown={handleKeyDown}>
+                    <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Expense name"
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                        autoFocus
+                    />
+                    
+                    <div className="space-y-2">
+                        <div className="flex space-x-2">
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, inputMode: 'amount', percentage: '' }))}
+                                className={`flex-1 py-1 px-3 rounded text-sm ${
+                                    formData.inputMode === 'amount' 
+                                        ? 'bg-blue-600 text-white' 
+                                        : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                                }`}
+                            >
+                                $ Amount
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, inputMode: 'percentage', amount: '' }))}
+                                className={`flex-1 py-1 px-3 rounded text-sm ${
+                                    formData.inputMode === 'percentage' 
+                                        ? 'bg-green-600 text-white' 
+                                        : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                                }`}
+                            >
+                                % of Paycheck
+                            </button>
+                        </div>
+                        
+                        {formData.inputMode === 'amount' ? (
+                            <input
+                                type="number"
+                                step="0.01"
+                                value={formData.amount}
+                                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value, percentage: '' }))}
+                                placeholder="Amount"
+                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                            />
+                        ) : (
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={formData.percentage}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, percentage: e.target.value, amount: '' }))}
+                                    placeholder="Percentage of paycheck"
+                                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                />
+                                <span className="absolute right-3 top-3 text-gray-400">%</span>
+                            </div>
+                        )}
+                        
+                        {formData.percentage && formData.inputMode === 'percentage' && (
+                            <div className="text-xs text-gray-500">
+                                ≈ ${((parseFloat(formData.percentage) / 100) * currentPay).toFixed(2)} per paycheck
+                            </div>
+                        )}
+                        {formData.amount && formData.inputMode === 'amount' && (
+                            <div className="text-xs text-gray-500">
+                                ≈ {((parseFloat(formData.amount) / currentPay) * 100).toFixed(1)}% of paycheck
+                            </div>
+                        )}
+                    </div>
 
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
-        });
-        
-        function openCategoryModal() {
-            const modalContent = `
-                <div class="form-row">
-                    <input type="text" id="modalCategoryName" placeholder="Category name" style="flex: 1;">
-                    <input type="color" id="modalCategoryColor" value="#3b82f6" style="width: 60px;">
-                </div>
-                <div style="margin-top: 20px; text-align: right;">
-                    <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
-                    <button onclick="addCategoryFromModal()">Add Category</button>
-                </div>
-            `;
-
-            openModal('Add New Category', modalContent);
-            setTimeout(() => {
-                document.getElementById('modalCategoryName').focus();
-            }, 100);
-        }
-
-        function addCategoryFromModal() {
-            const name = document.getElementById('modalCategoryName').value;
-            const color = document.getElementById('modalCategoryColor').value;
-
-            if (name) {
-                const newCategory = {
-                    id: Date.now(),
-                    name: name,
-                    color: color
-                };
-
-                categories.push(newCategory);
-                updateExpensesList();
-                populateTransactionCategoryDropdown();
-
-                const categoriesContent = document.getElementById('budget-content');
-                categoriesContent.style.maxHeight = categoriesContent.scrollHeight + 'px';
-
-                saveData();
-                closeModal();
-            } else {
-                alert('Please enter a category name');
-            }
-        }
-        
-        function openExpenseModal() {
-            const modalContent = `
-                <div class="form-row">
-                    <input type="text" id="modalExpenseName" placeholder="Expense name (e.g., Hair cut)" style="flex: 1;">
-                    <input type="number" id="modalExpenseAmount" placeholder="Amount">
-                </div>
-                <div class="form-row">
-                    <select id="modalExpenseCategory" style="flex: 1;">
-                        ${categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
-                    </select>
-                    <select id="modalExpenseFrequency" style="flex: 1;">
+                    <select
+                        name="frequency"
+                        value={formData.frequency}
+                        onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                    >
                         <option value="weekly">Weekly</option>
                         <option value="bi-weekly">Bi-weekly</option>
+                        <option value="every-3-weeks">Every 3 weeks</option>
                         <option value="monthly">Monthly</option>
                         <option value="every-6-weeks">Every 6 weeks</option>
+                        <option value="every-7-weeks">Every 7 weeks</option>
                         <option value="every-8-weeks">Every 8 weeks</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="annually">Annually</option>
+                        <option value="per-paycheck">Per Paycheck (Direct)</option>
                     </select>
+
+                    <div className="space-y-3 p-4 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100">💰 Funding Status</h4>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Already Saved</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.alreadySaved}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, alreadySaved: e.target.value }))}
+                                    placeholder="0.00"
+                                    className={`w-full p-2 border rounded text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
+                                />
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Due Date (Optional)</label>
+                                <input
+                                    type="date"
+                                    value={formData.dueDate}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                                    className={`w-full p-2 border rounded text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
+                                    style={darkMode ? { colorScheme: 'dark' } : {}}
+                                />
+                            </div>
+                        </div>
+
+                        {formData.amount && formData.alreadySaved > 0 && (
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                                    <span>Progress: ${parseFloat(formData.alreadySaved || 0).toFixed(2)} / ${parseFloat(formData.amount || 0).toFixed(2)}</span>
+                                    <span className="font-medium">{fundingProgress.toFixed(0)}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                    <div 
+                                        className={`h-2 rounded-full ${fundingProgress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                                        style={{ width: `${Math.min(100, fundingProgress)}%` }}
+                                    ></div>
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                    Remaining needed: ${remainingNeeded.toFixed(2)}
+                                    {fundingProgress >= 100 && <span className="text-green-600 dark:text-green-400 font-medium"> ✓ Fully funded!</span>}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="pauseAllocation"
+                                checked={formData.allocationPaused}
+                                onChange={(e) => setFormData(prev => ({ ...prev, allocationPaused: e.target.checked }))}
+                                className="mr-2"
+                            />
+                            <label htmlFor="pauseAllocation" className="text-sm text-gray-700 dark:text-gray-300">
+                                Pause bi-weekly allocation (I'll handle this manually)
+                            </label>
+                        </div>
+                    </div>
+
+                    <select
+                        name="categoryId"
+                        value={formData.categoryId}
+                        onChange={(e) => setFormData(prev => ({ ...prev, categoryId: parseInt(e.target.value) }))}
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                    >
+                        {categories.map(cat => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={formData.priority}
+                        onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                    >
+                        <option value="essential">Essential</option>
+                        <option value="important">Important</option>
+                        <option value="nice-to-have">Nice to Have</option>
+                    </select>
+
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => handleSubmit(false)}
+                            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                            disabled={!formData.name || (!formData.amount && !formData.percentage)}
+                        >
+                            {expense ? 'Update' : 'Add'} Expense
+                        </button>
+                        <button
+                            onClick={() => handleSubmit(true)}
+                            className="bg-green-600 text-white py-2 px-3 rounded hover:bg-green-700"
+                            disabled={!formData.name || (!formData.amount && !formData.percentage)}
+                            title="Save and add another (Shift+Enter)"
+                        >
+                            +
+                        </button>
+                        <button
+                            onClick={onCancel}
+                            className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                    
+                    <div className="text-xs text-gray-500 mt-2">
+                        💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
+                    </div>
                 </div>
-                <div style="margin-top: 20px; text-align: right;">
-                    <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
-                    <button onclick="addExpenseFromModal()">Add Expense</button>
+            );
+        };
+
+        // Add Category Form Component
+        const AddCategoryForm = ({ onSave, onCancel, categoryColors, darkMode, category = null }) => {
+            const [formData, setFormData] = useState({
+                name: category?.name || '',
+                color: category?.color || categoryColors[0]
+            });
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        handleSubmit(true);
+                    } else {
+                        handleSubmit(false);
+                    }
+                } else if (e.key === 'Escape') {
+                    onCancel();
+                }
+            };
+
+            const handleSubmit = (addAnother = false) => {
+                if (formData.name) {
+                    onSave(formData, addAnother);
+                    if (addAnother) {
+                        setFormData({
+                            name: '',
+                            color: categoryColors[0]
+                        });
+                        setTimeout(() => {
+                            const nameInput = document.querySelector('input[placeholder="Category name"]');
+                            if (nameInput) nameInput.focus();
+                        }, 100);
+                    }
+                }
+            };
+
+            return (
+                <div className="space-y-4" onKeyDown={handleKeyDown}>
+                    <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        placeholder="Category name"
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                        autoFocus
+                    />
+                    
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Color</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            {categoryColors.map((color, index) => (
+                                <button
+                                    key={color}
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, color }))}
+                                    className={`h-12 rounded-lg ${color} border-3 ${formData.color === color ? 'border-blue-500 ring-2 ring-blue-300' : 'border-transparent hover:border-gray-400'} shadow-lg transition-all duration-200 hover:scale-105 flex items-center justify-center`}
+                                    title={`Aurora Gradient ${index + 1}`}
+                                >
+                                    <div className="w-full h-full rounded-md opacity-80"></div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={() => handleSubmit(false)}
+                            className="flex-1 bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700"
+                            disabled={!formData.name}
+                        >
+                            {category ? 'Update' : 'Add'} Category
+                        </button>
+                        <button
+                            onClick={() => handleSubmit(true)}
+                            className="bg-green-600 text-white py-2 px-3 rounded hover:bg-green-700"
+                            disabled={!formData.name}
+                            title="Save and add another (Shift+Enter)"
+                        >
+                            +
+                        </button>
+                        <button
+                            onClick={onCancel}
+                            className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                    
+                    <div className="text-xs text-gray-500 mt-2">
+                        💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
+                    </div>
                 </div>
-            `;
+            );
+        };
 
-            openModal('Add New Expense', modalContent);
-            setTimeout(() => {
-                document.getElementById('modalExpenseName').focus();
-            }, 100);
-        }
+        // Main Component
+        const BiweeklyBudgetCalculator = () => {
+            const [darkMode, setDarkMode] = useLocalStorage('budgetCalc_darkMode', true);
+            const [takeHomePay, setTakeHomePay] = useLocalStorage('budgetCalc_takeHomePay', 2800);
+            const [roundingOption, setRoundingOption] = useLocalStorage('budgetCalc_roundingOption', 5);
+            const [bufferPercentage, setBufferPercentage] = useLocalStorage('budgetCalc_bufferPercentage', 7);
+            const [whatIfMode, setWhatIfMode] = useState(false);
+            const [whatIfPay, setWhatIfPay] = useState(2800);
+            const [viewMode, setViewMode] = useLocalStorage('budgetCalc_viewMode', 'amount');
+            
+            const [categories, setCategories] = useLocalStorage('budgetCalc_categories', [
+                { id: 1, name: 'Personal Care', color: 'bg-gradient-to-r from-purple-500 to-pink-500', collapsed: false },
+                { id: 2, name: 'Pet Care', color: 'bg-gradient-to-r from-green-500 to-blue-500', collapsed: false },
+                { id: 3, name: 'Savings Goals', color: 'bg-gradient-to-r from-purple-600 to-indigo-600', collapsed: false }
+            ]);
 
-        function addExpenseFromModal() {
-            const name = document.getElementById('modalExpenseName').value;
-            const amount = parseFloat(document.getElementById('modalExpenseAmount').value);
-            const categoryId = parseInt(document.getElementById('modalExpenseCategory').value);
-            const frequency = document.getElementById('modalExpenseFrequency').value;
+            const [expenses, setExpenses] = useLocalStorage('budgetCalc_expenses', [
+                { 
+                    id: 1, 
+                    name: 'Hair coloring', 
+                    amount: 180, 
+                    frequency: 'every-6-weeks', 
+                    categoryId: 1, 
+                    priority: 'important',
+                    alreadySaved: 0,
+                    dueDate: '',
+                    allocationPaused: false,
+                    collapsed: true
+                },
+                { 
+                    id: 2, 
+                    name: 'Dog medications', 
+                    amount: 85, 
+                    frequency: 'every-8-weeks', 
+                    categoryId: 2, 
+                    priority: 'essential',
+                    alreadySaved: 0,
+                    dueDate: '',
+                    allocationPaused: false,
+                    collapsed: true
+                }
+            ]);
 
-            if (name && amount) {
-                const expense = {
-                    id: Date.now(),
-                    name: name,
-                    amount: amount,
-                    frequency: frequency,
-                    categoryId: categoryId,
-                    biweeklyAmount: calculateBiweeklyAmount(amount, frequency)
+            const [savingsGoals, setSavingsGoals] = useLocalStorage('budgetCalc_savingsGoals', [
+                { 
+                    id: 1, 
+                    name: 'Emergency fund', 
+                    targetAmount: 10000, 
+                    monthlyContribution: 500, 
+                    targetDate: '2025-12-31', 
+                    categoryId: 3,
+                    alreadySaved: 0,
+                    allocationPaused: false,
+                    collapsed: true
+                }
+            ]);
+
+            const [accounts, setAccounts] = useLocalStorage('budgetCalc_accounts', [
+                { id: 1, name: 'Main Checking', type: 'checking', balance: 3500, bankName: 'Chase' },
+                { id: 2, name: 'Savings', type: 'savings', balance: 8200, bankName: 'Chase' },
+                { id: 3, name: 'Credit Card', type: 'credit', balance: -450, bankName: 'Capital One' }
+            ]);
+
+            const [transactions, setTransactions] = useLocalStorage('budgetCalc_transactions', [
+                { 
+                    id: 1, 
+                    date: '2025-06-01', 
+                    payee: 'Grocery Store', 
+                    amount: 85.43, 
+                    categoryId: 1, 
+                    accountId: 1, 
+                    memo: 'Weekly groceries', 
+                    cleared: true,
+                    transfer: false,
+                    transferAccountId: null
+                },
+                { 
+                    id: 2, 
+                    date: '2025-06-01', 
+                    payee: '', 
+                    amount: 200, 
+                    categoryId: null, 
+                    accountId: 1, 
+                    memo: 'Emergency fund deposit', 
+                    cleared: true,
+                    transfer: true,
+                    transferAccountId: 2
+                }
+            ]);
+
+            const [showAddExpense, setShowAddExpense] = useState(false);
+            const [showAddCategory, setShowAddCategory] = useState(false);
+            const [showAddTransaction, setShowAddTransaction] = useState(false);
+            const [showTransactions, setShowTransactions] = useState(false);
+            const [showConfig, setShowConfig] = useState(false);
+            const [editingCategory, setEditingCategory] = useState(null);
+            const [editingExpense, setEditingExpense] = useState(null);
+            const [editingTransaction, setEditingTransaction] = useState(null);
+            const [confirmDelete, setConfirmDelete] = useState(null);
+            const [preselectedCategory, setPreselectedCategory] = useState(null);
+            const [selectedAccount, setSelectedAccount] = useState('all');
+
+            const frequencyOptions = [
+                { value: 'weekly', label: 'Weekly', weeksPerYear: 52 },
+                { value: 'bi-weekly', label: 'Bi-weekly', weeksPerYear: 26 },
+                { value: 'every-3-weeks', label: 'Every 3 weeks', weeksPerYear: 17.33 },
+                { value: 'monthly', label: 'Monthly', weeksPerYear: 12 },
+                { value: 'every-6-weeks', label: 'Every 6 weeks', weeksPerYear: 8.67 },
+                { value: 'every-7-weeks', label: 'Every 7 weeks', weeksPerYear: 7.43 },
+                { value: 'every-8-weeks', label: 'Every 8 weeks', weeksPerYear: 6.5 },
+                { value: 'quarterly', label: 'Quarterly', weeksPerYear: 4 },
+                { value: 'annually', label: 'Annually', weeksPerYear: 1 },
+                { value: 'per-paycheck', label: 'Per Paycheck (Direct)', weeksPerYear: 26 }
+            ];
+
+            const priorityColors = {
+                essential: 'border-red-400 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100',
+                important: 'border-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100',
+                'nice-to-have': 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100'
+            };
+
+            const categoryColors = [
+                'bg-gradient-to-r from-purple-500 to-pink-500',
+                'bg-gradient-to-r from-pink-500 to-blue-500',
+                'bg-gradient-to-r from-orange-500 to-red-600',
+                'bg-gradient-to-r from-green-500 to-yellow-400',
+                'bg-gradient-to-r from-pink-500 to-red-500',
+                'bg-gradient-to-r from-yellow-400 to-orange-500',
+                'bg-gradient-to-r from-purple-600 to-teal-500',
+                'bg-gradient-to-r from-violet-600 to-purple-800'
+            ];
+
+            const currentPay = whatIfMode ? whatIfPay : takeHomePay;
+
+            // Apply dark mode to document
+            useEffect(() => {
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            }, [darkMode]);
+
+            const calculateBiweeklyAllocation = (expense) => {
+                if (expense.allocationPaused) return 0;
+                
+                const { amount, frequency, alreadySaved = 0 } = expense;
+                const remainingAmount = Math.max(0, amount - alreadySaved);
+                
+                if (remainingAmount <= 0) return 0;
+                
+                if (frequency === 'per-paycheck') {
+                    if (roundingOption === 0) return remainingAmount;
+                    return Math.ceil(remainingAmount / roundingOption) * roundingOption;
+                }
+
+                const freqData = frequencyOptions.find(f => f.value === frequency);
+                if (!freqData) return 0;
+                
+                const yearlyAmount = amount * freqData.weeksPerYear;
+                const biweeklyAmount = yearlyAmount / 26;
+                const adjustedBiweeklyAmount = (remainingAmount / amount) * biweeklyAmount;
+                
+                if (roundingOption === 0) return adjustedBiweeklyAmount;
+                return Math.ceil(adjustedBiweeklyAmount / roundingOption) * roundingOption;
+            };
+
+            const calculateGoalBiweeklyAllocation = (goal) => {
+                if (goal.allocationPaused) return 0;
+                
+                const { targetAmount, monthlyContribution, alreadySaved = 0 } = goal;
+                const remainingAmount = Math.max(0, targetAmount - alreadySaved);
+                
+                if (remainingAmount <= 0) return 0;
+                
+                const monthlyAmount = monthlyContribution;
+                const biweeklyAmount = (monthlyAmount * 12) / 26;
+                
+                if (roundingOption === 0) return biweeklyAmount;
+                return Math.ceil(biweeklyAmount / roundingOption) * roundingOption;
+            };
+
+            const calculations = useMemo(() => {
+                const expenseAllocations = expenses.map(expense => {
+                    const biweeklyAmount = calculateBiweeklyAllocation(expense);
+                    const remainingNeeded = Math.max(0, expense.amount - (expense.alreadySaved || 0));
+                    const fundingProgress = expense.amount > 0 ? ((expense.alreadySaved || 0) / expense.amount) * 100 : 0;
+                    const isFullyFunded = fundingProgress >= 100;
+                    
+                    return {
+                        ...expense,
+                        biweeklyAmount,
+                        percentage: (biweeklyAmount / currentPay) * 100,
+                        remainingNeeded,
+                        fundingProgress,
+                        isFullyFunded
+                    };
+                });
+
+                const goalAllocations = savingsGoals.map(goal => {
+                    const biweeklyAmount = calculateGoalBiweeklyAllocation(goal);
+                    const remainingNeeded = Math.max(0, goal.targetAmount - (goal.alreadySaved || 0));
+                    const fundingProgress = goal.targetAmount > 0 ? ((goal.alreadySaved || 0) / goal.targetAmount) * 100 : 0;
+                    const isFullyFunded = fundingProgress >= 100;
+                    
+                    return {
+                        ...goal,
+                        biweeklyAmount,
+                        percentage: (biweeklyAmount / currentPay) * 100,
+                        remainingNeeded,
+                        fundingProgress,
+                        isFullyFunded
+                    };
+                });
+
+                const totalExpenseAllocation = expenseAllocations.reduce((sum, exp) => sum + exp.biweeklyAmount, 0);
+                const totalGoalAllocation = goalAllocations.reduce((sum, goal) => sum + goal.biweeklyAmount, 0);
+                const totalBiweeklyAllocation = totalExpenseAllocation + totalGoalAllocation;
+                
+                const bufferAmount = totalBiweeklyAllocation * (bufferPercentage / 100);
+                const totalWithBuffer = totalBiweeklyAllocation + bufferAmount;
+                const remainingIncome = currentPay - totalWithBuffer;
+                const allocationPercentage = (totalWithBuffer / currentPay) * 100;
+
+                return {
+                    expenseAllocations,
+                    goalAllocations,
+                    totalExpenseAllocation,
+                    totalGoalAllocation,
+                    totalBiweeklyAllocation,
+                    bufferAmount,
+                    totalWithBuffer,
+                    remainingIncome,
+                    allocationPercentage
                 };
+            }, [expenses, savingsGoals, currentPay, roundingOption, bufferPercentage]);
 
-                expenses.push(expense);
-                updateExpensesList();
-                updateSummary();
+            const categorizedExpenses = useMemo(() => {
+                return categories.map(category => ({
+                    ...category,
+                    expenses: calculations.expenseAllocations.filter(exp => exp.categoryId === category.id),
+                    goals: calculations.goalAllocations.filter(goal => goal.categoryId === category.id),
+                    total: calculations.expenseAllocations
+                        .filter(exp => exp.categoryId === category.id)
+                        .reduce((sum, exp) => sum + exp.biweeklyAmount, 0) +
+                        calculations.goalAllocations
+                        .filter(goal => goal.categoryId === category.id)
+                        .reduce((sum, goal) => sum + goal.biweeklyAmount, 0),
+                    percentage: ((calculations.expenseAllocations
+                        .filter(exp => exp.categoryId === category.id)
+                        .reduce((sum, exp) => sum + exp.biweeklyAmount, 0) +
+                        calculations.goalAllocations
+                        .filter(goal => goal.categoryId === category.id)
+                        .reduce((sum, goal) => sum + goal.biweeklyAmount, 0)) / currentPay) * 100
+                }));
+            }, [categories, calculations.expenseAllocations, calculations.goalAllocations, currentPay]);
 
-                const expensesContent = document.getElementById('budget-content');
-                expensesContent.style.maxHeight = expensesContent.scrollHeight + 'px';
+            const deleteTransaction = (transactionId) => {
+                setTransactions(transactions.filter(txn => txn.id !== transactionId));
+                setConfirmDelete(null);
+            };
 
-                saveData();
-                closeModal();
-            } else {
-                alert('Please enter both expense name and amount');
-            }
-        }
-        
-        function openTransactionModal() {
-            const modalContent = `
-                <div class="form-row">
-                    <input type="date" id="modalTransactionDate" value="${new Date().toISOString().split('T')[0]}">
-                    <input type="text" id="modalTransactionPayee" placeholder="Payee (e.g., Grocery Store)" style="flex: 1;">
-                </div>
-                <div class="form-row">
-                    <input type="number" id="modalTransactionAmount" placeholder="Amount" step="0.01" style="flex: 1;">
-                    <select id="modalTransactionAccount" style="flex: 1;">
-                        ${accounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="form-row">
-                    <select id="modalTransactionCategory" style="flex: 1;">
-                        ${categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div style="margin-top: 20px; text-align: right;">
-                    <button onclick="closeModal()" style="background: var(--border-color); color: var(--text-color); margin-right: 10px;">Cancel</button>
-                    <button onclick="addTransactionFromModal()">Add Transaction</button>
-                </div>
-            `;
+            const deleteExpense = (expenseId) => {
+                setExpenses(expenses.filter(exp => exp.id !== expenseId));
+                setConfirmDelete(null);
+            };
 
-            openModal('Add New Transaction', modalContent);
-            setTimeout(() => {
-                document.getElementById('modalTransactionPayee').focus();
-            }, 100);
-        }
+            const deleteCategory = (categoryId) => {
+                const remainingCategories = categories.filter(cat => cat.id !== categoryId);
+                const firstCategoryId = remainingCategories[0]?.id;
+                
+                if (firstCategoryId) {
+                    setExpenses(expenses.map(exp => 
+                        exp.categoryId === categoryId 
+                            ? { ...exp, categoryId: firstCategoryId }
+                            : exp
+                    ));
+                    setSavingsGoals(savingsGoals.map(goal => 
+                        goal.categoryId === categoryId 
+                            ? { ...goal, categoryId: firstCategoryId }
+                            : goal
+                    ));
+                }
+                
+                setCategories(categories.filter(cat => cat.id !== categoryId));
+                setConfirmDelete(null);
+            };
 
-        function addTransactionFromModal() {
-            const date = document.getElementById('modalTransactionDate').value;
-            const payee = document.getElementById('modalTransactionPayee').value;
-            const amount = parseFloat(document.getElementById('modalTransactionAmount').value);
-            const accountId = parseInt(document.getElementById('modalTransactionAccount').value);
-            const categoryId = parseInt(document.getElementById('modalTransactionCategory').value);
+            const exportToYNAB = () => {
+                const exportData = categorizedExpenses.map(category => ({
+                    category: category.name,
+                    biweeklyTotal: category.total,
+                    percentage: category.percentage,
+                    items: [
+                        ...category.expenses.map(exp => `${exp.name}: ${viewMode === 'amount' ? `${exp.biweeklyAmount.toFixed(2)}` : `${exp.percentage.toFixed(1)}%`}/paycheck (${exp.amount} ${frequencyOptions.find(f => f.value === exp.frequency)?.label.toLowerCase()})${exp.allocationPaused ? ' [PAUSED]' : ''}${exp.isFullyFunded ? ' [FUNDED]' : ''}`),
+                        ...category.goals.map(goal => `${goal.name} (Goal): ${viewMode === 'amount' ? `${goal.biweeklyAmount.toFixed(2)}` : `${goal.percentage.toFixed(1)}%`}/paycheck${goal.allocationPaused ? ' [PAUSED]' : ''}${goal.isFullyFunded ? ' [COMPLETE]' : ''}`)
+                    ]
+                }));
 
-            if (date && payee && amount && accountId && categoryId) {
-                const transaction = {
-                    id: Date.now(),
-                    date: date,
-                    payee: payee,
-                    amount: amount,
-                    accountId: accountId,
-                    categoryId: categoryId
-                };
+                const exportText = `BI-WEEKLY BUDGET BREAKDOWN\n` +
+                    `Take-home pay: ${currentPay.toFixed(2)}\n` +
+                    `Total allocations: ${calculations.totalBiweeklyAllocation.toFixed(2)} (${(calculations.totalBiweeklyAllocation / currentPay * 100).toFixed(1)}%)\n` +
+                    `Buffer (${bufferPercentage}%): ${calculations.bufferAmount.toFixed(2)}\n` +
+                    `Total with buffer: ${calculations.totalWithBuffer.toFixed(2)} (${calculations.allocationPercentage.toFixed(1)}%)\n` +
+                    `Remaining: ${calculations.remainingIncome.toFixed(2)} (${((calculations.remainingIncome / currentPay) * 100).toFixed(1)}%)\n\n` +
+                    exportData.map(cat => 
+                        `${cat.category.toUpperCase()} - ${cat.biweeklyTotal.toFixed(2)}/paycheck (${cat.percentage.toFixed(1)}%)\n${cat.items.map(item => `• ${item}`).join('\n')}`
+                    ).join('\n\n');
 
-                transactions.push(transaction);
-                updateTransactionsList();
+                // Copy to clipboard or show in alert
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(exportText).then(() => {
+                        alert('Budget data copied to clipboard!');
+                    }).catch(() => {
+                        prompt('Copy this text for YNAB:', exportText);
+                    });
+                } else {
+                    prompt('Copy this text for YNAB:', exportText);
+                }
+            };
 
-                const transactionsContent = document.getElementById('transactions-content');
-                transactionsContent.style.maxHeight = transactionsContent.scrollHeight + 'px';
+            return (
+                <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+                    <div className="container mx-auto px-4 py-8 max-w-6xl">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-8">
+                            <div>
+                                <h1 className="text-3xl font-bold mb-2">Bi-weekly Budget Calculator</h1>
+                                <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Plan your YNAB allocations with precision</p>
+                            </div>
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={() => setViewMode(viewMode === 'amount' ? 'percentage' : 'amount')}
+                                    className={`p-2 rounded-lg flex items-center space-x-2 ${
+                                        viewMode === 'percentage' 
+                                            ? 'bg-green-600 text-white' 
+                                            : `${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`
+                                    } transition-colors`}
+                                >
+                                    <Percent />
+                                    <span className="text-sm hidden sm:inline">{viewMode === 'amount' ? 'Show %' : 'Show $'}</span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setWhatIfMode(!whatIfMode);
+                                        if (!whatIfMode) setWhatIfPay(takeHomePay);
+                                    }}
+                                    className={`p-2 rounded-lg flex items-center space-x-2 ${
+                                        whatIfMode 
+                                            ? 'bg-blue-600 text-white' 
+                                            : `${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`
+                                    } transition-colors`}
+                                >
+                                    <Eye />
+                                    <span className="text-sm hidden sm:inline">What-If</span>
+                                </button>
+                                <button
+                                    onClick={() => setDarkMode(!darkMode)}
+                                    className={`p-2 rounded-lg ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'} transition-colors`}
+                                >
+                                    {darkMode ? <Sun /> : <Moon />}
+                                </button>
+                            </div>
+                        </div>
 
-                saveData();
-                closeModal();
-            } else {
-                alert('Please fill in all fields');
-            }
-        }
-        
-        // Initialize everything
-        if (loadData()) {
-            document.getElementById('payAmount').value = currentPay;
-            updateSummary();
-        }
+                        {/* Configuration Panel */}
+                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 mb-8 shadow-lg`}>
+                            <div className="flex justify-between items-center mb-4">
+                                <div 
+                                    className="flex items-center cursor-pointer flex-1" 
+                                    onClick={() => setShowConfig(!showConfig)}
+                                >
+                                    {showConfig ? <ChevronDown className="w-5 h-5 mr-2" /> : <ChevronRight className="w-5 h-5 mr-2" />}
+                                    <h2 className="text-xl font-semibold flex items-center">
+                                        <Calculator />
+                                        <span className="ml-2">Configuration</span>
+                                        {whatIfMode && <span className="ml-2 text-sm bg-blue-600 text-white px-2 py-1 rounded">What-If Mode</span>}
+                                        {viewMode === 'percentage' && <span className="ml-2 text-sm bg-green-600 text-white px-2 py-1 rounded">% View</span>}
+                                    </h2>
+                                </div>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={exportToYNAB}
+                                        className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} transition-colors`}
+                                        title="Export to YNAB"
+                                    >
+                                        <Download />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {showConfig && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">
+                                            {whatIfMode ? 'What-If Pay' : 'Take-home Pay'} (bi-weekly)
+                                        </label>
+                                        <div className="relative">
+                                            <DollarSign className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                                            <input
+                                                type="number"
+                                                value={whatIfMode ? whatIfPay : takeHomePay}
+                                                onChange={(e) => whatIfMode ? setWhatIfPay(parseFloat(e.target.value) || 0) : setTakeHomePay(parseFloat(e.target.value) || 0)}
+                                                className={`w-full pl-10 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} ${whatIfMode ? 'ring-2 ring-blue-500' : ''}`}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Rounding</label>
+                                        <select
+                                            value={roundingOption}
+                                            onChange={(e) => setRoundingOption(parseInt(e.target.value))}
+                                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                        >
+                                            <option value={0}>No rounding</option>
+                                            <option value={5}>Round to $5</option>
+                                            <option value={10}>Round to $10</option>
+                                        </select>
+                                    </div>
 
-        loadTheme();
-        populateTransactionCategoryDropdown();
-        updateAccountDropdown();
-        setDefaultDate();
-        
-        updateExpensesList();
-        updateAccountsList();
-        updateTransactionsList();
-        initializeSections();
+                                    <div>
+                                        <label className="block text-sm font-medium mb-1">Buffer (%)</label>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            max="20"
+                                            value={bufferPercentage}
+                                            onChange={(e) => setBufferPercentage(parseFloat(e.target.value) || 0)}
+                                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
-        console.log("Budget calculator loaded!");
-    </script>
-    
-    <!-- Modal Overlay -->
-    <div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h3 id="modalTitle">Modal Title</h3>
-                <button class="modal-close" onclick="closeModal()">✕</button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Modal content will be inserted here -->
-            </div>
-        </div>
-    </div>
-</body>
-
-</html>
+                        {/* Summary Cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                            <div className={`${darkMode ? 'bg-
