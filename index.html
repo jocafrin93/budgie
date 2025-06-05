@@ -1198,7 +1198,8 @@
                                 <div className="space-y-4">
                                     {categorizedExpenses.map((category) => (
                                         <div key={category.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}>
-                                            <div className={`border-l-8 ${category.color} p-4`}>
+                                            <div className="p-4 relative">
+                                                <div className={`absolute left-0 top-0 bottom-0 w-2 ${category.color}`}></div>
                                                 <div className="flex items-center justify-between mb-3">
                                                     <div
                                                         className="flex items-center cursor-pointer flex-1"
@@ -1209,10 +1210,10 @@
                                                         }}
                                                     >
                                                         {category.collapsed ? <ChevronRight className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
-                                                        <div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-gray-700`}></div>
+                                                        <div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-white`}></div>
                                                         <h3 className="font-semibold">{category.name}</h3>
                                                         <span className="ml-2 text-sm text-gray-500">
-                                                            {viewMode === 'amount' ? `${category.total.toFixed(2)}/bi-weekly` : `${category.percentage.toFixed(1)}%`}
+                                                            {viewMode === 'amount' ? `$${category.total.toFixed(2)}/bi-weekly` : `${category.percentage.toFixed(1)}%`}
                                                         </span>
                                                     </div>
                                                     <div className="flex space-x-1">
