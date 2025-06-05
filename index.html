@@ -1197,61 +1197,62 @@
 
                                 <div className="space-y-4">
                                     {categorizedExpenses.map((category) => (
-                                        <div key={category.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div
-                                                    className="flex items-center cursor-pointer flex-1"
-                                                    onClick={() => {
-                                                        setCategories(prev => prev.map(cat =>
-                                                            cat.id === category.id ? { ...cat, collapsed: !cat.collapsed } : cat
-                                                        ));
-                                                    }}
-                                                >
-                                                    {category.collapsed ? <ChevronRight className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
-                                                    <div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-gray-700`}></div>
-                                                    <h3 className="font-semibold">{category.name}</h3>
-                                                    <span className="ml-2 text-sm text-gray-500">
-                                                        {viewMode === 'amount' ? `${category.total.toFixed(2)}/bi-weekly` : `${category.percentage.toFixed(1)}%`}
-                                                    </span>
-                                                </div>
-                                                <div className="flex space-x-1">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setPreselectedCategory(category.id);
-                                                            setShowAddExpense(true);
+                                        <div key={category.id} className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}>
+                                            <div className={`border-l-8 ${category.color} p-4`}>
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div
+                                                        className="flex items-center cursor-pointer flex-1"
+                                                        onClick={() => {
+                                                            setCategories(prev => prev.map(cat =>
+                                                                cat.id === category.id ? { ...cat, collapsed: !cat.collapsed } : cat
+                                                            ));
                                                         }}
-                                                        className="p-1 hover:bg-gray-700 rounded text-blue-400 hover:text-blue-300"
-                                                        title="Add expense to this category"
                                                     >
-                                                        <Plus className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setEditingCategory(category);
-                                                        }}
-                                                        className="p-1 hover:bg-gray-700 rounded"
-                                                    >
-                                                        <Edit2 className="w-4 h-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setConfirmDelete({
-                                                                type: 'category',
-                                                                id: category.id,
-                                                                name: category.name,
-                                                                message: 'Delete this category? All items will be moved to the first category.'
-                                                            });
-                                                        }}
-                                                        className="p-1 hover:bg-gray-700 rounded text-red-400"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                        {category.collapsed ? <ChevronRight className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+                                                        <div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-gray-700`}></div>
+                                                        <h3 className="font-semibold">{category.name}</h3>
+                                                        <span className="ml-2 text-sm text-gray-500">
+                                                            {viewMode === 'amount' ? `${category.total.toFixed(2)}/bi-weekly` : `${category.percentage.toFixed(1)}%`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex space-x-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setPreselectedCategory(category.id);
+                                                                setShowAddExpense(true);
+                                                            }}
+                                                            className="p-1 hover:bg-gray-700 rounded text-blue-400 hover:text-blue-300"
+                                                            title="Add expense to this category"
+                                                        >
+                                                            <Plus className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setEditingCategory(category);
+                                                            }}
+                                                            className="p-1 hover:bg-gray-700 rounded"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setConfirmDelete({
+                                                                    type: 'category',
+                                                                    id: category.id,
+                                                                    name: category.name,
+                                                                    message: 'Delete this category? All items will be moved to the first category.'
+                                                                });
+                                                            }}
+                                                            className="p-1 hover:bg-gray-700 rounded text-red-400"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
-
                                             {!category.collapsed && (
                                                 <div className="space-y-2">
                                                     {category.expenses.length === 0 && category.goals.length === 0 ? (
