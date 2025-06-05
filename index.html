@@ -779,8 +779,42 @@
             const paycheckEvents = generatePaycheckEventsWithSplit(paySchedule, currentPay);
             events.push(...paycheckEvents);
 
-            console.log(`Generated ${events.length} calendar events`);
-            return events;
+            // Add goal deadlines
+            savingsGoals.forEach(goal => {
+                if (goal.targetDate) {
+                    const [year, month, day] = goal.targetDate.split('-').map(Number);
+                    const deadline = new Date(year, month - 1, day);
+
+                    events.push({
+                        date: deadline,
+                        type: 'goal-deadline',
+                        title: goal.name,
+                        amount: goal.targetAmount,
+                        description: `Target: $${goal.targetAmount.toLocaleString()}`,
+                        category: categories.find(c => c.id === goal.categoryId)?.name
+                    });
+                }
+            });
+
+            // Add expense due dates
+            expenses.forEach(expense => {
+                if (expense.dueDate) {
+                    const [year, month, day] = expense.dueDate.split('-').map(Number);
+                    const dueDate = new Date(year, month - 1, day);
+
+                    events.push({
+                        date: dueDate,
+                        type: 'expense-due',
+                        title: expense.name,
+                        amount: expense.amount,
+                        description: `$${expense.amount} due`,
+                        category: categories.find(c => c.id === expense.categoryId)?.name
+                    });
+                }
+            });
+
+            console.log(`Generated ${events.length} calendar events (${paycheckEvents.length} paychecks, ${savingsGoals.length} goals, ${expenses.filter(e => e.dueDate).length} expenses with due dates)`);
+            return events.sort((a, b) => a.date - b.date);
         };
 
         const CalendarView = ({ events, darkMode, currentPay, paySchedule, savingsGoals, expenses, categories }) => {
@@ -817,7 +851,6 @@
 
             // Generate the actual events
             const calendarEvents = generateCalendarEvents(paySchedule, currentPay, savingsGoals, expenses, categories);
-
             // Group events by date for timeline view
             const groupedEvents = calendarEvents.reduce((acc, event) => {
                 const dateKey = event.date.toDateString();
