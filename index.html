@@ -728,7 +728,7 @@
             }
 
             // Generate next 10 paychecks
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 26; i++) {
                 dates.push(new Date(currentDate));
                 currentDate.setDate(currentDate.getDate() + daysBetween);
             }
@@ -783,7 +783,7 @@
             return events;
         };
 
-        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
+        const CalendarView = ({ events, darkMode, currentPay, paySchedule, savingsGoals, expenses, categories }) => {
             const formatDate = (date) => {
                 return date.toLocaleDateString('en-US', {
                     weekday: 'short',
@@ -816,7 +816,7 @@
             };
 
             // Generate the actual events
-            const calendarEvents = generateCalendarEvents(paySchedule, currentPay, [], [], []);
+            const calendarEvents = generateCalendarEvents(paySchedule, currentPay, savingsGoals, expenses, categories);
 
             // Group events by date for timeline view
             const groupedEvents = calendarEvents.reduce((acc, event) => {
@@ -2632,6 +2632,9 @@
                                         darkMode={darkMode}
                                         currentPay={currentPay}
                                         paySchedule={paySchedule}
+                                        savingsGoals={savingsGoals}
+                                        expenses={expenses}
+                                        categories={categories}
                                     />
 
                                     <button
