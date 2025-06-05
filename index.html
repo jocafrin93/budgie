@@ -1412,7 +1412,7 @@
                                                             {category.expenses.map((expense) => (
                                                                 <div key={`exp-${expense.id}`} className={`border-l-4 ${priorityColors[expense.priority]} ${expense.isFullyFunded ? 'opacity-75' : ''} ${expense.allocationPaused ? 'opacity-60' : ''} rounded-r`}>
                                                                     <div
-                                                                        className="p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                                                                        className="p-3 cursor-pointer transition-colors"
                                                                         onClick={() => {
                                                                             setExpenses(prev => prev.map(exp =>
                                                                                 exp.id === expense.id ? { ...exp, collapsed: !exp.collapsed } : exp
