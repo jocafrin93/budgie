@@ -48,6 +48,31 @@
             background: linear-gradient(to right, #7c3aed, #6b21a8);
         }
 
+        /* Custom pastel backgrounds for dark mode */
+        .dark .bg-red-100 {
+            background-color: #fecaca !important;
+        }
+
+        .dark .bg-yellow-100 {
+            background-color: #fef3c7 !important;
+        }
+
+        .dark .bg-green-100 {
+            background-color: #dcfce7 !important;
+        }
+
+        .dark .text-red-900 {
+            color: #7f1d1d !important;
+        }
+
+        .dark .text-yellow-900 {
+            color: #78350f !important;
+        }
+
+        .dark .text-green-900 {
+            color: #14532d !important;
+        }
+
         /* Fallback styling */
         body {
             margin: 0;
@@ -798,9 +823,9 @@
             ];
 
             const priorityColors = {
-                essential: 'border-red-400 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100',
-                important: 'border-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100',
-                'nice-to-have': 'border-green-400 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100'
+                essential: 'border-red-400 bg-red-100 text-red-900',
+                important: 'border-yellow-400 bg-yellow-100 text-yellow-900',
+                'nice-to-have': 'border-green-400 bg-green-100 text-green-900'
             };
 
             const categoryColors = [
