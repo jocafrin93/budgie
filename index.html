@@ -1059,6 +1059,19 @@
                 </div>
             );
         };
+        // Minimal CalendarView Component
+        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
+            return (
+                <div className="space-y-4">
+                    <h4 className="font-medium">Calendar View</h4>
+                    <p>Events: {events ? events.length : 0}</p>
+                    <p>Dark mode: {darkMode ? 'true' : 'false'}</p>
+                    <p>Current pay: ${currentPay}</p>
+                    <p>Pay schedule: {paySchedule ? 'exists' : 'missing'}</p>
+                </div>
+            );
+        };
+
         // Main Component
         const BiweeklyBudgetCalculator = () => {
             const [darkMode, setDarkMode] = useLocalStorage('budgetCalc_darkMode', true);
@@ -2448,7 +2461,14 @@
                                             ✕
                                         </button>
                                     </div>
-                                    <p>Calendar modal is working!</p>
+
+                                    <CalendarView
+                                        events={[]}
+                                        darkMode={darkMode}
+                                        currentPay={currentPay}
+                                        paySchedule={paySchedule}
+                                    />
+
                                     <button
                                         onClick={() => setShowCalendar(false)}
                                         className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -2458,6 +2478,7 @@
                                 </div>
                             </div>
                         )}
+
                         {/* Custom Confirmation Dialog */}
                         {confirmDelete && (
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
