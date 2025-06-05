@@ -706,7 +706,38 @@
                 </div>
             );
         };
+       
+        // Generate Paycheck Dates
+        const generatePaycheckDates = (paySchedule) => {
+            console.log("generatePaycheckDates called with:", paySchedule.startDate);
 
+            const dates = [];
+            const [year, month, day] = paySchedule.startDate.split('-').map(Number);
+            const startDate = new Date(year, month - 1, day);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let currentDate = new Date(startDate);
+            const daysBetween = paySchedule.frequency === 'bi-weekly' ? 14 : 30;
+
+            // Move currentDate to first future paycheck
+            let safetyCount = 0;
+            while (currentDate < today && safetyCount < 100) {
+                currentDate.setDate(currentDate.getDate() + daysBetween);
+                safetyCount++;
+            }
+
+            // Generate next 10 paychecks
+            for (let i = 0; i < 10; i++) {
+                dates.push(new Date(currentDate));
+                currentDate.setDate(currentDate.getDate() + daysBetween);
+            }
+
+            console.log(`Generated ${dates.length} paycheck dates`);
+            return dates;
+        };
+
+        // Your existing generatePaycheckEventsWithSplit function follows here...
         const generatePaycheckEventsWithSplit = (paySchedule, currentPay) => {
             const events = [];
             const primaryDates = generatePaycheckDates(paySchedule);
