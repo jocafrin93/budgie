@@ -1061,13 +1061,14 @@
         };
         // Minimal CalendarView Component
         const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
+            const testDates = generatePaycheckDates();
+
             return (
                 <div className="space-y-4">
                     <h4 className="font-medium">Calendar View</h4>
                     <p>Events: {events ? events.length : 0}</p>
-                    <p>Dark mode: {darkMode ? 'true' : 'false'}</p>
-                    <p>Current pay: ${currentPay}</p>
-                    <p>Pay schedule: {paySchedule ? 'exists' : 'missing'}</p>
+                    <p>Generated dates: {testDates.length}</p>
+                    <p>First date: {testDates[0]?.toLocaleDateString()}</p>
                 </div>
             );
         };
@@ -1268,7 +1269,33 @@
                 if (roundingOption === 0) return biweeklyAmount;
                 return Math.ceil(biweeklyAmount / roundingOption) * roundingOption;
             };
+            const generatePaycheckDates = () => {
+                console.log("generatePaycheckDates called");
+                const dates = [];
+                const [year, month, day] = paySchedule.startDate.split('-').map(Number);
+                const startDate = new Date(year, month - 1, day);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
 
+                let currentDate = new Date(startDate);
+                const daysBetween = paySchedule.frequency === 'bi-weekly' ? 14 : 30;
+
+                // Safety check to prevent infinite loop
+                let loopCount = 0;
+                while (currentDate < today && loopCount < 100) {
+                    currentDate.setDate(currentDate.getDate() + daysBetween);
+                    loopCount++;
+                }
+
+                // Generate next 10 paychecks (reduced from 26 for testing)
+                for (let i = 0; i < 10; i++) {
+                    dates.push(new Date(currentDate));
+                    currentDate.setDate(currentDate.getDate() + daysBetween);
+                }
+
+                console.log("Generated", dates.length, "paycheck dates");
+                return dates;
+            };
             const calculations = useMemo(() => {
                 const expenseAllocations = expenses.map(expense => {
                     const biweeklyAmount = calculateBiweeklyAllocation(expense);
