@@ -1458,18 +1458,32 @@
                 }));
             }, [categories, calculations.expenseAllocations, calculations.goalAllocations, currentPay]);
             const generatePaycheckDates = () => {
+                console.log("generatePaycheckDates called");
+                console.log("paySchedule.startDate:", paySchedule.startDate);
+
                 const dates = [];
                 const [year, month, day] = paySchedule.startDate.split('-').map(Number);
+                console.log("Parsed date:", year, month, day);
+
                 const startDate = new Date(year, month - 1, day);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
 
+                console.log("startDate:", startDate);
+                console.log("today:", today);
+
                 let currentDate = new Date(startDate);
                 const daysBetween = paySchedule.frequency === 'bi-weekly' ? 14 : 30;
 
-                while (currentDate < today) {
+                // Safety check to prevent infinite loop
+                let loopCount = 0;
+                while (currentDate < today && loopCount < 1000) {
                     currentDate.setDate(currentDate.getDate() + daysBetween);
+                    loopCount++;
                 }
+
+                console.log("Loop executed", loopCount, "times");
+                console.log("Final currentDate:", currentDate);
 
                 // Generate next 26 primary paychecks
                 for (let i = 0; i < 26; i++) {
@@ -1477,6 +1491,7 @@
                     currentDate.setDate(currentDate.getDate() + daysBetween);
                 }
 
+                console.log("Generated", dates.length, "dates");
                 return dates;
             };
             const generatePaycheckEventsWithSplit = () => {
