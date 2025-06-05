@@ -895,11 +895,11 @@
                 });
             };
 
-            const getEventIcon = (type) => {
+            const getEventIcon = (type, isRecurring = false) => {
                 switch (type) {
                     case 'paycheck': return '💰';
                     case 'goal-deadline': return '🎯';
-                    case 'expense-due': return '⏰';
+                    case 'expense-due': return isRecurring ? '🔄' : '⏰';
                     case 'recurring-transaction': return '🔄';
                     default: return '📅';
                 }
@@ -978,6 +978,28 @@
 
             // Generate the actual events
             const calendarEvents = generateCalendarEvents(paySchedule, currentPay, savingsGoals, expenses, categories, frequencyOptions);
+
+            // Legend component (shared between both views)
+            const Legend = () => (
+                <div className="flex flex-wrap gap-4 text-sm border-t pt-4 mt-4">
+                    <div className="flex items-center">
+                        <span className="mr-1">💰</span>
+                        <span>Paycheck</span>
+                    </div>
+                    <div className="flex items-center">
+                        <span className="mr-1">🎯</span>
+                        <span>Goal Deadline</span>
+                    </div>
+                    <div className="flex items-center">
+                        <span className="mr-1">⏰</span>
+                        <span>Single Expense</span>
+                    </div>
+                    <div className="flex items-center">
+                        <span className="mr-1">🔄</span>
+                        <span>Recurring Item</span>
+                    </div>
+                </div>
+            );
 
             if (calendarView === 'grid') {
                 const calendarDays = generateCalendarGrid(calendarEvents);
@@ -1060,7 +1082,7 @@
                                             <div className="space-y-1 mt-1">
                                                 {dayData.events.slice(0, 3).map((event, eventIndex) => (
                                                     <div key={eventIndex} className={`text-xs p-1 rounded truncate ${getEventColor(event.type, event.subtype, event.warning)}`}>
-                                                        <span className="mr-1">{getEventIcon(event.type)}</span>
+                                                        <span className="mr-1">{getEventIcon(event.type, event.isRecurring || event.occurrenceNumber > 1)}</span>
                                                         {event.title}
                                                     </div>
                                                 ))}
@@ -1076,30 +1098,12 @@
                             ))}
                         </div>
 
-                        {/* Legend */}
-                        <div className="flex flex-wrap gap-4 text-sm">
-                            <div className="flex items-center">
-                                <span className="mr-1">💰</span>
-                                <span>Paycheck</span>
-                            </div>
-                            <div className="flex items-center">
-                                <span className="mr-1">🎯</span>
-                                <span>Goal Deadline</span>
-                            </div>
-                            <div className="flex items-center">
-                                <span className="mr-1">⏰</span>
-                                <span>Expense Due</span>
-                            </div>
-                            <div className="flex items-center">
-                                <span className="mr-1">🔄</span>
-                                <span>Recurring</span>
-                            </div>
-                        </div>
+                        <Legend />
                     </div>
                 );
             }
 
-            // Timeline view 
+            // Timeline view
             const groupedEvents = calendarEvents.reduce((acc, event) => {
                 const dateKey = event.date.toDateString();
                 if (!acc[dateKey]) acc[dateKey] = [];
@@ -1157,7 +1161,7 @@
                                             <div key={index} className={`p-3 rounded border-l-4 ${getEventColor(event.type, event.subtype, event.warning)}`}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center">
-                                                        <span className="mr-2 text-lg">{getEventIcon(event.type)}</span>
+                                                        <span className="mr-2 text-lg">{getEventIcon(event.type, event.isRecurring || event.occurrenceNumber > 1)}</span>
                                                         <div>
                                                             <div className="font-medium">{event.title}</div>
                                                             <div className="text-sm">{event.description}</div>
@@ -1183,6 +1187,8 @@
                             );
                         })}
                     </div>
+
+                    <Legend />
                 </div>
             );
         };
@@ -2932,16 +2938,15 @@
                         {/* Calendar Modal */}
                         {showCalendar && (
                             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-96 p-6`}>
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-semibold">Calendar Test</h3>
-                                        <button
-                                            onClick={() => setShowCalendar(false)}
-                                            className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
+                                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}>                                    <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold">Calendar Test</h3>
+                                    <button
+                                        onClick={() => setShowCalendar(false)}
+                                        className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
 
                                     <CalendarView
                                         events={[]}
