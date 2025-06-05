@@ -1060,7 +1060,18 @@
             );
         };
         // Calendar View Component
-        const CalendarView = ({ events, darkMode, currentPay }) => {
+        const CalendarView = ({ events, darkMode, currentPay, paySchedule }) => {
+    return (
+        <div className="space-y-4">
+            <h4>Calendar Debug Test</h4>
+            <p>Events: {events.length}</p>
+            <p>Dark mode: {darkMode ? 'true' : 'false'}</p>
+            <p>Current pay: {currentPay}</p>
+            <p>Pay schedule: {paySchedule ? 'exists' : 'missing'}</p>
+        </div>
+    );
+};
+       /*const CalendarView = ({ events, darkMode, currentPay }) => {
             const [calendarView, setCalendarView] = useState('timeline');
 
             const formatDate = (date) => {
@@ -1174,7 +1185,7 @@
                     </div>
                 </div>
             );
-        };
+        };*/
         // Main Component
         const BiweeklyBudgetCalculator = () => {
             const [darkMode, setDarkMode] = useLocalStorage('budgetCalc_darkMode', true);
