@@ -1271,30 +1271,28 @@
             };
             const generatePaycheckDates = () => {
                 console.log("generatePaycheckDates called");
-                const dates = [];
-                const [year, month, day] = paySchedule.startDate.split('-').map(Number);
-                const startDate = new Date(year, month - 1, day);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                console.log("paySchedule.startDate:", paySchedule.startDate);
 
-                let currentDate = new Date(startDate);
-                const daysBetween = paySchedule.frequency === 'bi-weekly' ? 14 : 30;
+                try {
+                    const [year, month, day] = paySchedule.startDate.split('-').map(Number);
+                    console.log("Parsed:", year, month, day);
 
-                // Safety check to prevent infinite loop
-                let loopCount = 0;
-                while (currentDate < today && loopCount < 100) {
-                    currentDate.setDate(currentDate.getDate() + daysBetween);
-                    loopCount++;
+                    const startDate = new Date(year, month - 1, day);
+                    console.log("Start date:", startDate);
+
+                    const today = new Date();
+                    console.log("Today:", today);
+
+                    // Just return a simple test array for now
+                    return [
+                        new Date('2025-06-15'),
+                        new Date('2025-06-29'),
+                        new Date('2025-07-13')
+                    ];
+                } catch (error) {
+                    console.error("Error in generatePaycheckDates:", error);
+                    return [];
                 }
-
-                // Generate next 10 paychecks (reduced from 26 for testing)
-                for (let i = 0; i < 10; i++) {
-                    dates.push(new Date(currentDate));
-                    currentDate.setDate(currentDate.getDate() + daysBetween);
-                }
-
-                console.log("Generated", dates.length, "paycheck dates");
-                return dates;
             };
             const calculations = useMemo(() => {
                 const expenseAllocations = expenses.map(expense => {
