@@ -810,39 +810,22 @@
             });
 
             // Generate recurring expense due dates
+            // Generate recurring expense due dates
             expenses.forEach(expense => {
-                console.log('Processing expense:', expense.name, {
-                    dueDate: expense.dueDate,
-                    isRecurringExpense: expense.isRecurringExpense,
-                    frequency: expense.frequency
-                });
-
                 if (expense.dueDate) {
                     try {
                         const [year, month, day] = expense.dueDate.split('-').map(Number);
                         const firstDueDate = new Date(year, month - 1, day);
-                        console.log('Parsed due date:', firstDueDate);
 
                         if (expense.isRecurringExpense && expense.frequency && expense.frequency !== 'per-paycheck') {
-                            console.log('Processing as recurring expense');
                             const freqData = frequencyOptions.find(f => f.value === expense.frequency);
-                            console.log('Frequency data:', freqData);
-
                             if (freqData && freqData.weeksPerYear > 0) {
                                 const daysBetween = Math.round(365 / freqData.weeksPerYear);
-                                console.log('Days between occurrences:', daysBetween);
-
                                 let currentDate = new Date(firstDueDate);
                                 const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
                                 let occurrenceCount = 1;
 
                                 while (currentDate <= endDate && occurrenceCount <= 8) {
-                                    console.log('Adding recurring event:', {
-                                        date: currentDate,
-                                        occurrence: occurrenceCount,
-                                        title: expense.name
-                                    });
-
                                     events.push({
                                         date: new Date(currentDate),
                                         type: 'expense-due',
@@ -850,25 +833,25 @@
                                         amount: expense.amount,
                                         description: `$${expense.amount} due`,
                                         category: categories.find(c => c.id === expense.categoryId)?.name,
-                                        isRecurring: occurrenceCount > 1,
-                                        occurrenceNumber: occurrenceCount
+                                        isRecurring: true,  // Always true for recurring expenses
+                                        occurrenceNumber: occurrenceCount  // Set the occurrence number
                                     });
 
                                     currentDate = new Date(currentDate.getTime() + (daysBetween * 24 * 60 * 60 * 1000));
                                     occurrenceCount++;
                                 }
-                            } else {
-                                console.log('No valid frequency data found');
                             }
                         } else {
-                            console.log('Processing as single occurrence');
+                            // Single occurrence
                             events.push({
                                 date: firstDueDate,
                                 type: 'expense-due',
                                 title: expense.name,
                                 amount: expense.amount,
                                 description: `$${expense.amount} due`,
-                                category: categories.find(c => c.id === expense.categoryId)?.name
+                                category: categories.find(c => c.id === expense.categoryId)?.name,
+                                isRecurring: false,  // Not recurring
+                                occurrenceNumber: 1   // First (and only) occurrence
                             });
                         }
                     } catch (error) {
@@ -1082,7 +1065,9 @@
                                             <div className="space-y-1 mt-1">
                                                 {dayData.events.slice(0, 3).map((event, eventIndex) => (
                                                     <div key={eventIndex} className={`text-xs p-1 rounded truncate ${getEventColor(event.type, event.subtype, event.warning)}`}>
-                                                        <span className="mr-1">{getEventIcon(event.type, event.occurrenceNumber === 1, event.isRecurring)}</span>
+                                                        <span className="mr-1">{getEventIcon(event.type, event.occurrenceNumber === 1, event.isRecurring)}
+
+                                                        </span>
                                                         {/* Remove occurrence number from title */}
                                                         {event.title.replace(/ \(#\d+\)/, '')}
                                                     </div>
@@ -1162,7 +1147,8 @@
                                             <div key={index} className={`p-3 rounded border-l-4 ${getEventColor(event.type, event.subtype, event.warning)}`}>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center">
-                                                        <span className="mr-2 text-lg">{getEventIcon(event.type, event.occurrenceNumber === 1, event.isRecurring)}</span>
+                                                        <span className="mr-2 text-lg">{getEventIcon(event.type, event.occurrenceNumber === 1, event.isRecurring)}
+                                                        </span>
                                                         <div>
                                                             {/* Remove occurrence number from title */}
                                                             <div className="font-medium">{event.title.replace(/ \(#\d+\)/, '')}</div>
@@ -2939,15 +2925,16 @@
                         )}
                         {/* Calendar Modal */}
                         {showCalendar && (
-                            <div
-                                className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-                                onClick={(e) => e.target === e.currentTarget && setShowCalendar(false)}
-                            >
+                            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                                 <div
                                     className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}
-                                    onKeyDown={(e) => e.key === 'Escape' && setShowCalendar(false)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Escape') {
+                                            setShowCalendar(false);
+                                        }
+                                    }}
                                     tabIndex={0}
-                                    autoFocus
+                                    ref={(el) => el && el.focus()}
                                 >
                                     <div className="flex justify-between items-center mb-4">
                                         <h3 className="text-lg font-semibold">Calendar Test</h3>
