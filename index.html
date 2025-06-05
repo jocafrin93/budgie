@@ -348,7 +348,8 @@
                 priority: expense?.priority || 'important',
                 alreadySaved: expense?.alreadySaved || 0,
                 dueDate: expense?.dueDate || '',
-                allocationPaused: expense?.allocationPaused || false
+                allocationPaused: expense?.allocationPaused || false,
+                isRecurringExpense: expense?.isRecurringExpense || false
             });
 
             useEffect(() => {
@@ -556,6 +557,18 @@
                             />
                             <label htmlFor="pauseAllocation" className="text-sm text-gray-700 dark:text-gray-300">
                                 Pause bi-weekly allocation (I'll handle this manually)
+                            </label>
+                        </div>
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="recurringExpense"
+                                checked={formData.isRecurringExpense}
+                                onChange={(e) => setFormData(prev => ({ ...prev, isRecurringExpense: e.target.checked }))}
+                                className="mr-2"
+                            />
+                            <label htmlFor="recurringExpense" className="text-sm text-gray-700 dark:text-gray-300">
+                                This expense repeats on the calendar (not just saving for it)
                             </label>
                         </div>
                     </div>
@@ -797,46 +810,54 @@
             });
 
             // Generate recurring expense due dates
+            // Replace the expense section in generateCalendarEvents with this:
             expenses.forEach(expense => {
                 if (expense.dueDate) {
-                    const [year, month, day] = expense.dueDate.split('-').map(Number);
-                    const firstDueDate = new Date(year, month - 1, day);
+                    try {
+                        const [year, month, day] = expense.dueDate.split('-').map(Number);
+                        const firstDueDate = new Date(year, month - 1, day);
 
-                    // Generate multiple instances based on frequency
-                    if (expense.frequency && expense.frequency !== 'per-paycheck') {
-                        const freqData = frequencyOptions.find(f => f.value === expense.frequency);
-                        if (freqData) {
-                            const daysBetween = Math.round(365 / freqData.weeksPerYear);
-                            let currentDate = new Date(firstDueDate);
-                            const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // Next year
-                            let occurrenceCount = 1;
+                        // Only create recurring instances if explicitly marked as recurring
+                        if (expense.isRecurringExpense && expense.frequency && expense.frequency !== 'per-paycheck') {
+                            const freqData = frequencyOptions.find(f => f.value === expense.frequency);
+                            if (freqData && freqData.weeksPerYear > 0) {
+                                const daysBetween = Math.round(365 / freqData.weeksPerYear);
+                                let currentDate = new Date(firstDueDate);
+                                const endDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+                                let occurrenceCount = 1;
 
-                            while (currentDate <= endDate && occurrenceCount <= 12) {
-                                events.push({
-                                    date: new Date(currentDate),
-                                    type: 'expense-due',
-                                    title: `${expense.name}${occurrenceCount > 1 ? ` (#${occurrenceCount})` : ''}`,
-                                    amount: expense.amount,
-                                    description: `$${expense.amount} due`,
-                                    category: categories.find(c => c.id === expense.categoryId)?.name,
-                                    isRecurring: occurrenceCount > 1,
-                                    occurrenceNumber: occurrenceCount
-                                });
+                                while (currentDate <= endDate && occurrenceCount <= 8) { // Limit to 8 occurrences
+                                    if (currentDate >= new Date()) { // Only show future dates
+                                        events.push({
+                                            date: new Date(currentDate),
+                                            type: 'expense-due',
+                                            title: `${expense.name}${occurrenceCount > 1 ? ` (#${occurrenceCount})` : ''}`,
+                                            amount: expense.amount,
+                                            description: `$${expense.amount} due`,
+                                            category: categories.find(c => c.id === expense.categoryId)?.name,
+                                            isRecurring: occurrenceCount > 1,
+                                            occurrenceNumber: occurrenceCount
+                                        });
+                                    }
 
-                                currentDate = new Date(currentDate.getTime() + (daysBetween * 24 * 60 * 60 * 1000));
-                                occurrenceCount++;
+                                    currentDate = new Date(currentDate.getTime() + (daysBetween * 24 * 60 * 60 * 1000));
+                                    occurrenceCount++;
+                                }
                             }
+                        } else {
+                            // Single occurrence
+                            events.push({
+                                date: firstDueDate,
+                                type: 'expense-due',
+                                title: expense.name,
+                                amount: expense.amount,
+                                description: `$${expense.amount} due`,
+                                category: categories.find(c => c.id === expense.categoryId)?.name
+                            });
                         }
-                    } else {
-                        // Single occurrence for per-paycheck or no frequency
-                        events.push({
-                            date: firstDueDate,
-                            type: 'expense-due',
-                            title: expense.name,
-                            amount: expense.amount,
-                            description: `$${expense.amount} due`,
-                            category: categories.find(c => c.id === expense.categoryId)?.name
-                        });
+                    } catch (error) {
+                        console.error('Error processing expense date:', expense.name, error);
+                        // Skip this expense if there's a date error
                     }
                 }
             });
@@ -1327,7 +1348,8 @@
                     alreadySaved: 0,
                     dueDate: '',
                     allocationPaused: false,
-                    collapsed: true
+                    collapsed: true,
+                    isRecurringExpense: false
                 },
                 {
                     id: 2,
