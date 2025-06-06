@@ -804,7 +804,9 @@
                         title: goal.name,
                         amount: goal.targetAmount,
                         description: `Target: $${goal.targetAmount.toLocaleString()}`,
-                        category: categories.find(c => c.id === goal.categoryId)?.name
+                        category: categories.find(c => c.id === goal.categoryId)?.name,
+                        isRecurring: false,
+                        occurrenceNumber: 1
                     });
                 }
             });
@@ -832,8 +834,8 @@
                                         amount: expense.amount,
                                         description: `$${expense.amount} due`,
                                         category: categories.find(c => c.id === expense.categoryId)?.name,
-                                        isRecurring: true,  // Always true for recurring expenses
-                                        occurrenceNumber: occurrenceCount  // Set the occurrence number
+                                        isRecurring: true,
+                                        occurrenceNumber: occurrenceCount
                                     });
 
                                     currentDate = new Date(currentDate.getTime() + (daysBetween * 24 * 60 * 60 * 1000));
@@ -849,8 +851,8 @@
                                 amount: expense.amount,
                                 description: `$${expense.amount} due`,
                                 category: categories.find(c => c.id === expense.categoryId)?.name,
-                                isRecurring: false,  // Not recurring
-                                occurrenceNumber: 1   // First (and only) occurrence
+                                isRecurring: false,
+                                occurrenceNumber: 1
                             });
                         }
                     } catch (error) {
@@ -859,10 +861,10 @@
                 }
             });
 
-
-            // Add this right after the expenses.forEach loop (around line 1080):
             console.log('Generated events:', events.filter(e => e.type === 'expense-due'));
             console.log('Expenses with due dates:', expenses.filter(e => e.dueDate));
+
+            return events.sort((a, b) => a.date - b.date);
         };
 
         const CalendarView = ({ events, darkMode, currentPay, paySchedule, savingsGoals, expenses, categories, frequencyOptions }) => {
