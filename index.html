@@ -896,7 +896,7 @@
 
             return events.sort((a, b) => a.date - b.date);
         };
-        const generateCalendarEvents = (paySchedule, currentPay, savingsGoals, expenses, categories, frequencyOptions) => {
+        const generateCalendarEvents = (paySchedule, currentPay, savingsGoals, expenses, categories, frequencyOptions, accounts) => {
             const events = [];
             const paycheckEvents = generatePaycheckEventsWithSplit(paySchedule, currentPay, accounts);
             events.push(...paycheckEvents);
@@ -976,7 +976,7 @@
             return events.sort((a, b) => a.date - b.date);
         };
 
-        const CalendarView = ({ events, darkMode, currentPay, paySchedule, savingsGoals, expenses, categories, frequencyOptions }) => {
+        const CalendarView = ({ events, darkMode, currentPay, paySchedule, savingsGoals, expenses, categories, frequencyOptions, accounts }) => {
             const [calendarView, setCalendarView] = useState('timeline');
             const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -1071,7 +1071,7 @@
             };
 
             // Generate the actual events
-            const calendarEvents = generateCalendarEvents(paySchedule, currentPay, savingsGoals, expenses, categories, frequencyOptions);
+            const calendarEvents = generateCalendarEvents(paySchedule, currentPay, savingsGoals, expenses, categories, frequencyOptions, accounts);
 
             // Legend component (shared between both views)
             const Legend = () => (
