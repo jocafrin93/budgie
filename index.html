@@ -48,7 +48,7 @@
             background: linear-gradient(to right, #7c3aed, #6b21a8);
         }
 
-        /* Custom pastel backgrounds for dark mode 
+        /* Custom pastel backgrounds for dark mode */
         .dark .bg-red-100 {
             background-color: #fecaca !important;
         }
@@ -63,7 +63,7 @@
 
         .dark .text-red-900 {
             color: #7f1d1d !important;
-        }*/
+        }
 
         .dark .text-yellow-900 {
             color: #78350f !important;
@@ -71,6 +71,79 @@
 
         .dark .text-green-900 {
             color: #14532d !important;
+        }
+
+        /* Fix light mode calendar colors */
+        .bg-red-100 {
+            background-color: #fee2e2 !important;
+        }
+
+        .bg-yellow-100 {
+            background-color: #fef3c7 !important;
+        }
+
+        .bg-green-100 {
+            background-color: #dcfce7 !important;
+        }
+
+        .bg-blue-100 {
+            background-color: #dbeafe !important;
+        }
+
+        .bg-purple-100 {
+            background-color: #e9d5ff !important;
+        }
+
+        .bg-cyan-100 {
+            background-color: #cffafe !important;
+        }
+
+        .text-red-900 {
+            color: #7f1d1d !important;
+        }
+
+        .text-yellow-900 {
+            color: #78350f !important;
+        }
+
+        .text-green-900 {
+            color: #14532d !important;
+        }
+
+        .text-blue-900 {
+            color: #1e3a8a !important;
+        }
+
+        .text-purple-900 {
+            color: #581c87 !important;
+        }
+
+        .text-cyan-900 {
+            color: #164e63 !important;
+        }
+
+        .border-red-400 {
+            border-color: #f87171 !important;
+        }
+
+        .border-yellow-400 {
+            border-color: #facc15 !important;
+        }
+
+        .border-green-400 {
+            border-color: #4ade80 !important;
+        }
+
+        .border-blue-400 {
+            border-color: #60a5fa !important;
+        }
+
+        .border-purple-400 {
+            border-color: #a78bfa !important;
+        }
+
+        .border-cyan-400 {
+            border-color: #22d3ee !important;
         }
 
         /* Fallback styling */
@@ -884,7 +957,7 @@
                 switch (type) {
                     case 'paycheck': return '💰';
                     case 'goal-deadline': return '🎯';
-                    case 'expense-due': return (isRecurring && !isFirstOccurrence) ? '🔄' : '⏰';
+                    case 'expense-due': return (isRecurring && isFirstOccurrence) ? '⏰' : (isRecurring ? '🔄' : '⏰');
                     case 'recurring-transaction': return '🔄';
                     default: return '📅';
                 }
