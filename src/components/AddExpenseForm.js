@@ -10,71 +10,70 @@ const AddExpenseForm = ({
     preselectedCategory,
 }) => {
     const [formData, setFormData] = useState({
-        name: expense?.name || "",
-        amount: expense?.amount || "",
-        percentage: "",
-        inputMode: "amount",
-        frequency: expense?.frequency || "monthly",
+        name: expense?.name || '',
+        amount: expense?.amount || '',
+        percentage: '',
+        inputMode: 'amount',
+        frequency: expense?.frequency || 'monthly',
         categoryId: expense?.categoryId || preselectedCategory || categories[0]?.id || 1,
-        priority: expense?.priority || "important",
+        priority: expense?.priority || 'important',
         alreadySaved: expense?.alreadySaved || 0,
-        dueDate: expense?.dueDate || "",
+        dueDate: expense?.dueDate || '',
         allocationPaused: expense?.allocationPaused || false,
         isRecurringExpense: expense?.isRecurringExpense || false,
-        priorityState: expense?.priorityState || (expense?.allocationPaused ? "paused" : "active"),
+        priorityState: expense?.priorityState || (expense?.allocationPaused ? 'paused' : 'active'),
     });
 
     useEffect(() => {
-        if (formData.inputMode === "percentage" && formData.percentage && !formData.amount) {
+        if (formData.inputMode === 'percentage' && formData.percentage && !formData.amount) {
             const calculatedAmount = (parseFloat(formData.percentage) / 100) * currentPay;
-            setFormData((prev) => ({ ...prev, amount: calculatedAmount.toFixed(2) }));
-        } else if (formData.inputMode === "amount" && formData.amount && !formData.percentage) {
+            setFormData(prev => ({ ...prev, amount: calculatedAmount.toFixed(2) }));
+        } else if (formData.inputMode === 'amount' && formData.amount && !formData.percentage) {
             const calculatedPercentage = (parseFloat(formData.amount) / currentPay) * 100;
-            setFormData((prev) => ({ ...prev, percentage: calculatedPercentage.toFixed(2) }));
+            setFormData(prev => ({ ...prev, percentage: calculatedPercentage.toFixed(2) }));
         }
     }, [formData.percentage, formData.amount, formData.inputMode, currentPay]);
 
     const handleKeyDown = (e) => {
-        if (e.key === "Enter") {
+        if (e.key === 'Enter') {
             e.preventDefault();
             if (e.shiftKey) {
                 handleSubmit(true);
             } else {
                 handleSubmit(false);
             }
-        } else if (e.key === "Escape") {
+        } else if (e.key === 'Escape') {
             onCancel();
         }
     };
 
     const handleSubmit = (addAnother = false) => {
         if (formData.name && (formData.amount || formData.percentage)) {
-            const finalAmount = formData.inputMode === "percentage"
+            const finalAmount = formData.inputMode === 'percentage'
                 ? (parseFloat(formData.percentage) / 100) * currentPay
                 : parseFloat(formData.amount);
 
-            onSave(
-                {
-                    ...formData,
-                    amount: finalAmount,
-                    categoryId: parseInt(formData.categoryId),
-                    alreadySaved: parseFloat(formData.alreadySaved) || 0,
-                },
-                addAnother
-            );
+            onSave({
+                ...formData,
+                amount: finalAmount,
+                categoryId: parseInt(formData.categoryId),
+                alreadySaved: parseFloat(formData.alreadySaved) || 0
+            }, addAnother);
 
             if (addAnother) {
                 setFormData({
-                    name: "",
-                    amount: "",
-                    percentage: "",
+                    name: '',
+                    amount: '',
+                    percentage: '',
                     inputMode: formData.inputMode,
                     frequency: formData.frequency,
                     categoryId: formData.categoryId,
                     priority: formData.priority,
                     alreadySaved: 0,
-                    dueDate: "",
+                    dueDate: '',
                     allocationPaused: false,
+                    isRecurringExpense: false,
+                    priorityState: 'active',
                 });
                 setTimeout(() => {
                     const nameInput = document.querySelector('input[placeholder="Expense name"]');
@@ -92,9 +91,9 @@ const AddExpenseForm = ({
             <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Expense name"
-                className={`w-full p-2 border rounded ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"}`}
+                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
                 autoFocus
             />
 
@@ -102,34 +101,34 @@ const AddExpenseForm = ({
                 <div className="flex space-x-2">
                     <button
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, inputMode: "amount", percentage: "" }))}
-                        className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === "amount"
-                                ? "bg-blue-600 text-white"
-                                : `${darkMode ? "bg-gray-700" : "bg-gray-200"}`
+                        onClick={() => setFormData(prev => ({ ...prev, inputMode: 'amount', percentage: '' }))}
+                        className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === 'amount'
+                                ? 'bg-blue-600 text-white'
+                                : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
                             }`}
                     >
                         $ Amount
                     </button>
                     <button
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, inputMode: "percentage", amount: "" }))}
-                        className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === "percentage"
-                                ? "bg-green-600 text-white"
-                                : `${darkMode ? "bg-gray-700" : "bg-gray-200"}`
+                        onClick={() => setFormData(prev => ({ ...prev, inputMode: 'percentage', amount: '' }))}
+                        className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === 'percentage'
+                                ? 'bg-green-600 text-white'
+                                : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
                             }`}
                     >
                         % of Paycheck
                     </button>
                 </div>
 
-                {formData.inputMode === "amount" ? (
+                {formData.inputMode === 'amount' ? (
                     <input
                         type="number"
                         step="0.01"
                         value={formData.amount}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, amount: e.target.value, percentage: "" }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value, percentage: '' }))}
                         placeholder="Amount"
-                        className={`w-full p-2 border rounded ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"}`}
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
                     />
                 ) : (
                     <div className="relative">
@@ -137,20 +136,20 @@ const AddExpenseForm = ({
                             type="number"
                             step="0.1"
                             value={formData.percentage}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, percentage: e.target.value, amount: "" }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, percentage: e.target.value, amount: '' }))}
                             placeholder="Percentage of paycheck"
-                            className={`w-full p-2 border rounded ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"}`}
+                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
                         />
                         <span className="absolute right-3 top-3 text-gray-400">%</span>
                     </div>
                 )}
 
-                {formData.percentage && formData.inputMode === "percentage" && (
+                {formData.percentage && formData.inputMode === 'percentage' && (
                     <div className="text-xs text-gray-500">
                         ≈ ${((parseFloat(formData.percentage) / 100) * currentPay).toFixed(2)} per paycheck
                     </div>
                 )}
-                {formData.amount && formData.inputMode === "amount" && (
+                {formData.amount && formData.inputMode === 'amount' && (
                     <div className="text-xs text-gray-500">
                         ≈ {((parseFloat(formData.amount) / currentPay) * 100).toFixed(1)}% of paycheck
                     </div>
@@ -160,8 +159,8 @@ const AddExpenseForm = ({
             <select
                 name="frequency"
                 value={formData.frequency}
-                onChange={(e) => setFormData((prev) => ({ ...prev, frequency: e.target.value }))}
-                className={`w-full p-2 border rounded ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"}`}
+                onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
+                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
             >
                 <option value="weekly">Weekly</option>
                 <option value="bi-weekly">Bi-weekly</option>
@@ -185,9 +184,9 @@ const AddExpenseForm = ({
                             type="number"
                             step="0.01"
                             value={formData.alreadySaved}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, alreadySaved: e.target.value }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, alreadySaved: e.target.value }))}
                             placeholder="0.00"
-                            className={`w-full p-2 border rounded text-sm ${darkMode ? "bg-gray-800 border-gray-600 text-gray-100" : "bg-white border-gray-300 text-gray-900"}`}
+                            className={`w-full p-2 border rounded text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
                         />
                     </div>
 
@@ -196,9 +195,9 @@ const AddExpenseForm = ({
                         <input
                             type="date"
                             value={formData.dueDate}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, dueDate: e.target.value }))}
-                            className={`w-full p-2 border rounded text-sm ${darkMode ? "bg-gray-800 border-gray-600 text-gray-100" : "bg-white border-gray-300 text-gray-900"}`}
-                            style={darkMode ? { colorScheme: "dark" } : {}}
+                            onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                            className={`w-full p-2 border rounded text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
+                            style={darkMode ? { colorScheme: 'dark' } : {}}
                         />
                     </div>
                 </div>
@@ -211,7 +210,7 @@ const AddExpenseForm = ({
                         </div>
                         <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
                             <div
-                                className={`h-2 rounded-full ${fundingProgress >= 100 ? "bg-green-500" : "bg-blue-500"}`}
+                                className={`h-2 rounded-full ${fundingProgress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                                 style={{ width: `${Math.min(100, fundingProgress)}%` }}
                             ></div>
                         </div>
@@ -272,7 +271,7 @@ const AddExpenseForm = ({
                         type="checkbox"
                         id="recurringExpense"
                         checked={formData.isRecurringExpense}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, isRecurringExpense: e.target.checked }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, isRecurringExpense: e.target.checked }))}
                         className="mr-2"
                     />
                     <label htmlFor="recurringExpense" className="text-sm text-gray-700 dark:text-gray-300">
@@ -284,18 +283,18 @@ const AddExpenseForm = ({
             <select
                 name="categoryId"
                 value={formData.categoryId}
-                onChange={(e) => setFormData((prev) => ({ ...prev, categoryId: parseInt(e.target.value) }))}
-                className={`w-full p-2 border rounded ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"}`}
+                onChange={(e) => setFormData(prev => ({ ...prev, categoryId: parseInt(e.target.value) }))}
+                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
             >
-                {categories.map((cat) => (
+                {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
             </select>
 
             <select
                 value={formData.priority}
-                onChange={(e) => setFormData((prev) => ({ ...prev, priority: e.target.value }))}
-                className={`w-full p-2 border rounded ${darkMode ? "bg-gray-700 border-gray-600" : "bg-white border-gray-300"}`}
+                onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
+                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
             >
                 <option value="essential">Essential</option>
                 <option value="important">Important</option>
@@ -308,7 +307,7 @@ const AddExpenseForm = ({
                     className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
                     disabled={!formData.name || (!formData.amount && !formData.percentage)}
                 >
-                    {expense ? "Update" : "Add"} Expense
+                    {expense ? 'Update' : 'Add'} Expense
                 </button>
                 <button
                     onClick={() => handleSubmit(true)}
@@ -320,7 +319,7 @@ const AddExpenseForm = ({
                 </button>
                 <button
                     onClick={onCancel}
-                    className={`py-2 px-4 rounded border ${darkMode ? "border-gray-600" : "border-gray-300"}`}
+                    className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
                 >
                     Cancel
                 </button>

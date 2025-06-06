@@ -1,13 +1,11 @@
 import React from 'react';
 
-const ConfirmDialog = ({ confirmDelete, onConfirm, onCancel, darkMode }) => {
-    if (!confirmDelete) return null;
-
+const ConfirmDialog = ({ title, message, onConfirm, onCancel, darkMode }) => {
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className={`${darkMode ? "bg-gray-800" : "bg-white"} p-6 rounded-lg w-96`}>
-                <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-                <p className="mb-6">{confirmDelete.message}</p>
+            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                <h3 className="text-lg font-semibold mb-4">{title}</h3>
+                <p className="mb-6">{message}</p>
                 <div className="flex space-x-2">
                     <button
                         onClick={onConfirm}
@@ -17,7 +15,7 @@ const ConfirmDialog = ({ confirmDelete, onConfirm, onCancel, darkMode }) => {
                     </button>
                     <button
                         onClick={onCancel}
-                        className={`flex-1 py-2 px-4 rounded border ${darkMode ? "border-gray-600 hover:bg-gray-700" : "border-gray-300 hover:bg-gray-50"
+                        className={`flex-1 py-2 px-4 rounded border ${darkMode ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-50'
                             }`}
                     >
                         Cancel

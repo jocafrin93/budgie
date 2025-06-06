@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom dark mode styles */
+.dark {
+  color-scheme: dark;
+}
+/* Ensure dark mode works */
+.dark {
+  color-scheme: dark;
+}
+
+/* Custom gradient backgrounds for categories */
+.bg-gradient-to-r.from-purple-500.to-pink-500 {
+  background: linear-gradient(to right, #8b5cf6, #ec4899);
+}
+
+.bg-gradient-to-r.from-pink-500.to-blue-500 {
+  background: linear-gradient(to right, #ec4899, #3b82f6);
+}
+
+.bg-gradient-to-r.from-orange-500.to-red-600 {
+  background: linear-gradient(to right, #f97316, #dc2626);
+}
+
+.bg-gradient-to-r.from-green-500.to-yellow-400 {
+  background: linear-gradient(to right, #22c55e, #facc15);
+}
+
+.bg-gradient-to-r.from-pink-500.to-red-500 {
+  background: linear-gradient(to right, #ec4899, #ef4444);
+}
+
+.bg-gradient-to-r.from-yellow-400.to-orange-500 {
+  background: linear-gradient(to right, #facc15, #f97316);
+}
+
+.bg-gradient-to-r.from-purple-600.to-teal-500 {
+  background: linear-gradient(to right, #9333ea, #14b8a6);
+}
+
+.bg-gradient-to-r.from-violet-600.to-purple-800 {
+  background: linear-gradient(to right, #7c3aed, #6b21a8);
+}
+
+/* Custom pastel backgrounds for dark mode */
+.dark .bg-red-100 {
+  background-color: #fecaca !important;
+}
+
+.dark .bg-yellow-100 {
+  background-color: #fef3c7 !important;
+}
+
+.dark .bg-green-100 {
+  background-color: #dcfce7 !important;
+}
+
+.dark .text-red-900 {
+  color: #7f1d1d !important;
+}
+
+.dark .text-yellow-900 {
+  color: #78350f !important;
+}
+
+.dark .text-green-900 {
+  color: #14532d !important;
+}
+
+/* Fix light mode calendar colors */
+.bg-red-100 {
+  background-color: #fee2e2 !important;
+}
+
+.bg-yellow-100 {
+  background-color: #fef3c7 !important;
+}
+
+.bg-green-100 {
+  background-color: #dcfce7 !important;
+}
+
+.bg-blue-100 {
+  background-color: #dbeafe !important;
+}
+
+.bg-purple-100 {
+  background-color: #e9d5ff !important;
+}
+
+.bg-cyan-100 {
+  background-color: #cffafe !important;
+}
+
+.text-red-900 {
+  color: #7f1d1d !important;
+}
+
+.text-yellow-900 {
+  color: #78350f !important;
+}
+
+.text-green-900 {
+  color: #14532d !important;
+}
+
+.text-blue-900 {
+  color: #1e3a8a !important;
+}
+
+.text-purple-900 {
+  color: #581c87 !important;
+}
+
+.text-cyan-900 {
+  color: #164e63 !important;
+}
+
+.border-red-400 {
+  border-color: #f87171 !important;
+}
+
+.border-yellow-400 {
+  border-color: #facc15 !important;
+}
+
+.border-green-400 {
+  border-color: #4ade80 !important;
+}
+
+.border-blue-400 {
+  border-color: #60a5fa !important;
+}
+
+.border-purple-400 {
+  border-color: #a78bfa !important;
+}
+
+.border-cyan-400 {
+  border-color: #22d3ee !important;
+}
+
+.border-l-green-400 {
+  border-left-color: #4ade80 !important;
+}
+
+.border-l-yellow-400 {
+  border-left-color: #facc15 !important;
+}
+
+.border-l-red-400 {
+  border-left-color: #f87171 !important;
+}
+
+.border-l-blue-400 {
+  border-left-color: #60a5fa !important;
+}
+
+.border-l-purple-400 {
+  border-left-color: #a78bfa !important;
+}
+
+.border-l-cyan-400 {
+  border-left-color: #22d3ee !important;
+}
+
+.border-blue-500 {
+  border-color: #3b82f6 !important;
+}
+
+.border-gray-300 {
+  border-color: #d1d5db !important;
+}
+
+/* Fallback styling */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 1200px;
+}
