@@ -1,5 +1,9 @@
+import { useDrag, useDrop } from 'react-dnd';
+import { ChevronUp, ChevronDown } from 'lucide-react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Download, Moon, Sun, Edit2, Trash2, Calculator, Target, DollarSign, ChevronDown, ChevronRight, Eye, Percent } from 'lucide-react';
+import { Plus, Download, Moon, Sun, Edit2, Trash2, Calculator, Target, DollarSign, ChevronRight, Eye, Percent } from 'lucide-react';
 
 // Import components
 import AddExpenseForm from './components/AddExpenseForm';
@@ -269,605 +273,703 @@ const App = () => {
             frequencyOptions,
         });
     };
+    // Reorder categories by drag and drop
+    const reorderCategories = (dragIndex, hoverIndex) => {
+        const newCategories = [...categories];
+        const draggedItem = newCategories[dragIndex];
+        newCategories.splice(dragIndex, 1);
+        newCategories.splice(hoverIndex, 0, draggedItem);
+        setCategories(newCategories);
+    };
 
+    // Reorder expenses within a category
+    const reorderExpenses = (dragIndex, hoverIndex, categoryId) => {
+        const categoryExpenses = expenses.filter(exp => exp.categoryId === categoryId);
+        const otherExpenses = expenses.filter(exp => exp.categoryId !== categoryId);
+
+        const draggedItem = categoryExpenses[dragIndex];
+        categoryExpenses.splice(dragIndex, 1);
+        categoryExpenses.splice(hoverIndex, 0, draggedItem);
+
+        setExpenses([...otherExpenses, ...categoryExpenses]);
+    };
+
+    // Reorder goals within a category  
+    const reorderGoals = (dragIndex, hoverIndex, categoryId) => {
+        const categoryGoals = savingsGoals.filter(goal => goal.categoryId === categoryId);
+        const otherGoals = savingsGoals.filter(goal => goal.categoryId !== categoryId);
+
+        const draggedItem = categoryGoals[dragIndex];
+        categoryGoals.splice(dragIndex, 1);
+        categoryGoals.splice(hoverIndex, 0, draggedItem);
+
+        setSavingsGoals([...otherGoals, ...categoryGoals]);
+    };
+
+    // Arrow button functions for expenses/goals
+    const moveExpenseUpDown = (expenseId, direction) => {
+        const index = expenses.findIndex(exp => exp.id === expenseId);
+        if (direction === 'up' && index > 0) {
+            const newExpenses = [...expenses];
+            [newExpenses[index], newExpenses[index - 1]] = [newExpenses[index - 1], newExpenses[index]];
+            setExpenses(newExpenses);
+        } else if (direction === 'down' && index < expenses.length - 1) {
+            const newExpenses = [...expenses];
+            [newExpenses[index], newExpenses[index + 1]] = [newExpenses[index + 1], newExpenses[index]];
+            setExpenses(newExpenses);
+        }
+    };
+
+    const moveGoalUpDown = (goalId, direction) => {
+        const index = savingsGoals.findIndex(goal => goal.id === goalId);
+        if (direction === 'up' && index > 0) {
+            const newGoals = [...savingsGoals];
+            [newGoals[index], newGoals[index - 1]] = [newGoals[index - 1], newGoals[index]];
+            setSavingsGoals(newGoals);
+        } else if (direction === 'down' && index < savingsGoals.length - 1) {
+            const newGoals = [...savingsGoals];
+            [newGoals[index], newGoals[index + 1]] = [newGoals[index + 1], newGoals[index]];
+            setSavingsGoals(newGoals);
+        }
+  };
+    const moveCategoryUp = (categoryId) => {
+        const index = categories.findIndex(cat => cat.id === categoryId);
+        if (index > 0) {
+            const newCategories = [...categories];
+            [newCategories[index], newCategories[index - 1]] = [newCategories[index - 1], newCategories[index]];
+            setCategories(newCategories);
+        }
+    };
+
+    const moveCategoryDown = (categoryId) => {
+        const index = categories.findIndex(cat => cat.id === categoryId);
+        if (index < categories.length - 1) {
+            const newCategories = [...categories];
+            [newCategories[index], newCategories[index + 1]] = [newCategories[index + 1], newCategories[index]];
+            setCategories(newCategories);
+        }
+    };
+
+    const moveExpense = (dragIndex, hoverIndex) => {
+        const newExpenses = [...expenses];
+        const draggedItem = newExpenses[dragIndex];
+        newExpenses.splice(dragIndex, 1);
+        newExpenses.splice(hoverIndex, 0, draggedItem);
+        setExpenses(newExpenses);
+    };
+
+    const moveGoal = (dragIndex, hoverIndex) => {
+        const newGoals = [...savingsGoals];
+        const draggedItem = newGoals[dragIndex];
+        newGoals.splice(dragIndex, 1);
+        newGoals.splice(hoverIndex, 0, draggedItem);
+        setSavingsGoals(newGoals);
+      };
     return (
-        <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
-            }`}>
-            <div className="container mx-auto px-4 py-8 max-w-6xl">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold mb-2">Bi-weekly Budget Calculator</h1>
-                        <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                            Plan your YNAB allocations with precision
-                        </p>
-                    </div>
+        <DndProvider backend={HTML5Backend}>
+            <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
+                }`}>
+                <div className="container mx-auto px-4 py-8 max-w-6xl">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-8">
+                        <div>
+                            <h1 className="text-3xl font-bold mb-2">Bi-weekly Budget Calculator</h1>
+                            <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                Plan your YNAB allocations with precision
+                            </p>
+                        </div>
 
-                    <div className="flex space-x-2">
-                        <button
-                            onClick={() => setViewMode(viewMode === 'amount' ? 'percentage' : 'amount')}
-                            className={`p-2 rounded-lg flex items-center space-x-2 ${viewMode === 'percentage'
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={() => setViewMode(viewMode === 'amount' ? 'percentage' : 'amount')}
+                                className={`p-2 rounded-lg flex items-center space-x-2 ${viewMode === 'percentage'
                                     ? 'bg-green-600 text-white'
                                     : `${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`
-                                } transition-colors`}
-                        >
-                            <Percent className="w-4 h-4" />
-                            <span className="text-sm hidden sm:inline">
-                                {viewMode === 'amount' ? 'Show %' : 'Show $'}
-                            </span>
-                        </button>
+                                    } transition-colors`}
+                            >
+                                <Percent className="w-4 h-4" />
+                                <span className="text-sm hidden sm:inline">
+                                    {viewMode === 'amount' ? 'Show %' : 'Show $'}
+                                </span>
+                            </button>
 
-                        <button
-                            onClick={() => setShowCalendar(true)}
-                            className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
-                                } transition-colors`}
-                            title="Open calendar view"
-                        >
-                            📅
-                        </button>
+                            <button
+                                onClick={() => setShowCalendar(true)}
+                                className={`p-2 rounded-lg ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'
+                                    } transition-colors`}
+                                title="Open calendar view"
+                            >
+                                📅
+                            </button>
 
-                        <button
-                            onClick={() => {
-                                setWhatIfMode(!whatIfMode);
-                                if (!whatIfMode) setWhatIfPay(takeHomePay);
-                            }}
-                            className={`p-2 rounded-lg flex items-center space-x-2 ${whatIfMode
+                            <button
+                                onClick={() => {
+                                    setWhatIfMode(!whatIfMode);
+                                    if (!whatIfMode) setWhatIfPay(takeHomePay);
+                                }}
+                                className={`p-2 rounded-lg flex items-center space-x-2 ${whatIfMode
                                     ? 'bg-blue-600 text-white'
                                     : `${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'}`
-                                } transition-colors`}
-                        >
-                            <Eye className="w-4 h-4" />
-                            <span className="text-sm hidden sm:inline">What-If</span>
-                        </button>
+                                    } transition-colors`}
+                            >
+                                <Eye className="w-4 h-4" />
+                                <span className="text-sm hidden sm:inline">What-If</span>
+                            </button>
 
-                        <button
-                            onClick={() => setDarkMode(!darkMode)}
-                            className={`p-2 rounded-lg ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'
-                                } transition-colors`}
-                        >
-                            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Configuration Panel */}
-                <ConfigurationPanel
-                    darkMode={darkMode}
-                    showConfig={showConfig}
-                    setShowConfig={setShowConfig}
-                    takeHomePay={takeHomePay}
-                    setTakeHomePay={setTakeHomePay}
-                    whatIfMode={whatIfMode}
-                    whatIfPay={whatIfPay}
-                    setWhatIfPay={setWhatIfPay}
-                    roundingOption={roundingOption}
-                    setRoundingOption={setRoundingOption}
-                    bufferPercentage={bufferPercentage}
-                    setBufferPercentage={setBufferPercentage}
-                    paySchedule={paySchedule}
-                    setPaySchedule={setPaySchedule}
-                    accounts={accounts}
-                    setShowAddAccount={setShowAddAccount}
-                    onExport={handleExportToYNAB}
-                />
-
-                {/* Summary Cards */}
-                <SummaryCards
-                    calculations={calculations}
-                    currentPay={currentPay}
-                    bufferPercentage={bufferPercentage}
-                    viewMode={viewMode}
-                    darkMode={darkMode}
-                />
-
-                {/* Accounts Section */}
-                <AccountsSection
-                    accounts={accounts}
-                    darkMode={darkMode}
-                    onAddAccount={() => setShowAddAccount(true)}
-                    onEditAccount={setEditingAccount}
-                    onDeleteAccount={(account) => setConfirmDelete({
-                        type: 'account',
-                        id: account.id,
-                        name: account.name,
-                        message: `Delete "${account.name}"? All associated transactions will also be deleted.`,
-                    })}
-                />
-
-                {/* Main Content Grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                    {/* Categories Section */}
-                    <div className="xl:col-span-2">
-                        <CategoriesSection
-                            categorizedExpenses={categorizedExpenses}
-                            darkMode={darkMode}
-                            viewMode={viewMode}
-                            frequencyOptions={frequencyOptions}
-                            onAddCategory={() => setShowAddCategory(true)}
-                            onAddExpense={() => setShowAddExpense(true)}
-                            onAddGoal={() => {
-                                setPreselectedCategory(3);
-                                setShowAddGoal(true);
-                            }}
-                            onEditCategory={setEditingCategory}
-                            onEditExpense={setEditingExpense}
-                            onEditGoal={setEditingGoal}
-                            onDeleteCategory={(category) => setConfirmDelete({
-                                type: 'category',
-                                id: category.id,
-                                name: category.name,
-                                message: 'Delete this category? All items will be moved to the first category.',
-                            })}
-                            onDeleteExpense={(expense) => setConfirmDelete({
-                                type: 'expense',
-                                id: expense.id,
-                                name: expense.name,
-                                message: `Delete "${expense.name}"?`,
-                            })}
-                            onDeleteGoal={(goal) => setConfirmDelete({
-                                type: 'goal',
-                                id: goal.id,
-                                name: goal.name,
-                                message: `Delete "${goal.name}" savings goal?`,
-                            })}
-                            setExpenses={setExpenses}
-                            setSavingsGoals={setSavingsGoals}
-                            setCategories={setCategories}
-                            setPreselectedCategory={setPreselectedCategory}
-                        />
+                            <button
+                                onClick={() => setDarkMode(!darkMode)}
+                                className={`p-2 rounded-lg ${darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100'
+                                    } transition-colors`}
+                            >
+                                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Right Sidebar */}
-                    <div className="space-y-6">
-                        {/* Transactions Section */}
-                        <TransactionsSection
-                            transactions={transactions}
-                            accounts={accounts}
-                            categories={categories}
-                            darkMode={darkMode}
-                            onAddTransaction={() => setShowAddTransaction(true)}
-                            onShowAllTransactions={() => setShowTransactions(true)}
-                            onEditTransaction={setEditingTransaction}
-                            onDeleteTransaction={(transaction) => setConfirmDelete({
-                                type: 'transaction',
-                                id: transaction.id,
-                                name: transaction.transfer
-                                    ? `Transfer to ${accounts.find(acc => acc.id === transaction.transferAccountId)?.name}`
-                                    : transaction.payee,
-                                message: 'Delete this transaction?',
-                            })}
-                        />
+                    {/* Configuration Panel */}
+                    <ConfigurationPanel
+                        darkMode={darkMode}
+                        showConfig={showConfig}
+                        setShowConfig={setShowConfig}
+                        takeHomePay={takeHomePay}
+                        setTakeHomePay={setTakeHomePay}
+                        whatIfMode={whatIfMode}
+                        whatIfPay={whatIfPay}
+                        setWhatIfPay={setWhatIfPay}
+                        roundingOption={roundingOption}
+                        setRoundingOption={setRoundingOption}
+                        bufferPercentage={bufferPercentage}
+                        setBufferPercentage={setBufferPercentage}
+                        paySchedule={paySchedule}
+                        setPaySchedule={setPaySchedule}
+                        accounts={accounts}
+                        setShowAddAccount={setShowAddAccount}
+                        onExport={handleExportToYNAB}
+                    />
 
-                        {/* Summary Panel */}
-                        <SummaryPanel
-                            calculations={calculations}
-                            currentPay={currentPay}
-                            bufferPercentage={bufferPercentage}
-                            viewMode={viewMode}
-                            darkMode={darkMode}
-                            whatIfMode={whatIfMode}
-                            takeHomePay={takeHomePay}
-                            whatIfPay={whatIfPay}
-                            categorizedExpenses={categorizedExpenses}
-                            expenses={expenses}
-                            savingsGoals={savingsGoals}
-                        />
+                    {/* Summary Cards */}
+                    <SummaryCards
+                        calculations={calculations}
+                        currentPay={currentPay}
+                        bufferPercentage={bufferPercentage}
+                        viewMode={viewMode}
+                        darkMode={darkMode}
+                    />
+
+                    {/* Accounts Section */}
+                    <AccountsSection
+                        accounts={accounts}
+                        darkMode={darkMode}
+                        onAddAccount={() => setShowAddAccount(true)}
+                        onEditAccount={setEditingAccount}
+                        onDeleteAccount={(account) => setConfirmDelete({
+                            type: 'account',
+                            id: account.id,
+                            name: account.name,
+                            message: `Delete "${account.name}"? All associated transactions will also be deleted.`,
+                        })}
+                    />
+
+                    {/* Main Content Grid */}
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                        {/* Categories Section */}
+                        <div className="xl:col-span-2">
+                            <CategoriesSection
+                                categorizedExpenses={categorizedExpenses}
+                                darkMode={darkMode}
+                                viewMode={viewMode}
+                                frequencyOptions={frequencyOptions}
+                                onAddCategory={() => setShowAddCategory(true)}
+                                onAddExpense={() => setShowAddExpense(true)}
+                                onAddGoal={() => {
+                                    setPreselectedCategory(3);
+                                    setShowAddGoal(true);
+                                }}
+                                onEditCategory={setEditingCategory}
+                                onEditExpense={setEditingExpense}
+                                onEditGoal={setEditingGoal}
+                                onDeleteCategory={(category) => setConfirmDelete({
+                                    type: 'category',
+                                    id: category.id,
+                                    name: category.name,
+                                    message: 'Delete this category? All items will be moved to the first category.',
+                                })}
+                                onDeleteExpense={(expense) => setConfirmDelete({
+                                    type: 'expense',
+                                    id: expense.id,
+                                    name: expense.name,
+                                    message: `Delete "${expense.name}"?`,
+                                })}
+                                onDeleteGoal={(goal) => setConfirmDelete({
+                                    type: 'goal',
+                                    id: goal.id,
+                                    name: goal.name,
+                                    message: `Delete "${goal.name}" savings goal?`,
+                                })}
+                                setExpenses={setExpenses}
+                                setSavingsGoals={setSavingsGoals}
+                                setCategories={setCategories}
+                                setPreselectedCategory={setPreselectedCategory}
+                                onMoveCategoryUp={moveCategoryUp}
+                                onMoveCategoryDown={moveCategoryDown}
+                                onMoveExpense={moveExpense}
+                                onMoveGoal={moveGoal}
+                            />
+                        </div>
+
+                        {/* Right Sidebar */}
+                        <div className="space-y-6">
+                            {/* Transactions Section */}
+                            <TransactionsSection
+                                transactions={transactions}
+                                accounts={accounts}
+                                categories={categories}
+                                darkMode={darkMode}
+                                onAddTransaction={() => setShowAddTransaction(true)}
+                                onShowAllTransactions={() => setShowTransactions(true)}
+                                onEditTransaction={setEditingTransaction}
+                                onDeleteTransaction={(transaction) => setConfirmDelete({
+                                    type: 'transaction',
+                                    id: transaction.id,
+                                    name: transaction.transfer
+                                        ? `Transfer to ${accounts.find(acc => acc.id === transaction.transferAccountId)?.name}`
+                                        : transaction.payee,
+                                    message: 'Delete this transaction?',
+                                })}
+                            />
+
+                            {/* Summary Panel */}
+                            <SummaryPanel
+                                calculations={calculations}
+                                currentPay={currentPay}
+                                bufferPercentage={bufferPercentage}
+                                viewMode={viewMode}
+                                darkMode={darkMode}
+                                whatIfMode={whatIfMode}
+                                takeHomePay={takeHomePay}
+                                whatIfPay={whatIfPay}
+                                categorizedExpenses={categorizedExpenses}
+                                expenses={expenses}
+                                savingsGoals={savingsGoals}
+                            />
+                        </div>
                     </div>
-                </div>
 
-                {/* Modals */}
-                {showAddExpense && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                            <h3 className="text-lg font-semibold mb-4">Add New Expense</h3>
-                            <AddExpenseForm
-                                onSave={(expenseData, addAnother) => {
-                                    const newExpense = {
-                                        ...expenseData,
-                                        id: Math.max(...expenses.map(e => e.id), 0) + 1,
-                                        collapsed: true,
-                                    };
-                                    setExpenses(prev => [...prev, newExpense]);
-                                    if (!addAnother) {
+                    {/* Modals */}
+                    {showAddExpense && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Add New Expense</h3>
+                                <AddExpenseForm
+                                    onSave={(expenseData, addAnother) => {
+                                        const newExpense = {
+                                            ...expenseData,
+                                            id: Math.max(...expenses.map(e => e.id), 0) + 1,
+                                            collapsed: true,
+                                        };
+                                        setExpenses(prev => [...prev, newExpense]);
+                                        if (!addAnother) {
+                                            setShowAddExpense(false);
+                                            setPreselectedCategory(null);
+                                        }
+                                    }}
+                                    onCancel={() => {
                                         setShowAddExpense(false);
                                         setPreselectedCategory(null);
-                                    }
-                                }}
-                                onCancel={() => {
-                                    setShowAddExpense(false);
-                                    setPreselectedCategory(null);
-                                }}
-                                categories={categories}
-                                darkMode={darkMode}
-                                currentPay={currentPay}
-                                preselectedCategory={preselectedCategory}
-                            />
+                                    }}
+                                    categories={categories}
+                                    darkMode={darkMode}
+                                    currentPay={currentPay}
+                                    preselectedCategory={preselectedCategory}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {editingExpense && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                            <h3 className="text-lg font-semibold mb-4">Edit Expense</h3>
-                            <AddExpenseForm
-                                expense={editingExpense}
-                                onSave={(expenseData) => {
-                                    setExpenses(prev => prev.map(exp =>
-                                        exp.id === editingExpense.id ? { ...exp, ...expenseData } : exp
-                                    ));
-                                    setEditingExpense(null);
-                                }}
-                                onCancel={() => setEditingExpense(null)}
-                                categories={categories}
-                                darkMode={darkMode}
-                                currentPay={currentPay}
-                            />
+                    {editingExpense && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Expense</h3>
+                                <AddExpenseForm
+                                    expense={editingExpense}
+                                    onSave={(expenseData) => {
+                                        setExpenses(prev => prev.map(exp =>
+                                            exp.id === editingExpense.id ? { ...exp, ...expenseData } : exp
+                                        ));
+                                        setEditingExpense(null);
+                                    }}
+                                    onCancel={() => setEditingExpense(null)}
+                                    categories={categories}
+                                    darkMode={darkMode}
+                                    currentPay={currentPay}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {showAddCategory && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                            <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
-                            <AddCategoryForm
-                                onSave={(categoryData, addAnother) => {
-                                    const newCategory = {
-                                        ...categoryData,
-                                        id: Math.max(...categories.map(c => c.id), 0) + 1,
-                                        collapsed: false,
-                                    };
-                                    setCategories(prev => [...prev, newCategory]);
-                                    if (!addAnother) setShowAddCategory(false);
-                                }}
-                                onCancel={() => setShowAddCategory(false)}
-                                categoryColors={categoryColors}
-                                darkMode={darkMode}
-                            />
+                    {showAddCategory && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
+                                <AddCategoryForm
+                                    onSave={(categoryData, addAnother) => {
+                                        const newCategory = {
+                                            ...categoryData,
+                                            id: Math.max(...categories.map(c => c.id), 0) + 1,
+                                            collapsed: false,
+                                        };
+                                        setCategories(prev => [...prev, newCategory]);
+                                        if (!addAnother) setShowAddCategory(false);
+                                    }}
+                                    onCancel={() => setShowAddCategory(false)}
+                                    categoryColors={categoryColors}
+                                    darkMode={darkMode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {editingCategory && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                            <h3 className="text-lg font-semibold mb-4">Edit Category</h3>
-                            <AddCategoryForm
-                                category={editingCategory}
-                                onSave={(categoryData) => {
-                                    setCategories(prev => prev.map(cat =>
-                                        cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
-                                    ));
-                                    setEditingCategory(null);
-                                }}
-                                onCancel={() => setEditingCategory(null)}
-                                categoryColors={categoryColors}
-                                darkMode={darkMode}
-                            />
+                    {editingCategory && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Category</h3>
+                                <AddCategoryForm
+                                    category={editingCategory}
+                                    onSave={(categoryData) => {
+                                        setCategories(prev => prev.map(cat =>
+                                            cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
+                                        ));
+                                        setEditingCategory(null);
+                                    }}
+                                    onCancel={() => setEditingCategory(null)}
+                                    categoryColors={categoryColors}
+                                    darkMode={darkMode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {showAddGoal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                            <h3 className="text-lg font-semibold mb-4">Add Savings Goal</h3>
-                            <AddGoalForm
-                                onSave={(goalData, addAnother) => {
-                                    const newGoal = {
-                                        ...goalData,
-                                        id: Math.max(...savingsGoals.map(g => g.id), 0) + 1,
-                                        collapsed: true,
-                                    };
-                                    setSavingsGoals(prev => [...prev, newGoal]);
-                                    if (!addAnother) {
+                    {showAddGoal && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Add Savings Goal</h3>
+                                <AddGoalForm
+                                    onSave={(goalData, addAnother) => {
+                                        const newGoal = {
+                                            ...goalData,
+                                            id: Math.max(...savingsGoals.map(g => g.id), 0) + 1,
+                                            collapsed: true,
+                                        };
+                                        setSavingsGoals(prev => [...prev, newGoal]);
+                                        if (!addAnother) {
+                                            setShowAddGoal(false);
+                                            setPreselectedCategory(null);
+                                        }
+                                    }}
+                                    onCancel={() => {
                                         setShowAddGoal(false);
                                         setPreselectedCategory(null);
-                                    }
-                                }}
-                                onCancel={() => {
-                                    setShowAddGoal(false);
-                                    setPreselectedCategory(null);
-                                }}
-                                categories={categories}
-                                darkMode={darkMode}
-                                currentPay={currentPay}
-                                preselectedCategory={preselectedCategory}
-                            />
+                                    }}
+                                    categories={categories}
+                                    darkMode={darkMode}
+                                    currentPay={currentPay}
+                                    preselectedCategory={preselectedCategory}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {editingGoal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                            <h3 className="text-lg font-semibold mb-4">Edit Savings Goal</h3>
-                            <AddGoalForm
-                                goal={editingGoal}
-                                onSave={(goalData) => {
-                                    setSavingsGoals(prev => prev.map(goal =>
-                                        goal.id === editingGoal.id ? { ...goal, ...goalData } : goal
-                                    ));
-                                    setEditingGoal(null);
-                                }}
-                                onCancel={() => setEditingGoal(null)}
-                                categories={categories}
-                                darkMode={darkMode}
-                                currentPay={currentPay}
-                            />
+                    {editingGoal && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Savings Goal</h3>
+                                <AddGoalForm
+                                    goal={editingGoal}
+                                    onSave={(goalData) => {
+                                        setSavingsGoals(prev => prev.map(goal =>
+                                            goal.id === editingGoal.id ? { ...goal, ...goalData } : goal
+                                        ));
+                                        setEditingGoal(null);
+                                    }}
+                                    onCancel={() => setEditingGoal(null)}
+                                    categories={categories}
+                                    darkMode={darkMode}
+                                    currentPay={currentPay}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {showAddAccount && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                            <h3 className="text-lg font-semibold mb-4">Add New Account</h3>
-                            <AddAccountForm
-                                onSave={(accountData) => {
-                                    const newAccount = {
-                                        ...accountData,
-                                        id: Math.max(...accounts.map(a => a.id), 0) + 1,
-                                    };
-                                    setAccounts(prev => [...prev, newAccount]);
-                                    setShowAddAccount(false);
-                                }}
-                                onCancel={() => setShowAddAccount(false)}
-                                darkMode={darkMode}
-                            />
+                    {showAddAccount && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Add New Account</h3>
+                                <AddAccountForm
+                                    onSave={(accountData) => {
+                                        const newAccount = {
+                                            ...accountData,
+                                            id: Math.max(...accounts.map(a => a.id), 0) + 1,
+                                        };
+                                        setAccounts(prev => [...prev, newAccount]);
+                                        setShowAddAccount(false);
+                                    }}
+                                    onCancel={() => setShowAddAccount(false)}
+                                    darkMode={darkMode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {editingAccount && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
-                            <h3 className="text-lg font-semibold mb-4">Edit Account</h3>
-                            <AddAccountForm
-                                account={editingAccount}
-                                onSave={(accountData) => {
-                                    setAccounts(prev => prev.map(acc =>
-                                        acc.id === editingAccount.id ? { ...acc, ...accountData } : acc
-                                    ));
-                                    setEditingAccount(null);
-                                }}
-                                onCancel={() => setEditingAccount(null)}
-                                darkMode={darkMode}
-                            />
+                    {editingAccount && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Account</h3>
+                                <AddAccountForm
+                                    account={editingAccount}
+                                    onSave={(accountData) => {
+                                        setAccounts(prev => prev.map(acc =>
+                                            acc.id === editingAccount.id ? { ...acc, ...accountData } : acc
+                                        ));
+                                        setEditingAccount(null);
+                                    }}
+                                    onCancel={() => setEditingAccount(null)}
+                                    darkMode={darkMode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {showAddTransaction && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                            <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
-                            <AddTransactionForm
-                                onSave={(transactionData, addAnother) => {
-                                    const newTransaction = {
-                                        ...transactionData,
-                                        id: Math.max(...transactions.map(t => t.id), 0) + 1,
-                                    };
-                                    setTransactions(prev => [...prev, newTransaction]);
-                                    if (!addAnother) setShowAddTransaction(false);
-                                }}
-                                onCancel={() => setShowAddTransaction(false)}
-                                categories={categories}
-                                accounts={accounts}
-                                darkMode={darkMode}
-                            />
+                    {showAddTransaction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
+                                <AddTransactionForm
+                                    onSave={(transactionData, addAnother) => {
+                                        const newTransaction = {
+                                            ...transactionData,
+                                            id: Math.max(...transactions.map(t => t.id), 0) + 1,
+                                        };
+                                        setTransactions(prev => [...prev, newTransaction]);
+                                        if (!addAnother) setShowAddTransaction(false);
+                                    }}
+                                    onCancel={() => setShowAddTransaction(false)}
+                                    categories={categories}
+                                    accounts={accounts}
+                                    darkMode={darkMode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {editingTransaction && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
-                            <h3 className="text-lg font-semibold mb-4">Edit Transaction</h3>
-                            <AddTransactionForm
-                                transaction={editingTransaction}
-                                onSave={(transactionData) => {
-                                    setTransactions(prev => prev.map(txn =>
-                                        txn.id === editingTransaction.id ? { ...txn, ...transactionData } : txn
-                                    ));
-                                    setEditingTransaction(null);
-                                }}
-                                onCancel={() => setEditingTransaction(null)}
-                                categories={categories}
-                                accounts={accounts}
-                                darkMode={darkMode}
-                            />
+                    {editingTransaction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                                <h3 className="text-lg font-semibold mb-4">Edit Transaction</h3>
+                                <AddTransactionForm
+                                    transaction={editingTransaction}
+                                    onSave={(transactionData) => {
+                                        setTransactions(prev => prev.map(txn =>
+                                            txn.id === editingTransaction.id ? { ...txn, ...transactionData } : txn
+                                        ));
+                                        setEditingTransaction(null);
+                                    }}
+                                    onCancel={() => setEditingTransaction(null)}
+                                    categories={categories}
+                                    accounts={accounts}
+                                    darkMode={darkMode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {showTransactions && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-4xl h-[95vh] sm:h-[85vh] overflow-hidden flex flex-col`}>
-                            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-                                <div className="flex justify-between items-center mb-3">
-                                    <h3 className="text-lg font-semibold flex items-center">💳 All Transactions</h3>
+                    {showTransactions && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-4xl h-[95vh] sm:h-[85vh] overflow-hidden flex flex-col`}>
+                                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className="text-lg font-semibold flex items-center">💳 All Transactions</h3>
+                                        <button
+                                            onClick={() => setShowTransactions(false)}
+                                            className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                    <div className="flex space-x-4 items-center">
+                                        <select
+                                            value={selectedAccount}
+                                            onChange={(e) => setSelectedAccount(e.target.value)}
+                                            className={`p-2 border rounded text-sm ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                                                }`}
+                                        >
+                                            <option value="all">All Accounts</option>
+                                            {accounts.map(account => (
+                                                <option key={account.id} value={account.id}>
+                                                    {account.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            onClick={() => setShowAddTransaction(true)}
+                                            className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 flex items-center"
+                                        >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            Add Transaction
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex-1 overflow-y-auto p-4">
+                                    <div className="space-y-2">
+                                        {transactions
+                                            .filter(txn =>
+                                                selectedAccount === 'all' || txn.accountId === parseInt(selectedAccount)
+                                            )
+                                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                                            .map(transaction => {
+                                                const account = accounts.find(acc => acc.id === transaction.accountId);
+                                                const category = categories.find(cat => cat.id === transaction.categoryId);
+                                                const transferAccount = transaction.transferAccountId
+                                                    ? accounts.find(acc => acc.id === transaction.transferAccountId)
+                                                    : null;
+
+                                                return (
+                                                    <div
+                                                        key={transaction.id}
+                                                        className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center">
+                                                                    <span className="font-medium">
+                                                                        {transaction.transfer
+                                                                            ? `Transfer to ${transferAccount?.name}`
+                                                                            : transaction.payee}
+                                                                    </span>
+                                                                    {transaction.cleared && (
+                                                                        <span className="ml-2 text-green-500">✓</span>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-sm text-gray-500 mt-1">
+                                                                    {transaction.date} • {account?.name}{' '}
+                                                                    {category && `• ${category.name}`}
+                                                                </div>
+                                                                {transaction.memo && (
+                                                                    <div className="text-sm text-gray-400 mt-1">
+                                                                        {transaction.memo}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div className="text-right ml-4">
+                                                                <div className="font-semibold text-lg">
+                                                                    ${transaction.amount.toFixed(2)}
+                                                                </div>
+                                                                <div className="flex space-x-1 mt-1">
+                                                                    <button
+                                                                        onClick={() => setEditingTransaction(transaction)}
+                                                                        className="p-1 hover:bg-gray-600 rounded"
+                                                                    >
+                                                                        <Edit2 className="w-4 h-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setConfirmDelete({
+                                                                            type: 'transaction',
+                                                                            id: transaction.id,
+                                                                            name: transaction.transfer
+                                                                                ? `Transfer to ${transferAccount?.name}`
+                                                                                : transaction.payee,
+                                                                            message: 'Delete this transaction?',
+                                                                        })}
+                                                                        className="p-1 hover:bg-gray-600 rounded text-red-400"
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        {transactions.length === 0 && (
+                                            <p className="text-gray-500 text-center py-8">
+                                                No transactions yet. Add your first transaction to get started!
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
                                     <button
                                         onClick={() => setShowTransactions(false)}
+                                        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                                    >
+                                        Done
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showCalendar && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}>
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-semibold">📅 Paycheck & Expense Calendar</h3>
+                                    <button
+                                        onClick={() => setShowCalendar(false)}
                                         className="text-gray-400 hover:text-gray-600 text-xl font-bold"
                                     >
                                         ✕
                                     </button>
                                 </div>
-                                <div className="flex space-x-4 items-center">
-                                    <select
-                                        value={selectedAccount}
-                                        onChange={(e) => setSelectedAccount(e.target.value)}
-                                        className={`p-2 border rounded text-sm ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                                            }`}
-                                    >
-                                        <option value="all">All Accounts</option>
-                                        {accounts.map(account => (
-                                            <option key={account.id} value={account.id}>
-                                                {account.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        onClick={() => setShowAddTransaction(true)}
-                                        className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 flex items-center"
-                                    >
-                                        <Plus className="w-4 h-4 mr-1" />
-                                        Add Transaction
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-4">
-                                <div className="space-y-2">
-                                    {transactions
-                                        .filter(txn =>
-                                            selectedAccount === 'all' || txn.accountId === parseInt(selectedAccount)
-                                        )
-                                        .sort((a, b) => new Date(b.date) - new Date(a.date))
-                                        .map(transaction => {
-                                            const account = accounts.find(acc => acc.id === transaction.accountId);
-                                            const category = categories.find(cat => cat.id === transaction.categoryId);
-                                            const transferAccount = transaction.transferAccountId
-                                                ? accounts.find(acc => acc.id === transaction.transferAccountId)
-                                                : null;
-
-                                            return (
-                                                <div
-                                                    key={transaction.id}
-                                                    className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'
-                                                        }`}
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center">
-                                                                <span className="font-medium">
-                                                                    {transaction.transfer
-                                                                        ? `Transfer to ${transferAccount?.name}`
-                                                                        : transaction.payee}
-                                                                </span>
-                                                                {transaction.cleared && (
-                                                                    <span className="ml-2 text-green-500">✓</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500 mt-1">
-                                                                {transaction.date} • {account?.name}{' '}
-                                                                {category && `• ${category.name}`}
-                                                            </div>
-                                                            {transaction.memo && (
-                                                                <div className="text-sm text-gray-400 mt-1">
-                                                                    {transaction.memo}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-right ml-4">
-                                                            <div className="font-semibold text-lg">
-                                                                ${transaction.amount.toFixed(2)}
-                                                            </div>
-                                                            <div className="flex space-x-1 mt-1">
-                                                                <button
-                                                                    onClick={() => setEditingTransaction(transaction)}
-                                                                    className="p-1 hover:bg-gray-600 rounded"
-                                                                >
-                                                                    <Edit2 className="w-4 h-4" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setConfirmDelete({
-                                                                        type: 'transaction',
-                                                                        id: transaction.id,
-                                                                        name: transaction.transfer
-                                                                            ? `Transfer to ${transferAccount?.name}`
-                                                                            : transaction.payee,
-                                                                        message: 'Delete this transaction?',
-                                                                    })}
-                                                                    className="p-1 hover:bg-gray-600 rounded text-red-400"
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    {transactions.length === 0 && (
-                                        <p className="text-gray-500 text-center py-8">
-                                            No transactions yet. Add your first transaction to get started!
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
-                                <button
-                                    onClick={() => setShowTransactions(false)}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                                >
-                                    Done
-                                </button>
+                                <CalendarView
+                                    darkMode={darkMode}
+                                    currentPay={currentPay}
+                                    paySchedule={paySchedule}
+                                    savingsGoals={savingsGoals}
+                                    expenses={expenses}
+                                    categories={categories}
+                                    frequencyOptions={frequencyOptions}
+                                    accounts={accounts}
+                                />
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {showCalendar && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-lg font-semibold">📅 Paycheck & Expense Calendar</h3>
-                                <button
-                                    onClick={() => setShowCalendar(false)}
-                                    className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                            <CalendarView
-                                darkMode={darkMode}
-                                currentPay={currentPay}
-                                paySchedule={paySchedule}
-                                savingsGoals={savingsGoals}
-                                expenses={expenses}
-                                categories={categories}
-                                frequencyOptions={frequencyOptions}
-                                accounts={accounts}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* Confirm Delete Dialog */}
-                {confirmDelete && (
-                    <ConfirmDialog
-                        title="Confirm Delete"
-                        message={confirmDelete.message}
-                        onConfirm={() => {
-                            switch (confirmDelete.type) {
-                                case 'expense':
-                                    handleDeleteExpense(confirmDelete.id);
-                                    break;
-                                case 'goal':
-                                    handleDeleteGoal(confirmDelete.id);
-                                    break;
-                                case 'category':
-                                    handleDeleteCategory(confirmDelete.id);
-                                    break;
-                                case 'account':
-                                    handleDeleteAccount(confirmDelete.id);
-                                    break;
-                                case 'transaction':
-                                    handleDeleteTransaction(confirmDelete.id);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }}
-                        onCancel={() => setConfirmDelete(null)}
-                        darkMode={darkMode}
-                    />
-                )}
+                    {/* Confirm Delete Dialog */}
+                    {confirmDelete && (
+                        <ConfirmDialog
+                            title="Confirm Delete"
+                            message={confirmDelete.message}
+                            onConfirm={() => {
+                                switch (confirmDelete.type) {
+                                    case 'expense':
+                                        handleDeleteExpense(confirmDelete.id);
+                                        break;
+                                    case 'goal':
+                                        handleDeleteGoal(confirmDelete.id);
+                                        break;
+                                    case 'category':
+                                        handleDeleteCategory(confirmDelete.id);
+                                        break;
+                                    case 'account':
+                                        handleDeleteAccount(confirmDelete.id);
+                                        break;
+                                    case 'transaction':
+                                        handleDeleteTransaction(confirmDelete.id);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }}
+                            onCancel={() => setConfirmDelete(null)}
+                            darkMode={darkMode}
+                        />
+                    )}
+                </div>
             </div>
-        </div>
+        </DndProvider>
     );
+
 };
 
 export default App;
