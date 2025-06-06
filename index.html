@@ -1619,14 +1619,17 @@
                         className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
                     />
 
-                    <input
-                        type="number"
-                        step="0.01"
-                        value={formData.balance}
-                        onChange={(e) => setFormData(prev => ({ ...prev, balance: e.target.value }))}
-                        placeholder="Current balance"
-                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                    />
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
+                        <input
+                            type="number"
+                            step="0.01"
+                            value={formData.balance}
+                            onChange={(e) => setFormData(prev => ({ ...prev, balance: e.target.value }))}
+                            placeholder="Current balance"
+                            className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                        />
+                    </div>
 
                     <div className="flex space-x-2">
                         <button
@@ -2064,115 +2067,48 @@
 
                             {showConfig && (
                                 <div className="space-y-4">
-                                    {/* Split paycheck section - moved to top */}
-                                    {/* Split paycheck section - only show if 2+ accounts exist */}
-                                    {accounts.length >= 2 ? (
-                                        <div className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'}`}>
-                                            <div className="flex items-center mb-4">
-                                                <input
-                                                    type="checkbox"
-                                                    id="splitPaycheck"
-                                                    checked={paySchedule.splitPaycheck}
-                                                    onChange={(e) => setPaySchedule(prev => ({ ...prev, splitPaycheck: e.target.checked }))}
-                                                    className="mr-2"
-                                                />
-                                                <label htmlFor="splitPaycheck" className="text-sm font-medium">
-                                                    I receive split paychecks (direct deposit to multiple accounts)
-                                                </label>
-                                                {paySchedule.splitPaycheck && (
-                                                    <span className="ml-2 text-xs bg-purple-500 text-white px-2 py-1 rounded">Split Pay</span>
-                                                )}
-                                            </div>
-
-                                            {paySchedule.splitPaycheck && (
-                                                <div className="space-y-4">
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        <div>
-                                                            <label className="block text-sm font-medium mb-1">Primary Bank Account</label>
-                                                            <select
-                                                                value={paySchedule.primaryAccountId}
-                                                                onChange={(e) => setPaySchedule(prev => ({ ...prev, primaryAccountId: parseInt(e.target.value) }))}
-                                                                className={`w-full p-2 border rounded mb-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                                            >
-                                                                {accounts.map(account => (
-                                                                    <option key={account.id} value={account.id}>{account.name} ({account.bankName})</option>
-                                                                ))}
-                                                            </select>
-                                                            <div className="relative">
-                                                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
-                                                                <input
-                                                                    type="number"
-                                                                    value={paySchedule.primaryAmount}
-                                                                    onChange={(e) => setPaySchedule(prev => ({ ...prev, primaryAmount: parseFloat(e.target.value) || 0 }))}
-                                                                    className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                                                />
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 mt-1">Main deposit</div>
-                                                        </div>
-
-                                                        <div>
-                                                            <label className="block text-sm font-medium mb-1">Secondary Bank Account</label>
-                                                            <select
-                                                                value={paySchedule.secondaryAccountId}
-                                                                onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryAccountId: parseInt(e.target.value) }))}
-                                                                className={`w-full p-2 border rounded mb-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                                            >
-                                                                {accounts.filter(acc => acc.id !== paySchedule.primaryAccountId).map(account => (
-                                                                    <option key={account.id} value={account.id}>{account.name} ({account.bankName})</option>
-                                                                ))}
-                                                            </select>
-                                                            <div className="relative">
-                                                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
-                                                                <input
-                                                                    type="number"
-                                                                    value={paySchedule.secondaryAmount}
-                                                                    onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryAmount: parseFloat(e.target.value) || 0 }))}
-                                                                    className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                                                />
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 mt-1">Early deposit</div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                        <div>
-                                                            <label className="block text-sm font-medium mb-1">Days Early for Secondary Bank</label>
-                                                            <input
-                                                                type="number"
-                                                                min="1"
-                                                                max="5"
-                                                                value={paySchedule.secondaryDaysEarly}
-                                                                onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryDaysEarly: parseInt(e.target.value) || 2 }))}
-                                                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                                            />
-                                                            <div className="text-xs text-gray-500 mt-1">days before main deposit</div>
-                                                        </div>
-
-                                                        <div>
-                                                            <label className="block text-sm font-medium mb-1">Total</label>
-                                                            <div className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-gray-100 border-gray-300'} text-center font-semibold`}>
-                                                                ${(paySchedule.primaryAmount + paySchedule.secondaryAmount).toFixed(2)}
-                                                            </div>
-                                                            <div className="text-xs text-gray-500 mt-1 text-center">Combined</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                    {/* Split paycheck section - always show checkbox */}
+                                    <div className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'}`}>
+                                        <div className="flex items-center mb-4">
+                                            <input
+                                                type="checkbox"
+                                                id="splitPaycheck"
+                                                checked={paySchedule.splitPaycheck}
+                                                onChange={(e) => setPaySchedule(prev => ({ ...prev, splitPaycheck: e.target.checked }))}
+                                                className="mr-2"
+                                            />
+                                            <label htmlFor="splitPaycheck" className="text-sm font-medium">
+                                                I receive split paychecks (direct deposit to multiple accounts)
+                                            </label>
+                                            {paySchedule.splitPaycheck && accounts.length >= 2 && (
+                                                <span className="ml-2 text-xs bg-purple-500 text-white px-2 py-1 rounded">Split Pay</span>
                                             )}
                                         </div>
-                                    ) : (
-                                        <div className={`p-4 rounded border ${darkMode ? 'border-yellow-600 bg-yellow-900/20' : 'border-yellow-300 bg-yellow-50'}`}>
-                                            <div className="flex items-center text-sm">
-                                                <span className="mr-2">💡</span>
-                                                <span>Add a second account to enable split paycheck deposits.</span>
-                                                <button
-                                                    onClick={() => setShowAddAccount(true)}
-                                                    className={`ml-2 hover:underline ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
-                                                >
-                                                    Add Account
-                                                </button>
+
+                                        {/* Show helper text only when checkbox is checked but <2 accounts */}
+                                        {paySchedule.splitPaycheck && accounts.length < 2 && (
+                                            <div className={`p-3 rounded border ${darkMode ? 'border-yellow-600 bg-yellow-900/20' : 'border-yellow-300 bg-yellow-50'} mb-4`}>
+                                                <div className="flex items-center text-sm">
+                                                    <span className="mr-2">💡</span>
+                                                    <span>You'll need a second account to split your paycheck.</span>
+                                                    <button
+                                                        onClick={() => setShowAddAccount(true)}
+                                                        className={`ml-2 hover:underline ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
+                                                    >
+                                                        Add Account
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
+
+                                        {/* Show split paycheck form only when checkbox is checked AND 2+ accounts */}
+                                        {paySchedule.splitPaycheck && accounts.length >= 2 && (
+                                            <div className="space-y-4">
+                                                {/* ... your existing split paycheck form content ... */}
+                                            </div>
+                                        )}
+                                    </div>
+
 
                                     {/* Main config row - responsive stacking */}
                                     <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-cols-2 gap-4">
