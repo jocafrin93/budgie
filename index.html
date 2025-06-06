@@ -1751,7 +1751,7 @@
             const [editingGoal, setEditingGoal] = useState(null);
             const [showCalendar, setShowCalendar] = useState(false);
             const [paySchedule, setPaySchedule] = useState({
-                startDate: '2025-06-15',
+                startDate: '2025-06-13',
                 frequency: 'bi-weekly',
                 splitPaycheck: false,
                 primaryAmount: 2200,
@@ -2059,56 +2059,135 @@
                             </div>
 
                             {showConfig && (
-                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">
-                                            {whatIfMode ? 'What-If Pay' : 'Take-home Pay'} (bi-weekly)
-                                        </label>
-                                        <div className="relative">
-                                            <DollarSign className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                                <div className="space-y-4">
+                                    {/* First row - basic config */}
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">
+                                                {whatIfMode ? 'What-If Pay' : 'Take-home Pay'} (bi-weekly)
+                                            </label>
+                                            <div className="relative">
+                                                <DollarSign className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                                                <input
+                                                    type="number"
+                                                    value={whatIfMode ? whatIfPay : takeHomePay}
+                                                    onChange={(e) => whatIfMode ? setWhatIfPay(parseFloat(e.target.value) || 0) : setTakeHomePay(parseFloat(e.target.value) || 0)}
+                                                    className={`w-full pl-10 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} ${whatIfMode ? 'ring-2 ring-blue-500' : ''}`}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Rounding</label>
+                                            <select
+                                                value={roundingOption}
+                                                onChange={(e) => setRoundingOption(parseInt(e.target.value))}
+                                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                            >
+                                                <option value={0}>No rounding</option>
+                                                <option value={5}>Round to $5</option>
+                                                <option value={10}>Round to $10</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Buffer (%)</label>
                                             <input
                                                 type="number"
-                                                value={whatIfMode ? whatIfPay : takeHomePay}
-                                                onChange={(e) => whatIfMode ? setWhatIfPay(parseFloat(e.target.value) || 0) : setTakeHomePay(parseFloat(e.target.value) || 0)}
-                                                className={`w-full pl-10 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} ${whatIfMode ? 'ring-2 ring-blue-500' : ''}`}
+                                                min="0"
+                                                max="20"
+                                                value={bufferPercentage}
+                                                onChange={(e) => setBufferPercentage(parseFloat(e.target.value) || 0)}
+                                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium mb-1">Next Paycheck Date</label>
+                                            <input
+                                                type="date"
+                                                value={paySchedule.startDate}
+                                                onChange={(e) => setPaySchedule(prev => ({ ...prev, startDate: e.target.value }))}
+                                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                                style={darkMode ? { colorScheme: 'dark' } : {}}
                                             />
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Rounding</label>
-                                        <select
-                                            value={roundingOption}
-                                            onChange={(e) => setRoundingOption(parseInt(e.target.value))}
-                                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                        >
-                                            <option value={0}>No rounding</option>
-                                            <option value={5}>Round to $5</option>
-                                            <option value={10}>Round to $10</option>
-                                        </select>
-                                    </div>
+                                    {/* Split paycheck section */}
+                                    <div className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'}`}>
+                                        <div className="flex items-center mb-4">
+                                            <input
+                                                type="checkbox"
+                                                id="splitPaycheck"
+                                                checked={paySchedule.splitPaycheck}
+                                                onChange={(e) => setPaySchedule(prev => ({ ...prev, splitPaycheck: e.target.checked }))}
+                                                className="mr-2"
+                                            />
+                                            <label htmlFor="splitPaycheck" className="text-sm font-medium">
+                                                I receive split paychecks (direct deposit to multiple accounts)
+                                            </label>
+                                            {paySchedule.splitPaycheck && (
+                                                <span className="ml-2 text-xs bg-purple-500 text-white px-2 py-1 rounded">Split Pay</span>
+                                            )}
+                                        </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Buffer (%)</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="20"
-                                            value={bufferPercentage}
-                                            onChange={(e) => setBufferPercentage(parseFloat(e.target.value) || 0)}
-                                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                        />
-                                    </div>
+                                        {paySchedule.splitPaycheck && (
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">Primary Bank Amount</label>
+                                                        <div className="relative">
+                                                            <DollarSign className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                                                            <input
+                                                                type="number"
+                                                                value={paySchedule.primaryAmount}
+                                                                onChange={(e) => setPaySchedule(prev => ({ ...prev, primaryAmount: parseFloat(e.target.value) || 0 }))}
+                                                                className={`w-full pl-10 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                                            />
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-1">Main deposit</div>
+                                                    </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Next Paycheck Date</label>
-                                        <input
-                                            type="date"
-                                            value={paySchedule.startDate}
-                                            onChange={(e) => setPaySchedule(prev => ({ ...prev, startDate: e.target.value }))}
-                                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
-                                            style={darkMode ? { colorScheme: 'dark' } : {}}
-                                        />
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">Secondary Bank Amount</label>
+                                                        <div className="relative">
+                                                            <DollarSign className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                                                            <input
+                                                                type="number"
+                                                                value={paySchedule.secondaryAmount}
+                                                                onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryAmount: parseFloat(e.target.value) || 0 }))}
+                                                                className={`w-full pl-10 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                                            />
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-1">Early deposit</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">Days Early for Secondary Bank</label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            max="5"
+                                                            value={paySchedule.secondaryDaysEarly}
+                                                            onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryDaysEarly: parseInt(e.target.value) || 2 }))}
+                                                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                                                        />
+                                                        <div className="text-xs text-gray-500 mt-1">days before main deposit</div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-sm font-medium mb-1">Total</label>
+                                                        <div className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-gray-100 border-gray-300'} text-center font-semibold`}>
+                                                            ${(paySchedule.primaryAmount + paySchedule.secondaryAmount).toFixed(2)}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-1 text-center">Combined</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
