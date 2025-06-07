@@ -18,7 +18,7 @@ import CategoriesSection from './components/CategoriesSection';
 import TransactionsSection from './components/TransactionsSection';
 import SummaryPanel from './components/SummaryPanel';
 import ConfirmDialog from './components/ConfirmDialog';
-import { SimpleDragTest } from './components/DebugDragDrop';
+
 
 // Import hooks
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -369,12 +369,12 @@ const App = () => {
         <DndProvider backend={HTML5Backend}>
             <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
                 }`}>
-                <SimpleDragTest />
+
                 <div className="container mx-auto px-4 py-8 max-w-6xl">
                     {/* Header */}
                     <div className="flex justify-between items-center mb-8">
                         <div>
-                            <h1 className="text-3xl font-bold mb-2">Bi-weekly Budget Calculator</h1>
+                            <h1 className="text-3xl font-bold mb-2">Budgie 🦜 </h1>
                             <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 Plan your YNAB allocations with precision
                             </p>

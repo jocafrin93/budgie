@@ -6,6 +6,7 @@
 .dark {
   color-scheme: dark;
 }
+
 /* Ensure dark mode works */
 .dark {
   color-scheme: dark;
@@ -67,6 +68,12 @@
 
 .dark .text-green-900 {
   color: #14532d !important;
+}
+
+/* Fix hover states for expense/goal items in dark mode */
+.dark .hover\:bg-gray-100:hover {
+  background-color: rgba(75, 85, 99, 0.3) !important;
+  /* More transparent gray */
 }
 
 /* Fix light mode calendar colors */
@@ -172,6 +179,33 @@
 
 .border-gray-300 {
   border-color: #d1d5db !important;
+}
+
+/* Drag and drop cursor styles */
+[draggable="true"] {
+  cursor: grab;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* React DnD drag handles */
+.react-dnd-drag-handle {
+  cursor: grab;
+}
+
+.react-dnd-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Override any conflicting cursor styles during drag */
+.transition-opacity {
+  cursor: grab !important;
+}
+
+.transition-opacity:active {
+  cursor: grabbing !important;
 }
 
 /* Fallback styling */
