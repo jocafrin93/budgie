@@ -1,5 +1,6 @@
 import React from 'react';
 import { Calculator, Download, ChevronDown, ChevronRight } from 'lucide-react';
+import CurrencyInput from './CurrencyInput';
 
 const ConfigurationPanel = ({
     darkMode,
@@ -121,15 +122,13 @@ const ConfigurationPanel = ({
 
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Primary Amount</label>
-                                        <input
-                                            type="number"
+                                        <CurrencyInput
                                             value={paySchedule.primaryAmount}
                                             onChange={(e) => setPaySchedule(prev => ({
                                                 ...prev,
                                                 primaryAmount: parseFloat(e.target.value) || 0,
                                             }))}
-                                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                                                }`}
+                                            darkMode={darkMode}
                                         />
                                     </div>
                                 </div>
@@ -158,15 +157,13 @@ const ConfigurationPanel = ({
 
                                     <div>
                                         <label className="block text-sm font-medium mb-1">Secondary Amount</label>
-                                        <input
-                                            type="number"
+                                        <CurrencyInput
                                             value={paySchedule.secondaryAmount}
                                             onChange={(e) => setPaySchedule(prev => ({
                                                 ...prev,
                                                 secondaryAmount: parseFloat(e.target.value) || 0,
                                             }))}
-                                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                                                }`}
+                                            darkMode={darkMode}
                                         />
                                     </div>
 
@@ -196,22 +193,25 @@ const ConfigurationPanel = ({
                             <label className="block text-sm font-medium mb-1">
                                 {whatIfMode ? 'What-If Pay' : 'Take-home Pay'} (bi-weekly)
                             </label>
-                            <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                                    $
-                                </span>
-                                <input
-                                    type="number"
+                            {paySchedule.splitPaycheck ? (
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
+                                    <div className={`w-full pl-8 p-2 border rounded bg-gray-100 dark:bg-gray-600 ${darkMode ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-700'}`}>
+                                        {(paySchedule.primaryAmount + paySchedule.secondaryAmount).toFixed(2)}
+                                    </div>
+                                </div>
+                            ) : (
+                                <CurrencyInput
                                     value={whatIfMode ? whatIfPay : takeHomePay}
                                     onChange={(e) =>
                                         whatIfMode
                                             ? setWhatIfPay(parseFloat(e.target.value) || 0)
                                             : setTakeHomePay(parseFloat(e.target.value) || 0)
                                     }
-                                    className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                                        } ${whatIfMode ? 'ring-2 ring-blue-500' : ''}`}
+                                    darkMode={darkMode}
+                                    className={whatIfMode ? 'ring-2 ring-blue-500' : ''}
                                 />
-                            </div>
+                            )}
                             {!paySchedule.splitPaycheck && (
                                 <div className="text-xs text-gray-500 mt-1">
                                     Complete bi-weekly amount

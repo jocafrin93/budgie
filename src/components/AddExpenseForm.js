@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import CurrencyInput from './CurrencyInput';
+
 
 const AddExpenseForm = ({
     onSave,
@@ -103,8 +105,8 @@ const AddExpenseForm = ({
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, inputMode: 'amount', percentage: '' }))}
                         className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === 'amount'
-                                ? 'bg-blue-600 text-white'
-                                : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                            ? 'bg-blue-600 text-white'
+                            : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
                             }`}
                     >
                         $ Amount
@@ -113,8 +115,8 @@ const AddExpenseForm = ({
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, inputMode: 'percentage', amount: '' }))}
                         className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === 'percentage'
-                                ? 'bg-green-600 text-white'
-                                : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                            ? 'bg-green-600 text-white'
+                            : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
                             }`}
                     >
                         % of Paycheck
@@ -122,13 +124,11 @@ const AddExpenseForm = ({
                 </div>
 
                 {formData.inputMode === 'amount' ? (
-                    <input
-                        type="number"
-                        step="0.01"
+                    <CurrencyInput
                         value={formData.amount}
                         onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value, percentage: '' }))}
                         placeholder="Amount"
-                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                        darkMode={darkMode}
                     />
                 ) : (
                     <div className="relative">
@@ -149,7 +149,7 @@ const AddExpenseForm = ({
                         ≈ ${((parseFloat(formData.percentage) / 100) * currentPay).toFixed(2)} per paycheck
                     </div>
                 )}
-                {formData.amount && formData.inputMode === 'amount' && (
+                {formData.amount > 0 && formData.inputMode === 'amount' && (
                     <div className="text-xs text-gray-500">
                         ≈ {((parseFloat(formData.amount) / currentPay) * 100).toFixed(1)}% of paycheck
                     </div>
@@ -180,13 +180,12 @@ const AddExpenseForm = ({
                 <div className="grid grid-cols-2 gap-3">
                     <div>
                         <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Already Saved</label>
-                        <input
-                            type="number"
-                            step="0.01"
+                        <CurrencyInput
                             value={formData.alreadySaved}
                             onChange={(e) => setFormData(prev => ({ ...prev, alreadySaved: e.target.value }))}
                             placeholder="0.00"
-                            className={`w-full p-2 border rounded text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
+                            darkMode={darkMode}
+                            className="text-sm"
                         />
                     </div>
 
@@ -202,7 +201,7 @@ const AddExpenseForm = ({
                     </div>
                 </div>
 
-                {formData.amount && formData.alreadySaved > 0 && (
+                {(parseFloat(formData.amount || 0) > 0) && (
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                             <span>Progress: ${parseFloat(formData.alreadySaved || 0).toFixed(2)} / ${parseFloat(formData.amount || 0).toFixed(2)}</span>
@@ -228,10 +227,10 @@ const AddExpenseForm = ({
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'active' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'active'
-                                    ? 'bg-blue-500 text-white border border-blue-500'
-                                    : darkMode
-                                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-500 text-white border border-blue-500'
+                                : darkMode
+                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             🟢 Active
@@ -240,10 +239,10 @@ const AddExpenseForm = ({
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'paused' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'paused'
-                                    ? 'bg-blue-500 text-white border border-blue-500'
-                                    : darkMode
-                                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-500 text-white border border-blue-500'
+                                : darkMode
+                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             ⏸️ Paused
@@ -252,10 +251,10 @@ const AddExpenseForm = ({
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'complete' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'complete'
-                                    ? 'bg-blue-500 text-white border border-blue-500'
-                                    : darkMode
-                                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-500 text-white border border-blue-500'
+                                : darkMode
+                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             ✅ Funded

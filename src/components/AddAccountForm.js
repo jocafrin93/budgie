@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import CurrencyInput from './CurrencyInput';
+
 
 const AddAccountForm = ({ onSave, onCancel, darkMode, account = null }) => {
     const [formData, setFormData] = useState({
@@ -60,19 +62,12 @@ const AddAccountForm = ({ onSave, onCancel, darkMode, account = null }) => {
                 className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
                     }`}
             />
-
-            <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">$</span>
-                <input
-                    type="number"
-                    step="0.01"
-                    value={formData.balance}
-                    onChange={(e) => setFormData(prev => ({ ...prev, balance: e.target.value }))}
-                    placeholder="Current balance"
-                    className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                        }`}
-                />
-            </div>
+            <CurrencyInput
+                value={formData.balance}
+                onChange={(e) => setFormData(prev => ({ ...prev, balance: e.target.value }))}
+                placeholder="Current balance"
+                darkMode={darkMode}
+            />
 
             <div className="flex space-x-2">
                 <button

@@ -18,6 +18,8 @@ import CategoriesSection from './components/CategoriesSection';
 import TransactionsSection from './components/TransactionsSection';
 import SummaryPanel from './components/SummaryPanel';
 import ConfirmDialog from './components/ConfirmDialog';
+import CurrencyInput from './components/CurrencyInput';
+
 
 
 // Import hooks
@@ -658,6 +660,9 @@ const App = () => {
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                             <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                 <h3 className="text-lg font-semibold mb-4">Add Savings Goal</h3>
+                                <div className="text-xs text-gray-500 mb-1">
+                                    Fill any two fields and the third calculates automatically
+                                </div>
                                 <AddGoalForm
                                     onSave={(goalData, addAnother) => {
                                         const newGoal = {

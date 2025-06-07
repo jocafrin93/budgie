@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import CurrencyInput from './CurrencyInput';
+
 
 const AddTransactionForm = ({
     onSave,
@@ -172,14 +174,11 @@ const AddTransactionForm = ({
 
             <div>
                 <label className="block text-sm font-medium mb-1">Amount</label>
-                <input
-                    type="number"
-                    step="0.01"
+                <CurrencyInput
                     value={formData.amount}
                     onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                     placeholder="0.00"
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                        }`}
+                    darkMode={darkMode}
                 />
             </div>
 

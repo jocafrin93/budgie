@@ -1,4 +1,23 @@
 # Budget Calculator Development Session Summary
+# Changelog
+
+## [Unreleased]
+### Added
+- Drag and drop reordering for categories, expenses, and goals
+- Dark mode hover state fixes
+
+### Fixed
+- Text readability in dark mode on hover
+
+## [1.0.0] - 2025-06-07
+### Added
+- Initial release
+- Bi-weekly budget calculator
+- Expense tracking with multiple frequencies
+- Savings goals with progress tracking
+- Transaction management
+- Calendar view for paychecks and due dates
+- Dark/light mode toggle
 
 Version 1.0 
 ### 1. **Recurring Expenses Feature** ✅

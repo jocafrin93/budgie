@@ -1,4 +1,3 @@
-// CurrencyInput.js - Add this as a new component file
 import React, { useState, useEffect } from 'react';
 
 const CurrencyInput = ({
@@ -8,86 +7,87 @@ const CurrencyInput = ({
     className = "",
     darkMode = false,
     disabled = false,
-    step = "0.01",
-    min,
-    max,
+    autoFocus = false,
     ...props
 }) => {
-    const [displayValue, setDisplayValue] = useState('');
-    const [isFocused, setIsFocused] = useState(false);
+    const [displayValue, setDisplayValue] = useState('0.00');
 
-    // Format number for display (with commas)
-    const formatForDisplay = (num) => {
-        if (num === '' || num === null || num === undefined) return '';
-        const number = parseFloat(num);
-        if (isNaN(number)) return '';
-        return number.toLocaleString('en-US', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-        });
+    // Convert numeric value to currency display (always show 0.00 format)
+    const formatCurrency = (num) => {
+        const number = parseFloat(num) || 0;
+        return number.toFixed(2);
     };
 
-    // Parse display value back to number
-    const parseDisplayValue = (str) => {
-        if (!str) return '';
-        // Remove commas and parse
-        const cleaned = str.replace(/,/g, '');
-        const number = parseFloat(cleaned);
-        return isNaN(number) ? '' : number;
-    };
-
-    // Update display value when prop value changes
+    // Update display when prop value changes
     useEffect(() => {
-        if (!isFocused) {
-            setDisplayValue(value ? formatForDisplay(value) : '');
+        setDisplayValue(formatCurrency(value));
+    }, [value]);
+
+    const handleKeyDown = (e) => {
+        // Allow: backspace, delete, tab, escape, enter
+        if ([8, 9, 27, 13, 46].indexOf(e.keyCode) !== -1 ||
+            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            (e.keyCode === 65 && e.ctrlKey === true) ||
+            (e.keyCode === 67 && e.ctrlKey === true) ||
+            (e.keyCode === 86 && e.ctrlKey === true) ||
+            (e.keyCode === 88 && e.ctrlKey === true)) {
+            return;
         }
-    }, [value, isFocused]);
-
-    const handleFocus = (e) => {
-        setIsFocused(true);
-        // Show raw number when focused (no commas)
-        setDisplayValue(value ? value.toString() : '');
-        e.target.select(); // Select all text on focus
-    };
-
-    const handleBlur = (e) => {
-        setIsFocused(false);
-        const numericValue = parseDisplayValue(e.target.value);
-
-        // Update parent with numeric value
-        if (onChange) {
-            onChange({
-                ...e,
-                target: {
-                    ...e.target,
-                    value: numericValue
-                }
-            });
+        // Ensure that it is a number and stop the keypress
+        if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+            e.preventDefault();
         }
-
-        // Format for display
-        setDisplayValue(numericValue ? formatForDisplay(numericValue) : '');
     };
 
     const handleChange = (e) => {
-        const inputValue = e.target.value;
+        let value = e.target.value;
 
-        if (isFocused) {
-            // While focused, allow raw input
-            setDisplayValue(inputValue);
-        } else {
-            // When not focused, parse and format
-            const numericValue = parseDisplayValue(inputValue);
+        // Remove all non-digits
+        let digits = value.replace(/\D/g, '');
+
+        // If empty after removing non-digits, treat as 0
+        if (!digits) {
+            setDisplayValue('0.00');
             if (onChange) {
                 onChange({
                     ...e,
                     target: {
                         ...e.target,
-                        value: numericValue
+                        value: 0
                     }
                 });
             }
+            return;
         }
+
+        // Limit to reasonable number of digits (max $999,999.99)
+        if (digits.length > 8) {
+            digits = digits.slice(0, 8);
+        }
+
+        // Convert to cents, then to dollars
+        let cents = parseInt(digits) || 0;
+        let dollars = cents / 100;
+
+        // Format as currency
+        let formatted = dollars.toFixed(2);
+        setDisplayValue(formatted);
+
+        // Call onChange with numeric value
+        if (onChange) {
+            onChange({
+                ...e,
+                target: {
+                    ...e.target,
+                    value: dollars
+                }
+            });
+        }
+    };
+
+    const handleFocus = (e) => {
+        // Select all on focus for easy replacement
+        e.target.select();
     };
 
     const baseClassName = `w-full pl-8 p-2 border rounded ${darkMode
@@ -104,10 +104,11 @@ const CurrencyInput = ({
                 type="text"
                 value={displayValue}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 onFocus={handleFocus}
-                onBlur={handleBlur}
                 placeholder={placeholder}
                 disabled={disabled}
+                autoFocus={autoFocus}
                 className={`${baseClassName} ${className}`}
                 {...props}
             />

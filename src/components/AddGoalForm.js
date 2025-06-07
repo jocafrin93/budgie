@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import CurrencyInput from './CurrencyInput';
+
 
 const AddGoalForm = ({
     onSave,
@@ -135,110 +137,116 @@ const AddGoalForm = ({
         : 0;
 
     return (
+
         <div className="space-y-4" onKeyDown={handleKeyDown}>
-            <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Goal name"
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                    }`}
-                autoFocus
-            />
-
-            <input
-                type="date"
-                value={formData.targetDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, targetDate: e.target.value }))}
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                    }`}
-                style={darkMode ? { colorScheme: 'dark' } : {}}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
+            <div>
+                <label className="block text-sm font-medium mb-1">Goal Name</label>
                 <input
-                    type="number"
-                    step="0.01"
-                    value={formData.targetAmount}
-                    onChange={(e) =>
-                        setFormData(prev => ({
-                            ...prev,
-                            targetAmount: e.target.value,
-                            monthlyContribution: '',
-                            monthlyPercentage: '',
-                        }))
-                    }
-                    placeholder="Target amount"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="a pony, a summer estate, a case of caviar"
                     className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
                         }`}
+                    autoFocus
                 />
+            </div>
+            <div>
+                <label className="block text-sm font-medium mb-1">Target Date</label>
+                <input
+                    type="date"
+                    value={formData.targetDate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, targetDate: e.target.value }))}
+                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                        }`}
+                    style={darkMode ? { colorScheme: 'dark' } : {}}
+                />
+            </div>
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1">Target Amount</label>
+                    <CurrencyInput
+                        value={formData.targetAmount}
+                        onChange={(e) =>
+                            setFormData(prev => ({
+                                ...prev,
+                                targetAmount: e.target.value,
+                                monthlyContribution: '',
+                                monthlyPercentage: '',
+                            }))
+                        }
+                        placeholder="Target amount"
+                        darkMode={darkMode}
+                    />
 
-                <div className="space-y-2">
-                    <div className="flex space-x-1">
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setFormData(prev => ({ ...prev, inputMode: 'amount', monthlyPercentage: '' }))
-                            }
-                            className={`flex-1 py-1 px-2 rounded text-xs ${formData.inputMode === 'amount'
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium mb-1">Monthly Contribution</label>
+                    <div className="space-y-2">
+                        <div className="flex space-x-1">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setFormData(prev => ({ ...prev, inputMode: 'amount', monthlyPercentage: '' }))
+                                }
+                                className={`flex-1 py-1 px-2 rounded text-xs ${formData.inputMode === 'amount'
                                     ? 'bg-blue-600 text-white'
                                     : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
-                                }`}
-                        >
-                            $
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() =>
-                                setFormData(prev => ({ ...prev, inputMode: 'percentage', monthlyContribution: '' }))
-                            }
-                            className={`flex-1 py-1 px-2 rounded text-xs ${formData.inputMode === 'percentage'
+                                    }`}
+                            >
+                                $
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setFormData(prev => ({ ...prev, inputMode: 'percentage', monthlyContribution: '' }))
+                                }
+                                className={`flex-1 py-1 px-2 rounded text-xs ${formData.inputMode === 'percentage'
                                     ? 'bg-green-600 text-white'
                                     : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
-                                }`}
-                        >
-                            %
-                        </button>
-                    </div>
+                                    }`}
+                            >
+                                %
+                            </button>
+                        </div>
 
-                    {formData.inputMode === 'amount' ? (
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={formData.monthlyContribution}
-                            onChange={(e) =>
-                                setFormData(prev => ({
-                                    ...prev,
-                                    monthlyContribution: e.target.value,
-                                    targetAmount: '',
-                                    monthlyPercentage: '',
-                                }))
-                            }
-                            placeholder="Monthly amount"
-                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                                }`}
-                        />
-                    ) : (
-                        <div className="relative">
-                            <input
-                                type="number"
-                                step="0.1"
-                                value={formData.monthlyPercentage}
+                        {formData.inputMode === 'amount' ? (
+                            <CurrencyInput
+                                value={formData.monthlyContribution}
                                 onChange={(e) =>
                                     setFormData(prev => ({
                                         ...prev,
-                                        monthlyPercentage: e.target.value,
-                                        monthlyContribution: '',
+                                        monthlyContribution: e.target.value,
                                         targetAmount: '',
+                                        monthlyPercentage: '',
                                     }))
                                 }
-                                placeholder="% per paycheck"
-                                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                                    }`}
+                                placeholder="Monthly amount"
+                                darkMode={darkMode}
                             />
-                            <span className="absolute right-3 top-3 text-gray-400">%</span>
-                        </div>
-                    )}
+                        ) : (
+                            <div className="relative">
+                                <input
+                                    type="number"
+                                    step="0.1"
+                                    value={formData.monthlyPercentage}
+                                    onChange={(e) =>
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            monthlyPercentage: e.target.value,
+                                            monthlyContribution: '',
+                                            targetAmount: '',
+                                        }))
+                                    }
+                                    placeholder="% per paycheck"
+                                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                                        }`}
+                                />
+                                <span className="absolute right-3 top-3 text-gray-400">%</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -249,18 +257,16 @@ const AddGoalForm = ({
                     <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                         Already Saved
                     </label>
-                    <input
-                        type="number"
-                        step="0.01"
+                    <CurrencyInput
                         value={formData.alreadySaved}
                         onChange={(e) => setFormData(prev => ({ ...prev, alreadySaved: e.target.value }))}
                         placeholder="0.00"
-                        className={`w-full p-2 border rounded text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'
-                            }`}
+                        darkMode={darkMode}
+                        className="text-sm"
                     />
                 </div>
 
-                {formData.targetAmount && formData.alreadySaved > 0 && (
+                {(parseFloat(formData.targetAmount || 0) > 0) && (
                     <div className="space-y-2">
                         <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
                             <span>
@@ -293,10 +299,10 @@ const AddGoalForm = ({
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'active' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'active'
-                                    ? 'bg-blue-500 text-white border border-blue-500'
-                                    : darkMode
-                                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-500 text-white border border-blue-500'
+                                : darkMode
+                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             🟢 Active
@@ -305,10 +311,10 @@ const AddGoalForm = ({
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'paused' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'paused'
-                                    ? 'bg-blue-500 text-white border border-blue-500'
-                                    : darkMode
-                                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-500 text-white border border-blue-500'
+                                : darkMode
+                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             ⏸️ Paused
@@ -317,10 +323,10 @@ const AddGoalForm = ({
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'complete' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'complete'
-                                    ? 'bg-blue-500 text-white border border-blue-500'
-                                    : darkMode
-                                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                ? 'bg-blue-500 text-white border border-blue-500'
+                                : darkMode
+                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                                 }`}
                         >
                             ✅ Funded
@@ -330,10 +336,6 @@ const AddGoalForm = ({
                         Active: Allocate money • Paused: Track only • Complete: Goal reached
                     </div>
                 </div>
-            </div>
-
-            <div className="text-xs text-gray-500">
-                Fill any two fields and the third calculates automatically
             </div>
 
             <select
