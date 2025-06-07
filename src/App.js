@@ -1,9 +1,8 @@
+import React, { useState, useMemo, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { useDrag, useDrop } from 'react-dnd';
-import { ChevronUp, ChevronDown } from 'lucide-react';
-import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Download, Moon, Sun, Edit2, Trash2, Calculator, Target, DollarSign, ChevronRight, Eye, Percent, GripVertical } from 'lucide-react';
+import { Plus, Download, Moon, Sun, Edit2, Trash2, Calculator, Target, DollarSign, ChevronRight, Eye, Percent } from 'lucide-react';
+
 
 // Import components
 import AddExpenseForm from './components/AddExpenseForm';
@@ -19,6 +18,7 @@ import CategoriesSection from './components/CategoriesSection';
 import TransactionsSection from './components/TransactionsSection';
 import SummaryPanel from './components/SummaryPanel';
 import ConfirmDialog from './components/ConfirmDialog';
+import { SimpleDragTest } from './components/DebugDragDrop';
 
 // Import hooks
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -364,10 +364,12 @@ const App = () => {
         newGoals.splice(hoverIndex, 0, draggedItem);
         setSavingsGoals(newGoals);
     };
+
     return (
         <DndProvider backend={HTML5Backend}>
             <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
                 }`}>
+                <SimpleDragTest />
                 <div className="container mx-auto px-4 py-8 max-w-6xl">
                     {/* Header */}
                     <div className="flex justify-between items-center mb-8">
@@ -972,7 +974,6 @@ const App = () => {
             </div>
         </DndProvider>
     );
-
 };
 
 export default App;
