@@ -1,70 +1,110 @@
-# Getting Started with Create React App
+# README - The Road So Far 🦜
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-## Available Scripts
+**✅Complete✅**
+ - [x] Calendar view
+ - [x] Adding income transactions
+ - [x] Split checks
+ - [x] Timeline view
+ - [x] Spending from categories
+ - [x] Priority-based expense classification
+ - [x] Dark/light mode toggle
+ - [x] What-if analysis mode
+ - [x] Support for various expense frequencies (weekly, bi-weekly, monthly, quarterly, etc.)
+ - [x] Expense and savings goal tracking with progress indicators
+ - [x] Calendar view for paycheck and deadline visualization
+ - [x] Categories with collapsible organization
+ - [x] Priority-based expense classification
+ - [x] Funding status tracking with progress bars
+ - [x] Data persistence on localStorage
+ - [x] Drag and drop reordering
 
-In the project directory, you can run:
+**🚧Missing Core Features:🚧**
 
-### `npm start`
+ - [ ] Urgency indicators and catch-up timeline calculations (see below)
+ - [ ] Tab Structure
+	 - [ ] Transactions
+	 - [ ] Reporting (?)
+	 - [ ] Config
+	 - [ ] Payee management
+ - [ ]  Add recurring expenses to transactions
+ - [ ] Cross-device sync
+	 - [ ] JSON with cloud sync?
+ - [ ] Funding bars on item view
+ - [ ] Three-paycheck month identification
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+<details>
+<summary>**Catch-up timeline**</summary>
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+> How should you handle things you've already got money for? For
+> example, for one of your yearly expenses, you've already got a few
+> months' worth squirreled away.
 
-### `npm test`
+**Option 1: "Amount Already Saved" Field**
+*Add a field to expenses/goals where you can specify how much you've already set aside. The calculator would then:*
+-   Show your remaining needed allocation
+-   Calculate a "catch-up timeline"
+-   Optionally reduce your bi-weekly allocation until you're back on track
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**Option 2: "Funding Status" Tracking**
+*Add a progress indicator that shows:*
+-   Total needed for the expense
+-   Amount already saved
+-   Remaining to save
+-   Whether you can reduce/pause this allocation
 
-### `npm run build`
+**Option 3: "Smart Allocation Adjustment"**
+*The calculator could automatically:*
+-   Detect when you're ahead on an expense
+-   Suggest reducing the bi-weekly amount
+- Show you how the extra money could be reallocated
+</details>
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+	 
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+**👩🏼‍🔧Fixes:👩🏼‍🔧**
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+ - [ ] Consistent formatting for currency
+	 - what do you call it when you start typing a number and as you type, it moves past the decimal? Whatever that is.
+ - [ ] Fix margins/padding around split check and config cards
+ - [ ] Require due dates for recurring expenses
+ - [ ] Consolidate to remove scroll on forms
+ - [ ] Slim down categories and items when collapsed
+ - [ ] Fix "next few months" verbiage on calendar view
+ - [ ] Redo notes export
+ - [ ] Dark mode hover on goals, expenses
 
-### `npm run eject`
+## **Stretch Goals:**
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+ - [ ] New themes (see below)
+ - [ ] Reporting and Analytics
+ - [ ] Add cleaner sample data
+ - [ ] Inline calculator
+ - [ ] Change split deposit functionality into multiple checks - for shared accounts, couples, etc. 
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+<details>
+<summary>🎨 **Different Color Schemes for Categories**</summary>
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+ **Seasonal themes**: Spring pastels, autumn warmth, winter blues, summer brights
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+✨  **Seasonal Theme Features:** ✨ 
 
-## Learn More
+- **🌸 Spring**: Soft pastels - pinks, greens, purples, yellows  
+- **☀️ Summer**: Vibrant warmth - oranges, yellows, reds, bright pinks  
+- **🍂 Autumn**: Rich earth tones - ambers, deep oranges, warm reds
+- **❄️ Winter**: Cool elegance - blues, slates, indigos, cyans
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+🎮 **How to Use:**🎮 
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- Theme selector in the top-right header with a gradient button showing current theme
+- Hover to see options - dropdown appears with all four seasonal themes
+- One-click switching - instantly updates all category colors
+- Auto-updates existing categories when you change themes
 
-### Code Splitting
+🎨 **Smart Features:** 🎨
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Each theme has 8 coordinated colors for variety
+- Gradient accent colors that match each season's vibe
+- Existing categories automatically get new colors when switching
+- New categories will use the current theme's palette
+</details>
