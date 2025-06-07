@@ -23,7 +23,7 @@ const ConfigurationPanel = ({
 }) => {
     return (
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 mb-8 shadow-lg`}>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-2">
                 <div
                     className="flex items-center cursor-pointer flex-1"
                     onClick={() => setShowConfig(!showConfig)}
@@ -60,7 +60,7 @@ const ConfigurationPanel = ({
                     {/* Split paycheck section */}
                     <div className={`p-4 rounded border ${darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
                         }`}>
-                        <div className="flex items-center mb-4">
+                        <div className="flex items-center mb-2">
                             <input
                                 type="checkbox"
                                 id="splitPaycheck"

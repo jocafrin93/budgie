@@ -186,6 +186,7 @@ const CategoriesSection = ({
         'nice-to-have': 'border-green-400 bg-green-100 text-green-900',
     };
 
+
     return (
         <div>
             <div className="flex justify-between items-center mb-4">
@@ -228,7 +229,7 @@ const CategoriesSection = ({
                                 <div className={`absolute left-0 top-0 bottom-0 w-2 ${category.color}`}></div>
                                 <div className="flex items-center justify-between mb-3">
                                     <div
-                                        className="flex items-center cursor-pointer flex-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 transition-colors"
+                                        className="flex items-center cursor-pointer flex-1 hover:bg-black/10 rounded px-2 py-1 transition-colors"
 
                                         onClick={() => {
                                             setCategories(prev =>
@@ -263,7 +264,7 @@ const CategoriesSection = ({
                                                 setPreselectedCategory(category.id);
                                                 onAddExpense();
                                             }}
-                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-blue-400 hover:text-blue-300"
+                                            className="p-1 hover:bg-black/10 rounded text-blue-400 hover:text-blue-300"
                                             title="Add expense to this category"
                                         >
                                             <Plus className="w-4 h-4" />
@@ -273,7 +274,7 @@ const CategoriesSection = ({
                                                 e.stopPropagation();
                                                 onEditCategory(category);
                                             }}
-                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                            className="p-1 hover:bg-black/10 rounded"
                                         >
                                             <Edit2 className="w-4 h-4" />
                                         </button>
@@ -282,7 +283,7 @@ const CategoriesSection = ({
                                                 e.stopPropagation();
                                                 onDeleteCategory(category);
                                             }}
-                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-400"
+                                            className="p-1 hover:bg-black/10 rounded text-red-400"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -293,7 +294,7 @@ const CategoriesSection = ({
                                                     onMoveCategoryUp(category.id);
                                                 }}
                                                 disabled={categoryIndex === 0}
-                                                className={`p-1 rounded ${categoryIndex === 0 ? 'text-gray-400' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                                                className={`p-1 rounded ${categoryIndex === 0 ? 'text-gray-400' : 'hover:bg-black/10'}`}
                                             >
                                                 <ChevronUp className="w-3 h-3" />
                                             </button>
@@ -303,7 +304,7 @@ const CategoriesSection = ({
                                                     onMoveCategoryDown(category.id);
                                                 }}
                                                 disabled={categoryIndex === categorizedExpenses.length - 1}
-                                                className={`p-1 rounded ${categoryIndex === categorizedExpenses.length - 1 ? 'text-gray-400' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                                                className={`p-1 rounded ${categoryIndex === categorizedExpenses.length - 1 ? 'text-gray-400' : 'hover:bg-black/10'}`}
                                             >
                                                 <ChevronDown className="w-3 h-3" />
                                             </button>
@@ -331,7 +332,7 @@ const CategoriesSection = ({
                                                             } ${expense.allocationPaused ? 'opacity-60' : ''} rounded-r`}
                                                     >
                                                         <div
-                                                            className="p-3 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                            className="p-3 cursor-pointer transition-colors hover:bg-black/10"
                                                             onClick={() => {
                                                                 setExpenses(prev =>
                                                                     prev.map(exp =>
@@ -396,7 +397,7 @@ const CategoriesSection = ({
                                                                                     onMoveExpense(expense.id, 'up');
                                                                                 }}
                                                                                 disabled={expenseIndex === 0}
-                                                                                className={`p-1 rounded ${expenseIndex === 0 ? 'text-gray-400' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                                                                                className={`p-1 rounded ${expenseIndex === 0 ? 'text-gray-400' : 'hover:bg-black/10'}`}
                                                                             >
                                                                                 <ChevronUp className="w-3 h-3" />
                                                                             </button>
@@ -406,7 +407,7 @@ const CategoriesSection = ({
                                                                                     onMoveExpense(expense.id, 'down');
                                                                                 }}
                                                                                 disabled={expenseIndex === category.expenses.length - 1}
-                                                                                className={`p-1 rounded ${expenseIndex === category.expenses.length - 1 ? 'text-gray-400' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                                                                                className={`p-1 rounded ${expenseIndex === category.expenses.length - 1 ? 'text-gray-400' : 'hover:bg-black/10'}`}
                                                                             >
                                                                                 <ChevronDown className="w-3 h-3" />
                                                                             </button>
@@ -416,7 +417,7 @@ const CategoriesSection = ({
                                                                                 e.stopPropagation();
                                                                                 onEditExpense(expense);
                                                                             }}
-                                                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                                                            className="p-1 hover:bg-black/10 rounded"
                                                                         >
                                                                             <Edit2 className="w-3 h-3" />
                                                                         </button>
@@ -425,7 +426,7 @@ const CategoriesSection = ({
                                                                                 e.stopPropagation();
                                                                                 onDeleteExpense(expense);
                                                                             }}
-                                                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-400"
+                                                                            className="p-1 hover:bg-black/10 rounded text-red-400"
                                                                         >
                                                                             <Trash2 className="w-3 h-3" />
                                                                         </button>
@@ -461,11 +462,14 @@ const CategoriesSection = ({
                                                     onReorder={(dragIndex, hoverIndex) => onReorderGoals(dragIndex, hoverIndex, category.id)}
                                                 >
                                                     <div
-                                                        className={`border-l-4 border-green-400 bg-green-100 text-green-900 ${goal.isFullyFunded ? 'opacity-75' : ''
-                                                            } ${goal.allocationPaused ? 'opacity-60' : ''} rounded-r`}
+                                                        className={`border-l-4 border-green-400 ${darkMode
+                                                            ? 'bg-green-100 text-green-900'
+                                                            : 'bg-green-100 text-green-900'
+                                                            } ${goal.isFullyFunded ? 'opacity-75' : ''} ${goal.allocationPaused ? 'opacity-60' : ''
+                                                            } rounded-r`}
                                                     >
                                                         <div
-                                                            className="p-3 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                            className="p-3 cursor-pointer transition-colors hover:bg-black/10"
                                                             onClick={() => {
                                                                 setSavingsGoals(prev =>
                                                                     prev.map(g =>
@@ -534,7 +538,7 @@ const CategoriesSection = ({
                                                                                     onMoveGoal(goal.id, 'up');
                                                                                 }}
                                                                                 disabled={goalIndex === 0}
-                                                                                className={`p-1 rounded ${goalIndex === 0 ? 'text-gray-400' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                                                                                className={`p-1 rounded ${goalIndex === 0 ? 'text-gray-400' : 'hover:bg-black/10'}`}
                                                                             >
                                                                                 <ChevronUp className="w-3 h-3" />
                                                                             </button>
@@ -544,7 +548,7 @@ const CategoriesSection = ({
                                                                                     onMoveGoal(goal.id, 'down');
                                                                                 }}
                                                                                 disabled={goalIndex === category.goals.length - 1}
-                                                                                className={`p-1 rounded ${goalIndex === category.goals.length - 1 ? 'text-gray-400' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
+                                                                                className={`p-1 rounded ${goalIndex === category.goals.length - 1 ? 'text-gray-400' : 'hover:bg-black/10'}`}
                                                                             >
                                                                                 <ChevronDown className="w-3 h-3" />
                                                                             </button>
@@ -554,7 +558,7 @@ const CategoriesSection = ({
                                                                                 e.stopPropagation();
                                                                                 onEditGoal(goal);
                                                                             }}
-                                                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                                                                            className="p-1 hover:bg-black/10 rounded"
                                                                         >
                                                                             <Edit2 className="w-3 h-3" />
                                                                         </button>
@@ -563,7 +567,7 @@ const CategoriesSection = ({
                                                                                 e.stopPropagation();
                                                                                 onDeleteGoal(goal);
                                                                             }}
-                                                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-red-400"
+                                                                            className="p-1 hover:bg-black/10 rounded text-red-400"
                                                                         >
                                                                             <Trash2 className="w-3 h-3" />
                                                                         </button>
@@ -573,8 +577,8 @@ const CategoriesSection = ({
                                                         </div>
 
                                                         {!goal.collapsed && (
-                                                            <div className="px-3 pb-3 bg-green-200">
-                                                                <div className="text-sm text-gray-700 dark:text-gray-400 mb-2">
+                                                            <div className={`px-3 pb-3 ${darkMode ? 'bg-green-200' : 'bg-green-200'}`}>
+                                                                <div className={`text-sm ${darkMode ? 'text-green-100' : 'text-gray-700'} mb-2`}>
                                                                     Target: ${goal.targetAmount.toLocaleString()} by {goal.targetDate}
                                                                 </div>
 

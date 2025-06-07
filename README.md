@@ -59,7 +59,8 @@
  - [ ] Reporting and Analytics
  - [ ] Add cleaner sample data
  - [ ] Inline calculator
- - [ ] Change split deposit functionality into multiple checks - for shared accounts, couples, etc. 
+ - [ ] Change split deposit functionality into multiple checks - for shared accounts, couples, etc.
+ - [ ] Add more pay frequencies
 
 ##
 
