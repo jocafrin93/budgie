@@ -1,9 +1,9 @@
-import { useDrag, useDrop } from 'react-dnd';
-import { ChevronUp, ChevronDown } from 'lucide-react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { useDrag, useDrop } from 'react-dnd';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Download, Moon, Sun, Edit2, Trash2, Calculator, Target, DollarSign, ChevronRight, Eye, Percent } from 'lucide-react';
+import { Plus, Download, Moon, Sun, Edit2, Trash2, Calculator, Target, DollarSign, ChevronRight, Eye, Percent, GripVertical } from 'lucide-react';
 
 // Import components
 import AddExpenseForm from './components/AddExpenseForm';
@@ -273,7 +273,6 @@ const App = () => {
             frequencyOptions,
         });
     };
-    // Reorder categories by drag and drop
     const reorderCategories = (dragIndex, hoverIndex) => {
         const newCategories = [...categories];
         const draggedItem = newCategories[dragIndex];
@@ -282,7 +281,6 @@ const App = () => {
         setCategories(newCategories);
     };
 
-    // Reorder expenses within a category
     const reorderExpenses = (dragIndex, hoverIndex, categoryId) => {
         const categoryExpenses = expenses.filter(exp => exp.categoryId === categoryId);
         const otherExpenses = expenses.filter(exp => exp.categoryId !== categoryId);
@@ -294,7 +292,6 @@ const App = () => {
         setExpenses([...otherExpenses, ...categoryExpenses]);
     };
 
-    // Reorder goals within a category  
     const reorderGoals = (dragIndex, hoverIndex, categoryId) => {
         const categoryGoals = savingsGoals.filter(goal => goal.categoryId === categoryId);
         const otherGoals = savingsGoals.filter(goal => goal.categoryId !== categoryId);
@@ -306,7 +303,9 @@ const App = () => {
         setSavingsGoals([...otherGoals, ...categoryGoals]);
     };
 
-    // Arrow button functions for expenses/goals
+
+
+    // Arrow button functions for expenses/goals (keep these as they are)
     const moveExpenseUpDown = (expenseId, direction) => {
         const index = expenses.findIndex(exp => exp.id === expenseId);
         if (direction === 'up' && index > 0) {
@@ -331,7 +330,7 @@ const App = () => {
             [newGoals[index], newGoals[index + 1]] = [newGoals[index + 1], newGoals[index]];
             setSavingsGoals(newGoals);
         }
-  };
+    };
     const moveCategoryUp = (categoryId) => {
         const index = categories.findIndex(cat => cat.id === categoryId);
         if (index > 0) {
@@ -364,7 +363,7 @@ const App = () => {
         newGoals.splice(dragIndex, 1);
         newGoals.splice(hoverIndex, 0, draggedItem);
         setSavingsGoals(newGoals);
-      };
+    };
     return (
         <DndProvider backend={HTML5Backend}>
             <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
@@ -512,9 +511,13 @@ const App = () => {
                                 setPreselectedCategory={setPreselectedCategory}
                                 onMoveCategoryUp={moveCategoryUp}
                                 onMoveCategoryDown={moveCategoryDown}
-                                onMoveExpense={moveExpense}
-                                onMoveGoal={moveGoal}
+                                onMoveExpense={moveExpenseUpDown}
+                                onMoveGoal={moveGoalUpDown}
+                                onReorderCategories={reorderCategories}
+                                onReorderExpenses={reorderExpenses}
+                                onReorderGoals={reorderGoals}
                             />
+
                         </div>
 
                         {/* Right Sidebar */}

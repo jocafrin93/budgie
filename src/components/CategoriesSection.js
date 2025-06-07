@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Edit2, Trash2, Target, ChevronDown, ChevronRight, ChevronUp } from 'lucide-react';
+import { Plus, Edit2, Trash2, Target, ChevronDown, ChevronRight, ChevronUp, GripVertical } from 'lucide-react';
 import { useDrag, useDrop } from 'react-dnd';
 
 const DraggableCategory = ({
@@ -12,7 +12,7 @@ const DraggableCategory = ({
     canMoveUp,
     canMoveDown
 }) => {
-    const [{ isDragging }, drag] = useDrag({
+    const [{ isDragging }, drag, dragPreview] = useDrag({
         type: 'category',
         item: { index, id: category.id },
         collect: (monitor) => ({
@@ -32,11 +32,13 @@ const DraggableCategory = ({
 
     return (
         <div
-            ref={(node) => drag(drop(node))}
+            ref={dragPreview}
             style={{ opacity: isDragging ? 0.5 : 1 }}
             className="transition-opacity"
         >
-            {children}
+            <div ref={drop}>
+                {React.cloneElement(children, { dragHandle: drag })}
+            </div>
         </div>
     );
 };
@@ -47,12 +49,8 @@ const DraggableExpense = ({
     categoryId,
     children,
     onReorder,
-    onMoveUp,
-    onMoveDown,
-    canMoveUp,
-    canMoveDown
 }) => {
-    const [{ isDragging }, drag] = useDrag({
+    const [{ isDragging }, drag, dragPreview] = useDrag({
         type: 'expense',
         item: { index, id: expense.id, categoryId },
         collect: (monitor) => ({
@@ -72,11 +70,13 @@ const DraggableExpense = ({
 
     return (
         <div
-            ref={(node) => drag(drop(node))}
+            ref={dragPreview}
             style={{ opacity: isDragging ? 0.5 : 1 }}
             className="transition-opacity"
         >
-            {children}
+            <div ref={drop}>
+                {React.cloneElement(children, { dragHandle: drag })}
+            </div>
         </div>
     );
 };
@@ -87,12 +87,8 @@ const DraggableGoal = ({
     categoryId,
     children,
     onReorder,
-    onMoveUp,
-    onMoveDown,
-    canMoveUp,
-    canMoveDown
 }) => {
-    const [{ isDragging }, drag] = useDrag({
+    const [{ isDragging }, drag, dragPreview] = useDrag({
         type: 'goal',
         item: { index, id: goal.id, categoryId },
         collect: (monitor) => ({
@@ -112,11 +108,13 @@ const DraggableGoal = ({
 
     return (
         <div
-            ref={(node) => drag(drop(node))}
+            ref={dragPreview}
             style={{ opacity: isDragging ? 0.5 : 1 }}
             className="transition-opacity"
         >
-            {children}
+            <div ref={drop}>
+                {React.cloneElement(children, { dragHandle: drag })}
+            </div>
         </div>
     );
 };
@@ -198,32 +196,51 @@ const CategoriesSection = ({
                             <div className="p-4 relative">
                                 <div className={`absolute left-0 top-0 bottom-0 w-2 ${category.color}`}></div>
                                 <div className="flex items-center justify-between mb-3">
+                                    {/* Drag handle for category */}
                                     <div
-                                        className="flex items-center cursor-pointer flex-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 transition-colors"
-                                        onClick={() => {
-                                            setCategories(prev =>
-                                                prev.map(cat =>
-                                                    cat.id === category.id
-                                                        ? { ...cat, collapsed: !cat.collapsed }
-                                                        : cat
-                                                )
-                                            );
-                                        }}
+                                        className="flex items-center flex-1 group"
                                     >
-                                        {category.collapsed ? (
-                                            <ChevronRight className="w-4 h-4 mr-2" />
-                                        ) : (
-                                            <ChevronDown className="w-4 h-4 mr-2" />
-                                        )}
-                                        <div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-white`}></div>
-                                        <h3 className="font-semibold">{category.name}</h3>
-                                        <span className="ml-2 text-sm text-gray-500">
-                                            {viewMode === 'amount'
-                                                ? `$${category.total.toFixed(2)}/bi-weekly`
-                                                : `${category.percentage.toFixed(1)}%`
-                                            }
-                                        </span>
+                                        <div
+                                            className="mr-2 p-1 rounded cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                                            ref={(node) => {
+                                                // Get dragHandle from props passed by DraggableCategory
+                                                if (node && category.dragHandle) {
+                                                    category.dragHandle(node);
+                                                }
+                                            }}
+                                            title="Drag to reorder"
+                                        >
+                                            <GripVertical className="w-4 h-4 text-gray-400" />
+                                        </div>
+
+                                        <div
+                                            className="flex items-center cursor-pointer flex-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded px-2 py-1 transition-colors"
+                                            onClick={() => {
+                                                setCategories(prev =>
+                                                    prev.map(cat =>
+                                                        cat.id === category.id
+                                                            ? { ...cat, collapsed: !cat.collapsed }
+                                                            : cat
+                                                    )
+                                                );
+                                            }}
+                                        >
+                                            {category.collapsed ? (
+                                                <ChevronRight className="w-4 h-4 mr-2" />
+                                            ) : (
+                                                <ChevronDown className="w-4 h-4 mr-2" />
+                                            )}
+                                            <div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-white`}></div>
+                                            <h3 className="font-semibold select-none">{category.name}</h3>
+                                            <span className="ml-2 text-sm text-gray-500 select-none">
+                                                {viewMode === 'amount'
+                                                    ? `$${category.total.toFixed(2)}/bi-weekly`
+                                                    : `${category.percentage.toFixed(1)}%`
+                                                }
+                                            </span>
+                                        </div>
                                     </div>
+
                                     <div className="flex space-x-1">
                                         <button
                                             onClick={(e) => {
@@ -293,70 +310,83 @@ const CategoriesSection = ({
                                                     index={expenseIndex}
                                                     categoryId={category.id}
                                                     onReorder={(dragIndex, hoverIndex) => onReorderExpenses(dragIndex, hoverIndex, category.id)}
-                                                    onMoveUp={() => onMoveExpense(expense.id, 'up')}
-                                                    onMoveDown={() => onMoveExpense(expense.id, 'down')}
-                                                    canMoveUp={expenseIndex > 0}
-                                                    canMoveDown={expenseIndex < category.expenses.length - 1}
                                                 >
                                                     <div
                                                         className={`border-l-4 ${priorityColors[expense.priority]} ${expense.isFullyFunded ? 'opacity-75' : ''
                                                             } ${expense.allocationPaused ? 'opacity-60' : ''} rounded-r`}
                                                     >
-                                                        <div
-                                                            className="p-3 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                            onClick={() => {
-                                                                setExpenses(prev =>
-                                                                    prev.map(exp =>
-                                                                        exp.id === expense.id
-                                                                            ? { ...exp, collapsed: !exp.collapsed }
-                                                                            : exp
-                                                                    )
-                                                                );
-                                                            }}
-                                                        >
+                                                        <div className="p-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 group">
                                                             <div className="flex items-center justify-between">
                                                                 <div className="flex items-center flex-1 min-w-0">
-                                                                    {expense.collapsed ? (
-                                                                        <ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" />
-                                                                    ) : (
-                                                                        <ChevronDown className="w-4 h-4 mr-2 flex-shrink-0" />
-                                                                    )}
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <div className="flex items-center">
-                                                                            <span className="font-medium truncate">{expense.name}</span>
-                                                                            {expense.priorityState === 'active' && (
-                                                                                <span className="text-xs ml-2" title="Active">🟢</span>
-                                                                            )}
-                                                                            {expense.priorityState === 'paused' && (
-                                                                                <span className="text-xs ml-2" title="Paused">⏸️</span>
-                                                                            )}
-                                                                            {expense.priorityState === 'complete' && (
-                                                                                <span className="text-xs ml-2" title="Funded">✅</span>
-                                                                            )}
-                                                                            <div className="flex items-center ml-2 space-x-1 flex-shrink-0">
-                                                                                {expense.allocationPaused && (
-                                                                                    <span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">
-                                                                                        PAUSED
-                                                                                    </span>
+                                                                    {/* Drag handle for expense */}
+                                                                    <div
+                                                                        className="mr-2 p-1 rounded cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                        ref={(node) => {
+                                                                            if (node && expense.dragHandle) {
+                                                                                expense.dragHandle(node);
+                                                                            }
+                                                                        }}
+                                                                        title="Drag to reorder"
+                                                                    >
+                                                                        <GripVertical className="w-3 h-3 text-gray-400" />
+                                                                    </div>
+
+                                                                    <div
+                                                                        className="flex items-center cursor-pointer flex-1 min-w-0"
+                                                                        onClick={() => {
+                                                                            setExpenses(prev =>
+                                                                                prev.map(exp =>
+                                                                                    exp.id === expense.id
+                                                                                        ? { ...exp, collapsed: !exp.collapsed }
+                                                                                        : exp
+                                                                                )
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        {expense.collapsed ? (
+                                                                            <ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                                        ) : (
+                                                                            <ChevronDown className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                                        )}
+
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center">
+                                                                                <span className="font-medium truncate select-none">{expense.name}</span>
+                                                                                {expense.priorityState === 'active' && (
+                                                                                    <span className="text-xs ml-2" title="Active">🟢</span>
                                                                                 )}
-                                                                                {expense.isFullyFunded && !expense.allocationPaused && (
-                                                                                    <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">
-                                                                                        FUNDED
-                                                                                    </span>
+                                                                                {expense.priorityState === 'paused' && (
+                                                                                    <span className="text-xs ml-2" title="Paused">⏸️</span>
                                                                                 )}
+                                                                                {expense.priorityState === 'complete' && (
+                                                                                    <span className="text-xs ml-2" title="Funded">✅</span>
+                                                                                )}
+                                                                                <div className="flex items-center ml-2 space-x-1 flex-shrink-0">
+                                                                                    {expense.allocationPaused && (
+                                                                                        <span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">
+                                                                                            PAUSED
+                                                                                        </span>
+                                                                                    )}
+                                                                                    {expense.isFullyFunded && !expense.allocationPaused && (
+                                                                                        <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">
+                                                                                            FUNDED
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
+
                                                                 <div className="flex items-center space-x-3 flex-shrink-0">
                                                                     <div className="text-right">
-                                                                        <div className="font-semibold">
+                                                                        <div className="font-semibold select-none">
                                                                             {viewMode === 'amount'
                                                                                 ? `$${expense.biweeklyAmount.toFixed(2)}`
                                                                                 : `${expense.percentage.toFixed(1)}%`
                                                                             }
                                                                         </div>
-                                                                        <div className="text-xs text-gray-500">bi-weekly</div>
+                                                                        <div className="text-xs text-gray-500 select-none">bi-weekly</div>
                                                                     </div>
                                                                     <div className="flex space-x-1">
                                                                         <div className="flex flex-col">
@@ -429,74 +459,86 @@ const CategoriesSection = ({
                                                     index={goalIndex}
                                                     categoryId={category.id}
                                                     onReorder={(dragIndex, hoverIndex) => onReorderGoals(dragIndex, hoverIndex, category.id)}
-                                                    onMoveUp={() => onMoveGoal(goal.id, 'up')}
-                                                    onMoveDown={() => onMoveGoal(goal.id, 'down')}
-                                                    canMoveUp={goalIndex > 0}
-                                                    canMoveDown={goalIndex < category.goals.length - 1}
                                                 >
                                                     <div
                                                         className={`border-l-4 border-green-400 bg-green-100 text-green-900 ${goal.isFullyFunded ? 'opacity-75' : ''
                                                             } ${goal.allocationPaused ? 'opacity-60' : ''} rounded-r`}
                                                     >
-                                                        <div
-                                                            className="p-3 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                                                            onClick={() => {
-                                                                setSavingsGoals(prev =>
-                                                                    prev.map(g =>
-                                                                        g.id === goal.id
-                                                                            ? { ...g, collapsed: !g.collapsed }
-                                                                            : g
-                                                                    )
-                                                                );
-                                                            }}
-                                                        >
+                                                        <div className="p-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 group">
                                                             <div className="flex items-center justify-between">
                                                                 <div className="flex items-center flex-1 min-w-0">
-                                                                    {goal.collapsed ? (
-                                                                        <ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" />
-                                                                    ) : (
-                                                                        <ChevronDown className="w-4 h-4 mr-2 flex-shrink-0" />
-                                                                    )}
-                                                                    <Target className="w-4 h-4 mr-2 flex-shrink-0" />
-                                                                    <div className="flex-1 min-w-0">
-                                                                        <div className="flex items-center">
-                                                                            <span className="font-medium truncate">{goal.name}</span>
-                                                                            {goal.priorityState === 'active' && (
-                                                                                <span className="text-xs ml-2" title="Active">🟢</span>
-                                                                            )}
-                                                                            {goal.priorityState === 'paused' && (
-                                                                                <span className="text-xs ml-2" title="Paused">⏸️</span>
-                                                                            )}
-                                                                            {goal.priorityState === 'complete' && (
-                                                                                <span className="text-xs ml-2" title="Funded">✅</span>
-                                                                            )}
-                                                                            <span className="text-xs bg-green-600 text-white px-1.5 py-0.5 rounded ml-2">
-                                                                                {goal.fundingProgress.toFixed(0)}%
-                                                                            </span>
-                                                                            <div className="flex items-center ml-2 space-x-1 flex-shrink-0">
-                                                                                {goal.allocationPaused && (
-                                                                                    <span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">
-                                                                                        PAUSED
-                                                                                    </span>
+                                                                    {/* Drag handle for goal */}
+                                                                    <div
+                                                                        className="mr-2 p-1 rounded cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                        ref={(node) => {
+                                                                            if (node && goal.dragHandle) {
+                                                                                goal.dragHandle(node);
+                                                                            }
+                                                                        }}
+                                                                        title="Drag to reorder"
+                                                                    >
+                                                                        <GripVertical className="w-3 h-3 text-gray-400" />
+                                                                    </div>
+
+                                                                    <div
+                                                                        className="flex items-center cursor-pointer flex-1 min-w-0"
+                                                                        onClick={() => {
+                                                                            setSavingsGoals(prev =>
+                                                                                prev.map(g =>
+                                                                                    g.id === goal.id
+                                                                                        ? { ...g, collapsed: !g.collapsed }
+                                                                                        : g
+                                                                                )
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        {goal.collapsed ? (
+                                                                            <ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                                        ) : (
+                                                                            <ChevronDown className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                                        )}
+                                                                        <Target className="w-4 h-4 mr-2 flex-shrink-0" />
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center">
+                                                                                <span className="font-medium truncate select-none">{goal.name}</span>
+                                                                                {goal.priorityState === 'active' && (
+                                                                                    <span className="text-xs ml-2" title="Active">🟢</span>
                                                                                 )}
-                                                                                {goal.isFullyFunded && !goal.allocationPaused && (
-                                                                                    <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">
-                                                                                        COMPLETE
-                                                                                    </span>
+                                                                                {goal.priorityState === 'paused' && (
+                                                                                    <span className="text-xs ml-2" title="Paused">⏸️</span>
                                                                                 )}
+                                                                                {goal.priorityState === 'complete' && (
+                                                                                    <span className="text-xs ml-2" title="Funded">✅</span>
+                                                                                )}
+                                                                                <span className="text-xs bg-green-600 text-white px-1.5 py-0.5 rounded ml-2">
+                                                                                    {goal.fundingProgress.toFixed(0)}%
+                                                                                </span>
+                                                                                <div className="flex items-center ml-2 space-x-1 flex-shrink-0">
+                                                                                    {goal.allocationPaused && (
+                                                                                        <span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">
+                                                                                            PAUSED
+                                                                                        </span>
+                                                                                    )}
+                                                                                    {goal.isFullyFunded && !goal.allocationPaused && (
+                                                                                        <span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">
+                                                                                            COMPLETE
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
+
                                                                 <div className="flex items-center space-x-3 flex-shrink-0">
                                                                     <div className="text-right">
-                                                                        <div className="font-semibold">
+                                                                        <div className="font-semibold select-none">
                                                                             {viewMode === 'amount'
                                                                                 ? `$${goal.biweeklyAmount.toFixed(2)}`
                                                                                 : `${goal.percentage.toFixed(1)}%`
                                                                             }
                                                                         </div>
-                                                                        <div className="text-xs text-gray-500">bi-weekly</div>
+                                                                        <div className="text-xs text-gray-500 select-none">bi-weekly</div>
                                                                     </div>
                                                                     <div className="flex space-x-1">
                                                                         <div className="flex flex-col">
