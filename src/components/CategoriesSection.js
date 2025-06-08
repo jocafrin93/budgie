@@ -7,7 +7,7 @@ const DraggableCategory = ({
     index,
     children,
     onReorder,
-    
+
     ...otherProps
 }) => {
     const [mounted, setMounted] = useState(false);
@@ -160,6 +160,7 @@ const CategoriesSection = ({
     darkMode,
     viewMode,
     frequencyOptions,
+    timelines,
     onAddCategory,
     onAddExpense,
     onAddGoal,
@@ -180,8 +181,8 @@ const CategoriesSection = ({
     onReorderCategories,
     onReorderExpenses,
     onReorderGoals,
-    categories,
-  
+    // categories,
+
 }) => {
     const priorityColors = {
         essential: 'border-red-400 bg-red-100 text-red-900',
@@ -464,8 +465,20 @@ const CategoriesSection = ({
                                                                     <div className="text-xs text-blue-500">
                                                                         ${expense.remainingNeeded.toFixed(2)} remaining to save
                                                                     </div>
-                                                                    
+
                                                                 )}
+                                                                {(() => {
+                                                                    const expenseTimeline = timelines?.getTimelineForItem(expense.id, 'expense');
+                                                                    return expenseTimeline?.timeline.message && (
+                                                                        <div className="text-xs mt-1 flex items-center">
+                                                                            <span className="mr-1">{expenseTimeline.urgencyIndicator.emoji}</span>
+                                                                            <span className={expenseTimeline.urgencyIndicator.color}>
+                                                                                {expenseTimeline.timeline.message}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })()}
+
                                                             </div>
                                                         )}
                                                     </div>
@@ -621,6 +634,17 @@ const CategoriesSection = ({
                                                                             ${goal.remainingNeeded.toLocaleString()} remaining to save
                                                                         </div>
                                                                     )}
+                                                                    {(() => {
+                                                                        const goalTimeline = timelines?.getTimelineForItem(goal.id, 'goal');
+                                                                        return goalTimeline?.timeline.message && (
+                                                                            <div className="text-xs mt-1 flex items-center">
+                                                                                <span className="mr-1">{goalTimeline.urgencyIndicator.emoji}</span>
+                                                                                <span className={goalTimeline.urgencyIndicator.color}>
+                                                                                    {goalTimeline.timeline.message}
+                                                                                </span>
+                                                                            </div>
+                                                                        );
+                                                                    })()}
                                                                 </div>
                                                             </div>
                                                         )}

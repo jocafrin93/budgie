@@ -1,7 +1,12 @@
 import React from 'react';
 
 const SummaryPanel = ({
-    calculations,
+    // Remove the duplicate calculations prop
+    totalBiweeklyAllocation,  // These come from the spread
+    remainingIncome,
+    allocationPercentage,
+    // ... other calculation properties you use
+    timelines,  // Add this new prop
     currentPay,
     bufferPercentage,
     viewMode,

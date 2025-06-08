@@ -499,7 +499,7 @@ const App = () => {
                         <div className="xl:col-span-2">
                             <CategoriesSection
                                 categorizedExpenses={categorizedExpenses}
-                                calculations={calculations}
+                                timelines={calculations.timelines}
                                 darkMode={darkMode}
                                 viewMode={viewMode}
                                 frequencyOptions={frequencyOptions}
@@ -541,7 +541,7 @@ const App = () => {
                                 onReorderCategories={reorderCategories}
                                 onReorderExpenses={reorderExpenses}
                                 onReorderGoals={reorderGoals}
-                                calculations={calculations}
+                                timelines={calculations.timelines}
                             />
                         </div>
 
@@ -568,7 +568,7 @@ const App = () => {
 
                             {/* Summary Panel */}
                             <SummaryPanel
-                                calculations={calculations}
+                                {...calculations}
                                 currentPay={currentPay}
                                 bufferPercentage={bufferPercentage}
                                 viewMode={viewMode}
@@ -579,6 +579,7 @@ const App = () => {
                                 categorizedExpenses={categorizedExpenses}
                                 expenses={expenses}
                                 savingsGoals={savingsGoals}
+                            // timelines={calculations.timelines}
                             />
                         </div>
                     </div>
