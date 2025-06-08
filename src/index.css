@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom dark mode styles */
-.dark {
-  color-scheme: dark;
-}
-
 /* Ensure dark mode works */
 .dark {
   color-scheme: dark;
@@ -45,38 +40,7 @@
   background: linear-gradient(to right, #7c3aed, #6b21a8);
 }
 
-/* Custom pastel backgrounds for dark mode */
-.dark .bg-red-100 {
-  background-color: #fecaca !important;
-}
-
-.dark .bg-yellow-100 {
-  background-color: #fef3c7 !important;
-}
-
-.dark .bg-green-100 {
-  background-color: #dcfce7 !important;
-}
-
-.dark .text-red-900 {
-  color: #7f1d1d !important;
-}
-
-.dark .text-yellow-900 {
-  color: #78350f !important;
-}
-
-.dark .text-green-900 {
-  color: #14532d !important;
-}
-
-/* Fix hover states for expense/goal items in dark mode */
-.dark .hover\:bg-gray-100:hover {
-  background-color: rgba(75, 85, 99, 0.3) !important;
-  /* More transparent gray */
-}
-
-/* Fix light mode calendar colors */
+/* Calendar event colors - keep semantic meaning across themes */
 .bg-red-100 {
   background-color: #fee2e2 !important;
 }

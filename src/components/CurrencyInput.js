@@ -90,9 +90,7 @@ const CurrencyInput = ({
         e.target.select();
     };
 
-    const baseClassName = `w-full pl-8 p-2 border rounded ${darkMode
-        ? "bg-gray-700 border-gray-600 text-gray-100"
-        : "bg-white border-gray-300 text-gray-900"
+    const baseClassName = `w-full pl-8 p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary
         }`;
 
     return (

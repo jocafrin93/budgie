@@ -9,6 +9,8 @@
     --bg-quaternary: #e5e7eb;
     --bg-hover: #f3f4f6;
     --bg-active: #e5e7eb;
+    /* Dark */
+    --page-bg: #f9fafb;
 
     /* Border colors */
     --border-primary: #e5e7eb;
@@ -19,6 +21,8 @@
     --text-secondary: #6b7280;
     --text-tertiary: #9ca3af;
     --text-inverse: #ffffff;
+    /* Dark */
+    --page-text: #111827;
 
     /* Interactive colors */
     --color-blue: #3b82f6;
@@ -38,11 +42,12 @@
 [data-theme="dark"] {
     /* Background colors */
     --bg-primary: #504a68;
-    --bg-secondary: #f8f8f2;
+    --bg-secondary: #272241;
     --bg-tertiary: #4b5563;
     --bg-quaternary: #6b7280;
     --bg-hover: #4b5563;
     --bg-active: #6b7280;
+    --page-bg: #3a364b;
 
     /* Border colors */
     --border-primary: #4b5563;
@@ -54,12 +59,14 @@
     --text-tertiary: #9ca3af;
     --text-inverse: #111827;
 
+    --page-text: #f9fafb;
+
     /* Interactive colors */
-    --color-blue: #60a5fa;
-    --color-blue-hover: #3b82f6;
-    --color-green: #10b981;
-    --color-red: #ef4444;
-    --color-yellow: #f59e0b;
+    --color-blue: #7dd3fc;
+    --color-blue-hover: #0284c7;
+    --color-green: #7fc474;
+    --color-red: #f43f5e;
+    --color-yellow: #f9f158;
 
     /* Table specific */
     --table-header-bg: #374151;
@@ -205,6 +212,14 @@
 }
 
 /* Utility classes using CSS custom properties */
+.bg-page {
+    background-color: var(--page-bg);
+}
+
+.text-page {
+    color: var(--page-text);
+}
+
 .bg-theme-primary {
     background-color: var(--bg-primary);
 }

@@ -10,6 +10,7 @@ const AddExpenseForm = ({
     expense = null,
     currentPay,
     preselectedCategory,
+    accounts,
 }) => {
     const [formData, setFormData] = useState({
         name: expense?.name || '',
@@ -24,6 +25,7 @@ const AddExpenseForm = ({
         allocationPaused: expense?.allocationPaused || false,
         isRecurringExpense: expense?.isRecurringExpense || false,
         priorityState: expense?.priorityState || (expense?.allocationPaused ? 'paused' : 'active'),
+        accountId: expense?.accountId || accounts?.[0]?.id || 1,
     });
 
     useEffect(() => {
@@ -59,6 +61,7 @@ const AddExpenseForm = ({
                 ...formData,
                 amount: finalAmount,
                 categoryId: parseInt(formData.categoryId),
+                accountId: parseInt(formData.accountId),
                 alreadySaved: parseFloat(formData.alreadySaved) || 0
             }, addAnother);
 
@@ -200,6 +203,16 @@ const AddExpenseForm = ({
                         />
                     </div>
                 </div>
+                {!formData.dueDate && (
+                    <div className="p-3 rounded border border-yellow-400 bg-yellow-100 mt-2">
+                        <div className="flex items-center text-sm">
+                            <span className="mr-2">⚠️</span>
+                            <span className="text-yellow-800">
+                                Due date needed for paycheck countdown and timeline features
+                            </span>
+                        </div>
+                    </div>
+                )}
 
                 {(parseFloat(formData.amount || 0) > 0) && (
                     <div className="space-y-2">
@@ -289,7 +302,24 @@ const AddExpenseForm = ({
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
             </select>
-
+            <div>
+                <label className="block text-sm font-medium mb-1 text-theme-primary">Funding Account</label>
+                <select
+                    name="accountId"
+                    value={formData.accountId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, accountId: parseInt(e.target.value) }))}
+                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
+                >
+                    {accounts?.map(account => (
+                        <option key={account.id} value={account.id}>
+                            {account.name} ({account.bankName})
+                        </option>
+                    ))}
+                </select>
+                <div className="text-xs text-theme-tertiary mt-1">
+                    Which account will this expense be paid from?
+                </div>
+            </div>
             <select
                 value={formData.priority}
                 onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}

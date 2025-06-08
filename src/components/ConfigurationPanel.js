@@ -3,7 +3,6 @@ import { Calculator, Download, ChevronDown, ChevronRight } from 'lucide-react';
 import CurrencyInput from './CurrencyInput';
 
 const ConfigurationPanel = ({
-    darkMode,
     showConfig,
     setShowConfig,
     takeHomePay,
@@ -80,13 +79,13 @@ const ConfigurationPanel = ({
                         </div>
 
                         {paySchedule.splitPaycheck && accounts.length < 2 && (
-                            <div className="p-3 rounded border border-yellow-300 bg-yellow-50 dark:border-yellow-600 dark:bg-yellow-900/20 mb-4">
+                            <div className="p-3 rounded border border-yellow-400 bg-yellow-100 mb-4">
                                 <div className="flex items-center text-sm">
                                     <span className="mr-2">💡</span>
-                                    <span className="text-yellow-800 dark:text-yellow-200">You'll need a second account to split your paycheck.</span>
+                                    <span className="text-yellow-800">You'll need a second account to split your paycheck.</span>
                                     <button
                                         onClick={() => setShowAddAccount(true)}
-                                        className="ml-2 hover:underline text-blue-600 dark:text-blue-400"
+                                        className="ml-2 hover:underline text-blue-600 hover:text-blue-700"
                                     >
                                         Add Account
                                     </button>
@@ -123,7 +122,6 @@ const ConfigurationPanel = ({
                                                 ...prev,
                                                 primaryAmount: parseFloat(e.target.value) || 0,
                                             }))}
-                                            darkMode={darkMode}
                                         />
                                     </div>
                                 </div>
@@ -157,7 +155,6 @@ const ConfigurationPanel = ({
                                                 ...prev,
                                                 secondaryAmount: parseFloat(e.target.value) || 0,
                                             }))}
-                                            darkMode={darkMode}
                                         />
                                     </div>
 
@@ -201,7 +198,6 @@ const ConfigurationPanel = ({
                                             ? setWhatIfPay(parseFloat(e.target.value) || 0)
                                             : setTakeHomePay(parseFloat(e.target.value) || 0)
                                     }
-                                    darkMode={darkMode}
                                     className={whatIfMode ? 'ring-2 ring-blue-500' : ''}
                                 />
                             )}
@@ -247,7 +243,7 @@ const ConfigurationPanel = ({
                                     startDate: e.target.value,
                                 }))}
                                 className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                                style={darkMode ? { colorScheme: 'dark' } : {}}
+                                // style={{ colorScheme: 'dark' }}
                             />
                         </div>
                     </div>
