@@ -9,7 +9,7 @@ const AccountsSection = ({
     onDeleteAccount
 }) => {
     return (
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 mb-8 shadow-lg`}>
+        <div className={`bg-theme-primary rounded-lg p-6 mb-8 shadow-lg`}>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold flex items-center">
                     🏦 <span className="ml-2">Accounts</span>
@@ -39,12 +39,12 @@ const AccountsSection = ({
                             </div>
                             <div className="text-right">
                                 <div className={`font-semibold ${account.type === 'credit'
-                                        ? account.balance < 0
-                                            ? 'text-red-400'
-                                            : 'text-green-400'
-                                        : account.balance >= 0
-                                            ? 'text-green-400'
-                                            : 'text-red-400'
+                                    ? account.balance < 0
+                                        ? 'text-red-400'
+                                        : 'text-green-400'
+                                    : account.balance >= 0
+                                        ? 'text-green-400'
+                                        : 'text-red-400'
                                     }`}>
                                     ${Math.abs(account.balance).toFixed(2)}
                                 </div>

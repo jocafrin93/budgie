@@ -14,7 +14,7 @@ const SummaryPanel = ({
     savingsGoals,
 }) => {
     return (
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 shadow-lg h-fit`}>
+        <div className={`bg-theme-primary rounded-lg p-6 shadow-lg h-fit`}>
             <h3 className="text-lg font-semibold mb-4 flex items-center">
                 📊 Quick Summary
             </h3>

@@ -3,7 +3,7 @@ import React from 'react';
 const SummaryCards = ({ calculations, currentPay, bufferPercentage, viewMode, darkMode }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
+            <div className={`bg-theme-primary rounded-lg p-4 shadow-lg`}>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Total Allocation</h3>
                 <p className="text-2xl font-bold text-blue-400">
                     {viewMode === 'amount'
@@ -13,7 +13,7 @@ const SummaryCards = ({ calculations, currentPay, bufferPercentage, viewMode, da
                 </p>
             </div>
 
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
+            <div className={`bg-theme-primary rounded-lg p-4 shadow-lg`}>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Buffer Amount</h3>
                 <p className="text-2xl font-bold text-purple-400">
                     {viewMode === 'amount'
@@ -23,7 +23,7 @@ const SummaryCards = ({ calculations, currentPay, bufferPercentage, viewMode, da
                 </p>
             </div>
 
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
+            <div className={`bg-theme-primary rounded-lg p-4 shadow-lg`}>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Total with Buffer</h3>
                 <p className="text-2xl font-bold text-pink-400">
                     {viewMode === 'amount'
@@ -33,7 +33,7 @@ const SummaryCards = ({ calculations, currentPay, bufferPercentage, viewMode, da
                 </p>
             </div>
 
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
+            <div className={`bg-theme-primary rounded-lg p-4 shadow-lg`}>
                 <h3 className="text-sm font-medium text-gray-500 mb-1">Remaining Income</h3>
                 <p className={`text-2xl font-bold ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-red-400'
                     }`}>

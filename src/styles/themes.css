@@ -1,0 +1,299 @@
+/* themes.css */
+
+/* Base theme variables */
+:root {
+    /* Background colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-tertiary: #f3f4f6;
+    --bg-quaternary: #e5e7eb;
+    --bg-hover: #f3f4f6;
+    --bg-active: #e5e7eb;
+
+    /* Border colors */
+    --border-primary: #e5e7eb;
+    --border-secondary: #d1d5db;
+
+    /* Text colors */
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --text-inverse: #ffffff;
+
+    /* Interactive colors */
+    --color-blue: #3b82f6;
+    --color-blue-hover: #2563eb;
+    --color-green: #059669;
+    --color-red: #dc2626;
+    --color-yellow: #d97706;
+
+    /* Table specific */
+    --table-header-bg: #f9fafb;
+    --table-row-even: #ffffff;
+    --table-row-odd: #f9fafb;
+    --table-row-hover: #f3f4f6;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+    /* Background colors */
+    --bg-primary: #504a68;
+    --bg-secondary: #f8f8f2;
+    --bg-tertiary: #4b5563;
+    --bg-quaternary: #6b7280;
+    --bg-hover: #4b5563;
+    --bg-active: #6b7280;
+
+    /* Border colors */
+    --border-primary: #4b5563;
+    --border-secondary: #6b7280;
+
+    /* Text colors */
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --text-tertiary: #9ca3af;
+    --text-inverse: #111827;
+
+    /* Interactive colors */
+    --color-blue: #60a5fa;
+    --color-blue-hover: #3b82f6;
+    --color-green: #10b981;
+    --color-red: #ef4444;
+    --color-yellow: #f59e0b;
+
+    /* Table specific */
+    --table-header-bg: #374151;
+    --table-row-even: #1f2937;
+    --table-row-odd: #2d3748;
+    --table-row-hover: #374151;
+}
+
+/* Spring theme */
+[data-theme="spring"] {
+    /* Background colors */
+    --bg-primary: #fef7ff;
+    --bg-secondary: #fae8ff;
+    --bg-tertiary: #f3e8ff;
+    --bg-quaternary: #e9d5ff;
+    --bg-hover: #f3e8ff;
+    --bg-active: #e9d5ff;
+
+    /* Border colors */
+    --border-primary: #e9d5ff;
+    --border-secondary: #d8b4fe;
+
+    /* Text colors */
+    --text-primary: #581c87;
+    --text-secondary: #7c3aed;
+    --text-tertiary: #a855f7;
+    --text-inverse: #ffffff;
+
+    /* Interactive colors */
+    --color-blue: #8b5cf6;
+    --color-blue-hover: #7c3aed;
+    --color-green: #10b981;
+    --color-red: #f43f5e;
+    --color-yellow: #f59e0b;
+
+    /* Table specific */
+    --table-header-bg: #fae8ff;
+    --table-row-even: #fef7ff;
+    --table-row-odd: #fae8ff;
+    --table-row-hover: #f3e8ff;
+}
+
+/* Summer theme */
+[data-theme="summer"] {
+    /* Background colors */
+    --bg-primary: #fffbeb;
+    --bg-secondary: #fef3c7;
+    --bg-tertiary: #fed7aa;
+    --bg-quaternary: #fdba74;
+    --bg-hover: #fed7aa;
+    --bg-active: #fdba74;
+
+    /* Border colors */
+    --border-primary: #fed7aa;
+    --border-secondary: #fdba74;
+
+    /* Text colors */
+    --text-primary: #92400e;
+    --text-secondary: #d97706;
+    --text-tertiary: #f59e0b;
+    --text-inverse: #ffffff;
+
+    /* Interactive colors */
+    --color-blue: #f59e0b;
+    --color-blue-hover: #d97706;
+    --color-green: #10b981;
+    --color-red: #ef4444;
+    --color-yellow: #f59e0b;
+
+    /* Table specific */
+    --table-header-bg: #fef3c7;
+    --table-row-even: #fffbeb;
+    --table-row-odd: #fef3c7;
+    --table-row-hover: #fed7aa;
+}
+
+/* Autumn theme */
+[data-theme="autumn"] {
+    /* Background colors */
+    --bg-primary: #fef2f2;
+    --bg-secondary: #fee2e2;
+    --bg-tertiary: #fecaca;
+    --bg-quaternary: #fca5a5;
+    --bg-hover: #fecaca;
+    --bg-active: #fca5a5;
+
+    /* Border colors */
+    --border-primary: #fecaca;
+    --border-secondary: #fca5a5;
+
+    /* Text colors */
+    --text-primary: #991b1b;
+    --text-secondary: #dc2626;
+    --text-tertiary: #ef4444;
+    --text-inverse: #ffffff;
+
+    /* Interactive colors */
+    --color-blue: #dc2626;
+    --color-blue-hover: #b91c1c;
+    --color-green: #10b981;
+    --color-red: #dc2626;
+    --color-yellow: #d97706;
+
+    /* Table specific */
+    --table-header-bg: #fee2e2;
+    --table-row-even: #fef2f2;
+    --table-row-odd: #fee2e2;
+    --table-row-hover: #fecaca;
+}
+
+/* Winter theme */
+[data-theme="winter"] {
+    /* Background colors */
+    --bg-primary: #f0f9ff;
+    --bg-secondary: #e0f2fe;
+    --bg-tertiary: #bae6fd;
+    --bg-quaternary: #7dd3fc;
+    --bg-hover: #bae6fd;
+    --bg-active: #7dd3fc;
+
+    /* Border colors */
+    --border-primary: #bae6fd;
+    --border-secondary: #7dd3fc;
+
+    /* Text colors */
+    --text-primary: #0c4a6e;
+    --text-secondary: #0369a1;
+    --text-tertiary: #0284c7;
+    --text-inverse: #ffffff;
+
+    /* Interactive colors */
+    --color-blue: #0284c7;
+    --color-blue-hover: #0369a1;
+    --color-green: #10b981;
+    --color-red: #ef4444;
+    --color-yellow: #f59e0b;
+
+    /* Table specific */
+    --table-header-bg: #e0f2fe;
+    --table-row-even: #f0f9ff;
+    --table-row-odd: #e0f2fe;
+    --table-row-hover: #bae6fd;
+}
+
+/* Utility classes using CSS custom properties */
+.bg-theme-primary {
+    background-color: var(--bg-primary);
+}
+
+.bg-theme-secondary {
+    background-color: var(--bg-secondary);
+}
+
+.bg-theme-tertiary {
+    background-color: var(--bg-tertiary);
+}
+
+.bg-theme-quaternary {
+    background-color: var(--bg-quaternary);
+}
+
+.bg-theme-hover {
+    background-color: var(--bg-hover);
+}
+
+.bg-theme-active {
+    background-color: var(--bg-active);
+}
+
+.border-theme-primary {
+    border-color: var(--border-primary);
+}
+
+.border-theme-secondary {
+    border-color: var(--border-secondary);
+}
+
+.text-theme-primary {
+    color: var(--text-primary);
+}
+
+.text-theme-secondary {
+    color: var(--text-secondary);
+}
+
+.text-theme-tertiary {
+    color: var(--text-tertiary);
+}
+
+.text-theme-inverse {
+    color: var(--text-inverse);
+}
+
+.text-theme-blue {
+    color: var(--color-blue);
+}
+
+.text-theme-green {
+    color: var(--color-green);
+}
+
+.text-theme-red {
+    color: var(--color-red);
+}
+
+.text-theme-yellow {
+    color: var(--color-yellow);
+}
+
+.hover\:bg-theme-hover:hover {
+    background-color: var(--bg-hover);
+}
+
+.hover\:bg-theme-active:hover {
+    background-color: var(--bg-active);
+}
+
+.hover\:text-theme-blue:hover {
+    color: var(--color-blue);
+}
+
+/* Table-specific utility classes */
+.table-header {
+    background-color: var(--table-header-bg);
+}
+
+.table-row-even {
+    background-color: var(--table-row-even);
+}
+
+.table-row-odd {
+    background-color: var(--table-row-odd);
+}
+
+.hover\:table-row-hover:hover {
+    background-color: var(--table-row-hover);
+}

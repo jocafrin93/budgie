@@ -12,7 +12,7 @@ const TransactionsSection = ({
     onDeleteTransaction,
 }) => {
     return (
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-4 shadow-lg`}>
+        <div className={`bg-theme-primary rounded-lg p-4 shadow-lg`}>
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold flex items-center">
                     💳 Recent Transactions

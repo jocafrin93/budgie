@@ -224,7 +224,7 @@ const CategoriesSection = ({
                         index={categoryIndex}
                         onReorder={onReorderCategories}
                     >
-                        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg overflow-hidden`}>
+                        <div className={`bg-theme-primary rounded-lg shadow-lg overflow-hidden`}>
                             <div className="p-4 relative">
                                 <div className={`absolute left-0 top-0 bottom-0 w-2 ${category.color}`}></div>
                                 <div className="flex items-center justify-between mb-3">

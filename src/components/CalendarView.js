@@ -126,7 +126,7 @@ const CalendarView = ({
 
     // Legend component (shared between both views)
     const Legend = () => (
-        <div className="flex flex-wrap gap-4 text-sm border-t pt-4 mt-4">
+        <div className="flex flex-wrap gap-4 text-sm border-t border-theme-primary pt-4 mt-4 text-theme-secondary bg-theme-primary">
             <div className="flex items-center">
                 <span className="mr-1">💰</span>
                 <span>Paycheck</span>
@@ -146,6 +146,7 @@ const CalendarView = ({
         </div>
     );
 
+
     if (calendarView === 'grid') {
         const calendarDays = generateCalendarGrid(calendarEvents);
         const monthNames = [
@@ -158,26 +159,22 @@ const CalendarView = ({
             <div className="space-y-4">
                 <div className="flex justify-between items-center">
                     <div className="flex items-center space-x-4">
-                        <h4 className="font-medium">Calendar View</h4>
+                        <h4 className="font-medium text-theme-primary">Calendar View</h4>
                         <div className="flex space-x-2">
                             <button
                                 onClick={() => setCalendarView('grid')}
-                                className={`px-3 py-1 rounded text-sm font-medium ${calendarView === 'grid'
-                                        ? 'bg-purple-500 text-white'
-                                        : darkMode
-                                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${calendarView === 'grid'
+                                    ? 'bg-purple-500 text-white'
+                                    : 'bg-theme-secondary text-theme-secondary hover:bg-theme-hover'
                                     }`}
                             >
                                 Grid
                             </button>
                             <button
                                 onClick={() => setCalendarView('timeline')}
-                                className={`px-3 py-1 rounded text-sm font-medium ${calendarView === 'timeline'
-                                        ? 'bg-purple-500 text-white'
-                                        : darkMode
-                                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${calendarView === 'timeline'
+                                    ? 'bg-purple-500 text-white'
+                                    : 'bg-theme-secondary text-theme-secondary hover:bg-theme-hover'
                                     }`}
                             >
                                 Timeline
@@ -190,24 +187,24 @@ const CalendarView = ({
                 <div className="flex justify-between items-center">
                     <button
                         onClick={prevMonth}
-                        className={`p-2 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                        className="p-2 rounded hover:bg-theme-hover transition-colors text-theme-primary"
                     >
                         ←
                     </button>
                     <div className="flex items-center space-x-2">
-                        <h3 className={`text-lg font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                        <h3 className="text-lg font-semibold text-theme-primary">
                             {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                         </h3>
                         <button
                             onClick={resetToCurrentMonth}
-                            className={`text-sm hover:underline ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}
+                            className="text-sm hover:underline text-theme-blue"
                         >
                             Today
                         </button>
                     </div>
                     <button
                         onClick={nextMonth}
-                        className={`p-2 rounded ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'}`}
+                        className="p-2 rounded hover:bg-theme-hover transition-colors text-theme-primary"
                     >
                         →
                     </button>
@@ -219,8 +216,7 @@ const CalendarView = ({
                     {dayNames.map(day => (
                         <div
                             key={day}
-                            className={`p-2 text-center font-medium text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'
-                                }`}
+                            className="p-2 text-center font-medium text-sm text-theme-secondary"
                         >
                             {day}
                         </div>
@@ -230,30 +226,19 @@ const CalendarView = ({
                     {calendarDays.map((dayData, index) => (
                         <div
                             key={index}
-                            className={`min-h-24 p-1 border ${darkMode ? 'border-gray-600' : 'border-gray-200'
-                                } ${dayData
-                                    ? dayData.isToday
-                                        ? darkMode
-                                            ? 'bg-blue-900/30 text-blue-300'
-                                            : 'bg-blue-50 text-blue-600'
-                                        : darkMode
-                                            ? 'bg-gray-800 text-gray-100'
-                                            : 'bg-white text-gray-900'
-                                    : darkMode
-                                        ? 'bg-gray-900'
-                                        : 'bg-gray-50'
+                            className={`min-h-24 p-1 border border-theme-primary ${dayData
+                                ? dayData.isToday
+                                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300'
+                                    : 'bg-theme-primary text-theme-primary'
+                                : 'bg-theme-secondary'
                                 }`}
                         >
                             {dayData && (
                                 <>
                                     <div
                                         className={`text-sm font-medium ${dayData.isToday
-                                                ? darkMode
-                                                    ? 'text-blue-300'
-                                                    : 'text-blue-600'
-                                                : darkMode
-                                                    ? 'text-gray-100'
-                                                    : 'text-gray-900'
+                                            ? 'text-blue-600 dark:text-blue-300'
+                                            : 'text-theme-primary'
                                             }`}
                                     >
                                         {dayData.day}
@@ -275,7 +260,7 @@ const CalendarView = ({
                                             </div>
                                         ))}
                                         {dayData.events.length > 3 && (
-                                            <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                            <div className="text-xs text-theme-tertiary">
                                                 +{dayData.events.length - 3} more
                                             </div>
                                         )}
@@ -305,33 +290,29 @@ const CalendarView = ({
         <div className="space-y-4">
             <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-4">
-                    <h4 className="font-medium">Timeline View</h4>
+                    <h4 className="font-medium text-theme-primary">Timeline View</h4>
                     <div className="flex space-x-2">
                         <button
                             onClick={() => setCalendarView('grid')}
-                            className={`px-3 py-1 rounded text-sm font-medium ${calendarView === 'grid'
-                                    ? 'bg-purple-500 text-white'
-                                    : darkMode
-                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${calendarView === 'grid'
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-theme-secondary text-theme-secondary hover:bg-theme-hover'
                                 }`}
                         >
                             Grid
                         </button>
                         <button
                             onClick={() => setCalendarView('timeline')}
-                            className={`px-3 py-1 rounded text-sm font-medium ${calendarView === 'timeline'
-                                    ? 'bg-purple-500 text-white'
-                                    : darkMode
-                                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            className={`px-3 py-1 rounded text-sm font-medium transition-colors ${calendarView === 'timeline'
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-theme-secondary text-theme-secondary hover:bg-theme-hover'
                                 }`}
                         >
                             Timeline
                         </button>
                     </div>
                 </div>
-                <div className="text-sm text-gray-500">Next few months</div>
+                <div className="text-sm text-theme-secondary">Next few months</div>
             </div>
 
             <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -343,10 +324,15 @@ const CalendarView = ({
                     return (
                         <div
                             key={dateKey}
-                            className={`border-l-4 pl-4 ${isToday ? 'border-blue-500' : 'border-gray-300 dark:border-gray-600'
+                            className={`border-l-4 pl-4 ${isToday
+                                ? 'border-blue-500'
+                                : 'border-theme-primary'
                                 }`}
                         >
-                            <div className={`font-medium text-sm ${isToday ? 'text-blue-600 dark:text-blue-400' : ''}`}>
+                            <div className={`font-medium text-sm ${isToday
+                                ? 'text-blue-600 dark:text-blue-400'
+                                : 'text-theme-primary'
+                                }`}>
                                 {formatDate(date)} {isToday && '(Today)'}
                             </div>
 
@@ -379,7 +365,7 @@ const CalendarView = ({
                                             </div>
                                         </div>
                                         {event.category && (
-                                            <div className="text-xs text-gray-500 mt-1">Category: {event.category}</div>
+                                            <div className="text-xs text-theme-tertiary mt-1">Category: {event.category}</div>
                                         )}
                                     </div>
                                 ))}
@@ -394,4 +380,4 @@ const CalendarView = ({
     );
 };
 
-export default CalendarView; 
+export default CalendarView;

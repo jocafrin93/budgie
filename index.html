@@ -1074,10 +1074,10 @@
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, priorityState: 'active' }))}
                   className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'active'
-                      ? 'bg-blue-500 text-white border border-blue-500'
-                      : darkMode
-                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                    ? 'bg-blue-500 text-white border border-blue-500'
+                    : darkMode
+                      ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                      : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                     }`}
                 >
                   🟢 Active
@@ -1086,10 +1086,10 @@
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, priorityState: 'paused' }))}
                   className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'paused'
-                      ? 'bg-blue-500 text-white border border-blue-500'
-                      : darkMode
-                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                    ? 'bg-blue-500 text-white border border-blue-500'
+                    : darkMode
+                      ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                      : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                     }`}
                 >
                   ⏸️ Paused
@@ -1098,10 +1098,10 @@
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, priorityState: 'complete' }))}
                   className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'complete'
-                      ? 'bg-blue-500 text-white border border-blue-500'
-                      : darkMode
-                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                    ? 'bg-blue-500 text-white border border-blue-500'
+                    : darkMode
+                      ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                      : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                     }`}
                 >
                   ✅ Funded
@@ -2375,10 +2375,10 @@
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, priorityState: 'active' }))}
                   className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'active'
-                      ? 'bg-blue-500 text-white border border-blue-500'
-                      : darkMode
-                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                    ? 'bg-blue-500 text-white border border-blue-500'
+                    : darkMode
+                      ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                      : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                     }`}
                 >
                   🟢 Active
@@ -2387,10 +2387,10 @@
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, priorityState: 'paused' }))}
                   className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'paused'
-                      ? 'bg-blue-500 text-white border border-blue-500'
-                      : darkMode
-                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                    ? 'bg-blue-500 text-white border border-blue-500'
+                    : darkMode
+                      ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                      : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                     }`}
                 >
                   ⏸️ Paused
@@ -2399,10 +2399,10 @@
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, priorityState: 'complete' }))}
                   className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'complete'
-                      ? 'bg-blue-500 text-white border border-blue-500'
-                      : darkMode
-                        ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                        : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                    ? 'bg-blue-500 text-white border border-blue-500'
+                    : darkMode
+                      ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
+                      : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
                     }`}
                 >
                   ✅ Funded
@@ -4761,7 +4761,7 @@
 
             {editingGoal && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                <div className={`bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                   <h3 className="text-lg font-semibold mb-4">Edit Savings Goal</h3>
                   <GoalForm
                     goal={editingGoal}

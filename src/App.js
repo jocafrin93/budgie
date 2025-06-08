@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Plus, Download, Moon, Sun, Edit2, Trash2, Calculator, Target, DollarSign, ChevronRight, Eye, Percent } from 'lucide-react';
+import { Plus, Download, Moon, Sun, Edit2, Trash2, Calculator, Target, DollarSign, ChevronRight, Eye, Percent, Users, Palette } from 'lucide-react';
 
 
 // Import components
@@ -19,6 +19,9 @@ import TransactionsSection from './components/TransactionsSection';
 import SummaryPanel from './components/SummaryPanel';
 import ConfirmDialog from './components/ConfirmDialog';
 import CurrencyInput from './components/CurrencyInput';
+import TabNavigation from './components/TabNavigation';
+import TransactionsTab from './components/TransactionsTab';
+import ThemeSelector from './components/ThemeSelector';
 
 
 
@@ -37,6 +40,7 @@ const App = () => {
     const [roundingOption, setRoundingOption] = useLocalStorage('budgetCalc_roundingOption', 5);
     const [bufferPercentage, setBufferPercentage] = useLocalStorage('budgetCalc_bufferPercentage', 7);
     const [viewMode, setViewMode] = useLocalStorage('budgetCalc_viewMode', 'amount');
+    const [currentTheme, setCurrentTheme] = useLocalStorage('budgetCalc_theme', 'light');
 
     // Categories state
     const [categories, setCategories] = useLocalStorage('budgetCalc_categories', [
@@ -131,6 +135,8 @@ const App = () => {
     const [whatIfMode, setWhatIfMode] = useState(false);
     const [whatIfPay, setWhatIfPay] = useState(2800);
     const [showConfig, setShowConfig] = useState(false);
+    const [activeTab, setActiveTab] = useState('budget');
+
 
     // Modal states
     const [showAddExpense, setShowAddExpense] = useState(false);
@@ -211,14 +217,11 @@ const App = () => {
         }));
     }, [categories, calculations.expenseAllocations, calculations.goalAllocations, currentPay]);
 
-    // Apply dark mode
+    // Set Theme
     useEffect(() => {
-        if (darkMode) {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    }, [darkMode]);
+        console.log('Setting theme:', darkMode ? 'dark' : currentTheme); // Add this debug line
+        document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : currentTheme);
+    }, [darkMode, currentTheme]);
 
     // Handler functions
     const handleDeleteExpense = (expenseId) => {
@@ -383,6 +386,12 @@ const App = () => {
                         </div>
 
                         <div className="flex space-x-2">
+                            <ThemeSelector
+                                currentTheme={currentTheme}
+                                setCurrentTheme={setCurrentTheme}
+                                darkMode={darkMode}
+                            />
+
                             <button
                                 onClick={() => setViewMode(viewMode === 'amount' ? 'percentage' : 'amount')}
                                 className={`p-2 rounded-lg flex items-center space-x-2 ${viewMode === 'percentage'
@@ -429,7 +438,7 @@ const App = () => {
                         </div>
                     </div>
 
-                    {/* Configuration Panel */}
+                    {/* Configuration Panel
                     <ConfigurationPanel
                         darkMode={darkMode}
                         showConfig={showConfig}
@@ -448,7 +457,7 @@ const App = () => {
                         accounts={accounts}
                         setShowAddAccount={setShowAddAccount}
                         onExport={handleExportToYNAB}
-                    />
+                    /> */}
 
                     {/* Summary Cards */}
                     <SummaryCards
@@ -474,98 +483,174 @@ const App = () => {
                     />
 
                     {/* Main Content Grid */}
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                        {/* Categories Section */}
-                        <div className="xl:col-span-2">
-                            <CategoriesSection
-                                categorizedExpenses={categorizedExpenses}
-                                darkMode={darkMode}
-                                viewMode={viewMode}
-                                frequencyOptions={frequencyOptions}
-                                onAddCategory={() => setShowAddCategory(true)}
-                                onAddExpense={() => setShowAddExpense(true)}
-                                onAddGoal={() => {
-                                    setPreselectedCategory(3);
-                                    setShowAddGoal(true);
-                                }}
-                                onEditCategory={setEditingCategory}
-                                onEditExpense={setEditingExpense}
-                                onEditGoal={setEditingGoal}
-                                onDeleteCategory={(category) => setConfirmDelete({
-                                    type: 'category',
-                                    id: category.id,
-                                    name: category.name,
-                                    message: 'Delete this category? All items will be moved to the first category.',
-                                })}
-                                onDeleteExpense={(expense) => setConfirmDelete({
-                                    type: 'expense',
-                                    id: expense.id,
-                                    name: expense.name,
-                                    message: `Delete "${expense.name}"?`,
-                                })}
-                                onDeleteGoal={(goal) => setConfirmDelete({
-                                    type: 'goal',
-                                    id: goal.id,
-                                    name: goal.name,
-                                    message: `Delete "${goal.name}" savings goal?`,
-                                })}
-                                setExpenses={setExpenses}
-                                setSavingsGoals={setSavingsGoals}
-                                setCategories={setCategories}
-                                setPreselectedCategory={setPreselectedCategory}
-                                onMoveCategoryUp={moveCategoryUp}
-                                onMoveCategoryDown={moveCategoryDown}
-                                onMoveExpense={moveExpenseUpDown}
-                                onMoveGoal={moveGoalUpDown}
-                                onReorderCategories={reorderCategories}
-                                onReorderExpenses={reorderExpenses}
-                                onReorderGoals={reorderGoals}
-                            />
+                    {/* Tab Navigation */}
+                    <TabNavigation
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                        darkMode={darkMode}
+                    />
 
+                    {/* Tab Content */}
+                    {activeTab === 'budget' && (
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                            {/* Categories Section */}
+                            <div className="xl:col-span-2">
+                                <CategoriesSection
+                                    categorizedExpenses={categorizedExpenses}
+                                    darkMode={darkMode}
+                                    viewMode={viewMode}
+                                    frequencyOptions={frequencyOptions}
+                                    onAddCategory={() => setShowAddCategory(true)}
+                                    onAddExpense={() => setShowAddExpense(true)}
+                                    onAddGoal={() => {
+                                        setPreselectedCategory(3);
+                                        setShowAddGoal(true);
+                                    }}
+                                    onEditCategory={setEditingCategory}
+                                    onEditExpense={setEditingExpense}
+                                    onEditGoal={setEditingGoal}
+                                    onDeleteCategory={(category) => setConfirmDelete({
+                                        type: 'category',
+                                        id: category.id,
+                                        name: category.name,
+                                        message: 'Delete this category? All items will be moved to the first category.',
+                                    })}
+                                    onDeleteExpense={(expense) => setConfirmDelete({
+                                        type: 'expense',
+                                        id: expense.id,
+                                        name: expense.name,
+                                        message: `Delete "${expense.name}"?`,
+                                    })}
+                                    onDeleteGoal={(goal) => setConfirmDelete({
+                                        type: 'goal',
+                                        id: goal.id,
+                                        name: goal.name,
+                                        message: `Delete "${goal.name}" savings goal?`,
+                                    })}
+                                    setExpenses={setExpenses}
+                                    setSavingsGoals={setSavingsGoals}
+                                    setCategories={setCategories}
+                                    setPreselectedCategory={setPreselectedCategory}
+                                    onMoveCategoryUp={moveCategoryUp}
+                                    onMoveCategoryDown={moveCategoryDown}
+                                    onMoveExpense={moveExpenseUpDown}
+                                    onMoveGoal={moveGoalUpDown}
+                                    onReorderCategories={reorderCategories}
+                                    onReorderExpenses={reorderExpenses}
+                                    onReorderGoals={reorderGoals}
+                                />
+                            </div>
+
+                            {/* Right Sidebar */}
+                            <div className="space-y-6">
+                                {/* Transactions Section */}
+                                <TransactionsSection
+                                    transactions={transactions}
+                                    accounts={accounts}
+                                    categories={categories}
+                                    darkMode={darkMode}
+                                    onAddTransaction={() => setShowAddTransaction(true)}
+                                    onShowAllTransactions={() => setActiveTab('transactions')}
+                                    onEditTransaction={setEditingTransaction}
+                                    onDeleteTransaction={(transaction) => setConfirmDelete({
+                                        type: 'transaction',
+                                        id: transaction.id,
+                                        name: transaction.transfer
+                                            ? `Transfer to ${accounts.find(acc => acc.id === transaction.transferAccountId)?.name}`
+                                            : transaction.payee,
+                                        message: 'Delete this transaction?',
+                                    })}
+                                />
+
+                                {/* Summary Panel */}
+                                <SummaryPanel
+                                    calculations={calculations}
+                                    currentPay={currentPay}
+                                    bufferPercentage={bufferPercentage}
+                                    viewMode={viewMode}
+                                    darkMode={darkMode}
+                                    whatIfMode={whatIfMode}
+                                    takeHomePay={takeHomePay}
+                                    whatIfPay={whatIfPay}
+                                    categorizedExpenses={categorizedExpenses}
+                                    expenses={expenses}
+                                    savingsGoals={savingsGoals}
+                                />
+                            </div>
                         </div>
+                    )}
 
-                        {/* Right Sidebar */}
-                        <div className="space-y-6">
-                            {/* Transactions Section */}
-                            <TransactionsSection
-                                transactions={transactions}
-                                accounts={accounts}
-                                categories={categories}
+                    {activeTab === 'transactions' && (
+                        <TransactionsTab
+                            transactions={transactions}
+                            accounts={accounts}
+                            categories={categories}
+                            darkMode={darkMode}
+                            onAddTransaction={() => setShowAddTransaction(true)}
+                            onEditTransaction={setEditingTransaction}
+                            onDeleteTransaction={setConfirmDelete}
+                        />
+                    )}
+
+                    {activeTab === 'calendar' && (
+                        <div className="min-h-[70vh] h-full bg-theme-primary p-4 rounded-lg">
+                            <CalendarView
                                 darkMode={darkMode}
-                                onAddTransaction={() => setShowAddTransaction(true)}
-                                onShowAllTransactions={() => setShowTransactions(true)}
-                                onEditTransaction={setEditingTransaction}
-                                onDeleteTransaction={(transaction) => setConfirmDelete({
-                                    type: 'transaction',
-                                    id: transaction.id,
-                                    name: transaction.transfer
-                                        ? `Transfer to ${accounts.find(acc => acc.id === transaction.transferAccountId)?.name}`
-                                        : transaction.payee,
-                                    message: 'Delete this transaction?',
-                                })}
-                            />
-
-                            {/* Summary Panel */}
-                            <SummaryPanel
-                                calculations={calculations}
                                 currentPay={currentPay}
-                                bufferPercentage={bufferPercentage}
-                                viewMode={viewMode}
-                                darkMode={darkMode}
-                                whatIfMode={whatIfMode}
-                                takeHomePay={takeHomePay}
-                                whatIfPay={whatIfPay}
-                                categorizedExpenses={categorizedExpenses}
-                                expenses={expenses}
+                                paySchedule={paySchedule}
                                 savingsGoals={savingsGoals}
+                                expenses={expenses}
+                                categories={categories}
+                                frequencyOptions={frequencyOptions}
+                                accounts={accounts}
                             />
                         </div>
-                    </div>
+                    )}
+
+                    {activeTab === 'config' && (
+                        <div className="max-w-4xl">
+                            <h2 className="text-2xl font-bold mb-6">Configuration</h2>
+                            <ConfigurationPanel
+                                darkMode={darkMode}
+                                showConfig={true}
+                                setShowConfig={() => { }}
+                                takeHomePay={takeHomePay}
+                                setTakeHomePay={setTakeHomePay}
+                                whatIfMode={whatIfMode}
+                                whatIfPay={whatIfPay}
+                                setWhatIfPay={setWhatIfPay}
+                                roundingOption={roundingOption}
+                                setRoundingOption={setRoundingOption}
+                                bufferPercentage={bufferPercentage}
+                                setBufferPercentage={setBufferPercentage}
+                                paySchedule={paySchedule}
+                                setPaySchedule={setPaySchedule}
+                                accounts={accounts}
+                                setShowAddAccount={setShowAddAccount}
+                                onExport={handleExportToYNAB}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'payees' && (
+                        <div className="text-center py-12">
+                            <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <h2 className="text-2xl font-bold mb-4">Payee Management</h2>
+                            <p className="text-gray-600 dark:text-gray-400 mb-6">
+                                Payee management functionality coming soon! This will help you organize and categorize your transaction payees.
+                            </p>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg max-w-md mx-auto">
+                                <p className="text-sm text-blue-700 dark:text-blue-300">
+                                    💡 For now, you can manage payees when adding transactions in the Transactions tab.
+                                </p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Modals */}
                     {showAddExpense && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                 <h3 className="text-lg font-semibold mb-4">Add New Expense</h3>
                                 <AddExpenseForm
                                     onSave={(expenseData, addAnother) => {
@@ -595,7 +680,7 @@ const App = () => {
 
                     {editingExpense && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                 <h3 className="text-lg font-semibold mb-4">Edit Expense</h3>
                                 <AddExpenseForm
                                     expense={editingExpense}
@@ -616,7 +701,7 @@ const App = () => {
 
                     {showAddCategory && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96`}>
                                 <h3 className="text-lg font-semibold mb-4">Add New Category</h3>
                                 <AddCategoryForm
                                     onSave={(categoryData, addAnother) => {
@@ -638,7 +723,7 @@ const App = () => {
 
                     {editingCategory && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96`}>
                                 <h3 className="text-lg font-semibold mb-4">Edit Category</h3>
                                 <AddCategoryForm
                                     category={editingCategory}
@@ -658,7 +743,7 @@ const App = () => {
 
                     {showAddGoal && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                 <h3 className="text-lg font-semibold mb-4">Add Savings Goal</h3>
                                 <div className="text-xs text-gray-500 mb-1">
                                     Fill any two fields and the third calculates automatically
@@ -691,7 +776,7 @@ const App = () => {
 
                     {editingGoal && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                 <h3 className="text-lg font-semibold mb-4">Edit Savings Goal</h3>
                                 <AddGoalForm
                                     goal={editingGoal}
@@ -712,7 +797,7 @@ const App = () => {
 
                     {showAddAccount && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96`}>
                                 <h3 className="text-lg font-semibold mb-4">Add New Account</h3>
                                 <AddAccountForm
                                     onSave={(accountData) => {
@@ -732,7 +817,7 @@ const App = () => {
 
                     {editingAccount && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96`}>
                                 <h3 className="text-lg font-semibold mb-4">Edit Account</h3>
                                 <AddAccountForm
                                     account={editingAccount}
@@ -751,7 +836,7 @@ const App = () => {
 
                     {showAddTransaction && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                 <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
                                 <AddTransactionForm
                                     onSave={(transactionData, addAnother) => {
@@ -773,7 +858,7 @@ const App = () => {
 
                     {editingTransaction && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
+                            <div className={`bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto`}>
                                 <h3 className="text-lg font-semibold mb-4">Edit Transaction</h3>
                                 <AddTransactionForm
                                     transaction={editingTransaction}
@@ -794,7 +879,7 @@ const App = () => {
 
                     {showTransactions && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-4xl h-[95vh] sm:h-[85vh] overflow-hidden flex flex-col`}>
+                            <div className={`bg-theme-primary rounded-lg w-full max-w-4xl h-[95vh] sm:h-[85vh] overflow-hidden flex flex-col`}>
                                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                                     <div className="flex justify-between items-center mb-3">
                                         <h3 className="text-lg font-semibold flex items-center">💳 All Transactions</h3>
@@ -918,15 +1003,14 @@ const App = () => {
                             </div>
                         </div>
                     )}
-
-                    {showCalendar && (
+                    {/* {showCalendar && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6`}>
+                            <div className="bg-theme-primary rounded-lg w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-6 border border-theme-primary">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h3 className="text-lg font-semibold">📅 Paycheck & Expense Calendar</h3>
+                                    <h3 className="text-lg font-semibold text-theme-primary">📅 Paycheck & Expense Calendar</h3>
                                     <button
                                         onClick={() => setShowCalendar(false)}
-                                        className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                                        className="text-theme-secondary hover:text-theme-primary text-xl font-bold"
                                     >
                                         ✕
                                     </button>
@@ -943,7 +1027,7 @@ const App = () => {
                                 />
                             </div>
                         </div>
-                    )}
+                    )} */}
 
                     {/* Confirm Delete Dialog */}
                     {confirmDelete && (
