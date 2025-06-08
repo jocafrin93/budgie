@@ -49,8 +49,8 @@ const TransactionsSection = ({
                             <div
                                 key={transaction.id}
                                 className={`p-3 rounded border ${darkMode
-                                        ? 'border-gray-600 bg-gray-700'
-                                        : 'border-gray-200 bg-gray-50'
+                                    ? 'border-gray-600 bg-gray-700'
+                                    : 'border-gray-200 bg-gray-50'
                                     }`}
                             >
                                 <div className="flex items-center justify-between">
@@ -82,13 +82,13 @@ const TransactionsSection = ({
                                         <div className="flex space-x-1">
                                             <button
                                                 onClick={() => onEditTransaction(transaction)}
-                                                className="p-1 hover:bg-gray-600 rounded"
+                                                className="p-1 hover:bg-black/10 rounded"
                                             >
                                                 <Edit2 className="w-3 h-3" />
                                             </button>
                                             <button
                                                 onClick={() => onDeleteTransaction(transaction)}
-                                                className="p-1 hover:bg-gray-600 rounded text-red-400"
+                                                className="p-1 hover:bg-black/10 rounded text-red-400"
                                             >
                                                 <Trash2 className="w-3 h-3" />
                                             </button>

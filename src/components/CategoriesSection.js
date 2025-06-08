@@ -259,6 +259,16 @@ const CategoriesSection = ({
                                     </div>
                                     <div className="flex space-x-1">
                                         <button
+                                            onClick={onAddGoal}
+                                            className="p-1 text-green-600 rounded text-sm flex items-center hover:bg-black/10 rounded"
+                                            title="Add goal to this category"
+
+                                        >
+                                            <Target className="w-4 h-4" />
+
+
+                                        </button>
+                                        <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setPreselectedCategory(category.id);
@@ -275,6 +285,8 @@ const CategoriesSection = ({
                                                 onEditCategory(category);
                                             }}
                                             className="p-1 hover:bg-black/10 rounded"
+                                            title="Edit this category"
+
                                         >
                                             <Edit2 className="w-4 h-4" />
                                         </button>
@@ -284,6 +296,8 @@ const CategoriesSection = ({
                                                 onDeleteCategory(category);
                                             }}
                                             className="p-1 hover:bg-black/10 rounded text-red-400"
+                                            title="Delete this category"
+
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
