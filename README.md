@@ -4,6 +4,8 @@
 
 # README - The Road So Far 🦜
 
+Resources:
+previewer:https://claude.ai/public/artifacts/e01f0441-ca05-41ac-be05-237035d158fd
 
 ## **✅Complete✅**
  - [x] Calendar view
