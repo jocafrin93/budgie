@@ -196,7 +196,10 @@ const App = () => {
         roundingOption,
         bufferPercentage,
         frequencyOptions,
+        paySchedule,
+        accounts,
     });
+    console.log('Timeline data:', calculations.timelines);
 
     // Build categorized expenses with proper category info
     const categorizedExpenses = useMemo(() => {
@@ -496,6 +499,7 @@ const App = () => {
                         <div className="xl:col-span-2">
                             <CategoriesSection
                                 categorizedExpenses={categorizedExpenses}
+                                calculations={calculations}
                                 darkMode={darkMode}
                                 viewMode={viewMode}
                                 frequencyOptions={frequencyOptions}
@@ -537,6 +541,7 @@ const App = () => {
                                 onReorderCategories={reorderCategories}
                                 onReorderExpenses={reorderExpenses}
                                 onReorderGoals={reorderGoals}
+                                calculations={calculations}
                             />
                         </div>
 

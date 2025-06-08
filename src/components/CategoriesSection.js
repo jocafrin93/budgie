@@ -7,6 +7,7 @@ const DraggableCategory = ({
     index,
     children,
     onReorder,
+    
     ...otherProps
 }) => {
     const [mounted, setMounted] = useState(false);
@@ -179,6 +180,8 @@ const CategoriesSection = ({
     onReorderCategories,
     onReorderExpenses,
     onReorderGoals,
+    categories,
+  
 }) => {
     const priorityColors = {
         essential: 'border-red-400 bg-red-100 text-red-900',
@@ -454,12 +457,14 @@ const CategoriesSection = ({
                                                                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                                                                     ${expense.amount}{' '}
                                                                     {frequencyOptions.find(f => f.value === expense.frequency)?.label.toLowerCase()}
+
                                                                 </div>
 
                                                                 {expense.remainingNeeded > 0 && (
                                                                     <div className="text-xs text-blue-500">
                                                                         ${expense.remainingNeeded.toFixed(2)} remaining to save
                                                                     </div>
+                                                                    
                                                                 )}
                                                             </div>
                                                         )}
