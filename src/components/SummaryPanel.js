@@ -1,12 +1,11 @@
 import React from 'react';
 
 const SummaryPanel = ({
-    // Remove the duplicate calculations prop
+
     totalBiweeklyAllocation,  // These come from the spread
     remainingIncome,
     allocationPercentage,
     // ... other calculation properties you use
-    timelines,  // Add this new prop
     currentPay,
     bufferPercentage,
     viewMode,
@@ -17,7 +16,9 @@ const SummaryPanel = ({
     categorizedExpenses,
     expenses,
     savingsGoals,
+    calculations,
 }) => {
+    const { timeline } = calculations;
     return (
         <div className={`bg-theme-primary rounded-lg p-6 shadow-lg h-fit`}>
             <h3 className="text-lg font-semibold mb-4 flex items-center">
@@ -98,7 +99,21 @@ const SummaryPanel = ({
                     </div>
                 </div>
             )}
-
+            {timeline && timeline.timelines.summary.critical > 0 && (
+                <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/20 rounded">
+                    <h4 className="font-medium text-red-900 dark:text-red-100 mb-2 flex items-center">
+                        🚨 Critical Deadlines
+                    </h4>
+                    <div className="text-sm text-red-800 dark:text-red-200">
+                        <div>⚠️ {timeline.timelines.summary.critical} items need immediate attention</div>
+                        {timeline.getNextCriticalDeadline() && (
+                            <div className="mt-1">
+                                📅 Next: {timeline.getNextCriticalDeadline().name}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
             {/* Quick Stats Grid */}
             <div className="mt-4">
                 <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'} mb-3`} />

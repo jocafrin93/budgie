@@ -364,7 +364,6 @@ const AddGoalForm = ({
                     </option>
                 ))}
             </select>
-            // Add this after the category select:
             <div>
                 <label className="block text-sm font-medium mb-1 text-theme-primary">Funding Account</label>
                 <select

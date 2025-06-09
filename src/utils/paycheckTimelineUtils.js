@@ -91,7 +91,8 @@ export const getRelevantPaychecks = (targetDate, accountId, paySchedule, account
  * Calculate funding timeline for an expense or goal
  */
 export const calculateFundingTimeline = (item, paySchedule, accounts, biweeklyAllocation) => {
-    if (!item.dueDate) {
+    const deadlineDate = item.dueDate || item.targetDate;
+    if (!deadlineDate) {
         return {
             hasDeadline: false,
             message: 'No deadline set',
@@ -99,7 +100,7 @@ export const calculateFundingTimeline = (item, paySchedule, accounts, biweeklyAl
         };
     }
 
-    const relevantPaychecks = getRelevantPaychecks(item.dueDate, item.accountId, paySchedule, accounts);
+    const relevantPaychecks = getRelevantPaychecks(deadlineDate, item.accountId, paySchedule, accounts);
     const totalNeeded = item.targetAmount || item.amount;
     const alreadySaved = item.alreadySaved || 0;
     const remainingNeeded = Math.max(0, totalNeeded - alreadySaved);
@@ -224,4 +225,4 @@ export const getUrgencyIndicator = (urgencyScore) => {
     if (urgencyScore >= 60) return { emoji: '🟡', label: 'High', color: 'text-yellow-600' };
     if (urgencyScore >= 30) return { emoji: '🟢', label: 'Medium', color: 'text-green-600' };
     return { emoji: '⚪', label: 'Low', color: 'text-gray-600' };
-  };
+};

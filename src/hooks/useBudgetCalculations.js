@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { usePaycheckTimeline } from './usePaycheckTimeline';
 
 export const useBudgetCalculations = ({
     expenses,
@@ -8,8 +7,7 @@ export const useBudgetCalculations = ({
     roundingOption,
     bufferPercentage,
     frequencyOptions,
-    paySchedule,
-    accounts,
+    // Remove paySchedule and accounts from here - timeline system handles those
 }) => {
     const calculations = useMemo(() => {
         const calculateBiweeklyAllocation = (expense) => {
@@ -156,18 +154,5 @@ export const useBudgetCalculations = ({
         };
     }, [expenses, savingsGoals, currentPay, roundingOption, bufferPercentage, frequencyOptions]);
 
-    // Always call the hook, but handle missing data inside it
-    const timelineData = usePaycheckTimeline({
-        expenses,
-        savingsGoals,
-        paySchedule,
-        accounts,
-        expenseAllocations: calculations.expenseAllocations,
-        goalAllocations: calculations.goalAllocations,
-    });
-
-    return {
-        ...calculations,
-        timelines: timelineData,
-    };
+    return calculations;
 };

@@ -28,7 +28,7 @@ import ThemeSelector from './components/ThemeSelector';
 // Import hooks
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useBudgetCalculations } from './hooks/useBudgetCalculations';
-
+import { usePaycheckTimeline } from './hooks/usePaycheckTimeline';
 // Import utilities
 import { generateCalendarEvents } from './utils/calendarUtils';
 import { exportToYNAB } from './utils/exportUtils';
@@ -189,38 +189,71 @@ const App = () => {
     ];
 
     // Custom hook for calculations
-    const calculations = useBudgetCalculations({
+    const budgetCalculations = useBudgetCalculations({
         expenses,
         savingsGoals,
         currentPay,
         roundingOption,
         bufferPercentage,
         frequencyOptions,
+    });
+
+    // Timeline calculations (new functionality)
+    const timelineData = usePaycheckTimeline({
+        expenses,
+        savingsGoals,
         paySchedule,
         accounts,
+        expenseAllocations: budgetCalculations.expenseAllocations,
+        goalAllocations: budgetCalculations.goalAllocations,
     });
-    console.log('Timeline data:', calculations.timelines);
+    console.log('All goals passed to timeline:', savingsGoals);
+    console.log('Timeline result:', timelineData?.timelines?.all?.filter(item => item.type === 'goal'));
+
+    const calculations = {
+        ...budgetCalculations,
+        timeline: timelineData,
+    };
+    console.log('Budget calculations:', budgetCalculations);
+    console.log('Timeline data:', timelineData);
 
     // Build categorized expenses with proper category info
     const categorizedExpenses = useMemo(() => {
-        return categories.map(category => ({
-            ...category,
-            expenses: calculations.expenseAllocations.filter(exp => exp.categoryId === category.id),
-            goals: calculations.goalAllocations.filter(goal => goal.categoryId === category.id),
-            total: calculations.expenseAllocations
+        console.log('=== CATEGORIZED EXPENSES DEBUG ===');
+        console.log('budgetCalculations.goalAllocations:', budgetCalculations.goalAllocations);
+        return categories.map(category => {
+            const goalData = budgetCalculations.goalAllocations.filter(goal => goal.categoryId === category.id);
+            console.log(`Category ${category.name} (id: ${category.id}) found goals:`, goalData);
+            // In the categorizedExpenses useMemo debug, add this:
+            console.log('=== GOAL CATEGORY DEBUG ===');
+            budgetCalculations.goalAllocations.forEach((goal, index) => {
+                console.log(`Goal ${index}: "${goal.name}" - categoryId: ${goal.categoryId}`);
+            });
+
+            console.log('Available categories:');
+            categories.forEach(cat => {
+                console.log(`Category: "${cat.name}" - id: ${cat.id}`);
+            });
+
+            const expenseTotal = budgetCalculations.expenseAllocations
                 .filter(exp => exp.categoryId === category.id)
-                .reduce((sum, exp) => sum + exp.biweeklyAmount, 0) +
-                calculations.goalAllocations
-                    .filter(goal => goal.categoryId === category.id)
-                    .reduce((sum, goal) => sum + goal.biweeklyAmount, 0),
-            percentage: ((calculations.expenseAllocations
-                .filter(exp => exp.categoryId === category.id)
-                .reduce((sum, exp) => sum + exp.biweeklyAmount, 0) +
-                calculations.goalAllocations
-                    .filter(goal => goal.categoryId === category.id)
-                    .reduce((sum, goal) => sum + goal.biweeklyAmount, 0)) / currentPay) * 100
-        }));
-    }, [categories, calculations.expenseAllocations, calculations.goalAllocations, currentPay]);
+                .reduce((sum, exp) => sum + (exp.biweeklyAmount || 0), 0);
+
+            const goalTotal = budgetCalculations.goalAllocations
+                .filter(goal => goal.categoryId === category.id)
+                .reduce((sum, goal) => sum + (goal.biweeklyAmount || 0), 0);
+
+            const total = expenseTotal + goalTotal;
+
+            return {
+                ...category,
+                expenses: budgetCalculations.expenseAllocations.filter(exp => exp.categoryId === category.id),
+                goals: budgetCalculations.goalAllocations.filter(goal => goal.categoryId === category.id),
+                total: total || 0,  // Safety check
+                percentage: currentPay > 0 ? ((total || 0) / currentPay) * 100 : 0  // Safety check
+            };
+        });
+    }, [categories, budgetCalculations.expenseAllocations, budgetCalculations.goalAllocations, currentPay]);
 
     // Set Theme
     useEffect(() => {
@@ -497,12 +530,14 @@ const App = () => {
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                         {/* Categories Section */}
                         <div className="xl:col-span-2">
+
                             <CategoriesSection
                                 categorizedExpenses={categorizedExpenses}
-                                timelines={calculations.timelines}
+                                calculations={calculations}  // Remove this line - it's causing the conflict
                                 darkMode={darkMode}
                                 viewMode={viewMode}
                                 frequencyOptions={frequencyOptions}
+                                timeline={timelineData}
                                 onAddCategory={() => setShowAddCategory(true)}
                                 onAddExpense={() => setShowAddExpense(true)}
                                 onAddGoal={() => {
@@ -541,7 +576,7 @@ const App = () => {
                                 onReorderCategories={reorderCategories}
                                 onReorderExpenses={reorderExpenses}
                                 onReorderGoals={reorderGoals}
-                                timelines={calculations.timelines}
+                                categories={categories}
                             />
                         </div>
 
@@ -568,7 +603,7 @@ const App = () => {
 
                             {/* Summary Panel */}
                             <SummaryPanel
-                                {...calculations}
+                                calculations={calculations}
                                 currentPay={currentPay}
                                 bufferPercentage={bufferPercentage}
                                 viewMode={viewMode}
@@ -690,6 +725,7 @@ const App = () => {
                             <h3 className="text-lg font-semibold mb-4">Edit Expense</h3>
                             <AddExpenseForm
                                 expense={editingExpense}
+                                accounts={accounts}
                                 onSave={(expenseData) => {
                                     setExpenses(prev => prev.map(exp =>
                                         exp.id === editingExpense.id ? { ...exp, ...expenseData } : exp
@@ -772,14 +808,16 @@ const App = () => {
                                     setPreselectedCategory(null);
                                 }}
                                 categories={categories}
+                                accounts={accounts}
                                 darkMode={darkMode}
                                 currentPay={currentPay}
-                                accounts={accounts}
                                 preselectedCategory={preselectedCategory}
                             />
                         </div>
                     </div>
-                )}
+                )
+
+                }
 
                 {editingGoal && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -795,6 +833,7 @@ const App = () => {
                                 }}
                                 onCancel={() => setEditingGoal(null)}
                                 categories={categories}
+                                accounts={accounts}
                                 darkMode={darkMode}
                                 currentPay={currentPay}
                             />
@@ -1073,3 +1112,48 @@ const App = () => {
 };
 
 export default App;
+
+
+
+
+// === GOAL CATEGORY DEBUG ===
+//     App.js: 230 Goal 0: "SlimmedGoal" - categoryId: 3
+// App.js: 230 Goal 1: "Slim goal" - categoryId: 3
+// App.js: 230 Goal 2: "New Goal2" - categoryId: 3
+// App.js: 230 Goal 3: "A pony" - categoryId: 3
+// App.js: 230 Goal 4: "new" - categoryId: 2
+// App.js: 233 Available categories:
+// App.js: 235 Category: "New Category" - id: 1
+// App.js: 235 Category: "New Test" - id: 2
+// App.js: 226 Category New Test(id: 2) found goals: [{ ...}]
+// App.js: 228 === GOAL CATEGORY DEBUG ===
+//     App.js: 230 Goal 0: "SlimmedGoal" - categoryId: 3
+// App.js: 230 Goal 1: "Slim goal" - categoryId: 3
+// App.js: 230 Goal 2: "New Goal2" - categoryId: 3
+// App.js: 230 Goal 3: "A pony" - categoryId: 3
+// App.js: 230 Goal 4: "new" - categoryId: 2
+// App.js: 233 Available categories:
+// App.js: 235 Category: "New Category" - id: 1
+// App.js: 235 Category: "New Test" - id: 2
+// App.js: 222 === CATEGORIZED EXPENSES DEBUG ===
+//     App.js: 223 budgetCalculations.goalAllocations: (5)[{ ...}, { ...}, { ...}, { ...}, { ...}]
+// App.js: 226 Category New Category(id: 1) found goals: []
+// App.js: 228 === GOAL CATEGORY DEBUG ===
+//     App.js: 230 Goal 0: "SlimmedGoal" - categoryId: 3
+// App.js: 230 Goal 1: "Slim goal" - categoryId: 3
+// App.js: 230 Goal 2: "New Goal2" - categoryId: 3
+// App.js: 230 Goal 3: "A pony" - categoryId: 3
+// App.js: 230 Goal 4: "new" - categoryId: 2
+// App.js: 233 Available categories:
+// App.js: 235 Category: "New Category" - id: 1
+// App.js: 235 Category: "New Test" - id: 2
+// App.js: 226 Category New Test(id: 2) found goals: [{ ...}]
+// App.js: 228 === GOAL CATEGORY DEBUG ===
+//     App.js: 230 Goal 0: "SlimmedGoal" - categoryId: 3
+// App.js: 230 Goal 1: "Slim goal" - categoryId: 3
+// App.js: 230 Goal 2: "New Goal2" - categoryId: 3
+// App.js: 230 Goal 3: "A pony" - categoryId: 3
+// App.js: 230 Goal 4: "new" - categoryId: 2
+// App.js: 233 Available categories:
+// App.js: 235 Category: "New Category" - id: 1
+// App.js: 235 Category: "New Test" - id: 2

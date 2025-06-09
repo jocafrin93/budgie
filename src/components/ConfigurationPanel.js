@@ -243,7 +243,7 @@ const ConfigurationPanel = ({
                                     startDate: e.target.value,
                                 }))}
                                 className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                                // style={{ colorScheme: 'dark' }}
+                            // style={{ colorScheme: 'dark' }}
                             />
                         </div>
                     </div>

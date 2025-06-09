@@ -6,11 +6,12 @@ const AddExpenseForm = ({
     onSave,
     onCancel,
     categories,
+    accounts,
     darkMode,
     expense = null,
     currentPay,
     preselectedCategory,
-    accounts,
+
 }) => {
     const [formData, setFormData] = useState({
         name: expense?.name || '',
@@ -320,6 +321,7 @@ const AddExpenseForm = ({
                     Which account will this expense be paid from?
                 </div>
             </div>
+
             <select
                 value={formData.priority}
                 onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}

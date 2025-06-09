@@ -12,6 +12,8 @@ export const usePaycheckTimeline = ({
 }) => {
 
     const timelineData = useMemo(() => {
+
+
         // Return empty data if required props are missing
         if (!paySchedule || !accounts || !paySchedule.startDate || !expenseAllocations || !goalAllocations) {
             return {
