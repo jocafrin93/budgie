@@ -277,7 +277,7 @@ const CategoriesSection = ({
 			</div>
 
 			{/* Timeline Overview Panel */}
-			{timeline && timeline.timelines && timeline.timelines.summary && (
+			{/* {timeline && timeline.timelines && timeline.timelines.summary && (
 				<div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
 					<h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center">
 						📊 Timeline Overview
@@ -303,7 +303,7 @@ const CategoriesSection = ({
 						</div>
 					</div>
 				</div>
-			)}
+			)} */}
 
 			<div className="space-y-4">
 				{categorizedExpenses.map((category, categoryIndex) => (

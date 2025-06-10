@@ -255,6 +255,50 @@ const App = () => {
         });
     }, [categories, budgetCalculations.expenseAllocations, budgetCalculations.goalAllocations, currentPay]);
 
+    // Category management functions
+    const generateNextCategoryId = () => {
+        if (categories.length === 0) return 1;
+        return Math.max(...categories.map(c => c.id)) + 1;
+    };
+
+    const cleanupOrphanedItems = () => {
+        const validCategoryIds = categories.map(cat => cat.id);
+        const firstCategoryId = categories[0]?.id;
+
+        if (!firstCategoryId) return; // No categories to move items to
+
+        // Fix orphaned expenses
+        setExpenses(prev => prev.map(exp => {
+            if (!validCategoryIds.includes(exp.categoryId)) {
+                console.log(`Moving orphaned expense "${exp.name}" from category ${exp.categoryId} to ${firstCategoryId}`);
+                return { ...exp, categoryId: firstCategoryId };
+            }
+            return exp;
+        }));
+
+        // Fix orphaned goals
+        setSavingsGoals(prev => prev.map(goal => {
+            if (!validCategoryIds.includes(goal.categoryId)) {
+                console.log(`Moving orphaned goal "${goal.name}" from category ${goal.categoryId} to ${firstCategoryId}`);
+                return { ...goal, categoryId: firstCategoryId };
+            }
+            return goal;
+        }));
+    };
+
+    // Backup category cleanup 
+    // const handleFixCategories = () => {
+    //     cleanupOrphanedItems();
+    //     alert('Category cleanup completed! Check console for details.');
+    // };
+
+    // Run cleanup once on mount to fix any existing orphaned items
+    useEffect(() => {
+        if (categories.length > 0) {
+            cleanupOrphanedItems();
+        }
+    }, []); // Only run once on mount
+
     // Set Theme
     useEffect(() => {
         console.log('Setting theme:', darkMode ? 'dark' : currentTheme); // Add this debug line
@@ -277,11 +321,13 @@ const App = () => {
         const firstCategoryId = remainingCategories[0]?.id;
 
         if (firstCategoryId) {
+            // Move all items from the deleted category to the first remaining category
             setExpenses(expenses.map(exp =>
                 exp.categoryId === categoryId
                     ? { ...exp, categoryId: firstCategoryId }
                     : exp
             ));
+
             setSavingsGoals(savingsGoals.map(goal =>
                 goal.categoryId === categoryId
                     ? { ...goal, categoryId: firstCategoryId }
@@ -291,6 +337,11 @@ const App = () => {
 
         setCategories(categories.filter(cat => cat.id !== categoryId));
         setConfirmDelete(null);
+
+        // Clean up any orphaned items after category deletion
+        setTimeout(() => {
+            cleanupOrphanedItems();
+        }, 100);
     };
 
     const handleDeleteAccount = (accountId) => {
@@ -462,6 +513,15 @@ const App = () => {
                             <Eye className="w-4 h-4" />
                             <span className="text-sm hidden sm:inline">What-If</span>
                         </button>
+
+                        {/* Temporary Fix Categories Button */}
+                        {/* <button
+                            onClick={handleFixCategories}
+                            className="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700"
+                            title="Fix orphaned categories"
+                        >
+                            🔧 Fix
+                        </button> */}
 
                         <button
                             onClick={() => setDarkMode(!darkMode)}
@@ -749,7 +809,7 @@ const App = () => {
                                 onSave={(categoryData, addAnother) => {
                                     const newCategory = {
                                         ...categoryData,
-                                        id: Math.max(...categories.map(c => c.id), 0) + 1,
+                                        id: generateNextCategoryId(),
                                         collapsed: false,
                                     };
                                     setCategories(prev => [...prev, newCategory]);
@@ -1112,48 +1172,3 @@ const App = () => {
 };
 
 export default App;
-
-
-
-
-// === GOAL CATEGORY DEBUG ===
-//     App.js: 230 Goal 0: "SlimmedGoal" - categoryId: 3
-// App.js: 230 Goal 1: "Slim goal" - categoryId: 3
-// App.js: 230 Goal 2: "New Goal2" - categoryId: 3
-// App.js: 230 Goal 3: "A pony" - categoryId: 3
-// App.js: 230 Goal 4: "new" - categoryId: 2
-// App.js: 233 Available categories:
-// App.js: 235 Category: "New Category" - id: 1
-// App.js: 235 Category: "New Test" - id: 2
-// App.js: 226 Category New Test(id: 2) found goals: [{ ...}]
-// App.js: 228 === GOAL CATEGORY DEBUG ===
-//     App.js: 230 Goal 0: "SlimmedGoal" - categoryId: 3
-// App.js: 230 Goal 1: "Slim goal" - categoryId: 3
-// App.js: 230 Goal 2: "New Goal2" - categoryId: 3
-// App.js: 230 Goal 3: "A pony" - categoryId: 3
-// App.js: 230 Goal 4: "new" - categoryId: 2
-// App.js: 233 Available categories:
-// App.js: 235 Category: "New Category" - id: 1
-// App.js: 235 Category: "New Test" - id: 2
-// App.js: 222 === CATEGORIZED EXPENSES DEBUG ===
-//     App.js: 223 budgetCalculations.goalAllocations: (5)[{ ...}, { ...}, { ...}, { ...}, { ...}]
-// App.js: 226 Category New Category(id: 1) found goals: []
-// App.js: 228 === GOAL CATEGORY DEBUG ===
-//     App.js: 230 Goal 0: "SlimmedGoal" - categoryId: 3
-// App.js: 230 Goal 1: "Slim goal" - categoryId: 3
-// App.js: 230 Goal 2: "New Goal2" - categoryId: 3
-// App.js: 230 Goal 3: "A pony" - categoryId: 3
-// App.js: 230 Goal 4: "new" - categoryId: 2
-// App.js: 233 Available categories:
-// App.js: 235 Category: "New Category" - id: 1
-// App.js: 235 Category: "New Test" - id: 2
-// App.js: 226 Category New Test(id: 2) found goals: [{ ...}]
-// App.js: 228 === GOAL CATEGORY DEBUG ===
-//     App.js: 230 Goal 0: "SlimmedGoal" - categoryId: 3
-// App.js: 230 Goal 1: "Slim goal" - categoryId: 3
-// App.js: 230 Goal 2: "New Goal2" - categoryId: 3
-// App.js: 230 Goal 3: "A pony" - categoryId: 3
-// App.js: 230 Goal 4: "new" - categoryId: 2
-// App.js: 233 Available categories:
-// App.js: 235 Category: "New Category" - id: 1
-// App.js: 235 Category: "New Test" - id: 2

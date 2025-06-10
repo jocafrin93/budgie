@@ -26,15 +26,21 @@ previewer:https://claude.ai/public/artifacts/e01f0441-ca05-41ac-be05-237035d158f
  - [x] Drag and drop reordering
  - [X] Consistent formatting for currency (cash register)
   - [X] Form 0s and misalignment
+ - [X] Urgency indicators and catch-up timeline calculations<sup>1</sup>
+ - [X] Fix margins/padding around split check and config cards
+ - [X] Require due dates for recurring expenses
+ - [X] Slim down categories and items when collapsed
+ - [X] Dark mode hover on goals, expenses
+
+
 
 
 
 ## **🚧Missing Core Features:🚧**
- - [ ] Urgency indicators and catch-up timeline calculations<sup>1</sup>
  - [ ] Tab Structure
-	 - [ ] Transactions
+	 - [X] Transactions
 	 - [ ] Reporting (?)
-	 - [ ] Config
+	 - [X] Config
 	 - [ ] Payee management
  - [ ]  Add recurring expenses to transactions
         - Recur until X, number of occurrences 
@@ -48,13 +54,9 @@ previewer:https://claude.ai/public/artifacts/e01f0441-ca05-41ac-be05-237035d158f
 
 ## **👩🏼‍🔧Fixes:👩🏼‍🔧**
 
- - [ ] Fix margins/padding around split check and config cards
- - [ ] Require due dates for recurring expenses
  - [ ] Consolidate to remove scroll on forms
- - [ ] Slim down categories and items when collapsed
  - [ ] Fix "next few months" verbiage on calendar view
  - [ ] Redo notes export
- - [ ] Dark mode hover on goals, expenses
 
 ## **Stretch Goals:**
 
@@ -426,14 +428,12 @@ accounts={accounts} // Add this
 - **❄️ Winter**: Cool elegance - blues, slates, indigos, cyans
 
 **🎮 How to Use**:🎮 
-**🎮 How to Use**:🎮 
 
 - Theme selector in the top-right header with a gradient button showing current theme
 - Hover to see options - dropdown appears with all four seasonal themes
 - One-click switching - instantly updates all category colors
 - Auto-updates existing categories when you change themes
 
-**🎨 Smart Features**:🎨
 **🎨 Smart Features**:🎨
 
 - Each theme has 8 coordinated colors for variety
