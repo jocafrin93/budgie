@@ -2,10 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Ensure dark mode works */
-.dark {
-  color-scheme: dark;
-}
+
 
 /* Custom gradient backgrounds for categories */
 .bg-gradient-to-r.from-purple-500.to-pink-500 {
@@ -141,7 +138,7 @@
   border-color: #3b82f6 !important;
 }
 
-.border-gray-300 {
+.border-theme-primary {
   border-color: #d1d5db !important;
 }
 

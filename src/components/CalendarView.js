@@ -48,13 +48,13 @@ const CalendarView = ({
         }
         switch (type) {
             case 'goal-deadline':
-                return 'border-purple-400 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100';
+                return 'border-purple-400 bg-purple-400 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100';
             case 'expense-due':
                 return 'border-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100';
             case 'recurring-transaction':
                 return 'border-cyan-400 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-900 dark:text-cyan-100';
             default:
-                return 'border-gray-400 bg-gray-100 dark:bg-gray-900/30';
+                return 'border-gray-400 bg-theme-tertiary dark:bg-theme-tertiary/30';
         }
     };
 
@@ -164,7 +164,7 @@ const CalendarView = ({
                             <button
                                 onClick={() => setCalendarView('grid')}
                                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${calendarView === 'grid'
-                                    ? 'bg-purple-500 text-white'
+                                    ? 'bg-purple-400 text-theme-primary'
                                     : 'bg-theme-secondary text-theme-secondary hover:bg-theme-hover'
                                     }`}
                             >
@@ -173,7 +173,7 @@ const CalendarView = ({
                             <button
                                 onClick={() => setCalendarView('timeline')}
                                 className={`px-3 py-1 rounded text-sm font-medium transition-colors ${calendarView === 'timeline'
-                                    ? 'bg-purple-500 text-white'
+                                    ? 'bg-purple-400 text-theme-primary'
                                     : 'bg-theme-secondary text-theme-secondary hover:bg-theme-hover'
                                     }`}
                             >
@@ -295,7 +295,7 @@ const CalendarView = ({
                         <button
                             onClick={() => setCalendarView('grid')}
                             className={`px-3 py-1 rounded text-sm font-medium transition-colors ${calendarView === 'grid'
-                                ? 'bg-purple-500 text-white'
+                                ? 'bg-purple-400 text-theme-primary'
                                 : 'bg-theme-secondary text-theme-secondary hover:bg-theme-hover'
                                 }`}
                         >
@@ -304,7 +304,7 @@ const CalendarView = ({
                         <button
                             onClick={() => setCalendarView('timeline')}
                             className={`px-3 py-1 rounded text-sm font-medium transition-colors ${calendarView === 'timeline'
-                                ? 'bg-purple-500 text-white'
+                                ? 'bg-purple-400 text-theme-primary'
                                 : 'bg-theme-secondary text-theme-secondary hover:bg-theme-hover'
                                 }`}
                         >

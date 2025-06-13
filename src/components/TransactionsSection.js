@@ -20,14 +20,14 @@ const TransactionsSection = ({
                 <div className="flex space-x-2">
                     <button
                         onClick={onAddTransaction}
-                        className="bg-blue-600 text-white px-2 py-1 rounded text-sm hover:bg-blue-700 flex items-center"
+                        className="bg-blue-600 text-theme-primary px-2 py-1 rounded text-sm hover:bg-blue-700 flex items-center"
                     >
                         <Plus className="w-3 h-3 mr-1" />
                         Transaction
                     </button>
                     <button
                         onClick={onShowAllTransactions}
-                        className="bg-gray-600 text-white px-2 py-1 rounded text-sm hover:bg-gray-700"
+                        className="bg-gray-600 text-theme-primary px-2 py-1 rounded text-sm hover:bg-theme-secondary"
                     >
                         View All
                     </button>
@@ -49,8 +49,8 @@ const TransactionsSection = ({
                             <div
                                 key={transaction.id}
                                 className={`p-3 rounded border ${darkMode
-                                    ? 'border-gray-600 bg-gray-700'
-                                    : 'border-gray-200 bg-gray-50'
+                                    ? 'border-theme-primary bg-theme-secondary'
+                                    : 'border-theme-secondary bg-theme-secondary'
                                     }`}
                             >
                                 <div className="flex items-center justify-between">
@@ -65,12 +65,12 @@ const TransactionsSection = ({
                                                 <span className="ml-2 text-green-500">✓</span>
                                             )}
                                         </div>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="text-sm text-theme-tertiary">
                                             {transaction.date} • {account?.name}{' '}
                                             {category && `• ${category.name}`}
                                         </div>
                                         {transaction.memo && (
-                                            <div className="text-xs text-gray-400 truncate">
+                                            <div className="text-xs text-theme-tertiary truncate">
                                                 {transaction.memo}
                                             </div>
                                         )}
@@ -99,7 +99,7 @@ const TransactionsSection = ({
                         );
                     })}
                 {transactions.length === 0 && (
-                    <p className="text-gray-500 text-sm italic text-center py-4">
+                    <p className="text-theme-tertiary text-sm italic text-center py-4">
                         No transactions yet
                     </p>
                 )}

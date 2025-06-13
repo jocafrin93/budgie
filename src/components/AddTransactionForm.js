@@ -77,7 +77,7 @@ const AddTransactionForm = ({
                         type="date"
                         value={formData.date}
                         onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
                             }`}
                         style={darkMode ? { colorScheme: 'dark' } : {}}
                     />
@@ -88,7 +88,7 @@ const AddTransactionForm = ({
                     <select
                         value={formData.accountId}
                         onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
-                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
                             }`}
                     >
                         {accounts.map(account => (
@@ -126,7 +126,7 @@ const AddTransactionForm = ({
                     <select
                         value={formData.transferAccountId}
                         onChange={(e) => setFormData(prev => ({ ...prev, transferAccountId: e.target.value }))}
-                        className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                        className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
                             }`}
                     >
                         <option value="">Select account...</option>
@@ -148,7 +148,7 @@ const AddTransactionForm = ({
                             value={formData.payee}
                             onChange={(e) => setFormData(prev => ({ ...prev, payee: e.target.value }))}
                             placeholder="Payee"
-                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                            className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
                                 }`}
                             autoFocus={!transaction}
                         />
@@ -159,7 +159,7 @@ const AddTransactionForm = ({
                         <select
                             value={formData.categoryId}
                             onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                            className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
                                 }`}
                         >
                             {categories.map(cat => (
@@ -178,7 +178,7 @@ const AddTransactionForm = ({
                     value={formData.amount}
                     onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                     placeholder="0.00"
-                    darkMode={darkMode}
+
                 />
             </div>
 
@@ -189,7 +189,7 @@ const AddTransactionForm = ({
                     value={formData.memo}
                     onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
                     placeholder="Additional details..."
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                    className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
                         }`}
                 />
             </div>
@@ -210,14 +210,14 @@ const AddTransactionForm = ({
             <div className="flex space-x-2">
                 <button
                     onClick={() => handleSubmit(false)}
-                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                    className="flex-1 bg-blue-600 text-theme-primary py-2 px-4 rounded hover:bg-blue-700"
                     disabled={!formData.date || !formData.amount || (!formData.payee && !formData.transfer)}
                 >
                     {transaction ? 'Update' : 'Add'} Transaction
                 </button>
                 <button
                     onClick={() => handleSubmit(true)}
-                    className="bg-green-600 text-white py-2 px-3 rounded hover:bg-green-700"
+                    className="bg-green-600 text-theme-primary py-2 px-3 rounded hover:bg-green-700"
                     disabled={!formData.date || !formData.amount || (!formData.payee && !formData.transfer)}
                     title="Save and add another (Shift+Enter)"
                 >
@@ -225,13 +225,13 @@ const AddTransactionForm = ({
                 </button>
                 <button
                     onClick={onCancel}
-                    className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                    className={`py-2 px-4 rounded border border-theme-primary`}
                 >
                     Cancel
                 </button>
             </div>
 
-            <div className="text-xs text-gray-500 mt-2">
+            <div className="text-xs text-theme-tertiary mt-2">
                 💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
             </div>
         </div>

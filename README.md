@@ -115,7 +115,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
         <select
           value={paySchedule.primaryAccountId}
           onChange={(e) => setPaySchedule(prev => ({ ...prev, primaryAccountId: parseInt(e.target.value) }))}
-          className={`w-full p-2 border rounded mb-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+          className={`w-full p-2 border rounded mb-2 bg-theme-primary border-theme-primary`}
         >
           {accounts.map(account => (
             <option key={account.id} value={account.id}>{account.name} ({account.bankName})</option>
@@ -127,7 +127,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
             type="number"
             value={paySchedule.primaryAmount}
             onChange={(e) => setPaySchedule(prev => ({ ...prev, primaryAmount: parseFloat(e.target.value) || 0 }))}
-            className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+            className={`w-full pl-8 p-2 border rounded bg-theme-primary border-theme-primary`}
           />
         </div>
         <div className="text-xs text-gray-500 mt-1">Main deposit</div>
@@ -138,7 +138,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
         <select
           value={paySchedule.secondaryAccountId}
           onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryAccountId: parseInt(e.target.value) }))}
-          className={`w-full p-2 border rounded mb-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+          className={`w-full p-2 border rounded mb-2 bg-theme-primary border-theme-primary`}
         >
           {accounts.filter(acc => acc.id !== paySchedule.primaryAccountId).map(account => (
             <option key={account.id} value={account.id}>{account.name} ({account.bankName})</option>
@@ -150,7 +150,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
             type="number"
             value={paySchedule.secondaryAmount}
             onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryAmount: parseFloat(e.target.value) || 0 }))}
-            className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+            className={`w-full pl-8 p-2 border rounded bg-theme-primary border-theme-primary`}
           />
         </div>
         <div className="text-xs text-gray-500 mt-1">Early deposit</div>
@@ -166,7 +166,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
           max="5"
           value={paySchedule.secondaryDaysEarly}
           onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryDaysEarly: parseInt(e.target.value) || 2 }))}
-          className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+          className={`w-full p-2 border rounded bg-theme-primary border-theme-primary`}
         />
         <div className="text-xs text-gray-500 mt-1">days before main deposit</div>
       </div>
@@ -276,7 +276,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
         <select
           value={paySchedule.primaryAccountId}
           onChange={(e) => setPaySchedule(prev => ({ ...prev, primaryAccountId: parseInt(e.target.value) }))}
-          className={`w-full p-2 border rounded mb-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+          className={`w-full p-2 border rounded mb-2 bg-theme-primary border-theme-primary`}
         >
           {accounts.map(account => (
             <option key={account.id} value={account.id}>{account.name} ({account.bankName})</option>
@@ -288,7 +288,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
             type="number"
             value={paySchedule.primaryAmount}
             onChange={(e) => setPaySchedule(prev => ({ ...prev, primaryAmount: parseFloat(e.target.value) || 0 }))}
-            className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+            className={`w-full pl-8 p-2 border rounded bg-theme-primary border-theme-primary`}
           />
         </div>
         <div className="text-xs text-gray-500 mt-1">Main deposit</div>
@@ -299,7 +299,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
         <select
           value={paySchedule.secondaryAccountId}
           onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryAccountId: parseInt(e.target.value) }))}
-          className={`w-full p-2 border rounded mb-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+          className={`w-full p-2 border rounded mb-2 bg-theme-primary border-theme-primary`}
         >
           {accounts.filter(acc => acc.id !== paySchedule.primaryAccountId).map(account => (
             <option key={account.id} value={account.id}>{account.name} ({account.bankName})</option>
@@ -311,7 +311,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
             type="number"
             value={paySchedule.secondaryAmount}
             onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryAmount: parseFloat(e.target.value) || 0 }))}
-            className={`w-full pl-8 p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+            className={`w-full pl-8 p-2 border rounded bg-theme-primary border-theme-primary`}
           />
         </div>
         <div className="text-xs text-gray-500 mt-1">Early deposit</div>
@@ -327,7 +327,7 @@ primaryAccountId: 1, // Reference to actual account secondaryAccountId: 2 // Ref
           max="5"
           value={paySchedule.secondaryDaysEarly}
           onChange={(e) => setPaySchedule(prev => ({ ...prev, secondaryDaysEarly: parseInt(e.target.value) || 2 }))}
-          className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+          className={`w-full p-2 border rounded bg-theme-primary border-theme-primary`}
         />
         <div className="text-xs text-gray-500 mt-1">days before main deposit</div>
       </div>

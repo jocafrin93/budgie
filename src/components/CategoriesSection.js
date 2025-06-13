@@ -211,7 +211,7 @@ const CategoriesSection = ({
 		const colorClass = color.includes('red') ? 'text-red-600 bg-red-100' :
 			color.includes('yellow') ? 'text-yellow-600 bg-yellow-100' :
 				color.includes('green') ? 'text-green-600 bg-green-100' :
-					'text-gray-600 bg-gray-100';
+					'text-theme-secondary bg-theme-tertiary';
 
 		return (
 			<span className={`text-xs px-1.5 py-0.5 rounded font-medium ${colorClass}`} title={`${label} priority`}>
@@ -254,21 +254,21 @@ const CategoriesSection = ({
 				<div className="flex space-x-2">
 					<button
 						onClick={onAddCategory}
-						className="bg-purple-600 text-white px-2 sm:px-3 py-1 rounded text-sm hover:bg-purple-700 flex items-center"
+						className="btn-primary text-theme-primary px-2 sm:px-3 py-1 rounded text-sm hover:bg-purple-700 flex items-center"
 					>
 						<Plus className="w-4 h-4 mr-1" />
 						<span className="hidden sm:inline">Category</span>
 					</button>
 					<button
 						onClick={onAddExpense}
-						className="bg-blue-600 text-white px-2 sm:px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center"
+						className="btn-primary text-theme-primary px-2 sm:px-3 py-1 rounded text-sm hover:bg-blue-700 flex items-center"
 					>
 						<Plus className="w-4 h-4 mr-1" />
 						<span className="hidden sm:inline">Expense</span>
 					</button>
 					<button
 						onClick={onAddGoal}
-						className="bg-green-600 text-white px-2 sm:px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center"
+						className="btn-primary text-theme-primary px-2 sm:px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center"
 					>
 						<Target className="w-4 h-4 mr-1" />
 						<span className="hidden sm:inline">Goal</span>
@@ -329,7 +329,7 @@ const CategoriesSection = ({
 											);
 										}}
 									>
-										<GripVertical className="w-4 h-4 mr-2 text-gray-400 hover:text-gray-600 cursor-grab flex-shrink-0" />
+										<GripVertical className="w-4 h-4 mr-2 text-theme-tertiary hover:text-theme-secondary cursor-grab flex-shrink-0" />
 
 										{category.collapsed ? (
 											<ChevronRight className="w-4 h-4 mr-2" />
@@ -338,7 +338,7 @@ const CategoriesSection = ({
 										)}
 										<div className={`w-6 h-6 rounded-full ${category.color} mr-3 shadow-lg border-2 border-white dark:border-white`}></div>
 										<h3 className="font-semibold">{category.name}</h3>
-										<span className="ml-2 text-sm text-gray-500">
+										<span className="ml-2 text-sm text-theme-tertiary">
 											{viewMode === 'amount'
 												? `$${category.total.toFixed(2)}/bi-weekly`
 												: `${category.percentage.toFixed(1)}%`
@@ -395,7 +395,7 @@ const CategoriesSection = ({
 													onMoveCategoryUp(category.id);
 												}}
 												disabled={categoryIndex === 0}
-												className={`p-1 rounded ${categoryIndex === 0 ? 'text-gray-400' : 'hover:bg-black/10'}`}
+												className={`p-1 rounded ${categoryIndex === 0 ? 'text-theme-tertiary' : 'hover:bg-black/10'}`}
 											>
 												<ChevronUp className="w-3 h-3" />
 											</button>
@@ -405,7 +405,7 @@ const CategoriesSection = ({
 													onMoveCategoryDown(category.id);
 												}}
 												disabled={categoryIndex === categorizedExpenses.length - 1}
-												className={`p-1 rounded ${categoryIndex === categorizedExpenses.length - 1 ? 'text-gray-400' : 'hover:bg-black/10'}`}
+												className={`p-1 rounded ${categoryIndex === categorizedExpenses.length - 1 ? 'text-theme-tertiary' : 'hover:bg-black/10'}`}
 											>
 												<ChevronDown className="w-3 h-3" />
 											</button>
@@ -417,7 +417,7 @@ const CategoriesSection = ({
 							{!category.collapsed && (
 								<div className="space-y-2">
 									{category.expenses.length === 0 && category.goals.length === 0 ? (
-										<p className="text-gray-500 text-sm italic p-4">No items in this category</p>
+										<p className="text-theme-tertiary text-sm italic p-4">No items in this category</p>
 									) : (
 										<div className="space-y-2">
 											{/* EXPENSES with timeline integration */}
@@ -458,7 +458,7 @@ const CategoriesSection = ({
 															>
 																<div className="flex items-center justify-between">
 																	<div className="flex items-center flex-1 min-w-0">
-																		<GripVertical className="w-4 h-4 mr-2 text-gray-400 hover:text-gray-600 cursor-grab flex-shrink-0" />
+																		<GripVertical className="w-4 h-4 mr-2 text-theme-tertiary hover:text-theme-secondary cursor-grab flex-shrink-0" />
 
 																		{expense.collapsed ? (
 																			<ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -479,12 +479,12 @@ const CategoriesSection = ({
 																				)}
 																				<div className="flex items-center ml-2 space-x-1 flex-shrink-0">
 																					{expense.allocationPaused && (
-																						<span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">
+																						<span className="text-xs bg-theme-secondary0 text-theme-primary px-1.5 py-0.5 rounded">
 																							PAUSED
 																						</span>
 																					)}
 																					{expense.isFullyFunded && !expense.allocationPaused && (
-																						<span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">
+																						<span className="text-xs bg-green-500 text-theme-primary px-1.5 py-0.5 rounded">
 																							FUNDED
 																						</span>
 																					)}
@@ -500,7 +500,7 @@ const CategoriesSection = ({
 																					: `${expense.percentage.toFixed(1)}%`
 																				}
 																			</div>
-																			<div className="text-xs text-gray-500">bi-weekly</div>
+																			<div className="text-xs text-theme-tertiary">bi-weekly</div>
 																		</div>
 																		<div className="flex space-x-1">
 																			<div className="flex flex-col">
@@ -510,7 +510,7 @@ const CategoriesSection = ({
 																						onMoveExpense(expense.id, 'up');
 																					}}
 																					disabled={expenseIndex === 0}
-																					className={`p-1 rounded ${expenseIndex === 0 ? 'text-gray-400' : 'hover:bg-black/10'}`}
+																					className={`p-1 rounded ${expenseIndex === 0 ? 'text-theme-tertiary' : 'hover:bg-black/10'}`}
 																				>
 																					<ChevronUp className="w-3 h-3" />
 																				</button>
@@ -520,7 +520,7 @@ const CategoriesSection = ({
 																						onMoveExpense(expense.id, 'down');
 																					}}
 																					disabled={expenseIndex === category.expenses.length - 1}
-																					className={`p-1 rounded ${expenseIndex === category.expenses.length - 1 ? 'text-gray-400' : 'hover:bg-black/10'}`}
+																					className={`p-1 rounded ${expenseIndex === category.expenses.length - 1 ? 'text-theme-tertiary' : 'hover:bg-black/10'}`}
 																				>
 																					<ChevronDown className="w-3 h-3" />
 																				</button>
@@ -549,8 +549,8 @@ const CategoriesSection = ({
 															</div>
 
 															{!expense.collapsed && (
-																<div className="px-3 pb-3 bg-gray-50">
-																	<div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+																<div className="px-3 pb-3 bg-theme-secondary">
+																	<div className="text-sm text-theme-secondary dark:text-theme-tertiary mb-2">
 																		${expense.amount}{' '}
 																		{frequencyOptions.find(f => f.value === expense.frequency)?.label.toLowerCase()}
 																	</div>
@@ -632,7 +632,7 @@ const CategoriesSection = ({
 															>
 																<div className="flex items-center justify-between">
 																	<div className="flex items-center flex-1 min-w-0">
-																		<GripVertical className="w-4 h-4 mr-2 text-gray-400 hover:text-gray-600 cursor-grab flex-shrink-0" />
+																		<GripVertical className="w-4 h-4 mr-2 text-theme-tertiary hover:text-theme-secondary cursor-grab flex-shrink-0" />
 
 																		{goal.collapsed ? (
 																			<ChevronRight className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -652,17 +652,17 @@ const CategoriesSection = ({
 																				{goal.priorityState === 'complete' && (
 																					<span className="text-xs ml-2" title="Funded">✅</span>
 																				)}
-																				<span className="text-xs bg-green-600 text-white px-1.5 py-0.5 rounded ml-2">
+																				<span className="text-xs bg-green-600 text-theme-primary px-1.5 py-0.5 rounded ml-2">
 																					{safeGoal.fundingProgress.toFixed(0)}%
 																				</span>
 																				<div className="flex items-center ml-2 space-x-1 flex-shrink-0">
 																					{goal.allocationPaused && (
-																						<span className="text-xs bg-gray-500 text-white px-1.5 py-0.5 rounded">
+																						<span className="text-xs bg-theme-secondary0 text-theme-primary px-1.5 py-0.5 rounded">
 																							PAUSED
 																						</span>
 																					)}
 																					{goal.isFullyFunded && !goal.allocationPaused && (
-																						<span className="text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">
+																						<span className="text-xs bg-green-500 text-theme-primary px-1.5 py-0.5 rounded">
 																							COMPLETE
 																						</span>
 																					)}
@@ -678,7 +678,7 @@ const CategoriesSection = ({
 																					: `${safeGoal.percentage.toFixed(1)}%`
 																				}
 																			</div>
-																			<div className="text-xs text-gray-500">bi-weekly</div>
+																			<div className="text-xs text-theme-tertiary">bi-weekly</div>
 																		</div>
 																		<div className="flex space-x-1">
 																			<div className="flex flex-col">
@@ -688,7 +688,7 @@ const CategoriesSection = ({
 																						onMoveGoal(goal.id, 'up');
 																					}}
 																					disabled={goalIndex === 0}
-																					className={`p-1 rounded ${goalIndex === 0 ? 'text-gray-400' : 'hover:bg-black/10'}`}
+																					className={`p-1 rounded ${goalIndex === 0 ? 'text-theme-tertiary' : 'hover:bg-black/10'}`}
 																				>
 																					<ChevronUp className="w-3 h-3" />
 																				</button>
@@ -698,7 +698,7 @@ const CategoriesSection = ({
 																						onMoveGoal(goal.id, 'down');
 																					}}
 																					disabled={goalIndex === category.goals.length - 1}
-																					className={`p-1 rounded ${goalIndex === category.goals.length - 1 ? 'text-gray-400' : 'hover:bg-black/10'}`}
+																					className={`p-1 rounded ${goalIndex === category.goals.length - 1 ? 'text-theme-tertiary' : 'hover:bg-black/10'}`}
 																				>
 																					<ChevronDown className="w-3 h-3" />
 																				</button>
@@ -726,8 +726,8 @@ const CategoriesSection = ({
 																</div>
 															</div>
 															{!goal.collapsed && (
-																<div className={`px-3 pb-3 ${darkMode ? 'bg-green-200' : 'bg-green-200'}`}>
-																	<div className={`text-sm ${darkMode ? 'text-green-100' : 'text-gray-700'} mb-2`}>
+																<div className={`px-3 pb-3 bg-green-200`}>
+																	<div className={`text-sm text-gray-700 mb-2`}>
 																		Target: ${goal.targetAmount.toLocaleString()} by {goal.targetDate}
 																	</div>
 

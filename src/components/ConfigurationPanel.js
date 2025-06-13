@@ -36,7 +36,7 @@ const ConfigurationPanel = ({
                         <Calculator className="w-5 h-5 mr-2" />
                         <span>Configuration</span>
                         {whatIfMode && (
-                            <span className="ml-2 text-sm bg-blue-600 text-white px-2 py-1 rounded">
+                            <span className="ml-2 text-sm bg-blue-600 text-theme-primary px-2 py-1 rounded">
                                 What-If Mode
                             </span>
                         )}
@@ -72,7 +72,7 @@ const ConfigurationPanel = ({
                                 I receive split paychecks (direct deposit to multiple accounts)
                             </label>
                             {paySchedule.splitPaycheck && accounts.length >= 2 && (
-                                <span className="ml-2 text-xs bg-purple-500 text-white px-2 py-1 rounded">
+                                <span className="ml-2 text-xs bg-purple-400 text-theme-primary px-2 py-1 rounded">
                                     Split Pay
                                 </span>
                             )}

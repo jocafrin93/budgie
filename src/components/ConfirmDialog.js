@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ConfirmDialog = ({ title, message, onConfirm, onCancel, darkMode }) => {
+const ConfirmDialog = ({ title, message, onConfirm, onCancel }) => {
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
@@ -9,7 +9,7 @@ const ConfirmDialog = ({ title, message, onConfirm, onCancel, darkMode }) => {
                 <div className="flex space-x-2">
                     <button
                         onClick={onConfirm}
-                        className="flex-1 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition-colors"
+                        className="flex-1 bg-red-600 text-theme-primary py-2 px-4 rounded hover:bg-red-700 transition-colors"
                     >
                         Delete
                     </button>

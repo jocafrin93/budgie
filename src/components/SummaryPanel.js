@@ -51,7 +51,7 @@ const SummaryPanel = ({
                     </span>
                 </div>
 
-                <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'}`} />
+                <hr className={`border-theme-secondary`} />
 
                 <div className="flex justify-between font-semibold">
                     <span>Total Needed:</span>
@@ -116,41 +116,41 @@ const SummaryPanel = ({
             )}
             {/* Quick Stats Grid */}
             <div className="mt-4">
-                <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'} mb-3`} />
+                <hr className={`border-theme-secondary mb-3`} />
                 <div className="space-y-2">
                     <div className="flex items-center text-sm font-medium">
                         <span className="mr-2">📈</span>
                         <span>Quick Stats</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div className={`p-2 rounded text-center ${darkMode ? 'bg-purple-800' : 'bg-purple-100'}`}>
-                            <div className="font-medium">{categorizedExpenses.length}</div>
-                            <div className="text-purple-600 dark:text-purple-400">Categories</div>
+                        <div className={`p-2 rounded text-center bg-purple-400`}>
+                            <div className="font-medium text-purple-700">{categorizedExpenses.length}</div>
+                            <div className="text-purple-600">Categories</div>
                         </div>
-                        <div className={`p-2 rounded text-center ${darkMode ? 'bg-blue-800' : 'bg-blue-100'}`}>
-                            <div className="font-medium">{expenses.length}</div>
-                            <div className="text-blue-600 dark:text-blue-400">Expenses</div>
+                        <div className={`p-2 rounded text-center bg-blue-100`}>
+                            <div className="font-medium text-blue-700">{expenses.length}</div>
+                            <div className="text-blue-600">Expenses</div>
                         </div>
-                        <div className={`p-2 rounded text-center ${darkMode ? 'bg-green-800' : 'bg-green-100'}`}>
-                            <div className="font-medium">{savingsGoals.length}</div>
-                            <div className="text-green-600 dark:text-green-400">Goals</div>
+                        <div className={`p-2 rounded text-center bg-green-100`}>
+                            <div className="font-medium text-green-700">{savingsGoals.length}</div>
+                            <div className="text-green-600 ">Goals</div>
                         </div>
-                        <div className={`p-2 rounded text-center ${darkMode ? 'bg-yellow-800' : 'bg-yellow-100'}`}>
-                            <div className="font-medium">
+                        <div className={`p-2 rounded text-center bg-yellow-100`}>
+                            <div className="font-medium text-yellow-700">
                                 {calculations.expenseAllocations.filter(e => e.isFullyFunded).length +
                                     calculations.goalAllocations.filter(g => g.isFullyFunded).length}
                             </div>
-                            <div className="text-yellow-600 dark:text-yellow-400">Funded</div>
+                            <div className="text-yellow-600">Funded</div>
                         </div>
-                        <div className={`p-2 rounded text-center ${darkMode ? 'bg-orange-800' : 'bg-orange-100'}`}>
-                            <div className="font-medium">
+                        <div className={`p-2 rounded text-center bg-orange-100`}>
+                            <div className="font-medium text-orange-700">
                                 {calculations.expenseAllocations.filter(e => e.priorityState === 'paused').length +
                                     calculations.goalAllocations.filter(g => g.priorityState === 'paused').length}
                             </div>
-                            <div className="text-orange-600 dark:text-orange-400">Paused</div>
+                            <div className="text-orange-600">Paused</div>
                         </div>
-                        <div className={`p-2 rounded text-center ${darkMode ? 'bg-indigo-800' : 'bg-indigo-100'}`}>
-                            <div className="font-medium">
+                        <div className={`p-2 rounded text-center bg-indigo-100`}>
+                            <div className="font-medium text-indigo-700">
                                 {calculations.expenseAllocations.filter(e => e.priorityState === 'complete').length +
                                     calculations.goalAllocations.filter(g => g.priorityState === 'complete').length}
                             </div>
@@ -162,7 +162,7 @@ const SummaryPanel = ({
 
             {/* Annual Projections */}
             <div className="mt-4">
-                <hr className={`${darkMode ? 'border-gray-700' : 'border-gray-200'} mb-3`} />
+                <hr className={`border-theme-secondary mb-3`} />
                 <div className="space-y-2">
                     <div className="flex items-center text-sm font-medium">
                         <span className="mr-2">📅</span>
@@ -191,7 +191,7 @@ const SummaryPanel = ({
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

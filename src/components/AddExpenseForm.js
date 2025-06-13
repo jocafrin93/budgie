@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import CurrencyInput from './CurrencyInput';
 
-
 const AddExpenseForm = ({
     onSave,
     onCancel,
     categories,
     accounts,
-    darkMode,
     expense = null,
     currentPay,
     preselectedCategory,
-
 }) => {
     const [formData, setFormData] = useState({
         name: expense?.name || '',
@@ -99,7 +96,7 @@ const AddExpenseForm = ({
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Expense name"
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
                 autoFocus
             />
 
@@ -110,7 +107,7 @@ const AddExpenseForm = ({
                         onClick={() => setFormData(prev => ({ ...prev, inputMode: 'amount', percentage: '' }))}
                         className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === 'amount'
                             ? 'bg-blue-600 text-white'
-                            : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                            : 'bg-theme-secondary text-theme-primary hover:bg-theme-hover'
                             }`}
                     >
                         $ Amount
@@ -120,7 +117,7 @@ const AddExpenseForm = ({
                         onClick={() => setFormData(prev => ({ ...prev, inputMode: 'percentage', amount: '' }))}
                         className={`flex-1 py-1 px-3 rounded text-sm ${formData.inputMode === 'percentage'
                             ? 'bg-green-600 text-white'
-                            : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                            : 'bg-theme-secondary text-theme-primary hover:bg-theme-hover'
                             }`}
                     >
                         % of Paycheck
@@ -132,7 +129,6 @@ const AddExpenseForm = ({
                         value={formData.amount}
                         onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value, percentage: '' }))}
                         placeholder="Amount"
-                        darkMode={darkMode}
                     />
                 ) : (
                     <div className="relative">
@@ -142,19 +138,19 @@ const AddExpenseForm = ({
                             value={formData.percentage}
                             onChange={(e) => setFormData(prev => ({ ...prev, percentage: e.target.value, amount: '' }))}
                             placeholder="Percentage of paycheck"
-                            className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                            className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
                         />
-                        <span className="absolute right-3 top-3 text-gray-400">%</span>
+                        <span className="absolute right-3 top-3 text-theme-tertiary">%</span>
                     </div>
                 )}
 
                 {formData.percentage && formData.inputMode === 'percentage' && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-theme-tertiary">
                         ≈ ${((parseFloat(formData.percentage) / 100) * currentPay).toFixed(2)} per paycheck
                     </div>
                 )}
                 {formData.amount > 0 && formData.inputMode === 'amount' && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-theme-tertiary">
                         ≈ {((parseFloat(formData.amount) / currentPay) * 100).toFixed(1)}% of paycheck
                     </div>
                 )}
@@ -164,7 +160,7 @@ const AddExpenseForm = ({
                 name="frequency"
                 value={formData.frequency}
                 onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
             >
                 <option value="weekly">Weekly</option>
                 <option value="bi-weekly">Bi-weekly</option>
@@ -178,29 +174,27 @@ const AddExpenseForm = ({
                 <option value="per-paycheck">Per Paycheck (Direct)</option>
             </select>
 
-            <div className="space-y-3 p-4 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">💰 Funding Status</h4>
+            <div className="space-y-3 p-4 bg-theme-secondary rounded border border-theme-primary">
+                <h4 className="font-medium text-theme-primary">💰 Funding Status</h4>
 
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Already Saved</label>
+                        <label className="block text-sm font-medium mb-1 text-theme-secondary">Already Saved</label>
                         <CurrencyInput
                             value={formData.alreadySaved}
                             onChange={(e) => setFormData(prev => ({ ...prev, alreadySaved: e.target.value }))}
                             placeholder="0.00"
-                            darkMode={darkMode}
                             className="text-sm"
                         />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Due Date (Optional)</label>
+                        <label className="block text-sm font-medium mb-1 text-theme-secondary">Due Date (Optional)</label>
                         <input
                             type="date"
                             value={formData.dueDate}
                             onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                            className={`w-full p-2 border rounded text-sm ${darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-900'}`}
-                            style={darkMode ? { colorScheme: 'dark' } : {}}
+                            className="w-full p-2 border rounded text-sm bg-theme-primary border-theme-primary text-theme-primary"
                         />
                     </div>
                 </div>
@@ -217,34 +211,32 @@ const AddExpenseForm = ({
 
                 {(parseFloat(formData.amount || 0) > 0) && (
                     <div className="space-y-2">
-                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                        <div className="flex justify-between text-sm text-theme-secondary">
                             <span>Progress: ${parseFloat(formData.alreadySaved || 0).toFixed(2)} / ${parseFloat(formData.amount || 0).toFixed(2)}</span>
                             <span className="font-medium">{fundingProgress.toFixed(0)}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                        <div className="w-full bg-theme-tertiary rounded-full h-2">
                             <div
                                 className={`h-2 rounded-full ${fundingProgress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`}
                                 style={{ width: `${Math.min(100, fundingProgress)}%` }}
                             ></div>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-theme-secondary">
                             Remaining needed: ${remainingNeeded.toFixed(2)}
-                            {fundingProgress >= 100 && <span className="text-green-600 dark:text-green-400 font-medium"> ✓ Fully funded!</span>}
+                            {fundingProgress >= 100 && <span className="text-green-600 font-medium"> ✓ Fully funded!</span>}
                         </div>
                     </div>
                 )}
 
                 <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Priority Status</label>
+                    <label className="block text-sm font-medium mb-2 text-theme-secondary">Priority Status</label>
                     <div className="flex space-x-1">
                         <button
                             type="button"
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'active' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'active'
                                 ? 'bg-blue-500 text-white border border-blue-500'
-                                : darkMode
-                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                : 'border border-theme-primary hover:bg-theme-hover text-theme-secondary'
                                 }`}
                         >
                             🟢 Active
@@ -254,9 +246,7 @@ const AddExpenseForm = ({
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'paused' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'paused'
                                 ? 'bg-blue-500 text-white border border-blue-500'
-                                : darkMode
-                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                : 'border border-theme-primary hover:bg-theme-hover text-theme-secondary'
                                 }`}
                         >
                             ⏸️ Paused
@@ -266,15 +256,13 @@ const AddExpenseForm = ({
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'complete' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'complete'
                                 ? 'bg-blue-500 text-white border border-blue-500'
-                                : darkMode
-                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                : 'border border-theme-primary hover:bg-theme-hover text-theme-secondary'
                                 }`}
                         >
                             ✅ Funded
                         </button>
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">
+                    <div className="text-xs text-theme-tertiary mt-2">
                         Active: Allocate money • Paused: Track only • Complete: Goal reached
                     </div>
                 </div>
@@ -287,7 +275,7 @@ const AddExpenseForm = ({
                         onChange={(e) => setFormData(prev => ({ ...prev, isRecurringExpense: e.target.checked }))}
                         className="mr-2"
                     />
-                    <label htmlFor="recurringExpense" className="text-sm text-gray-700 dark:text-gray-300">
+                    <label htmlFor="recurringExpense" className="text-sm text-theme-secondary">
                         This is a recurring expense
                     </label>
                 </div>
@@ -297,12 +285,13 @@ const AddExpenseForm = ({
                 name="categoryId"
                 value={formData.categoryId}
                 onChange={(e) => setFormData(prev => ({ ...prev, categoryId: parseInt(e.target.value) }))}
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
             >
                 {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
             </select>
+
             <div>
                 <label className="block text-sm font-medium mb-1 text-theme-primary">Funding Account</label>
                 <select
@@ -325,7 +314,7 @@ const AddExpenseForm = ({
             <select
                 value={formData.priority}
                 onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+                className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
             >
                 <option value="essential">Essential</option>
                 <option value="important">Important</option>
@@ -350,13 +339,13 @@ const AddExpenseForm = ({
                 </button>
                 <button
                     onClick={onCancel}
-                    className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                    className="py-2 px-4 rounded border border-theme-primary text-theme-secondary hover:bg-theme-hover"
                 >
                     Cancel
                 </button>
             </div>
 
-            <div className="text-xs text-gray-500 mt-2">
+            <div className="text-xs text-theme-tertiary mt-2">
                 💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
             </div>
         </div>

@@ -108,13 +108,13 @@ const TransactionsTab = ({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold">Transactions</h2>
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    <p className={`text-sm text-theme-primary`}>
                         {filteredAndSortedTransactions.length} transaction{filteredAndSortedTransactions.length !== 1 ? 's' : ''}
                     </p>
                 </div>
                 <button
                     onClick={onAddTransaction}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+                    className="bg-blue-600 text-theme-primary px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
                 >
                     <Plus className="w-4 h-4" />
                     <span>Add Transaction</span>

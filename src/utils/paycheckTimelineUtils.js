@@ -224,5 +224,5 @@ export const getUrgencyIndicator = (urgencyScore) => {
     if (urgencyScore >= 80) return { emoji: '🔴', label: 'Critical', color: 'text-red-600' };
     if (urgencyScore >= 60) return { emoji: '🟡', label: 'High', color: 'text-yellow-600' };
     if (urgencyScore >= 30) return { emoji: '🟢', label: 'Medium', color: 'text-green-600' };
-    return { emoji: '⚪', label: 'Low', color: 'text-gray-600' };
+    return { emoji: '⚪', label: 'Low', color: 'text-theme-secondary' };
 };

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import CurrencyInput from './CurrencyInput';
 
-
 const AddGoalForm = ({
     onSave,
     onCancel,
     categories,
     accounts,
-    darkMode,
     goal = null,
     currentPay,
     preselectedCategory,
@@ -24,7 +22,6 @@ const AddGoalForm = ({
         allocationPaused: goal?.allocationPaused || false,
         priorityState: goal?.priorityState || (goal?.allocationPaused ? 'paused' : 'active'),
         accountId: goal?.accountId || accounts?.[0]?.id || 1,
-
     });
 
     useEffect(() => {
@@ -141,32 +138,30 @@ const AddGoalForm = ({
         : 0;
 
     return (
-
         <div className="space-y-4" onKeyDown={handleKeyDown}>
             <div>
-                <label className="block text-sm font-medium mb-1">Goal Name</label>
+                <label className="block text-sm font-medium mb-1 text-theme-primary">Goal Name</label>
                 <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="a pony, a summer estate, a case of caviar"
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                        }`}
+                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
                     autoFocus
                 />
             </div>
+
             <div>
-                <label className="block text-sm font-medium mb-1">Target Date</label>
+                <label className="block text-sm font-medium mb-1 text-theme-primary">Target Date</label>
                 <input
                     type="date"
                     value={formData.targetDate}
                     onChange={(e) => setFormData(prev => ({ ...prev, targetDate: e.target.value }))}
-                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                        }`}
-                    style={darkMode ? { colorScheme: 'dark' } : {}}
+                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
                 />
             </div>
-            {!formData.dueDate && (
+
+            {!formData.targetDate && (
                 <div className="p-2 rounded border border-yellow-400 bg-yellow-100">
                     <div className="flex items-center text-sm">
                         <span className="mr-2">⚠️</span>
@@ -176,9 +171,10 @@ const AddGoalForm = ({
                     </div>
                 </div>
             )}
+
             <div className="space-y-4">
                 <div>
-                    <label className="block text-sm font-medium mb-1">Target Amount</label>
+                    <label className="block text-sm font-medium mb-1 text-theme-primary">Target Amount</label>
                     <CurrencyInput
                         value={formData.targetAmount}
                         onChange={(e) =>
@@ -190,13 +186,11 @@ const AddGoalForm = ({
                             }))
                         }
                         placeholder="Target amount"
-                        darkMode={darkMode}
                     />
-
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1">Monthly Contribution</label>
+                    <label className="block text-sm font-medium mb-1 text-theme-primary">Monthly Contribution</label>
                     <div className="space-y-2">
                         <div className="flex space-x-1">
                             <button
@@ -206,7 +200,7 @@ const AddGoalForm = ({
                                 }
                                 className={`flex-1 py-1 px-2 rounded text-xs ${formData.inputMode === 'amount'
                                     ? 'bg-blue-600 text-white'
-                                    : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                                    : 'bg-theme-secondary text-theme-primary hover:bg-theme-hover'
                                     }`}
                             >
                                 $
@@ -218,7 +212,7 @@ const AddGoalForm = ({
                                 }
                                 className={`flex-1 py-1 px-2 rounded text-xs ${formData.inputMode === 'percentage'
                                     ? 'bg-green-600 text-white'
-                                    : `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`
+                                    : 'bg-theme-secondary text-theme-primary hover:bg-theme-hover'
                                     }`}
                             >
                                 %
@@ -237,7 +231,6 @@ const AddGoalForm = ({
                                     }))
                                 }
                                 placeholder="Monthly amount"
-                                darkMode={darkMode}
                             />
                         ) : (
                             <div className="relative">
@@ -254,58 +247,56 @@ const AddGoalForm = ({
                                         }))
                                     }
                                     placeholder="% per paycheck"
-                                    className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                                        }`}
+                                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
                                 />
-                                <span className="absolute right-3 top-3 text-gray-400">%</span>
+                                <span className="absolute right-3 top-3 text-theme-tertiary">%</span>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            <div className="space-y-3 p-4 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">
-                <h4 className="font-medium text-gray-900 dark:text-gray-100">🎯 Progress Tracking</h4>
+            <div className="space-y-3 p-4 bg-theme-secondary rounded border border-theme-primary">
+                <h4 className="font-medium text-theme-primary">🎯 Progress Tracking</h4>
 
                 <div>
-                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium mb-1 text-theme-secondary">
                         Already Saved
                     </label>
                     <CurrencyInput
                         value={formData.alreadySaved}
                         onChange={(e) => setFormData(prev => ({ ...prev, alreadySaved: e.target.value }))}
                         placeholder="0.00"
-                        darkMode={darkMode}
                         className="text-sm"
                     />
                 </div>
 
                 {(parseFloat(formData.targetAmount || 0) > 0) && (
                     <div className="space-y-2">
-                        <div className="flex justify-between text-sm text-gray-700 dark:text-gray-300">
+                        <div className="flex justify-between text-sm text-theme-secondary">
                             <span>
                                 Progress: ${parseFloat(formData.alreadySaved || 0).toLocaleString()} / $
                                 {parseFloat(formData.targetAmount || 0).toLocaleString()}
                             </span>
                             <span className="font-medium">{fundingProgress.toFixed(0)}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                        <div className="w-full bg-theme-tertiary rounded-full h-2">
                             <div
                                 className={`h-2 rounded-full ${fundingProgress >= 100 ? 'bg-green-500' : 'bg-green-400'}`}
                                 style={{ width: `${Math.min(100, fundingProgress)}%` }}
                             ></div>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-theme-secondary">
                             Remaining needed: ${remainingNeeded.toLocaleString()}
                             {fundingProgress >= 100 && (
-                                <span className="text-green-600 dark:text-green-400 font-medium"> ✓ Goal reached!</span>
+                                <span className="text-green-600 font-medium"> ✓ Goal reached!</span>
                             )}
                         </div>
                     </div>
                 )}
 
                 <div>
-                    <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-medium mb-2 text-theme-secondary">
                         Priority Status
                     </label>
                     <div className="flex space-x-1">
@@ -314,9 +305,7 @@ const AddGoalForm = ({
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'active' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'active'
                                 ? 'bg-blue-500 text-white border border-blue-500'
-                                : darkMode
-                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                : 'border border-theme-primary hover:bg-theme-hover text-theme-secondary'
                                 }`}
                         >
                             🟢 Active
@@ -326,9 +315,7 @@ const AddGoalForm = ({
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'paused' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'paused'
                                 ? 'bg-blue-500 text-white border border-blue-500'
-                                : darkMode
-                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                : 'border border-theme-primary hover:bg-theme-hover text-theme-secondary'
                                 }`}
                         >
                             ⏸️ Paused
@@ -338,15 +325,13 @@ const AddGoalForm = ({
                             onClick={() => setFormData(prev => ({ ...prev, priorityState: 'complete' }))}
                             className={`flex-1 py-1 px-2 rounded text-sm font-medium transition-colors ${formData.priorityState === 'complete'
                                 ? 'bg-blue-500 text-white border border-blue-500'
-                                : darkMode
-                                    ? 'border border-gray-600 hover:bg-gray-700 text-gray-300'
-                                    : 'border border-gray-300 hover:bg-gray-50 text-gray-700'
+                                : 'border border-theme-primary hover:bg-theme-hover text-theme-secondary'
                                 }`}
                         >
                             ✅ Funded
                         </button>
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">
+                    <div className="text-xs text-theme-tertiary mt-2">
                         Active: Allocate money • Paused: Track only • Complete: Goal reached
                     </div>
                 </div>
@@ -355,8 +340,7 @@ const AddGoalForm = ({
             <select
                 value={formData.categoryId}
                 onChange={(e) => setFormData(prev => ({ ...prev, categoryId: parseInt(e.target.value) }))}
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                    }`}
+                className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
             >
                 {categories.map(cat => (
                     <option key={cat.id} value={cat.id}>
@@ -364,6 +348,7 @@ const AddGoalForm = ({
                     </option>
                 ))}
             </select>
+
             <div>
                 <label className="block text-sm font-medium mb-1 text-theme-primary">Funding Account</label>
                 <select
@@ -382,6 +367,7 @@ const AddGoalForm = ({
                     Which account will fund this goal?
                 </div>
             </div>
+
             <div className="flex space-x-2">
                 <button
                     onClick={() => handleSubmit(false)}
@@ -410,13 +396,13 @@ const AddGoalForm = ({
                 </button>
                 <button
                     onClick={onCancel}
-                    className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
+                    className="py-2 px-4 rounded border border-theme-primary text-theme-secondary hover:bg-theme-hover"
                 >
                     Cancel
                 </button>
             </div>
 
-            <div className="text-xs text-gray-500 mt-2">
+            <div className="text-xs text-theme-tertiary mt-2">
                 💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
             </div>
         </div>

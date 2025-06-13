@@ -35,7 +35,7 @@ const AddAccountForm = ({ onSave, onCancel, darkMode, account = null }) => {
                 value={formData.name}
                 onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Account name (e.g., 'Main Checking')"
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                className={`w-full p-2 border rounded bg-theme-secondary border-theme-primary'
                     }`}
                 autoFocus
             />
@@ -43,7 +43,7 @@ const AddAccountForm = ({ onSave, onCancel, darkMode, account = null }) => {
             <select
                 value={formData.type}
                 onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
+                className={`w-full p-2 border rounded bg-theme-secondary border-theme-primary'
                     }`}
             >
                 <option value="checking">Checking</option>
@@ -59,27 +59,29 @@ const AddAccountForm = ({ onSave, onCancel, darkMode, account = null }) => {
                 value={formData.bankName}
                 onChange={(e) => setFormData(prev => ({ ...prev, bankName: e.target.value }))}
                 placeholder="Bank name (optional)"
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'
-                    }`}
+                className={`w-full p-2 border rounded bg-theme-secondary border-theme-primary'
+                    `}
             />
             <CurrencyInput
                 value={formData.balance}
                 onChange={(e) => setFormData(prev => ({ ...prev, balance: e.target.value }))}
                 placeholder="Current balance"
-                darkMode={darkMode}
+                className={`w-full p-2 border rounded bg-theme-secondary border-theme-primary'
+                    `}
+
             />
 
             <div className="flex space-x-2">
                 <button
                     onClick={handleSubmit}
-                    className="flex-1 bg-purple-600 text-white py-2 px-4 rounded hover:bg-purple-700"
+                    className="flex-1 bg-purple-400 text-theme-primary py-2 px-4 rounded hover:bg-purple-700"
                     disabled={!formData.name || formData.balance === ''}
                 >
                     {account ? 'Update' : 'Add'} Account
                 </button>
                 <button
                     onClick={onCancel}
-                    className={`py-2 px-4 rounded border ${darkMode ? 'border-gray-600' : 'border-gray-300'
+                    className={`py-2 px-4 rounded border border-theme-primary'
                         }`}
                 >
                     Cancel
