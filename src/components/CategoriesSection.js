@@ -417,7 +417,7 @@ const CategoriesSection = ({
 							{!category.collapsed && (
 								<div className="space-y-2">
 									{category.expenses.length === 0 && category.goals.length === 0 ? (
-										<p className="text-theme-tertiary text-sm italic p-4">No items in this category</p>
+										<p className="text-theme-secondary text-sm italic p-4">No items in this category</p>
 									) : (
 										<div className="space-y-2">
 											{/* EXPENSES with timeline integration */}
@@ -549,14 +549,14 @@ const CategoriesSection = ({
 															</div>
 
 															{!expense.collapsed && (
-																<div className="px-3 pb-3 bg-theme-secondary">
-																	<div className="text-sm text-theme-secondary dark:text-theme-tertiary mb-2">
+																<div className="px-3 pb-3 bg-theme-tertiary">
+																	<div className="text-sm text-theme-tertiary mb-2">
 																		${expense.amount}{' '}
 																		{frequencyOptions.find(f => f.value === expense.frequency)?.label.toLowerCase()}
 																	</div>
 
 																	{expense.remainingNeeded > 0 && (
-																		<div className="text-xs text-blue-500">
+																		<div className="text-xs text-theme-secondary">
 																			${expense.remainingNeeded.toFixed(2)} remaining to save
 																		</div>
 																	)}

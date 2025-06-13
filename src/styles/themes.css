@@ -64,7 +64,7 @@
     /* Background colors */
     --bg-primary: #3a364b;
     --bg-secondary: #5a5475;
-    --bg-tertiary: #958db8;
+    --bg-tertiary: #8077a8;
     --bg-quaternary: #7d7796;
     --bg-hover: #4b5563;
     --bg-active: #6b7280;
@@ -77,8 +77,8 @@
 
     /* Text colors */
     --text-primary: #f9fafb;
-    --text-secondary: ##ebb2cf;
-    --text-tertiary: #9ca3af;
+    --text-secondary: #c0bdd1;
+    --text-tertiary: #fca5a5;
     --text-inverse: #111827;
 
     --page-text: #f9fafb;
