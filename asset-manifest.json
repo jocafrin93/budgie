@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/budgie/static/css/main.ec24322d.css",
-    "main.js": "/budgie/static/js/main.b348738f.js",
+    "main.css": "/budgie/static/css/main.e20f2bb4.css",
+    "main.js": "/budgie/static/js/main.d65f55dc.js",
     "index.html": "/budgie/index.html",
-    "main.ec24322d.css.map": "/budgie/static/css/main.ec24322d.css.map",
-    "main.b348738f.js.map": "/budgie/static/js/main.b348738f.js.map"
+    "main.e20f2bb4.css.map": "/budgie/static/css/main.e20f2bb4.css.map",
+    "main.d65f55dc.js.map": "/budgie/static/js/main.d65f55dc.js.map"
   },
   "entrypoints": [
-    "static/css/main.ec24322d.css",
-    "static/js/main.b348738f.js"
+    "static/css/main.e20f2bb4.css",
+    "static/js/main.d65f55dc.js"
   ]
 }
