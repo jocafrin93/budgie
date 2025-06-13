@@ -20,6 +20,20 @@ export const useLocalStorage = (key, initialValue) => {
             console.error(`Error setting localStorage key "${key}":`, error);
         }
     };
-
+    const migrateCategoriesData = (categories) => {
+        return categories.map(category => ({
+            ...category,
+            // Add envelope fields
+            allocated: category.allocated || 0,
+            spent: category.spent || 0,
+            lastFunded: category.lastFunded || null,
+            targetBalance: category.targetBalance || 0,
+            autoFunding: category.autoFunding || {
+                enabled: false,
+                maxAmount: 500,
+                priority: 'medium'
+            }
+        }));
+    };
     return [storedValue, setValue];
 };

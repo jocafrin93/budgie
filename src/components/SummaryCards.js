@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 
 const SummaryCards = ({
     calculations,
@@ -7,11 +8,33 @@ const SummaryCards = ({
     viewMode,
     expenses = [],
     savingsGoals = [],
-    timeline
+    timeline,
+    accounts = [],
+    categories = []
 }) => {
     const [petMood, setPetMood] = useState('happy');
     const [petStage, setPetStage] = useState('chick');
     const [isAnimating, setIsAnimating] = useState(false);
+
+    // Helper to get category urgency from timeline
+    const getCategoryUrgency = (categoryId, allTimelines = []) => {
+        const categoryItems = allTimelines.filter(item =>
+            item.item && item.item.categoryId === categoryId
+        );
+
+        if (categoryItems.length === 0) return { urgency: 0, mostUrgentItem: null };
+
+        const mostUrgent = categoryItems.reduce((max, item) =>
+            (item.urgencyScore || 0) > (max.urgencyScore || 0) ? item : max
+        );
+
+        return {
+            urgency: mostUrgent.urgencyScore || 0,
+            mostUrgentItem: mostUrgent,
+            totalItems: categoryItems.length,
+            criticalItems: categoryItems.filter(item => (item.urgencyScore || 0) >= 80).length
+        };
+    };
 
     // Calculate pet stats
     const calculatePetStats = () => {
@@ -128,9 +151,34 @@ const SummaryCards = ({
         return moods[petMood];
     };
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+    // Available to Allocate Card Component
+    const AvailableToAllocateCard = () => {
+        const totalAccountBalance = accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+        const totalAllocated = categories.reduce((sum, category) => sum + (category.allocated || 0), 0);
+        const availableToAllocate = totalAccountBalance - totalAllocated;
 
+        return (
+            <div className="bg-theme-primary rounded-lg p-4 shadow-lg">
+                <h3 className="text-sm font-medium text-theme-tertiary mb-1">Available to Allocate</h3>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className={`text-2xl font-bold ${availableToAllocate >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            ${availableToAllocate.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-theme-secondary">
+                            real money available
+                        </p>
+                    </div>
+                    {availableToAllocate < 0 && (
+                        <AlertTriangle className="w-6 h-6 text-red-400" />
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
             {/* Budgie Pet Card */}
             <div
                 className="bg-theme-primary rounded-lg p-4 shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
@@ -176,18 +224,22 @@ const SummaryCards = ({
                     </div>
                 )}
             </div>
+
+            {/* Planned Allocation Card */}
             <div className="bg-theme-primary rounded-lg p-4 shadow-lg">
-                <h3 className="text-sm font-medium text-theme-tertiary mb-1">Total Allocation</h3>
+                <h3 className="text-sm font-medium text-theme-tertiary mb-1">Planned Allocation</h3>
                 <p className="text-2xl font-bold text-blue-400">
                     {viewMode === 'amount'
                         ? `$${calculations.totalBiweeklyAllocation.toFixed(2)}`
                         : `${((calculations.totalBiweeklyAllocation / currentPay) * 100).toFixed(1)}%`
                     }
                 </p>
+                <p className="text-xs text-theme-tertiary">per paycheck goal</p>
             </div>
 
+            {/* Planning Buffer Card */}
             <div className="bg-theme-primary rounded-lg p-4 shadow-lg">
-                <h3 className="text-sm font-medium text-theme-tertiary mb-1">Buffer Amount</h3>
+                <h3 className="text-sm font-medium text-theme-tertiary mb-1">Planning Buffer</h3>
                 <p className="text-2xl font-bold text-purple-400">
                     {viewMode === 'amount'
                         ? `$${calculations.bufferAmount.toFixed(2)}`
@@ -196,26 +248,39 @@ const SummaryCards = ({
                 </p>
             </div>
 
+            {/* Total Planned Card */}
             <div className="bg-theme-primary rounded-lg p-4 shadow-lg">
-                <h3 className="text-sm font-medium text-theme-tertiary mb-1">Total with Buffer</h3>
+                <h3 className="text-sm font-medium text-theme-tertiary mb-1">Total Planned</h3>
                 <p className="text-2xl font-bold text-pink-400">
                     {viewMode === 'amount'
                         ? `$${calculations.totalWithBuffer.toFixed(2)}`
                         : `${calculations.allocationPercentage.toFixed(1)}%`
                     }
                 </p>
+                <p className="text-xs text-theme-tertiary">from ${currentPay.toFixed(2)} paycheck</p>
             </div>
 
+            {/* Updated Remaining Income Card */}
             <div className="bg-theme-primary rounded-lg p-4 shadow-lg">
-                <h3 className="text-sm font-medium text-theme-tertiary mb-1">Remaining Income</h3>
-                <p className={`text-2xl font-bold ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <h3 className="text-sm font-medium text-theme-tertiary mb-1">
+                    {calculations.remainingIncome >= 0 ? 'Paycheck Remaining' : 'Over Planned'}
+                </h3>
+                <p className={`text-2xl font-bold ${calculations.remainingIncome >= 0 ? 'text-green-400' : 'text-orange-400'}`}>
                     {viewMode === 'amount'
-                        ? `$${calculations.remainingIncome.toFixed(2)}`
-                        : `${((calculations.remainingIncome / currentPay) * 100).toFixed(1)}%`
+                        ? `$${Math.abs(calculations.remainingIncome).toFixed(2)}`
+                        : `${Math.abs((calculations.remainingIncome / currentPay) * 100).toFixed(1)}%`
+                    }
+                </p>
+                <p className="text-xs text-theme-tertiary">
+                    {calculations.remainingIncome >= 0
+                        ? 'left from paycheck plan'
+                        : 'using existing money'
                     }
                 </p>
             </div>
 
+            {/* Available to Allocate Card */}
+            <AvailableToAllocateCard />
         </div>
     );
 };

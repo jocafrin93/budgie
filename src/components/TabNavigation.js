@@ -1,11 +1,11 @@
-// components/TabNavigation.js
 import React from 'react';
-import { DollarSign, Calendar, Settings, Users } from 'lucide-react';
+import { DollarSign, Calendar, Settings, Users, Calculator, Receipt } from 'lucide-react';
 
 const TabNavigation = ({ activeTab, setActiveTab, darkMode }) => {
     const tabs = [
-        { id: 'budget', label: 'Budget', icon: DollarSign },
-        { id: 'transactions', label: 'Transactions', icon: DollarSign },
+        { id: 'budget', label: 'Planning', icon: Calculator },
+        { id: 'funding', label: 'Funding', icon: DollarSign },
+        { id: 'transactions', label: 'Transactions', icon: Receipt },
         { id: 'calendar', label: 'Calendar', icon: Calendar },
         { id: 'config', label: 'Config', icon: Settings },
         { id: 'payees', label: 'Payees', icon: Users }
@@ -21,8 +21,8 @@ const TabNavigation = ({ activeTab, setActiveTab, darkMode }) => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
-                                ? 'border-theme-primary text-theme-secondary'
-                                : 'border-transparent text-theme-tertiary hover:text-theme-secondary dark:text-theme-tertiary dark:hover:text-theme-secondary'
+                                ? 'border-blue-500 text-blue-600'
+                                : 'border-transparent text-theme-tertiary hover:text-theme-secondary'
                                 }`}
                         >
                             <Icon className="w-4 h-4" />

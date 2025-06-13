@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Target, ChevronDown, ChevronRight, ChevronUp, GripVertical } from 'lucide-react';
 import { useDrag, useDrop } from 'react-dnd';
+import CurrencyInput from './CurrencyInput';
 
 const DraggableCategory = ({
 	category,
@@ -182,6 +183,39 @@ const CategoriesSection = ({
 	onReorderGoals,
 	categories,
 }) => {
+
+	// Helper to get category urgency from timeline
+	const getCategoryUrgency = (categoryId, allTimelines = []) => {
+		const categoryItems = allTimelines.filter(item =>
+			item.item && item.item.categoryId === categoryId
+		);
+
+		if (categoryItems.length === 0) return { urgency: 0, mostUrgentItem: null };
+
+		const mostUrgent = categoryItems.reduce((max, item) =>
+			(item.urgencyScore || 0) > (max.urgencyScore || 0) ? item : max
+		);
+
+		return {
+			urgency: mostUrgent.urgencyScore || 0,
+			mostUrgentItem: mostUrgent,
+			totalItems: categoryItems.length,
+			criticalItems: categoryItems.filter(item => (item.urgencyScore || 0) >= 80).length
+		};
+	};
+
+	// Simple urgency indicator component
+	const UrgencyIndicator = ({ urgency }) => {
+		if (urgency >= 80) {
+			return <span className="text-red-500 text-xs font-medium">🔴 Critical</span>;
+		} else if (urgency >= 60) {
+			return <span className="text-yellow-500 text-xs font-medium">🟡 High</span>;
+		} else if (urgency >= 30) {
+			return <span className="text-blue-500 text-xs font-medium">🔵 Medium</span>;
+		}
+		return null;
+	};
+
 	const priorityColors = {
 		essential: 'border-red-400 bg-red-100 text-red-900',
 		important: 'border-yellow-400 bg-yellow-100 text-yellow-900',
@@ -276,35 +310,6 @@ const CategoriesSection = ({
 				</div>
 			</div>
 
-			{/* Timeline Overview Panel */}
-			{/* {timeline && timeline.timelines && timeline.timelines.summary && (
-				<div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-					<h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center">
-						📊 Timeline Overview
-					</h3>
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-						<div className="text-center">
-							<div className="text-red-600 font-bold text-lg">{timeline.timelines.summary.critical || 0}</div>
-							<div className="text-red-700 dark:text-red-300">🔴 Critical</div>
-						</div>
-						<div className="text-center">
-							<div className="text-yellow-600 font-bold text-lg">
-								{(timeline.timelines.summary.withDeadlines || 0) - (timeline.timelines.summary.critical || 0)}
-							</div>
-							<div className="text-yellow-700 dark:text-yellow-300">🟡 Upcoming</div>
-						</div>
-						<div className="text-center">
-							<div className="text-green-600 font-bold text-lg">{timeline.timelines.summary.onTrack || 0}</div>
-							<div className="text-green-700 dark:text-green-300">🟢 On Track</div>
-						</div>
-						<div className="text-center">
-							<div className="text-blue-600 font-bold text-lg">{timeline.timelines.summary.fullyFunded || 0}</div>
-							<div className="text-blue-700 dark:text-blue-300">✅ Funded</div>
-						</div>
-					</div>
-				</div>
-			)} */}
-
 			<div className="space-y-4">
 				{categorizedExpenses.map((category, categoryIndex) => (
 					<DraggableCategory
@@ -340,10 +345,22 @@ const CategoriesSection = ({
 										<h3 className="font-semibold">{category.name}</h3>
 										<span className="ml-2 text-sm text-theme-tertiary">
 											{viewMode === 'amount'
-												? `$${category.total.toFixed(2)}/bi-weekly`
+												? `${category.total.toFixed(2)}/bi-weekly`
 												: `${category.percentage.toFixed(1)}%`
 											}
 										</span>
+
+										{/* Category balance display */}
+										{category.allocated !== undefined && (
+											<div className="ml-4 text-sm">
+												<span className="text-theme-secondary">
+													${((category.allocated || 0) - (category.spent || 0)).toFixed(2)} available
+												</span>
+												{(category.allocated || 0) - (category.spent || 0) < 0 && (
+													<span className="ml-2 text-red-500 font-medium">Overspent</span>
+												)}
+											</div>
+										)}
 									</div>
 									<div className="flex space-x-1">
 										<button
@@ -412,6 +429,27 @@ const CategoriesSection = ({
 										</div>
 									</div>
 								</div>
+
+								{/* Category balance bar */}
+								{category.allocated !== undefined && (
+									<div className="mb-3">
+										<div className="flex justify-between text-xs text-theme-secondary mb-1">
+											<span>Allocated: ${(category.allocated || 0).toFixed(2)}</span>
+											<span>Spent: ${(category.spent || 0).toFixed(2)}</span>
+										</div>
+										<div className="w-full bg-theme-tertiary rounded-full h-2">
+											<div
+												className={`h-2 rounded-full transition-all duration-300 ${(category.spent || 0) > (category.allocated || 0) ? 'bg-red-500' :
+													(category.spent || 0) / (category.allocated || 1) > 0.8 ? 'bg-yellow-500' :
+														'bg-green-500'
+													}`}
+												style={{
+													width: `${Math.min(100, ((category.spent || 0) / Math.max(1, category.allocated || 1)) * 100)}%`
+												}}
+											/>
+										</div>
+									</div>
+								)}
 							</div>
 
 							{!category.collapsed && (
@@ -423,7 +461,6 @@ const CategoriesSection = ({
 											{/* EXPENSES with timeline integration */}
 											{category.expenses.map((expense, expenseIndex) => {
 												const timelineItem = getTimelineInfo(expense.id, 'expense');
-												// const urgencyLevel = getUrgencyLevel(timelineItem);
 												console.log(`Expense: ${expense.name}`);
 												console.log('- Has dueDate:', expense.dueDate);
 												console.log('- Timeline item:', timelineItem);
@@ -496,7 +533,7 @@ const CategoriesSection = ({
 																		<div className="text-right">
 																			<div className="font-semibold">
 																				{viewMode === 'amount'
-																					? `$${expense.biweeklyAmount.toFixed(2)}`
+																					? `${expense.biweeklyAmount.toFixed(2)}`
 																					: `${expense.percentage.toFixed(1)}%`
 																				}
 																			</div>
@@ -563,7 +600,7 @@ const CategoriesSection = ({
 
 																	{/* Simple timeline countdown - shows when you'll have enough saved */}
 																	{timelineItem && timelineItem.timeline && timelineItem.timeline.hasDeadline && (
-																		<div className="text-xs text-green-600 mt-1 flex items-center">
+																		<div className="text-xs bg-theme-primary text-green-600 mt-1 flex items-center">
 																			<span className="mr-1">✅</span>
 																			<span>
 																				{timelineItem.timeline.fundingDate ? (
@@ -674,7 +711,7 @@ const CategoriesSection = ({
 																		<div className="text-right">
 																			<div className="font-semibold">
 																				{viewMode === 'amount'
-																					? `$${safeGoal.biweeklyAmount.toFixed(2)}`
+																					? `${safeGoal.biweeklyAmount.toFixed(2)}`
 																					: `${safeGoal.percentage.toFixed(1)}%`
 																				}
 																			</div>
@@ -769,13 +806,10 @@ const CategoriesSection = ({
 																	)}
 																</div>
 															)}
-
-
 														</div>
 													</DraggableGoal>
 												);
 											})}
-
 										</div>
 									)}
 								</div>

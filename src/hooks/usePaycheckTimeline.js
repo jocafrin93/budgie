@@ -134,6 +134,26 @@ export const usePaycheckTimeline = ({
         }));
     };
 
+    // Add category-level urgency aggregation to usePaycheckTimeline.js
+    const getCategoryUrgency = (categoryId, allTimelines) => {
+        const categoryItems = allTimelines.filter(item =>
+            item.item.categoryId === categoryId
+        );
+
+        if (categoryItems.length === 0) return { urgency: 0, mostUrgentItem: null };
+
+        const mostUrgent = categoryItems.reduce((max, item) =>
+            item.urgencyScore > max.urgencyScore ? item : max
+        );
+
+        return {
+            urgency: mostUrgent.urgencyScore,
+            mostUrgentItem: mostUrgent,
+            totalItems: categoryItems.length,
+            criticalItems: categoryItems.filter(item => item.urgencyScore >= 80).length
+        };
+    };
+
     return {
         timelines: timelineData,
         getTimelineForItem,

@@ -22,7 +22,7 @@ import TabNavigation from './components/TabNavigation';
 import TransactionsTab from './components/TransactionsTab';
 import ThemeSelector from './components/ThemeSelector';
 import BudgiePet from './components/BudgiePet';
-
+import FundingMode from './components/FundingMode';
 
 // Import hooks
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -31,6 +31,23 @@ import { usePaycheckTimeline } from './hooks/usePaycheckTimeline';
 // Import utilities
 import { generateCalendarEvents } from './utils/calendarUtils';
 import { exportToYNAB } from './utils/exportUtils';
+
+// Migration function for categories
+const migrateCategoriesData = (categories) => {
+    return categories.map(category => ({
+        ...category,
+        // Add envelope fields
+        allocated: category.allocated || 0,
+        spent: category.spent || 0,
+        lastFunded: category.lastFunded || null,
+        targetBalance: category.targetBalance || 0,
+        autoFunding: category.autoFunding || {
+            enabled: false,
+            maxAmount: 500,
+            priority: 'medium'
+        }
+    }));
+};
 
 const App = () => {
     // State management using localStorage hook
@@ -47,18 +64,45 @@ const App = () => {
             name: 'Personal Care',
             color: 'bg-gradient-to-r from-purple-500 to-pink-500',
             collapsed: false,
+            allocated: 0,
+            spent: 0,
+            lastFunded: null,
+            targetBalance: 0,
+            autoFunding: {
+                enabled: false,
+                maxAmount: 500,
+                priority: 'medium'
+            }
         },
         {
             id: 2,
             name: 'Pet Care',
             color: 'bg-gradient-to-r from-green-500 to-blue-500',
             collapsed: false,
+            allocated: 0,
+            spent: 0,
+            lastFunded: null,
+            targetBalance: 0,
+            autoFunding: {
+                enabled: false,
+                maxAmount: 500,
+                priority: 'medium'
+            }
         },
         {
             id: 3,
             name: 'Savings Goals',
             color: 'bg-gradient-to-r from-purple-600 to-indigo-600',
             collapsed: false,
+            allocated: 0,
+            spent: 0,
+            lastFunded: null,
+            targetBalance: 0,
+            autoFunding: {
+                enabled: false,
+                maxAmount: 500,
+                priority: 'medium'
+            }
         },
     ]);
 
@@ -233,6 +277,14 @@ const App = () => {
         });
     }, [categories, budgetCalculations.expenseAllocations, budgetCalculations.goalAllocations, currentPay]);
 
+    // Migration effect
+    useEffect(() => {
+        if (categories.length > 0 && !categories[0].hasOwnProperty('allocated')) {
+            const migratedCategories = migrateCategoriesData(categories);
+            setCategories(migratedCategories);
+        }
+    }, []);
+
     // Category management functions
     const generateNextCategoryId = () => {
         if (categories.length === 0) return 1;
@@ -271,6 +323,25 @@ const App = () => {
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', currentTheme);
     }, [currentTheme]);
+
+    // Funding functions
+    const handleFundCategory = (categoryId, amount) => {
+        setCategories(prev => prev.map(category =>
+            category.id === categoryId
+                ? {
+                    ...category,
+                    allocated: (category.allocated || 0) + amount,
+                    lastFunded: new Date().toISOString()
+                }
+                : category
+        ));
+    };
+
+    const handleAutoFund = (suggestions) => {
+        suggestions.forEach(suggestion => {
+            handleFundCategory(suggestion.categoryId, suggestion.amount);
+        });
+    };
 
     // Handler functions
     const handleDeleteExpense = (expenseId) => {
@@ -318,6 +389,60 @@ const App = () => {
     };
 
     const handleDeleteTransaction = (transactionId) => {
+        const transaction = transactions.find(txn => txn.id === transactionId);
+
+        if (transaction) {
+            // Reverse the transaction's effects
+            if (transaction.transfer) {
+                // Reverse transfer
+                setAccounts(prev => prev.map(account => {
+                    if (account.id === transaction.accountId) {
+                        return {
+                            ...account,
+                            balance: (account.balance || 0) + Math.abs(transaction.amount)
+                        };
+                    } else if (account.id === transaction.transferAccountId) {
+                        return {
+                            ...account,
+                            balance: (account.balance || 0) - Math.abs(transaction.amount)
+                        };
+                    }
+                    return account;
+                }));
+            } else if (transaction.isIncome || transaction.amount > 0) {
+                // Reverse income
+                setAccounts(prev => prev.map(account =>
+                    account.id === transaction.accountId
+                        ? {
+                            ...account,
+                            balance: (account.balance || 0) - Math.abs(transaction.amount)
+                        }
+                        : account
+                ));
+            } else {
+                // Reverse expense
+                setAccounts(prev => prev.map(account =>
+                    account.id === transaction.accountId
+                        ? {
+                            ...account,
+                            balance: (account.balance || 0) + Math.abs(transaction.amount)
+                        }
+                        : account
+                ));
+
+                if (transaction.categoryId) {
+                    setCategories(prev => prev.map(category =>
+                        category.id === transaction.categoryId
+                            ? {
+                                ...category,
+                                spent: Math.max(0, (category.spent || 0) - Math.abs(transaction.amount))
+                            }
+                            : category
+                    ));
+                }
+            }
+        }
+
         setTransactions(transactions.filter(txn => txn.id !== transactionId));
         setConfirmDelete(null);
     };
@@ -450,572 +575,623 @@ const App = () => {
                         </div>
                     </div>
 
-
-
-                </div>
-
-                {/* Summary Cards */}
-                <SummaryCards
-                    calculations={calculations}
-                    currentPay={currentPay}
-                    bufferPercentage={bufferPercentage}
-                    viewMode={viewMode}
-                    expenses={expenses}           // Add this
-                    savingsGoals={savingsGoals}   // Add this  
-                    timeline={timelineData}       // Add this
-                />
-
-                {/* Accounts Section */}
-                <AccountsSection
-                    accounts={accounts}
-                    onAddAccount={() => setShowAddAccount(true)}
-                    onEditAccount={setEditingAccount}
-                    onDeleteAccount={(account) => setConfirmDelete({
-                        type: 'account',
-                        id: account.id,
-                        name: account.name,
-                        message: `Delete "${account.name}"? All associated transactions will also be deleted.`,
-                    })}
-                />
-
-                {/* Tab Navigation */}
-                <TabNavigation
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                />
-
-                {/* Tab Content */}
-                {activeTab === 'budget' && (
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                        {/* Categories Section */}
-                        <div className="xl:col-span-2">
-                            <CategoriesSection
-                                categorizedExpenses={categorizedExpenses}
-                                viewMode={viewMode}
-                                frequencyOptions={frequencyOptions}
-                                timeline={timelineData}
-                                onAddCategory={() => setShowAddCategory(true)}
-                                onAddExpense={() => setShowAddExpense(true)}
-                                onAddGoal={() => {
-                                    setPreselectedCategory(3);
-                                    setShowAddGoal(true);
-                                }}
-                                onEditCategory={setEditingCategory}
-                                onEditExpense={setEditingExpense}
-                                onEditGoal={setEditingGoal}
-                                onDeleteCategory={(category) => setConfirmDelete({
-                                    type: 'category',
-                                    id: category.id,
-                                    name: category.name,
-                                    message: 'Delete this category? All items will be moved to the first category.',
-                                })}
-                                onDeleteExpense={(expense) => setConfirmDelete({
-                                    type: 'expense',
-                                    id: expense.id,
-                                    name: expense.name,
-                                    message: `Delete "${expense.name}"?`,
-                                })}
-                                onDeleteGoal={(goal) => setConfirmDelete({
-                                    type: 'goal',
-                                    id: goal.id,
-                                    name: goal.name,
-                                    message: `Delete "${goal.name}" savings goal?`,
-                                })}
-                                setExpenses={setExpenses}
-                                setSavingsGoals={setSavingsGoals}
-                                setCategories={setCategories}
-                                setPreselectedCategory={setPreselectedCategory}
-                                onMoveCategoryUp={moveCategoryUp}
-                                onMoveCategoryDown={moveCategoryDown}
-                                onMoveExpense={moveExpenseUpDown}
-                                onMoveGoal={moveGoalUpDown}
-                                onReorderCategories={reorderCategories}
-                                onReorderExpenses={reorderExpenses}
-                                onReorderGoals={reorderGoals}
-                                categories={categories}
-                            />
-                        </div>
-
-                        {/* Right Sidebar */}
-                        <div className="space-y-6">
-                            <TransactionsSection
-                                transactions={transactions}
-                                accounts={accounts}
-                                categories={categories}
-                                onAddTransaction={() => setShowAddTransaction(true)}
-                                onShowAllTransactions={() => setActiveTab('transactions')}
-                                onEditTransaction={setEditingTransaction}
-                                onDeleteTransaction={(transaction) => setConfirmDelete({
-                                    type: 'transaction',
-                                    id: transaction.id,
-                                    name: transaction.transfer
-                                        ? `Transfer to ${accounts.find(acc => acc.id === transaction.transferAccountId)?.name}`
-                                        : transaction.payee,
-                                    message: 'Delete this transaction?',
-                                })}
-                            />
-
-                            <SummaryPanel
-                                calculations={calculations}
-                                currentPay={currentPay}
-                                bufferPercentage={bufferPercentage}
-                                viewMode={viewMode}
-                                whatIfMode={whatIfMode}
-                                takeHomePay={takeHomePay}
-                                whatIfPay={whatIfPay}
-                                categorizedExpenses={categorizedExpenses}
-                                expenses={expenses}
-                                savingsGoals={savingsGoals}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'transactions' && (
-                    <TransactionsTab
-                        transactions={transactions}
+                    {/* Summary Cards */}
+                    <SummaryCards
+                        calculations={calculations}
+                        currentPay={currentPay}
+                        bufferPercentage={bufferPercentage}
+                        viewMode={viewMode}
+                        expenses={expenses}
+                        savingsGoals={savingsGoals}
+                        timeline={timelineData}
                         accounts={accounts}
                         categories={categories}
-                        onAddTransaction={() => setShowAddTransaction(true)}
-                        onEditTransaction={setEditingTransaction}
-                        onDeleteTransaction={setConfirmDelete}
                     />
-                )}
 
-                {activeTab === 'calendar' && (
-                    <div className="min-h-[70vh] h-full bg-theme-primary p-4 rounded-lg">
-                        <CalendarView
-                            currentPay={currentPay}
-                            paySchedule={paySchedule}
-                            savingsGoals={savingsGoals}
-                            expenses={expenses}
-                            categories={categories}
-                            frequencyOptions={frequencyOptions}
-                            accounts={accounts}
-                        />
-                    </div>
-                )}
+                    {/* Accounts Section */}
+                    <AccountsSection
+                        accounts={accounts}
+                        onAddAccount={() => setShowAddAccount(true)}
+                        onEditAccount={setEditingAccount}
+                        onDeleteAccount={(account) => setConfirmDelete({
+                            type: 'account',
+                            id: account.id,
+                            name: account.name,
+                            message: `Delete "${account.name}"? All associated transactions will also be deleted.`,
+                        })}
+                    />
 
-                {activeTab === 'config' && (
-                    <div className="max-w-4xl">
-                        <h2 className="text-2xl font-bold mb-6 text-theme-primary">Configuration</h2>
-                        <ConfigurationPanel
-                            showConfig={true}
-                            setShowConfig={() => { }}
-                            takeHomePay={takeHomePay}
-                            setTakeHomePay={setTakeHomePay}
-                            whatIfMode={whatIfMode}
-                            whatIfPay={whatIfPay}
-                            setWhatIfPay={setWhatIfPay}
-                            roundingOption={roundingOption}
-                            setRoundingOption={setRoundingOption}
-                            bufferPercentage={bufferPercentage}
-                            setBufferPercentage={setBufferPercentage}
-                            paySchedule={paySchedule}
-                            setPaySchedule={setPaySchedule}
-                            accounts={accounts}
-                            setShowAddAccount={setShowAddAccount}
-                            onExport={handleExportToYNAB}
-                        />
-                    </div>
-                )}
+                    {/* Tab Navigation */}
+                    <TabNavigation
+                        activeTab={activeTab}
+                        setActiveTab={setActiveTab}
+                    />
 
-                {activeTab === 'payees' && (
-                    <div className="text-center py-12">
-                        <Users className="w-12 h-12 mx-auto mb-4 opacity-50 text-theme-tertiary" />
-                        <h2 className="text-2xl font-bold mb-4 text-theme-primary">Payee Management</h2>
-                        <p className="text-theme-secondary mb-6">
-                            Payee management functionality coming soon! This will help you organize and categorize your transaction payees.
-                        </p>
-                        <div className="bg-theme-secondary p-4 rounded-lg max-w-md mx-auto border border-theme-primary">
-                            <p className="text-sm text-theme-blue">
-                                💡 For now, you can manage payees when adding transactions in the Transactions tab.
-                            </p>
+                    {/* Tab Content */}
+                    {activeTab === 'budget' && (
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                            {/* Categories Section */}
+                            <div className="xl:col-span-2">
+                                <CategoriesSection
+                                    categorizedExpenses={categorizedExpenses}
+                                    viewMode={viewMode}
+                                    frequencyOptions={frequencyOptions}
+                                    timeline={timelineData}
+                                    onAddCategory={() => setShowAddCategory(true)}
+                                    onAddExpense={() => setShowAddExpense(true)}
+                                    onAddGoal={() => {
+                                        setPreselectedCategory(3);
+                                        setShowAddGoal(true);
+                                    }}
+                                    onEditCategory={setEditingCategory}
+                                    onEditExpense={setEditingExpense}
+                                    onEditGoal={setEditingGoal}
+                                    onDeleteCategory={(category) => setConfirmDelete({
+                                        type: 'category',
+                                        id: category.id,
+                                        name: category.name,
+                                        message: 'Delete this category? All items will be moved to the first category.',
+                                    })}
+                                    onDeleteExpense={(expense) => setConfirmDelete({
+                                        type: 'expense',
+                                        id: expense.id,
+                                        name: expense.name,
+                                        message: `Delete "${expense.name}"?`,
+                                    })}
+                                    onDeleteGoal={(goal) => setConfirmDelete({
+                                        type: 'goal',
+                                        id: goal.id,
+                                        name: goal.name,
+                                        message: `Delete "${goal.name}" savings goal?`,
+                                    })}
+                                    setExpenses={setExpenses}
+                                    setSavingsGoals={setSavingsGoals}
+                                    setCategories={setCategories}
+                                    setPreselectedCategory={setPreselectedCategory}
+                                    onMoveCategoryUp={moveCategoryUp}
+                                    onMoveCategoryDown={moveCategoryDown}
+                                    onMoveExpense={moveExpenseUpDown}
+                                    onMoveGoal={moveGoalUpDown}
+                                    onReorderCategories={reorderCategories}
+                                    onReorderExpenses={reorderExpenses}
+                                    onReorderGoals={reorderGoals}
+                                    categories={categories}
+                                />
+                            </div>
+
+                            {/* Right Sidebar */}
+                            <div className="space-y-6">
+                                <TransactionsSection
+                                    transactions={transactions}
+                                    accounts={accounts}
+                                    categories={categories}
+                                    onAddTransaction={() => setShowAddTransaction(true)}
+                                    onShowAllTransactions={() => setActiveTab('transactions')}
+                                    onEditTransaction={setEditingTransaction}
+                                    onDeleteTransaction={(transaction) => setConfirmDelete({
+                                        type: 'transaction',
+                                        id: transaction.id,
+                                        name: transaction.transfer
+                                            ? `Transfer to ${accounts.find(acc => acc.id === transaction.transferAccountId)?.name}`
+                                            : transaction.payee,
+                                        message: 'Delete this transaction?',
+                                    })}
+                                />
+
+                                <SummaryPanel
+                                    calculations={calculations}
+                                    currentPay={currentPay}
+                                    bufferPercentage={bufferPercentage}
+                                    viewMode={viewMode}
+                                    whatIfMode={whatIfMode}
+                                    takeHomePay={takeHomePay}
+                                    whatIfPay={whatIfPay}
+                                    categorizedExpenses={categorizedExpenses}
+                                    expenses={expenses}
+                                    savingsGoals={savingsGoals}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Modals */}
-                {showAddExpense && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Expense</h3>
-                            <AddExpenseForm
-                                onSave={(expenseData, addAnother) => {
-                                    const newExpense = {
-                                        ...expenseData,
-                                        id: Math.max(...expenses.map(e => e.id), 0) + 1,
-                                        collapsed: true,
-                                    };
-                                    setExpenses(prev => [...prev, newExpense]);
-                                    if (!addAnother) {
+                    {activeTab === 'funding' && (
+                        <FundingMode
+                            categories={categories}
+                            expenses={expenses}
+                            savingsGoals={savingsGoals}
+                            timeline={timelineData}
+                            currentPay={currentPay}
+                            onFundCategory={handleFundCategory}
+                            onAutoFund={handleAutoFund}
+                        />
+                    )}
+
+                    {activeTab === 'transactions' && (
+                        <TransactionsTab
+                            transactions={transactions}
+                            accounts={accounts}
+                            categories={categories}
+                            onAddTransaction={() => setShowAddTransaction(true)}
+                            onEditTransaction={setEditingTransaction}
+                            onDeleteTransaction={setConfirmDelete}
+                        />
+                    )}
+
+                    {activeTab === 'calendar' && (
+                        <div className="min-h-[70vh] h-full bg-theme-primary p-4 rounded-lg">
+                            <CalendarView
+                                currentPay={currentPay}
+                                paySchedule={paySchedule}
+                                savingsGoals={savingsGoals}
+                                expenses={expenses}
+                                categories={categories}
+                                frequencyOptions={frequencyOptions}
+                                accounts={accounts}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'config' && (
+                        <div className="max-w-4xl">
+                            <h2 className="text-2xl font-bold mb-6 text-theme-primary">Configuration</h2>
+                            <ConfigurationPanel
+                                showConfig={true}
+                                setShowConfig={() => { }}
+                                takeHomePay={takeHomePay}
+                                setTakeHomePay={setTakeHomePay}
+                                whatIfMode={whatIfMode}
+                                whatIfPay={whatIfPay}
+                                setWhatIfPay={setWhatIfPay}
+                                roundingOption={roundingOption}
+                                setRoundingOption={setRoundingOption}
+                                bufferPercentage={bufferPercentage}
+                                setBufferPercentage={setBufferPercentage}
+                                paySchedule={paySchedule}
+                                setPaySchedule={setPaySchedule}
+                                accounts={accounts}
+                                setShowAddAccount={setShowAddAccount}
+                                onExport={handleExportToYNAB}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'payees' && (
+                        <div className="text-center py-12">
+                            <Users className="w-12 h-12 mx-auto mb-4 opacity-50 text-theme-tertiary" />
+                            <h2 className="text-2xl font-bold mb-4 text-theme-primary">Payee Management</h2>
+                            <p className="text-theme-secondary mb-6">
+                                Payee management functionality coming soon! This will help you organize and categorize your transaction payees.
+                            </p>
+                            <div className="bg-theme-secondary p-4 rounded-lg max-w-md mx-auto border border-theme-primary">
+                                <p className="text-sm text-theme-blue">
+                                    💡 For now, you can manage payees when adding transactions in the Transactions tab.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Modals */}
+                    {showAddExpense && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Expense</h3>
+                                <AddExpenseForm
+                                    onSave={(expenseData, addAnother) => {
+                                        const newExpense = {
+                                            ...expenseData,
+                                            id: Math.max(...expenses.map(e => e.id), 0) + 1,
+                                            collapsed: true,
+                                        };
+                                        setExpenses(prev => [...prev, newExpense]);
+                                        if (!addAnother) {
+                                            setShowAddExpense(false);
+                                            setPreselectedCategory(null);
+                                        }
+                                    }}
+                                    onCancel={() => {
                                         setShowAddExpense(false);
                                         setPreselectedCategory(null);
-                                    }
-                                }}
-                                onCancel={() => {
-                                    setShowAddExpense(false);
-                                    setPreselectedCategory(null);
-                                }}
-                                categories={categories}
-                                accounts={accounts}
-                                currentPay={currentPay}
-                                preselectedCategory={preselectedCategory}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {editingExpense && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Expense</h3>
-                            <AddExpenseForm
-                                expense={editingExpense}
-                                accounts={accounts}
-                                onSave={(expenseData) => {
-                                    setExpenses(prev => prev.map(exp =>
-                                        exp.id === editingExpense.id ? { ...exp, ...expenseData } : exp
-                                    ));
-                                    setEditingExpense(null);
-                                }}
-                                onCancel={() => setEditingExpense(null)}
-                                categories={categories}
-                                currentPay={currentPay}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {showAddCategory && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Category</h3>
-                            <AddCategoryForm
-                                onSave={(categoryData, addAnother) => {
-                                    const newCategory = {
-                                        ...categoryData,
-                                        id: generateNextCategoryId(),
-                                        collapsed: false,
-                                    };
-                                    setCategories(prev => [...prev, newCategory]);
-                                    if (!addAnother) setShowAddCategory(false);
-                                }}
-                                onCancel={() => setShowAddCategory(false)}
-                                categoryColors={categoryColors}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {editingCategory && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Category</h3>
-                            <AddCategoryForm
-                                category={editingCategory}
-                                onSave={(categoryData) => {
-                                    setCategories(prev => prev.map(cat =>
-                                        cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
-                                    ));
-                                    setEditingCategory(null);
-                                }}
-                                onCancel={() => setEditingCategory(null)}
-                                categoryColors={categoryColors}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {showAddGoal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add Savings Goal</h3>
-                            <div className="text-xs text-theme-tertiary mb-1">
-                                Fill any two fields and the third calculates automatically
+                                    }}
+                                    categories={categories}
+                                    accounts={accounts}
+                                    currentPay={currentPay}
+                                    preselectedCategory={preselectedCategory}
+                                />
                             </div>
-                            <AddGoalForm
-                                onSave={(goalData, addAnother) => {
-                                    const newGoal = {
-                                        ...goalData,
-                                        id: Math.max(...savingsGoals.map(g => g.id), 0) + 1,
-                                        collapsed: true,
-                                    };
-                                    setSavingsGoals(prev => [...prev, newGoal]);
-                                    if (!addAnother) {
+                        </div>
+                    )}
+
+                    {editingExpense && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Expense</h3>
+                                <AddExpenseForm
+                                    expense={editingExpense}
+                                    accounts={accounts}
+                                    onSave={(expenseData) => {
+                                        setExpenses(prev => prev.map(exp =>
+                                            exp.id === editingExpense.id ? { ...exp, ...expenseData } : exp
+                                        ));
+                                        setEditingExpense(null);
+                                    }}
+                                    onCancel={() => setEditingExpense(null)}
+                                    categories={categories}
+                                    currentPay={currentPay}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddCategory && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Category</h3>
+                                <AddCategoryForm
+                                    onSave={(categoryData, addAnother) => {
+                                        const newCategory = {
+                                            ...categoryData,
+                                            id: generateNextCategoryId(),
+                                            collapsed: false,
+                                            allocated: 0,
+                                            spent: 0,
+                                            lastFunded: null,
+                                            targetBalance: 0,
+                                            autoFunding: {
+                                                enabled: false,
+                                                maxAmount: 500,
+                                                priority: 'medium'
+                                            }
+                                        };
+                                        setCategories(prev => [...prev, newCategory]);
+                                        if (!addAnother) setShowAddCategory(false);
+                                    }}
+                                    onCancel={() => setShowAddCategory(false)}
+                                    categoryColors={categoryColors}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {editingCategory && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Category</h3>
+                                <AddCategoryForm
+                                    category={editingCategory}
+                                    onSave={(categoryData) => {
+                                        setCategories(prev => prev.map(cat =>
+                                            cat.id === editingCategory.id ? { ...cat, ...categoryData } : cat
+                                        ));
+                                        setEditingCategory(null);
+                                    }}
+                                    onCancel={() => setEditingCategory(null)}
+                                    categoryColors={categoryColors}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddGoal && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add Savings Goal</h3>
+                                <div className="text-xs text-theme-tertiary mb-1">
+                                    Fill any two fields and the third calculates automatically
+                                </div>
+                                <AddGoalForm
+                                    onSave={(goalData, addAnother) => {
+                                        const newGoal = {
+                                            ...goalData,
+                                            id: Math.max(...savingsGoals.map(g => g.id), 0) + 1,
+                                            collapsed: true,
+                                        };
+                                        setSavingsGoals(prev => [...prev, newGoal]);
+                                        if (!addAnother) {
+                                            setShowAddGoal(false);
+                                            setPreselectedCategory(null);
+                                        }
+                                    }}
+                                    onCancel={() => {
                                         setShowAddGoal(false);
                                         setPreselectedCategory(null);
-                                    }
-                                }}
-                                onCancel={() => {
-                                    setShowAddGoal(false);
-                                    setPreselectedCategory(null);
-                                }}
-                                categories={categories}
-                                accounts={accounts}
-                                currentPay={currentPay}
-                                preselectedCategory={preselectedCategory}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {editingGoal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Savings Goal</h3>
-                            <AddGoalForm
-                                goal={editingGoal}
-                                onSave={(goalData) => {
-                                    setSavingsGoals(prev => prev.map(goal =>
-                                        goal.id === editingGoal.id ? { ...goal, ...goalData } : goal
-                                    ));
-                                    setEditingGoal(null);
-                                }}
-                                onCancel={() => setEditingGoal(null)}
-                                categories={categories}
-                                accounts={accounts}
-                                currentPay={currentPay}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {showAddAccount && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Account</h3>
-                            <AddAccountForm
-                                onSave={(accountData) => {
-                                    const newAccount = {
-                                        ...accountData,
-                                        id: Math.max(...accounts.map(a => a.id), 0) + 1,
-                                    };
-                                    setAccounts(prev => [...prev, newAccount]);
-                                    setShowAddAccount(false);
-                                }}
-                                onCancel={() => setShowAddAccount(false)}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {editingAccount && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Account</h3>
-                            <AddAccountForm
-                                account={editingAccount}
-                                onSave={(accountData) => {
-                                    setAccounts(prev => prev.map(acc =>
-                                        acc.id === editingAccount.id ? { ...acc, ...accountData } : acc
-                                    ));
-                                    setEditingAccount(null);
-                                }}
-                                onCancel={() => setEditingAccount(null)}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {showAddTransaction && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Transaction</h3>
-                            <AddTransactionForm
-                                onSave={(transactionData, addAnother) => {
-                                    const newTransaction = {
-                                        ...transactionData,
-                                        id: Math.max(...transactions.map(t => t.id), 0) + 1,
-                                    };
-                                    setTransactions(prev => [...prev, newTransaction]);
-                                    if (!addAnother) setShowAddTransaction(false);
-                                }}
-                                onCancel={() => setShowAddTransaction(false)}
-                                categories={categories}
-                                accounts={accounts}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {editingTransaction && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
-                            <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Transaction</h3>
-                            <AddTransactionForm
-                                transaction={editingTransaction}
-                                onSave={(transactionData) => {
-                                    setTransactions(prev => prev.map(txn =>
-                                        txn.id === editingTransaction.id ? { ...txn, ...transactionData } : txn
-                                    ));
-                                    setEditingTransaction(null);
-                                }}
-                                onCancel={() => setEditingTransaction(null)}
-                                categories={categories}
-                                accounts={accounts}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {showTransactions && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
-                        <div className="bg-theme-primary rounded-lg w-full max-w-4xl h-[95vh] sm:h-[85vh] overflow-hidden flex flex-col border border-theme-primary">
-                            <div className="p-4 border-b border-theme-secondary flex-shrink-0">
-                                <div className="flex justify-between items-center mb-3">
-                                    <h3 className="text-lg font-semibold flex items-center text-theme-primary">💳 All Transactions</h3>
-                                    <button
-                                        onClick={() => setShowTransactions(false)}
-                                        className="text-theme-tertiary hover:text-theme-secondary text-xl font-bold"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                                <div className="flex space-x-4 items-center">
-                                    <select
-                                        value={selectedAccount}
-                                        onChange={(e) => setSelectedAccount(e.target.value)}
-                                        className="p-2 border rounded text-sm bg-theme-primary border-theme-primary text-theme-primary"
-                                    >
-                                        <option value="all">All Accounts</option>
-                                        {accounts.map(account => (
-                                            <option key={account.id} value={account.id}>
-                                                {account.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        onClick={() => setShowAddTransaction(true)}
-                                        className="btn-primary px-3 py-2 rounded text-sm flex items-center"
-                                    >
-                                        <Plus className="w-4 h-4 mr-1" />
-                                        Add Transaction
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-4">
-                                <div className="space-y-2">
-                                    {transactions
-                                        .filter(txn =>
-                                            selectedAccount === 'all' || txn.accountId === parseInt(selectedAccount)
-                                        )
-                                        .sort((a, b) => new Date(b.date) - new Date(a.date))
-                                        .map(transaction => {
-                                            const account = accounts.find(acc => acc.id === transaction.accountId);
-                                            const category = categories.find(cat => cat.id === transaction.categoryId);
-                                            const transferAccount = transaction.transferAccountId
-                                                ? accounts.find(acc => acc.id === transaction.transferAccountId)
-                                                : null;
-
-                                            return (
-                                                <div
-                                                    key={transaction.id}
-                                                    className="p-4 rounded border border-theme-primary bg-theme-secondary"
-                                                >
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center">
-                                                                <span className="font-medium text-theme-primary">
-                                                                    {transaction.transfer
-                                                                        ? `Transfer to ${transferAccount?.name}`
-                                                                        : transaction.payee}
-                                                                </span>
-                                                                {transaction.cleared && (
-                                                                    <span className="ml-2 text-green-500">✓</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="text-sm text-theme-tertiary mt-1">
-                                                                {transaction.date} • {account?.name}{' '}
-                                                                {category && `• ${category.name}`}
-                                                            </div>
-                                                            {transaction.memo && (
-                                                                <div className="text-sm text-theme-tertiary mt-1">
-                                                                    {transaction.memo}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        <div className="text-right ml-4">
-                                                            <div className="font-semibold text-lg text-theme-primary">
-                                                                ${transaction.amount.toFixed(2)}
-                                                            </div>
-                                                            <div className="flex space-x-1 mt-1">
-                                                                <button
-                                                                    onClick={() => setEditingTransaction(transaction)}
-                                                                    className="btn-secondary p-1 rounded"
-                                                                >
-                                                                    <Edit2 className="w-4 h-4" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setConfirmDelete({
-                                                                        type: 'transaction',
-                                                                        id: transaction.id,
-                                                                        name: transaction.transfer
-                                                                            ? `Transfer to ${transferAccount?.name}`
-                                                                            : transaction.payee,
-                                                                        message: 'Delete this transaction?',
-                                                                    })}
-                                                                    className="btn-danger p-1 rounded"
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    {transactions.length === 0 && (
-                                        <p className="text-theme-tertiary text-center py-8">
-                                            No transactions yet. Add your first transaction to get started!
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="p-4 border-t border-theme-secondary flex justify-end flex-shrink-0">
-                                <button
-                                    onClick={() => setShowTransactions(false)}
-                                    className="btn-primary px-4 py-2 rounded"
-                                >
-                                    Done
-                                </button>
+                                    }}
+                                    categories={categories}
+                                    accounts={accounts}
+                                    currentPay={currentPay}
+                                    preselectedCategory={preselectedCategory}
+                                />
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Confirm Delete Dialog */}
-                {confirmDelete && (
-                    <ConfirmDialog
-                        title="Confirm Delete"
-                        message={confirmDelete.message}
-                        onConfirm={() => {
-                            switch (confirmDelete.type) {
-                                case 'expense':
-                                    handleDeleteExpense(confirmDelete.id);
-                                    break;
-                                case 'goal':
-                                    handleDeleteGoal(confirmDelete.id);
-                                    break;
-                                case 'category':
-                                    handleDeleteCategory(confirmDelete.id);
-                                    break;
-                                case 'account':
-                                    handleDeleteAccount(confirmDelete.id);
-                                    break;
-                                case 'transaction':
-                                    handleDeleteTransaction(confirmDelete.id);
-                                    break;
-                                default:
-                                    break;
-                            }
-                        }}
-                        onCancel={() => setConfirmDelete(null)}
-                    />
-                )}
+                    {editingGoal && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Savings Goal</h3>
+                                <AddGoalForm
+                                    goal={editingGoal}
+                                    onSave={(goalData) => {
+                                        setSavingsGoals(prev => prev.map(goal =>
+                                            goal.id === editingGoal.id ? { ...goal, ...goalData } : goal
+                                        ));
+                                        setEditingGoal(null);
+                                    }}
+                                    onCancel={() => setEditingGoal(null)}
+                                    categories={categories}
+                                    accounts={accounts}
+                                    currentPay={currentPay}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddAccount && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Account</h3>
+                                <AddAccountForm
+                                    onSave={(accountData) => {
+                                        const newAccount = {
+                                            ...accountData,
+                                            id: Math.max(...accounts.map(a => a.id), 0) + 1,
+                                        };
+                                        setAccounts(prev => [...prev, newAccount]);
+                                        setShowAddAccount(false);
+                                    }}
+                                    onCancel={() => setShowAddAccount(false)}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {editingAccount && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Account</h3>
+                                <AddAccountForm
+                                    account={editingAccount}
+                                    onSave={(accountData) => {
+                                        setAccounts(prev => prev.map(acc =>
+                                            acc.id === editingAccount.id ? { ...acc, ...accountData } : acc
+                                        ));
+                                        setEditingAccount(null);
+                                    }}
+                                    onCancel={() => setEditingAccount(null)}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+
+                    {/*Add Transaction Handler */}
+                    {showAddTransaction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Transaction</h3>
+                                <AddTransactionForm
+                                    onSave={(transactionData, addAnother) => {
+                                        const newTransaction = {
+                                            ...transactionData,
+                                            id: Math.max(...transactions.map(t => t.id), 0) + 1,
+                                        };
+
+                                        // Handle different transaction types
+                                        if (newTransaction.transfer) {
+                                            // TRANSFERS: Update both account balances
+                                            setAccounts(prev => prev.map(account => {
+                                                if (account.id === newTransaction.accountId) {
+                                                    // Subtract from source account
+                                                    return {
+                                                        ...account,
+                                                        balance: (account.balance || 0) - Math.abs(newTransaction.amount)
+                                                    };
+                                                } else if (account.id === newTransaction.transferAccountId) {
+                                                    // Add to destination account
+                                                    return {
+                                                        ...account,
+                                                        balance: (account.balance || 0) + Math.abs(newTransaction.amount)
+                                                    };
+                                                }
+                                                return account;
+                                            }));
+                                        } else if (newTransaction.isIncome || newTransaction.amount > 0) {
+                                            // INCOME: Only update account balance, no category impact
+                                            setAccounts(prev => prev.map(account =>
+                                                account.id === newTransaction.accountId
+                                                    ? {
+                                                        ...account,
+                                                        balance: (account.balance || 0) + Math.abs(newTransaction.amount)
+                                                    }
+                                                    : account
+                                            ));
+                                        } else {
+                                            // EXPENSES: Update both account balance and category spent
+                                            setAccounts(prev => prev.map(account =>
+                                                account.id === newTransaction.accountId
+                                                    ? {
+                                                        ...account,
+                                                        balance: (account.balance || 0) - Math.abs(newTransaction.amount)
+                                                    }
+                                                    : account
+                                            ));
+
+                                            if (newTransaction.categoryId) {
+                                                setCategories(prev => prev.map(category =>
+                                                    category.id === newTransaction.categoryId
+                                                        ? {
+                                                            ...category,
+                                                            spent: (category.spent || 0) + Math.abs(newTransaction.amount)
+                                                        }
+                                                        : category
+                                                ));
+                                            }
+                                        }
+
+                                        setTransactions(prev => [...prev, newTransaction]);
+                                        if (!addAnother) setShowAddTransaction(false);
+                                    }}
+                                    onCancel={() => setShowAddTransaction(false)}
+                                    categories={categories}
+                                    accounts={accounts}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {editingTransaction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Transaction</h3>
+                                <AddTransactionForm
+                                    transaction={editingTransaction}
+                                    onSave={(transactionData) => {
+                                        const oldTransaction = editingTransaction;
+                                        const newTransaction = { ...oldTransaction, ...transactionData };
+
+                                        // Reverse the old transaction's effects first
+                                        if (oldTransaction.transfer) {
+                                            // Reverse transfer
+                                            setAccounts(prev => prev.map(account => {
+                                                if (account.id === oldTransaction.accountId) {
+                                                    return {
+                                                        ...account,
+                                                        balance: (account.balance || 0) + Math.abs(oldTransaction.amount)
+                                                    };
+                                                } else if (account.id === oldTransaction.transferAccountId) {
+                                                    return {
+                                                        ...account,
+                                                        balance: (account.balance || 0) - Math.abs(oldTransaction.amount)
+                                                    };
+                                                }
+                                                return account;
+                                            }));
+                                        } else if (oldTransaction.isIncome || oldTransaction.amount > 0) {
+                                            // Reverse income
+                                            setAccounts(prev => prev.map(account =>
+                                                account.id === oldTransaction.accountId
+                                                    ? {
+                                                        ...account,
+                                                        balance: (account.balance || 0) - Math.abs(oldTransaction.amount)
+                                                    }
+                                                    : account
+                                            ));
+                                        } else {
+                                            // Reverse expense
+                                            setAccounts(prev => prev.map(account =>
+                                                account.id === oldTransaction.accountId
+                                                    ? {
+                                                        ...account,
+                                                        balance: (account.balance || 0) + Math.abs(oldTransaction.amount)
+                                                    }
+                                                    : account
+                                            ));
+
+                                            if (oldTransaction.categoryId) {
+                                                setCategories(prev => prev.map(category =>
+                                                    category.id === oldTransaction.categoryId
+                                                        ? {
+                                                            ...category,
+                                                            spent: Math.max(0, (category.spent || 0) - Math.abs(oldTransaction.amount))
+                                                        }
+                                                        : category
+                                                ));
+                                            }
+                                        }
+
+                                        // Now apply the new transaction's effects
+                                        if (newTransaction.transfer) {
+                                            setAccounts(prev => prev.map(account => {
+                                                if (account.id === newTransaction.accountId) {
+                                                    return {
+                                                        ...account,
+                                                        balance: (account.balance || 0) - Math.abs(newTransaction.amount)
+                                                    };
+                                                } else if (account.id === newTransaction.transferAccountId) {
+                                                    return {
+                                                        ...account,
+                                                        balance: (account.balance || 0) + Math.abs(newTransaction.amount)
+                                                    };
+                                                }
+                                                return account;
+                                            }));
+                                        } else if (newTransaction.isIncome || newTransaction.amount > 0) {
+                                            setAccounts(prev => prev.map(account =>
+                                                account.id === newTransaction.accountId
+                                                    ? {
+                                                        ...account,
+                                                        balance: (account.balance || 0) + Math.abs(newTransaction.amount)
+                                                    }
+                                                    : account
+                                            ));
+                                        } else {
+                                            setAccounts(prev => prev.map(account =>
+                                                account.id === newTransaction.accountId
+                                                    ? {
+                                                        ...account,
+                                                        balance: (account.balance || 0) - Math.abs(newTransaction.amount)
+                                                    }
+                                                    : account
+                                            ));
+
+                                            if (newTransaction.categoryId) {
+                                                setCategories(prev => prev.map(category =>
+                                                    category.id === newTransaction.categoryId
+                                                        ? {
+                                                            ...category,
+                                                            spent: (category.spent || 0) + Math.abs(newTransaction.amount)
+                                                        }
+                                                        : category
+                                                ));
+                                            }
+                                        }
+
+                                        setTransactions(prev => prev.map(txn =>
+                                            txn.id === editingTransaction.id ? newTransaction : txn
+                                        ));
+                                        setEditingTransaction(null);
+                                    }}
+                                    onCancel={() => setEditingTransaction(null)}
+                                    categories={categories}
+                                    accounts={accounts}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+
+
+                    {/* Confirm Delete Dialog */}
+                    {confirmDelete && (
+                        <ConfirmDialog
+                            title="Confirm Delete"
+                            message={confirmDelete.message}
+                            onConfirm={() => {
+                                switch (confirmDelete.type) {
+                                    case 'expense':
+                                        handleDeleteExpense(confirmDelete.id);
+                                        break;
+                                    case 'goal':
+                                        handleDeleteGoal(confirmDelete.id);
+                                        break;
+                                    case 'category':
+                                        handleDeleteCategory(confirmDelete.id);
+                                        break;
+                                    case 'account':
+                                        handleDeleteAccount(confirmDelete.id);
+                                        break;
+                                    case 'transaction':
+                                        handleDeleteTransaction(confirmDelete.id);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                            }}
+                            onCancel={() => setConfirmDelete(null)}
+                        />
+                    )}
+                </div>
             </div>
-
-        </DndProvider >
+        </DndProvider>
     );
 };
 

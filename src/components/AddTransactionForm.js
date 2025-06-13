@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import CurrencyInput from './CurrencyInput';
 
-
 const AddTransactionForm = ({
     onSave,
     onCancel,
@@ -20,7 +19,11 @@ const AddTransactionForm = ({
         cleared: transaction?.cleared || false,
         transfer: transaction?.transfer || false,
         transferAccountId: transaction?.transferAccountId || '',
+        isIncome: transaction?.isIncome || false,
     });
+
+    // Determine if this is income based on amount
+    const isIncomeTransaction = parseFloat(formData.amount) > 0;
 
     const handleKeyDown = (e) => {
         if (e.key === 'Enter') {
@@ -37,16 +40,17 @@ const AddTransactionForm = ({
 
     const handleSubmit = (addAnother = false) => {
         if (formData.date && formData.amount && (formData.payee || formData.transfer)) {
-            onSave(
-                {
-                    ...formData,
-                    amount: parseFloat(formData.amount),
-                    categoryId: formData.transfer ? null : parseInt(formData.categoryId),
-                    accountId: parseInt(formData.accountId),
-                    transferAccountId: formData.transfer ? parseInt(formData.transferAccountId) : null,
-                },
-                addAnother
-            );
+            const transactionData = {
+                ...formData,
+                amount: parseFloat(formData.amount),
+                // Income transactions don't need categories - set to null
+                categoryId: formData.transfer ? null : (isIncomeTransaction ? null : parseInt(formData.categoryId)),
+                accountId: parseInt(formData.accountId),
+                transferAccountId: formData.transfer ? parseInt(formData.transferAccountId) : null,
+                isIncome: isIncomeTransaction,
+            };
+
+            onSave(transactionData, addAnother);
 
             if (addAnother) {
                 setFormData({
@@ -59,6 +63,7 @@ const AddTransactionForm = ({
                     cleared: false,
                     transfer: false,
                     transferAccountId: '',
+                    isIncome: false,
                 });
                 setTimeout(() => {
                     const payeeInput = document.querySelector('input[placeholder="Payee"]');
@@ -147,28 +152,43 @@ const AddTransactionForm = ({
                             type="text"
                             value={formData.payee}
                             onChange={(e) => setFormData(prev => ({ ...prev, payee: e.target.value }))}
-                            placeholder="Payee"
+                            placeholder="Payee (e.g., Employer, Store Name)"
                             className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
                                 }`}
                             autoFocus={!transaction}
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium mb-1">Category</label>
-                        <select
-                            value={formData.categoryId}
-                            onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-                            className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
-                                }`}
-                        >
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                    {/* Only show category selection for expenses (negative amounts) */}
+                    {!isIncomeTransaction && (
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Category</label>
+                            <select
+                                value={formData.categoryId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                                className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
+                                    }`}
+                            >
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Show income notice for positive amounts */}
+                    {isIncomeTransaction && (
+                        <div className="p-3 rounded border border-green-400 bg-green-50">
+                            <div className="flex items-center text-sm">
+                                <span className="mr-2">💰</span>
+                                <span className="text-green-800">
+                                    <strong>Income Transaction</strong> - This will be added to your account balance and available for allocation to categories.
+                                </span>
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 
@@ -178,8 +198,17 @@ const AddTransactionForm = ({
                     value={formData.amount}
                     onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                     placeholder="0.00"
-
+                    className="w-full"
                 />
+                <div className="text-xs text-theme-tertiary mt-1">
+                    {isIncomeTransaction ? (
+                        <span className="text-green-600">✓ Income - will be available for allocation</span>
+                    ) : parseFloat(formData.amount) < 0 ? (
+                        <span className="text-red-600">Expense - will reduce category balance</span>
+                    ) : (
+                        "Positive amounts = Income, Negative amounts = Expenses"
+                    )}
+                </div>
             </div>
 
             <div>
