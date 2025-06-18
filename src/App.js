@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { Plus, Download, Edit2, Trash2, Calculator, Target, DollarSign, Eye, Percent, Users, Palette, Settings, Calendar } from 'lucide-react';
+import { Plus, Download, Edit2, Trash2, Calculator, Target, DollarSign, Eye, Percent, Users, Palette, Settings, Calendar, Upload } from 'lucide-react';
 
 // Import NEW streamlined components
 import SimplifiedSummaryCards from './components/SimplifiedSummaryCards';
@@ -19,6 +19,9 @@ import TransactionsTab from './components/TransactionsTab';
 import ConfirmDialog from './components/ConfirmDialog';
 import CurrencyInput from './components/CurrencyInput';
 import ThemeSelector from './components/ThemeSelector';
+import PlanningMode from './components/PlanningMode';
+import EnhancedCategoryCard from './components/EnhancedCategoryCard';
+import ImprovedFundingMode from './components/ImprovedFundingMode';
 
 // Import hooks
 import { useLocalStorage } from './hooks/useLocalStorage';
@@ -29,21 +32,6 @@ import { usePaycheckTimeline } from './hooks/usePaycheckTimeline';
 import { generateCalendarEvents } from './utils/calendarUtils';
 import { exportToYNAB } from './utils/exportUtils';
 
-// Migration function for categories (keeping existing logic)
-const migrateCategoriesData = (categories) => {
-    return categories.map(category => ({
-        ...category,
-        allocated: category.allocated || 0,
-        spent: category.spent || 0,
-        lastFunded: category.lastFunded || null,
-        targetBalance: category.targetBalance || 0,
-        autoFunding: category.autoFunding || {
-            enabled: false,
-            maxAmount: 500,
-            priority: 'medium'
-        }
-    }));
-};
 
 const App = () => {
     // Enhanced state management using localStorage hook
@@ -51,6 +39,7 @@ const App = () => {
     const [roundingOption, setRoundingOption] = useLocalStorage('budgetCalc_roundingOption', 5);
     const [bufferPercentage, setBufferPercentage] = useLocalStorage('budgetCalc_bufferPercentage', 7);
     const [currentTheme, setCurrentTheme] = useLocalStorage('budgetCalc_theme', 'light');
+    const [payFrequency, setPayFrequency] = useLocalStorage('budgetCalc_payFrequency', 'bi-weekly');
 
     // Categories state (keeping existing structure)
     const [categories, setCategories] = useLocalStorage('budgetCalc_categories', [
@@ -192,6 +181,8 @@ const App = () => {
 
     // Constants (keeping existing logic)
     const currentPay = whatIfMode ? whatIfPay : takeHomePay;
+    // console.log('Current pay value:', currentPay, 'takeHomePay:', takeHomePay, 'whatIfPay:', whatIfPay);
+
 
     const frequencyOptions = [
         { value: 'weekly', label: 'Weekly', weeksPerYear: 52 },
@@ -206,6 +197,13 @@ const App = () => {
         { value: 'per-paycheck', label: 'Per Paycheck (Direct)', weeksPerYear: 26 },
     ];
 
+    const payFrequencyOptions = [
+        { value: 'weekly', label: 'Weekly', paychecksPerMonth: 4.33 },
+        { value: 'bi-weekly', label: 'Bi-weekly', paychecksPerMonth: 2.17 },
+        { value: 'semi-monthly', label: 'Semi-monthly (15th & 30th)', paychecksPerMonth: 2.0 },
+        { value: 'monthly', label: 'Monthly', paychecksPerMonth: 1.0 },
+    ];
+
     const categoryColors = [
         'bg-gradient-to-r from-purple-500 to-pink-500',
         'bg-gradient-to-r from-pink-500 to-blue-500',
@@ -217,6 +215,12 @@ const App = () => {
         'bg-gradient-to-r from-violet-600 to-purple-800',
     ];
 
+    // Get per check amounts
+    const convertToPerPaycheck = (monthlyAmount) => {
+        const payFreqOption = payFrequencyOptions.find(opt => opt.value === payFrequency);
+        const paychecksPerMonth = payFreqOption?.paychecksPerMonth || 2.17;
+        return monthlyAmount / paychecksPerMonth;
+    };
     // Keep existing calculation hooks
     const budgetCalculations = useBudgetCalculations({
         expenses,
@@ -243,18 +247,19 @@ const App = () => {
         timeline: timelineData,
     };
 
-    // Migration effect (keeping existing logic)
-    useEffect(() => {
-        if (categories.length > 0 && !categories[0].hasOwnProperty('allocated')) {
-            const migratedCategories = migrateCategoriesData(categories);
-            setCategories(migratedCategories);
-        }
-    }, []);
+    // // Migration effect (keeping existing logic)
+    // useEffect(() => {
+    //     if (categories.length > 0 && !categories[0].hasOwnProperty('allocated')) {
+    //         const migratedCategories = migrateCategoriesData(categories);
+    //         setCategories(migratedCategories);
+    //     }
+    // }, []);
 
     // Set Theme (keeping existing logic)
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', currentTheme);
     }, [currentTheme]);
+
 
     // Helper functions (keeping existing logic)
     const generateNextCategoryId = () => {
@@ -264,6 +269,13 @@ const App = () => {
 
     // NEW: Funding functions for the unified system
     const handleFundCategory = (categoryId, amount) => {
+        // Check if we have enough to allocate
+        const available = allocationData.toBeAllocated;
+        if (amount > available) {
+            alert(`Only $${available.toFixed(2)} available to allocate`);
+            return;
+        }
+
         setCategories(prev => prev.map(category =>
             category.id === categoryId
                 ? {
@@ -274,7 +286,6 @@ const App = () => {
                 : category
         ));
     };
-
     // NEW: Unified item handlers
     const handleAddItem = (categoryId) => {
         setPreselectedCategory(categoryId);
@@ -282,6 +293,14 @@ const App = () => {
     };
 
     const handleSaveItem = (itemData, addAnother = false) => {
+        console.log('=== SAVE ITEM DEBUG ===');
+        console.log('itemData received:', itemData);
+        console.log('editingItem:', editingItem);
+        console.log('addAnother:', addAnother);
+        console.log('======================');
+
+        console.log('Saving item:', itemData, 'editingItem:', editingItem);
+
         if (editingItem) {
             // Update existing item
             if (itemData.type === 'goal' || itemData.targetAmount) {
@@ -293,6 +312,18 @@ const App = () => {
                     expense.id === editingItem.id ? { ...expense, ...itemData } : expense
                 ));
             }
+
+            // Update localStorage planning items
+            try {
+                const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+                const updatedItems = planningItems.map(item =>
+                    item.id === editingItem.id ? { ...item, ...itemData } : item
+                );
+                localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+            } catch (error) {
+                console.error('Error updating planning items:', error);
+            }
+
             setEditingItem(null);
         } else {
             // Add new item
@@ -312,6 +343,37 @@ const App = () => {
                 setExpenses(prev => [...prev, newItem]);
             }
 
+            // ADD THIS: Also add to localStorage planning items
+            try {
+                const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+                const newPlanningItem = {
+                    ...newItem,
+                    type: itemData.type === 'goal' || itemData.targetAmount ? 'savings-goal' : 'expense',
+                    isActive: !itemData.allocationPaused && itemData.priorityState === 'active'
+                };
+                planningItems.push(newPlanningItem);
+                localStorage.setItem('budgetCalc_planningItems', JSON.stringify(planningItems));
+
+                // Also add to active budget allocations if active
+                if (newPlanningItem.isActive) {
+                    const activeBudgetAllocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+                    const newAllocation = {
+                        id: Math.max(...activeBudgetAllocations.map(a => a.id), 0) + 1,
+                        planningItemId: newItem.id,
+                        categoryId: newItem.categoryId,
+                        monthlyAllocation: newPlanningItem.type === 'expense' ? newItem.amount : newItem.monthlyContribution || 0,
+                        perPaycheckAmount: 0, // Will be calculated
+                        sourceAccountId: newItem.accountId || accounts[0]?.id || 1,
+                        isPaused: false,
+                        createdAt: new Date().toISOString()
+                    };
+                    activeBudgetAllocations.push(newAllocation);
+                    localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(activeBudgetAllocations));
+                }
+            } catch (error) {
+                console.error('Error adding to planning items:', error);
+            }
+
             if (!addAnother) {
                 setShowAddItem(false);
                 setPreselectedCategory(null);
@@ -322,11 +384,25 @@ const App = () => {
     // Keep existing delete handlers
     const handleDeleteExpense = (expenseId) => {
         setExpenses(expenses.filter(exp => exp.id !== expenseId));
+        try {
+            const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+            const updatedItems = planningItems.filter(item => item.id !== expenseId);
+            localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+        } catch (error) {
+            console.error('Error deleting from planning items:', error);
+        }
         setConfirmDelete(null);
     };
 
     const handleDeleteGoal = (goalId) => {
         setSavingsGoals(savingsGoals.filter(goal => goal.id !== goalId));
+        try {
+            const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+            const updatedItems = planningItems.filter(item => item.id !== goalId);
+            localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+        } catch (error) {
+            console.error('Error deleting from planning items:', error);
+        }
         setConfirmDelete(null);
     };
 
@@ -427,6 +503,111 @@ const App = () => {
         });
     };
 
+    // Toggle item active/inactive status  
+    const handleToggleItemActive = (itemId, isActive) => {
+        // Update in both expenses and savings goals
+        setExpenses(prev => prev.map(expense =>
+            expense.id === itemId
+                ? {
+                    ...expense,
+                    isActive,
+                    allocationPaused: !isActive,
+                    priorityState: isActive ? 'active' : 'paused'
+                }
+                : expense
+        ));
+
+        setSavingsGoals(prev => prev.map(goal =>
+            goal.id === itemId
+                ? {
+                    ...goal,
+                    isActive,
+                    allocationPaused: !isActive,
+                    priorityState: isActive ? 'active' : 'paused'
+                }
+                : goal
+        ));
+
+        // Update planning items in localStorage
+        try {
+            const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+            const updatedItems = planningItems.map(item =>
+                item.id === itemId ? { ...item, isActive } : item
+            );
+            localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+
+            // Also update active budget allocations
+            const activeBudgetAllocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+            if (isActive) {
+                // Add to active allocations if not already there
+                const exists = activeBudgetAllocations.some(allocation => allocation.planningItemId === itemId);
+                if (!exists) {
+                    const planningItem = updatedItems.find(item => item.id === itemId);
+                    if (planningItem) {
+                        const newAllocation = {
+                            id: Math.max(...activeBudgetAllocations.map(a => a.id), 0) + 1,
+                            planningItemId: itemId,
+                            categoryId: planningItem.categoryId,
+                            monthlyAllocation: planningItem.type === 'expense' ? planningItem.amount : planningItem.monthlyContribution || 0,
+                            perPaycheckAmount: 0, // Will be calculated
+                            sourceAccountId: planningItem.accountId || accounts[0]?.id || 1,
+                            isPaused: false,
+                            createdAt: new Date().toISOString()
+                        };
+                        activeBudgetAllocations.push(newAllocation);
+                    }
+                }
+            } else {
+                // Remove from active allocations
+                const filteredAllocations = activeBudgetAllocations.filter(allocation => allocation.planningItemId !== itemId);
+                localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(filteredAllocations));
+            }
+
+            if (isActive) {
+                localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(activeBudgetAllocations));
+            }
+        } catch (error) {
+            console.error('Error updating planning items:', error);
+        }
+    };
+
+    // Move item between categories
+    const handleMoveItem = (itemId, newCategoryId) => {
+        // Update in expenses and savings goals
+        setExpenses(prev => prev.map(expense =>
+            expense.id === itemId ? { ...expense, categoryId: newCategoryId } : expense
+        ));
+
+        setSavingsGoals(prev => prev.map(goal =>
+            goal.id === itemId ? { ...goal, categoryId: newCategoryId } : goal
+        ));
+
+        // Update planning items in localStorage
+        try {
+            const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+            const updatedItems = planningItems.map(item =>
+                item.id === itemId ? { ...item, categoryId: newCategoryId } : item
+            );
+            localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+
+            // Update active budget allocations
+            const activeBudgetAllocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+            const updatedAllocations = activeBudgetAllocations.map(allocation =>
+                allocation.planningItemId === itemId ? { ...allocation, categoryId: newCategoryId } : allocation
+            );
+            localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(updatedAllocations));
+        } catch (error) {
+            console.error('Error moving item:', error);
+        }
+    };
+
+    // Toggle category collapse
+    const handleToggleCategoryCollapse = (categoryId) => {
+        setCategories(prev => prev.map(category =>
+            category.id === categoryId ? { ...category, collapsed: !category.collapsed } : category
+        ));
+    };
+
     // Streamlined tabs
     const tabs = [
         { id: 'budget', label: 'Budget', icon: Calculator },
@@ -434,6 +615,28 @@ const App = () => {
         { id: 'calendar', label: 'Calendar', icon: Calendar },
         { id: 'config', label: 'Config', icon: Settings }
     ];
+
+    const calculateToBeAllocated = () => {
+        // Total money in all accounts
+        const totalAccountBalance = accounts.reduce((total, account) => {
+            return total + (account.balance || 0);
+        }, 0);
+
+        // Total money already allocated to categories
+        const totalAllocated = categories.reduce((total, category) => {
+            return total + (category.allocated || 0);
+        }, 0);
+
+        // Money available to allocate = Account balances - Already allocated
+        const toBeAllocated = totalAccountBalance - totalAllocated;
+
+        return {
+            totalAccountBalance,
+            totalAllocated,
+            toBeAllocated: Math.max(0, toBeAllocated) // Never negative
+        };
+    };
+    const allocationData = calculateToBeAllocated();
 
     return (
         <DndProvider backend={HTML5Backend}>
@@ -454,17 +657,12 @@ const App = () => {
                                 setCurrentTheme={setCurrentTheme}
                             />
 
-                            {/* What-If Mode Toggle */}
-                            <button
-                                onClick={() => {
-                                    setWhatIfMode(!whatIfMode);
-                                    if (!whatIfMode) setWhatIfPay(takeHomePay);
-                                }}
-                                className={`btn-secondary p-2 rounded-lg flex items-center space-x-2 ${whatIfMode ? 'btn-primary' : ''}`}
-                            >
-                                <Eye className="w-4 h-4" />
-                                <span className="text-sm hidden sm:inline">What-If</span>
-                            </button>
+                            <div className="bg-theme-secondary px-4 py-2 rounded-lg">
+                                <div className="text-xs text-theme-tertiary">To Be Allocated</div>
+                                <div className="font-bold text-green-600">
+                                    ${allocationData.toBeAllocated.toFixed(2)}
+                                </div>
+                            </div>
 
                             {/* Planning/Funding Mode Toggle (only show on budget tab) */}
                             {activeTab === 'budget' && (
@@ -486,10 +684,11 @@ const App = () => {
                         calculations={calculations}
                         accounts={accounts}
                         categories={categories}
-                        currentPay={currentPay}
+                        currentPay={allocationData.toBeAllocated}
                         expenses={expenses}
                         savingsGoals={savingsGoals}
                         timeline={timelineData}
+                        allocationData={allocationData}
                     />
 
                     {/* Accounts Section (keeping existing) */}
@@ -534,12 +733,12 @@ const App = () => {
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 className="text-2xl font-bold text-theme-primary">
-                                        {viewMode === 'planning' ? '📋 Budget Planning' : '💰 Category Funding'}
+                                        {viewMode === 'planning' ? '📋 Budget Planning' : '💰 Smart Category Funding'}
                                     </h2>
                                     <p className="text-theme-secondary">
                                         {viewMode === 'planning'
-                                            ? 'Plan your expenses and goals by category'
-                                            : 'Fund your category envelopes with available money'
+                                            ? 'Plan your expenses and goals by category - toggle items between active funding and planning-only'
+                                            : 'Get intelligent funding recommendations based on priorities, deadlines, and current balances'
                                         }
                                     </p>
                                 </div>
@@ -552,58 +751,87 @@ const App = () => {
                                 </button>
                             </div>
 
-                            {/* NEW: Unified Category Cards */}
-                            <div className="space-y-4">
-                                {categories.map(category => (
-                                    <UnifiedCategoryCard
-                                        key={category.id}
-                                        category={category}
-                                        expenses={expenses}
-                                        savingsGoals={savingsGoals}
-                                        timeline={timelineData}
-                                        viewMode={viewMode}
-                                        frequencyOptions={frequencyOptions}
-                                        onFund={handleFundCategory}
-                                        onEditCategory={setEditingCategory}
-                                        onDeleteCategory={(cat) => setConfirmDelete({
-                                            type: 'category',
-                                            id: cat.id,
-                                            name: cat.name,
-                                            message: `Delete "${cat.name}"? All items will be moved to the first category.`,
-                                        })}
-                                        onAddItem={handleAddItem}
-                                        onEditExpense={(expense) => setEditingItem(expense)}
-                                        onEditGoal={(goal) => setEditingItem(goal)}
-                                        onDeleteExpense={(expense) => setConfirmDelete({
-                                            type: 'expense',
-                                            id: expense.id,
-                                            name: expense.name,
-                                            message: `Delete "${expense.name}"?`,
-                                        })}
-                                        onDeleteGoal={(goal) => setConfirmDelete({
-                                            type: 'goal',
-                                            id: goal.id,
-                                            name: goal.name,
-                                            message: `Delete "${goal.name}" savings goal?`,
-                                        })}
-                                    />
-                                ))}
+                            {/* Conditional Rendering Based on View Mode */}
+                            {viewMode === 'planning' ? (
+                                <PlanningMode
+                                    categories={categories}
+                                    expenses={expenses}
+                                    savingsGoals={savingsGoals}
+                                    payFrequency={payFrequency}
+                                    payFrequencyOptions={payFrequencyOptions}
+                                    onAddItem={handleAddItem}
+                                    onEditItem={setEditingItem}
+                                    onDeleteItem={(item) => setConfirmDelete({
+                                        type: item.type === 'savings-goal' ? 'goal' : 'expense',
+                                        id: item.id,
+                                        name: item.name,
+                                        message: `Delete "${item.name}"?`,
+                                    })}
+                                    onToggleItemActive={handleToggleItemActive}
+                                    onEditCategory={setEditingCategory}
+                                    onDeleteCategory={(cat) => setConfirmDelete({
+                                        type: 'category',
+                                        id: cat.id,
+                                        name: cat.name,
+                                        message: `Delete "${cat.name}"? All items will be moved to the first category.`,
+                                    })}
+                                    onAddCategory={() => setShowAddCategory(true)}
+                                    onMoveItem={handleMoveItem}
+                                    onToggleCollapse={handleToggleCategoryCollapse}
+                                />
+                            ) : (
+                                <div className="space-y-6">
+                                    <ImprovedFundingMode
+                                        categories={categories}
+                                        currentPay={currentPay}
+                                        onFundCategory={handleFundCategory}
+                                        paySchedule={paySchedule}
 
-                                {categories.length === 0 && (
-                                    <div className="text-center py-12 bg-theme-secondary rounded-lg">
-                                        <h3 className="text-lg font-semibold mb-2 text-theme-primary">Get Started</h3>
-                                        <p className="text-theme-secondary mb-4">Create your first category to begin budgeting</p>
-                                        <button
-                                            onClick={() => setShowAddCategory(true)}
-                                            className="btn-primary px-6 py-3 rounded-lg"
-                                        >
-                                            Create First Category
-                                        </button>
+                                    />
+
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-semibold text-theme-primary">Manual Category Funding</h3>
+                                            <div className="text-sm text-theme-secondary">
+                                                Or fund categories individually below
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            {categories.map(category => (
+                                                <EnhancedCategoryCard
+                                                    key={category.id}
+                                                    category={category}
+                                                    viewMode={viewMode}
+                                                    onFund={handleFundCategory}
+                                                    onEditCategory={setEditingCategory}
+                                                    onDeleteCategory={(cat) => setConfirmDelete({
+                                                        type: 'category',
+                                                        id: cat.id,
+                                                        name: cat.name,
+                                                        message: `Delete "${cat.name}"? All items will be moved to the first category.`,
+                                                    })}
+                                                    onAddItem={handleAddItem}
+                                                    onEditItem={setEditingItem}
+                                                    onDeleteItem={(item) => setConfirmDelete({
+                                                        type: item.type === 'savings-goal' ? 'goal' : 'expense',
+                                                        id: item.id,
+                                                        name: item.name,
+                                                        message: `Delete "${item.name}"?`,
+                                                    })}
+                                                    onToggleItemActive={handleToggleItemActive}
+                                                    onToggleCollapse={handleToggleCategoryCollapse}
+                                                    payFrequency={payFrequency}
+                                                    payFrequencyOptions={payFrequencyOptions}
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     )}
+
 
                     {activeTab === 'transactions' && (
                         <TransactionsTab
@@ -633,6 +861,9 @@ const App = () => {
                     {activeTab === 'config' && (
                         <div className="max-w-4xl">
                             <h2 className="text-2xl font-bold mb-6 text-theme-primary">Configuration</h2>
+
+
+                            {/* Existing Configuration Panel */}
                             <ConfigurationPanel
                                 showConfig={true}
                                 setShowConfig={() => { }}
@@ -650,6 +881,10 @@ const App = () => {
                                 accounts={accounts}
                                 setShowAddAccount={setShowAddAccount}
                                 onExport={handleExportToYNAB}
+                                payFrequency={payFrequency}
+                                setPayFrequency={setPayFrequency}
+                                payFrequencyOptions={payFrequencyOptions}
+
                             />
                         </div>
                     )}
@@ -759,6 +994,137 @@ const App = () => {
                                         setShowAddAccount(false);
                                     }}
                                     onCancel={() => setShowAddAccount(false)}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Edit Account Modal */}
+                    {editingAccount && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Account</h3>
+                                <AddAccountForm
+                                    account={editingAccount}  // Pass the account being edited
+                                    onSave={(accountData) => {
+                                        // Update the existing account
+                                        setAccounts(prev => prev.map(account =>
+                                            account.id === editingAccount.id
+                                                ? { ...account, ...accountData }
+                                                : account
+                                        ));
+                                        setEditingAccount(null);
+                                    }}
+                                    onCancel={() => setEditingAccount(null)}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Add Transaction Modal */}
+                    {showAddTransaction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Add New Transaction</h3>
+                                <AddTransactionForm
+                                    onSave={(transactionData) => {
+                                        const newTransaction = {
+                                            ...transactionData,
+                                            id: Math.max(...transactions.map(t => t.id), 0) + 1,
+                                            createdAt: new Date().toISOString()
+                                        };
+                                        setTransactions(prev => [...prev, newTransaction]);
+
+                                        // Update account balance
+                                        setAccounts(prev => prev.map(account =>
+                                            account.id === newTransaction.accountId
+                                                ? { ...account, balance: (account.balance || 0) + newTransaction.amount }
+                                                : account
+                                        ));
+
+                                        setShowAddTransaction(false);
+                                    }}
+                                    onCancel={() => setShowAddTransaction(false)}
+                                    accounts={accounts}
+                                    categories={categories}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Edit Transaction Modal */}
+                    {editingTransaction && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary p-6 rounded-lg w-96 border border-theme-primary">
+                                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Edit Transaction</h3>
+                                <AddTransactionForm
+                                    transaction={editingTransaction}  // Pass the transaction being edited
+                                    onSave={(transactionData) => {
+                                        // First, reverse the effects of the old transaction
+                                        const oldTransaction = editingTransaction;
+
+                                        // Reverse old transaction effects on account
+                                        setAccounts(prev => prev.map(account => {
+                                            if (account.id === oldTransaction.accountId) {
+                                                return {
+                                                    ...account,
+                                                    balance: (account.balance || 0) - oldTransaction.amount
+                                                };
+                                            }
+                                            if (oldTransaction.transferAccountId && account.id === oldTransaction.transferAccountId) {
+                                                return {
+                                                    ...account,
+                                                    balance: (account.balance || 0) + oldTransaction.amount
+                                                };
+                                            }
+                                            return account;
+                                        }));
+
+                                        // Update the transaction
+                                        const updatedTransaction = {
+                                            ...oldTransaction,
+                                            ...transactionData,
+                                            lastModified: new Date().toISOString()
+                                        };
+
+                                        setTransactions(prev => prev.map(txn =>
+                                            txn.id === editingTransaction.id ? updatedTransaction : txn
+                                        ));
+
+                                        // Apply new transaction effects on account
+                                        setAccounts(prev => prev.map(account => {
+                                            if (account.id === updatedTransaction.accountId) {
+                                                return {
+                                                    ...account,
+                                                    balance: (account.balance || 0) + updatedTransaction.amount
+                                                };
+                                            }
+                                            if (updatedTransaction.transferAccountId && account.id === updatedTransaction.transferAccountId) {
+                                                return {
+                                                    ...account,
+                                                    balance: (account.balance || 0) - updatedTransaction.amount
+                                                };
+                                            }
+                                            return account;
+                                        }));
+
+                                        // Update category spending if it's an expense
+                                        if (updatedTransaction.categoryId && updatedTransaction.amount < 0) {
+                                            setCategories(prev => prev.map(category =>
+                                                category.id === updatedTransaction.categoryId
+                                                    ? {
+                                                        ...category,
+                                                        spent: (category.spent || 0) + Math.abs(updatedTransaction.amount)
+                                                    }
+                                                    : category
+                                            ));
+                                        }
+
+                                        setEditingTransaction(null);
+                                    }}
+                                    onCancel={() => setEditingTransaction(null)}
+                                    accounts={accounts}
+                                    categories={categories}
                                 />
                             </div>
                         </div>

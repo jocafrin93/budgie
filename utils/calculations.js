@@ -59,4 +59,4 @@ export const generatePaycheckDates = (paySchedule) => {
     }
 
     return dates;
-  };
+};

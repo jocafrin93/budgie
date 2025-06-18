@@ -1,6 +1,8 @@
 import React from 'react';
-import { Calculator, Download, ChevronDown, ChevronRight } from 'lucide-react';
+import { Calculator, Download, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
 import CurrencyInput from './CurrencyInput';
+
+
 
 const ConfigurationPanel = ({
     showConfig,
@@ -19,39 +21,70 @@ const ConfigurationPanel = ({
     accounts,
     setShowAddAccount,
     onExport,
+    payFrequency,
+    setPayFrequency, payFrequencyOptions
 }) => {
     return (
-        <div className="bg-theme-primary rounded-lg p-6 mb-8 shadow-lg border border-theme-primary">
-            <div className="flex justify-between items-center mb-2">
-                <div
-                    className="flex items-center cursor-pointer flex-1"
-                    onClick={() => setShowConfig(!showConfig)}
-                >
-                    {showConfig ? (
-                        <ChevronDown className="w-5 h-5 mr-2 text-theme-primary" />
-                    ) : (
-                        <ChevronRight className="w-5 h-5 mr-2 text-theme-primary" />
-                    )}
-                    <h2 className="text-xl font-semibold flex items-center text-theme-primary">
-                        <Calculator className="w-5 h-5 mr-2" />
-                        <span>Configuration</span>
-                        {whatIfMode && (
-                            <span className="ml-2 text-sm bg-blue-600 text-theme-primary px-2 py-1 rounded">
-                                What-If Mode
-                            </span>
-                        )}
-                    </h2>
-                </div>
-                <div className="flex space-x-2">
-                    <button
-                        onClick={onExport}
-                        className="p-2 rounded-lg bg-theme-secondary hover:bg-theme-hover transition-colors text-theme-primary"
-                        title="Export to YNAB"
-                    >
-                        <Download className="w-4 h-4" />
-                    </button>
+        <div>
+            {/* Add this as the FIRST section in your existing return */}
+            <div className="bg-theme-primary rounded-lg p-6 border border-theme-secondary mb-6">
+                <h3 className="text-lg font-semibold text-theme-primary mb-4 flex items-center">
+                    <Calendar className="w-5 h-5 mr-2" />
+                    Pay Schedule Configuration
+                </h3>
+
+
+
+                <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-theme-primary mb-2">
+                            How often are you paid?
+                        </label>
+                        <select
+                            value={payFrequency}
+                            onChange={(e) => setPayFrequency(e.target.value)}
+                            className="w-full p-2 border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary"
+                        >
+                            {payFrequencyOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-xs text-theme-tertiary mt-1">
+                            This affects how per-paycheck amounts are calculated throughout the app
+                        </p>
+                    </div>
+
+                    <div className="bg-theme-secondary rounded-lg p-4">
+                        <h4 className="font-medium text-theme-primary mb-2">Calculation Preview</h4>
+                        <div className="text-sm space-y-1">
+                            <div className="flex justify-between">
+                                <span className="text-theme-secondary">Pay frequency:</span>
+                                <span className="text-theme-primary">
+                                    {payFrequencyOptions.find(opt => opt.value === payFrequency)?.label}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-theme-secondary">Paychecks/month:</span>
+                                <span className="text-theme-primary">
+                                    {payFrequencyOptions.find(opt => opt.value === payFrequency)?.paychecksPerMonth}
+                                </span>
+                            </div>
+                            <div className="flex justify-between border-t border-theme-primary pt-1">
+                                <span className="text-theme-secondary">$100/month becomes:</span>
+                                <span className="text-theme-primary font-medium">
+                                    ${(100 / (payFrequencyOptions.find(opt => opt.value === payFrequency)?.paychecksPerMonth || 2.17)).toFixed(2)}/paycheck
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+
+
+
 
             {showConfig && (
                 <div className="space-y-4">
