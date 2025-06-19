@@ -163,7 +163,6 @@ const App = () => {
     const [viewMode, setViewMode] = useState('planning'); // 'planning' or 'funding'
     const [whatIfMode, setWhatIfMode] = useState(false);
     const [whatIfPay, setWhatIfPay] = useState(2800);
-    const [showConfig, setShowConfig] = useState(false);
     const [activeTab, setActiveTab] = useState('budget'); // Simplified tabs
 
     // Modal states (keeping existing structure)
