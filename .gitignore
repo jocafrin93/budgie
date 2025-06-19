@@ -11,6 +11,9 @@
 # production
 /build
 
+# Archive folder
+/archive/ 
+
 # misc
 .DS_Store
 .env.local
