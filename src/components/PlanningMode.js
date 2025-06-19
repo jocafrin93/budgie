@@ -15,7 +15,8 @@ import {
     AlertCircle,
     CheckCircle,
     Clock,
-    GripVertical
+    GripVertical,
+    Ghost
 } from 'lucide-react';
 
 const DND_TYPES = {
@@ -321,7 +322,7 @@ const PlanningCategory = ({
                 <div className="p-4">
                     {totalItems === 0 ? (
                         <div className="text-center py-8 text-theme-secondary">
-                            <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <Ghost className="w-8 h-8 mx-auto mb-2 opacity-50" />
                             <p>No items in this category yet</p>
                             <button
                                 onClick={() => onAddItem(category.id)}
@@ -394,6 +395,7 @@ const PlanningCategory = ({
 // Main Planning Mode Component
 const PlanningMode = ({
     categories,
+    planningItems = [],
     expenses,
     savingsGoals,
     payFrequency,
@@ -412,31 +414,7 @@ const PlanningMode = ({
     const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'active', 'planning'
     const [showStats, setShowStats] = useState(true);
 
-    // Get planning items from localStorage (post-migration data)
-    const planningItems = useMemo(() => {
-        try {
-            const stored = localStorage.getItem('budgetCalc_planningItems');
-            if (stored) {
-                return JSON.parse(stored);
-            }
-        } catch (error) {
-            console.warn('Could not load planning items from localStorage:', error);
-        }
 
-        // Fallback: convert current expenses and goals
-        return [
-            ...expenses.map(exp => ({
-                ...exp,
-                type: 'expense',
-                isActive: !exp.allocationPaused && exp.priorityState === 'active'
-            })),
-            ...savingsGoals.map(goal => ({
-                ...goal,
-                type: 'savings-goal',
-                isActive: !goal.allocationPaused && goal.priorityState === 'active'
-            }))
-        ];
-    }, [expenses, savingsGoals]);
 
     // Filter and search items
     const filteredCategories = useMemo(() => {
@@ -582,7 +560,7 @@ const PlanningMode = ({
             <div className="space-y-4">
                 {filteredCategories.length === 0 ? (
                     <div className="text-center py-12 bg-theme-secondary rounded-lg">
-                        <Target className="w-12 h-12 mx-auto text-theme-tertiary mb-4" />
+                        <Ghost className="w-12 h-12 mx-auto text-theme-tertiary mb-4" />
                         <h3 className="text-lg font-semibold mb-2 text-theme-primary">
                             {searchTerm || filterStatus !== 'all' ? 'No items match your filters' : 'Start Planning Your Budget'}
                         </h3>

@@ -18,7 +18,8 @@ import {
     ToggleRight,
     Calculator,
     Wallet,
-    GripVertical
+    GripVertical,
+    Ghost
 } from 'lucide-react';
 import CurrencyInput from './CurrencyInput';
 
@@ -239,6 +240,7 @@ const EnhancedCategoryCard = ({
     viewMode,
     payFrequency,
     payFrequencyOptions,
+    planningItems = [],
     onFund,
     onEditCategory,
     onDeleteCategory,
@@ -250,19 +252,10 @@ const EnhancedCategoryCard = ({
 }) => {
     const [fundingAmount, setFundingAmount] = useState(0);
 
-    // Get planning items from localStorage
-    const planningItems = useMemo(() => {
-        try {
-            const stored = localStorage.getItem('budgetCalc_planningItems');
-            if (stored) {
-                const items = JSON.parse(stored);
-                return items.filter(item => item.categoryId === category.id);
-            }
-        } catch (error) {
-            console.warn('Could not load planning items:', error);
-        }
-        return [];
-    }, [category.id]);
+    // Get planning items for this category from props
+    const categoryPlanningItems = useMemo(() => {
+        return planningItems.filter(item => item.categoryId === category.id);
+    }, [planningItems, category.id]);
 
     // Get active budget allocations
     const activeBudgetAllocations = useMemo(() => {
@@ -500,7 +493,7 @@ const EnhancedCategoryCard = ({
                 <div className="p-4">
                     {planningItems.length === 0 ? (
                         <div className="text-center py-8 text-theme-secondary">
-                            <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <Ghost className="w-8 h-8 mx-auto mb-2 opacity-50" />
                             <p>No items in this category yet</p>
                             <button
                                 onClick={() => onAddItem(category.id)}

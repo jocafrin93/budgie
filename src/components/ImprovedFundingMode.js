@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     DollarSign,
     AlertTriangle,
@@ -159,28 +159,20 @@ const AllocationSummary = ({ allocations, totalBudget }) => {
 // Main Improved Funding Mode Component
 const ImprovedFundingMode = ({
     categories,
-    currentPay,
+    availableFunds: initialAvailableFunds,
     onFundCategory,
-    paySchedule
+    paySchedule,
+    planningItems = [],
+    activeBudgetAllocations = []
 }) => {
-    const [availableFunds, setAvailableFunds] = useState(currentPay);
+    const [availableFunds, setAvailableFunds] = useState(initialAvailableFunds);
     const [fundingAllocations, setFundingAllocations] = useState([]);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
-    // Get planning items and allocations from localStorage
-    const { planningItems, activeBudgetAllocations } = useMemo(() => {
-        try {
-            const planningData = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
-            const budgetData = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
-            return {
-                planningItems: planningData,
-                activeBudgetAllocations: budgetData
-            };
-        } catch (error) {
-            console.warn('Could not load funding data:', error);
-            return { planningItems: [], activeBudgetAllocations: [] };
-        }
-    }, []);
+    useEffect(() => {
+        setAvailableFunds(initialAvailableFunds);
+    }, [initialAvailableFunds]);
+
 
     // Calculate funding needs and priorities
     const fundingAnalysis = useMemo(() => {
@@ -351,7 +343,7 @@ const ImprovedFundingMode = ({
     };
 
     const handleResetFunding = () => {
-        setAvailableFunds(currentPay);
+        setAvailableFunds(initialAvailableFunds);
         setFundingAllocations([]);
     };
 
@@ -368,7 +360,7 @@ const ImprovedFundingMode = ({
                             Smart Funding Assistant
                         </h2>
                         <p className="text-theme-secondary">
-                            AI-powered funding recommendations based on your priorities and deadlines
+                            AI-powered funding recommendations based on your available money
                         </p>
                     </div>
 
@@ -377,11 +369,9 @@ const ImprovedFundingMode = ({
                         <div className="text-3xl font-bold text-green-600">
                             ${availableFunds.toFixed(2)}
                         </div>
-                        {currentPay !== availableFunds && (
-                            <div className="text-sm text-theme-tertiary">
-                                of ${currentPay.toFixed(2)} total
-                            </div>
-                        )}
+                        <div className="text-sm text-theme-tertiary">
+                            from your account balances
+                        </div>
                     </div>
                 </div>
 
@@ -450,7 +440,7 @@ const ImprovedFundingMode = ({
             {fundingAllocations.length > 0 && (
                 <AllocationSummary
                     allocations={fundingAllocations}
-                    totalBudget={currentPay}
+                    totalBudget={initialAvailableFunds}
                 />
             )}
 

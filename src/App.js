@@ -40,7 +40,8 @@ const App = () => {
     const [bufferPercentage, setBufferPercentage] = useLocalStorage('budgetCalc_bufferPercentage', 7);
     const [currentTheme, setCurrentTheme] = useLocalStorage('budgetCalc_theme', 'light');
     const [payFrequency, setPayFrequency] = useLocalStorage('budgetCalc_payFrequency', 'bi-weekly');
-
+    const [planningItems, setPlanningItems] = useState([]);
+    const [activeBudgetAllocations, setActiveBudgetAllocations] = useState([]);
     // Categories state (keeping existing structure)
     const [categories, setCategories] = useLocalStorage('budgetCalc_categories', [
         {
@@ -110,19 +111,19 @@ const App = () => {
     ]);
 
     const [savingsGoals, setSavingsGoals] = useLocalStorage('budgetCalc_savingsGoals', [
-        {
-            id: 1,
-            name: 'Emergency fund',
-            targetAmount: 10000,
-            monthlyContribution: 500,
-            targetDate: '2025-12-31',
-            categoryId: 3,
-            alreadySaved: 0,
-            allocationPaused: false,
-            collapsed: true,
-            priorityState: 'active',
-            accountId: 1
-        },
+        // {
+        //     id: 1,
+        //     name: 'Emergency fund',
+        //     targetAmount: 10000,
+        //     monthlyContribution: 500,
+        //     targetDate: '2025-12-31',
+        //     categoryId: 3,
+        //     alreadySaved: 0,
+        //     allocationPaused: false,
+        //     collapsed: true,
+        //     priorityState: 'active',
+        // //     accountId: 1
+        // },
     ]);
 
     // Accounts state (keeping existing structure)
@@ -247,19 +248,44 @@ const App = () => {
         timeline: timelineData,
     };
 
-    // // Migration effect (keeping existing logic)
-    // useEffect(() => {
-    //     if (categories.length > 0 && !categories[0].hasOwnProperty('allocated')) {
-    //         const migratedCategories = migrateCategoriesData(categories);
-    //         setCategories(migratedCategories);
-    //     }
-    // }, []);
-
     // Set Theme (keeping existing logic)
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', currentTheme);
     }, [currentTheme]);
 
+    useEffect(() => {
+        // Auto-sync category allocations with active items on app load
+        const syncCategoryAllocations = () => {
+            console.log('Syncing category allocations with active items...');
+            setTimeout(() => calculateCorrectCategoryAllocations(), 1000);
+        };
+
+        syncCategoryAllocations();
+    }, []); // Run once on app load
+
+    // Load planning items on app start
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem('budgetCalc_planningItems');
+            if (stored) {
+                setPlanningItems(JSON.parse(stored));
+            }
+        } catch (error) {
+            console.error('Error loading planning items:', error);
+        }
+    }, []);
+
+    // Load budget allocations on app start
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem('budgetCalc_activeBudgetAllocations');
+            if (stored) {
+                setActiveBudgetAllocations(JSON.parse(stored));
+            }
+        } catch (error) {
+            console.error('Error loading budget allocations:', error);
+        }
+    }, []);
 
     // Helper functions (keeping existing logic)
     const generateNextCategoryId = () => {
@@ -293,13 +319,12 @@ const App = () => {
     };
 
     const handleSaveItem = (itemData, addAnother = false) => {
-        console.log('=== SAVE ITEM DEBUG ===');
-        console.log('itemData received:', itemData);
-        console.log('editingItem:', editingItem);
-        console.log('addAnother:', addAnother);
-        console.log('======================');
-
-        console.log('Saving item:', itemData, 'editingItem:', editingItem);
+        // console.log('=== SAVE ITEM DEBUG ===');
+        // console.log('itemData received:', itemData);
+        // console.log('editingItem:', editingItem);
+        // console.log('addAnother:', addAnother);
+        // console.log('======================');
+        // console.log('Saving item:', itemData, 'editingItem:', editingItem);
 
         if (editingItem) {
             // Update existing item
@@ -320,6 +345,8 @@ const App = () => {
                     item.id === editingItem.id ? { ...item, ...itemData } : item
                 );
                 localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+                setPlanningItems(updatedItems);
+
             } catch (error) {
                 console.error('Error updating planning items:', error);
             }
@@ -344,6 +371,7 @@ const App = () => {
             }
 
             // ADD THIS: Also add to localStorage planning items
+            // ADD THIS: Also add to localStorage planning items
             try {
                 const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
                 const newPlanningItem = {
@@ -351,8 +379,11 @@ const App = () => {
                     type: itemData.type === 'goal' || itemData.targetAmount ? 'savings-goal' : 'expense',
                     isActive: !itemData.allocationPaused && itemData.priorityState === 'active'
                 };
-                planningItems.push(newPlanningItem);
-                localStorage.setItem('budgetCalc_planningItems', JSON.stringify(planningItems));
+                const updatedPlanningItems = [...planningItems, newPlanningItem];  // Create new array
+                localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedPlanningItems));
+
+                // ADD THIS LINE:
+                setPlanningItems(updatedPlanningItems);
 
                 // Also add to active budget allocations if active
                 if (newPlanningItem.isActive) {
@@ -367,8 +398,11 @@ const App = () => {
                         isPaused: false,
                         createdAt: new Date().toISOString()
                     };
-                    activeBudgetAllocations.push(newAllocation);
-                    localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(activeBudgetAllocations));
+                    const updatedAllocations = [...activeBudgetAllocations, newAllocation];  // Create new array
+                    localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(updatedAllocations));
+
+                    // ADD THIS LINE:
+                    setActiveBudgetAllocations(updatedAllocations);
                 }
             } catch (error) {
                 console.error('Error adding to planning items:', error);
@@ -381,29 +415,125 @@ const App = () => {
         }
     };
 
-    // Keep existing delete handlers
-    const handleDeleteExpense = (expenseId) => {
-        setExpenses(expenses.filter(exp => exp.id !== expenseId));
+    const calculateCorrectCategoryAllocations = () => {
         try {
-            const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
-            const updatedItems = planningItems.filter(item => item.id !== expenseId);
-            localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+            const currentPlanningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+            const currentAllocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+
+            // Calculate what each category SHOULD have allocated based on active items only
+            const calculatedCategoryTotals = {};
+
+            currentAllocations.forEach(allocation => {
+                const planningItem = currentPlanningItems.find(item => item.id === allocation.planningItemId);
+
+                // Only count allocations for items that exist and are active
+                if (planningItem && planningItem.isActive) {
+                    if (!calculatedCategoryTotals[allocation.categoryId]) {
+                        calculatedCategoryTotals[allocation.categoryId] = 0;
+                    }
+                    // Convert monthly allocation to current balance (for now, using monthly amount)
+                    calculatedCategoryTotals[allocation.categoryId] += allocation.monthlyAllocation || 0;
+                }
+            });
+
+            // Update categories to match calculated totals
+            let totalReclaimed = 0;
+            setCategories(prev => prev.map(category => {
+                const shouldHaveAllocated = calculatedCategoryTotals[category.id] || 0;
+                const currentlyAllocated = category.allocated || 0;
+
+                // Only update if there's a meaningful discrepancy (more than 1 cent)
+                if (Math.abs(currentlyAllocated - shouldHaveAllocated) > 0.01) {
+                    const difference = currentlyAllocated - shouldHaveAllocated;
+                    totalReclaimed += difference;
+
+                    console.log(`Correcting ${category.name}: was $${currentlyAllocated.toFixed(2)}, should be $${shouldHaveAllocated.toFixed(2)} (${difference > 0 ? 'reclaiming' : 'allocating'} $${Math.abs(difference).toFixed(2)})`);
+
+                    return {
+                        ...category,
+                        allocated: shouldHaveAllocated,
+                        lastFunded: shouldHaveAllocated > currentlyAllocated ? new Date().toISOString() : category.lastFunded
+                    };
+                }
+
+                return category;
+            }));
+
+            if (totalReclaimed > 0.01) {
+                console.log(`Total money reclaimed: $${totalReclaimed.toFixed(2)}`);
+            }
+
         } catch (error) {
-            console.error('Error deleting from planning items:', error);
+            console.error('Error calculating category allocations:', error);
         }
+    };
+
+    // Keep existing delete handlers in App.js to sync React state
+
+    const handleDeleteExpense = (expenseId) => {
+        const expenseToDelete = expenses.find(exp => exp.id === expenseId);
+
+        if (expenseToDelete) {
+            // Remove from planning items and allocations in localStorage
+            try {
+                const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+                const updatedItems = planningItems.filter(item => item.id !== expenseId);
+                localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+
+                // UPDATE REACT STATE IMMEDIATELY:
+                setPlanningItems(updatedItems);
+
+                const allocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+                const updatedAllocations = allocations.filter(allocation => allocation.planningItemId !== expenseId);
+                localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(updatedAllocations));
+
+                // UPDATE REACT STATE IMMEDIATELY:
+                setActiveBudgetAllocations(updatedAllocations);
+
+            } catch (error) {
+                console.error('Error cleaning up deleted expense:', error);
+            }
+        }
+
+        // Remove the expense from state
+        setExpenses(expenses.filter(exp => exp.id !== expenseId));
         setConfirmDelete(null);
+
+        // Recalculate category allocations after deletion
+        setTimeout(() => calculateCorrectCategoryAllocations(), 100);
     };
 
     const handleDeleteGoal = (goalId) => {
-        setSavingsGoals(savingsGoals.filter(goal => goal.id !== goalId));
-        try {
-            const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
-            const updatedItems = planningItems.filter(item => item.id !== goalId);
-            localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
-        } catch (error) {
-            console.error('Error deleting from planning items:', error);
+        const goalToDelete = savingsGoals.find(goal => goal.id === goalId);
+
+        if (goalToDelete) {
+            // Remove from planning items and allocations in localStorage
+            try {
+                const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+                const updatedItems = planningItems.filter(item => item.id !== goalId);
+                localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+
+                // UPDATE REACT STATE IMMEDIATELY:
+                setPlanningItems(updatedItems);
+
+                const allocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+                const updatedAllocations = allocations.filter(allocation => allocation.planningItemId !== goalId);
+                localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(updatedAllocations));
+
+                // UPDATE REACT STATE IMMEDIATELY:
+                setActiveBudgetAllocations(updatedAllocations);
+
+            } catch (error) {
+                console.error('Error cleaning up deleted goal:', error);
+            }
         }
+
+        // Remove the goal from state
+        setSavingsGoals(savingsGoals.filter(goal => goal.id !== goalId));
         setConfirmDelete(null);
+
+        // Recalculate category allocations after deletion
+        setTimeout(() => calculateCorrectCategoryAllocations(), 100);
     };
 
     const handleDeleteCategory = (categoryId) => {
@@ -422,6 +552,25 @@ const App = () => {
                     ? { ...goal, categoryId: firstCategoryId }
                     : goal
             ));
+
+            // ADD THIS: Update planning items and allocations
+            try {
+                const planningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+                const updatedItems = planningItems.map(item =>
+                    item.categoryId === categoryId ? { ...item, categoryId: firstCategoryId } : item
+                );
+                localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
+                setPlanningItems(updatedItems);
+
+                const allocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+                const updatedAllocations = allocations.map(allocation =>
+                    allocation.categoryId === categoryId ? { ...allocation, categoryId: firstCategoryId } : allocation
+                );
+                localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(updatedAllocations));
+                setActiveBudgetAllocations(updatedAllocations);
+            } catch (error) {
+                console.error('Error updating category assignments:', error);
+            }
         }
 
         setCategories(categories.filter(cat => cat.id !== categoryId));
@@ -536,8 +685,12 @@ const App = () => {
             );
             localStorage.setItem('budgetCalc_planningItems', JSON.stringify(updatedItems));
 
-            // Also update active budget allocations
+            // UPDATE REACT STATE IMMEDIATELY:
+            setPlanningItems(updatedItems);
+
+            // Update active budget allocations
             const activeBudgetAllocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+
             if (isActive) {
                 // Add to active allocations if not already there
                 const exists = activeBudgetAllocations.some(allocation => allocation.planningItemId === itemId);
@@ -549,23 +702,30 @@ const App = () => {
                             planningItemId: itemId,
                             categoryId: planningItem.categoryId,
                             monthlyAllocation: planningItem.type === 'expense' ? planningItem.amount : planningItem.monthlyContribution || 0,
-                            perPaycheckAmount: 0, // Will be calculated
+                            perPaycheckAmount: 0,
                             sourceAccountId: planningItem.accountId || accounts[0]?.id || 1,
                             isPaused: false,
                             createdAt: new Date().toISOString()
                         };
-                        activeBudgetAllocations.push(newAllocation);
+                        const updatedAllocations = [...activeBudgetAllocations, newAllocation];
+                        localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(updatedAllocations));
+
+                        // UPDATE REACT STATE IMMEDIATELY:
+                        setActiveBudgetAllocations(updatedAllocations);
                     }
                 }
             } else {
-                // Remove from active allocations
+                // Remove from active allocations when deactivated
                 const filteredAllocations = activeBudgetAllocations.filter(allocation => allocation.planningItemId !== itemId);
                 localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(filteredAllocations));
+
+                // UPDATE REACT STATE IMMEDIATELY:
+                setActiveBudgetAllocations(filteredAllocations);
             }
 
-            if (isActive) {
-                localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(activeBudgetAllocations));
-            }
+            // IMMEDIATELY recalculate category allocations after any change
+            setTimeout(() => calculateCorrectCategoryAllocations(), 100);
+
         } catch (error) {
             console.error('Error updating planning items:', error);
         }
@@ -596,6 +756,10 @@ const App = () => {
                 allocation.planningItemId === itemId ? { ...allocation, categoryId: newCategoryId } : allocation
             );
             localStorage.setItem('budgetCalc_activeBudgetAllocations', JSON.stringify(updatedAllocations));
+
+            // Recalculate category allocations for both old and new categories
+            setTimeout(() => calculateCorrectCategoryAllocations(), 100);
+
         } catch (error) {
             console.error('Error moving item:', error);
         }
@@ -643,6 +807,18 @@ const App = () => {
             <div className="min-h-screen transition-colors duration-200 bg-page text-page">
                 <div className="container mx-auto px-4 py-8 max-w-6xl">
                     {/* Header */}
+
+                    <button
+                        onClick={() => {
+                            calculateCorrectCategoryAllocations();
+                            alert('Category money synced with active items!');
+                        }}
+                        className="btn-warning px-3 py-2 rounded-lg text-sm"
+                        title="Manually sync category money"
+                    >
+                        🔄 Sync Money
+                    </button>
+
                     <div className="flex justify-between items-center mb-8">
                         <div>
                             <h1 className="text-3xl font-bold mb-2 text-theme-primary">Budgie 🦜</h1>
@@ -672,7 +848,7 @@ const App = () => {
                                 >
                                     {viewMode === 'planning' ? <Target className="w-4 h-4" /> : <DollarSign className="w-4 h-4" />}
                                     <span className="text-sm hidden sm:inline">
-                                        {viewMode === 'planning' ? 'Plan' : 'Fund'}
+                                        {viewMode === 'planning' ? 'Planning' : 'Funding'}
                                     </span>
                                 </button>
                             )}
@@ -688,7 +864,8 @@ const App = () => {
                         expenses={expenses}
                         savingsGoals={savingsGoals}
                         timeline={timelineData}
-                        allocationData={allocationData}
+                        planningItems={planningItems}           // ADD THIS
+                        activeBudgetAllocations={activeBudgetAllocations} // ADD THIS
                     />
 
                     {/* Accounts Section (keeping existing) */}
@@ -755,6 +932,7 @@ const App = () => {
                             {viewMode === 'planning' ? (
                                 <PlanningMode
                                     categories={categories}
+                                    planningItems={planningItems}
                                     expenses={expenses}
                                     savingsGoals={savingsGoals}
                                     payFrequency={payFrequency}
@@ -783,10 +961,11 @@ const App = () => {
                                 <div className="space-y-6">
                                     <ImprovedFundingMode
                                         categories={categories}
-                                        currentPay={currentPay}
+                                        availableFunds={allocationData.toBeAllocated}
                                         onFundCategory={handleFundCategory}
                                         paySchedule={paySchedule}
-
+                                        planningItems={planningItems}
+                                        activeBudgetAllocations={activeBudgetAllocations}
                                     />
 
                                     <div>
@@ -802,6 +981,7 @@ const App = () => {
                                                 <EnhancedCategoryCard
                                                     key={category.id}
                                                     category={category}
+                                                    planningItems={planningItems}
                                                     viewMode={viewMode}
                                                     onFund={handleFundCategory}
                                                     onEditCategory={setEditingCategory}
