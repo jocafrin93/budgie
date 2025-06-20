@@ -1,22 +1,22 @@
-import React, { useEffect } from 'react';
-import { 
-  BaseForm, 
-  TextField, 
-  SelectField, 
-  DateField, 
-  CheckboxField, 
-  CurrencyField,
-  GoalFieldGroup
-} from './form';
+import { useEffect } from 'react';
 import { useForm } from '../hooks/useForm';
 import { formatDate } from '../utils/dateUtils';
 import { dollarToPercentage, percentageToDollar } from '../utils/moneyUtils';
+import {
+  BaseForm,
+  CheckboxField,
+  CurrencyField,
+  DateField,
+  GoalFieldGroup,
+  SelectField,
+  TextField
+} from './form';
 
-const UnifiedItemForm = ({ 
-  item = null, 
-  onSave, 
-  onCancel, 
-  categories = [], 
+const UnifiedItemForm = ({
+  item = null,
+  onSave,
+  onCancel,
+  categories = [],
   accounts = [],
   currentPay = 0,
   preselectedCategory = null,
@@ -25,7 +25,7 @@ const UnifiedItemForm = ({
   // Determine if we're editing an expense or a goal
   const isGoal = item?.targetAmount !== undefined;
   const initialType = isGoal ? 'goal' : 'expense';
-  
+
   // Initialize form with useForm hook
   const form = useForm({
     initialValues: {
@@ -41,7 +41,7 @@ const UnifiedItemForm = ({
       priorityState: item?.priorityState || 'active',
       isRecurring: item?.isRecurring !== false, // Default to true for new items
       priority: item?.priority || 'medium',
-      
+
       // Goal-specific fields
       targetAmount: item?.targetAmount || '',
       targetDate: item?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)), // 1 year from now
@@ -56,13 +56,13 @@ const UnifiedItemForm = ({
         accountId: values.accountId,
         priorityState: values.priorityState,
       };
-      
+
       if (values.type === 'expense') {
         onSave({
           ...commonData,
           type: 'expense',
-          amount: values.usePercentage 
-            ? percentageToDollar(parseFloat(values.percentageAmount) || 0, currentPay) 
+          amount: values.usePercentage
+            ? percentageToDollar(parseFloat(values.percentageAmount) || 0, currentPay)
             : parseFloat(values.amount) || 0,
           usePercentage: values.usePercentage,
           percentageAmount: parseFloat(values.percentageAmount) || 0,
@@ -84,20 +84,20 @@ const UnifiedItemForm = ({
     },
     validate: (values) => {
       const errors = {};
-      
+
       // Common validations
       if (!values.name) {
         errors.name = 'Name is required';
       }
-      
+
       if (!values.categoryId) {
         errors.categoryId = 'Category is required';
       }
-      
+
       if (!values.accountId) {
         errors.accountId = 'Account is required';
       }
-      
+
       // Type-specific validations
       if (values.type === 'expense') {
         if (values.usePercentage) {
@@ -109,11 +109,11 @@ const UnifiedItemForm = ({
             errors.amount = 'Amount is required';
           }
         }
-        
+
         if (!values.frequency) {
           errors.frequency = 'Frequency is required';
         }
-        
+
         if (!values.dueDate) {
           errors.dueDate = 'Due date is required';
         }
@@ -123,22 +123,22 @@ const UnifiedItemForm = ({
         const hasTargetAmount = !!values.targetAmount;
         const hasTargetDate = !!values.targetDate;
         const hasMonthlyContribution = !!values.monthlyContribution;
-        
+
         const filledFieldsCount = [
-          hasTargetAmount, 
-          hasTargetDate, 
+          hasTargetAmount,
+          hasTargetDate,
           hasMonthlyContribution
         ].filter(Boolean).length;
-        
+
         if (filledFieldsCount < 2) {
           errors.goalFields = 'Please fill at least 2 of the 3 goal fields';
         }
       }
-      
+
       return errors;
     },
   });
-  
+
   // Handle dollar/percentage conversion for expenses
   useEffect(() => {
     if (form.values.type === 'expense' && currentPay > 0) {
@@ -153,19 +153,19 @@ const UnifiedItemForm = ({
       }
     }
   }, [form.values.usePercentage, form.values.amount, form.values.percentageAmount, currentPay]);
-  
+
   // Category options
   const categoryOptions = categories.map(category => ({
     value: category.id,
     label: category.name
   }));
-  
+
   // Account options
   const accountOptions = accounts.map(account => ({
     value: account.id,
     label: account.name
   }));
-  
+
   // Frequency options
   const frequencyOptions = [
     { value: 'one-time', label: 'One-time' },
@@ -175,14 +175,14 @@ const UnifiedItemForm = ({
     { value: 'quarterly', label: 'Quarterly' },
     { value: 'annually', label: 'Annually' }
   ];
-  
+
   // Priority state options
   const priorityStateOptions = [
     { value: 'active', label: 'Active' },
     { value: 'paused', label: 'Paused' },
     { value: 'completed', label: 'Completed' }
   ];
-  
+
   // Priority options
   const priorityOptions = [
     { value: 'low', label: 'Low' },
@@ -190,18 +190,20 @@ const UnifiedItemForm = ({
     { value: 'high', label: 'High' },
     { value: 'critical', label: 'Critical' }
   ];
-  
+
   // Type options
   const typeOptions = [
     { value: 'expense', label: 'Expense or Bill' },
     { value: 'goal', label: 'Savings Goal' }
   ];
-  
+
   // Handle form submission
   const handleSubmit = () => {
+    console.log('Form values before submit:', form.values);
+    console.log('Form errors:', form.errors);
     form.handleSubmit();
   };
-  
+
   // Handle "Save & Add Another" button
   const handleSubmitAnother = () => {
     form.handleSubmit();
@@ -225,7 +227,7 @@ const UnifiedItemForm = ({
         required
         darkMode={darkMode}
       />
-      
+
       <TextField
         {...form.getFieldProps('name')}
         label="Name"
@@ -234,7 +236,7 @@ const UnifiedItemForm = ({
         required
         darkMode={darkMode}
       />
-      
+
       <SelectField
         {...form.getFieldProps('categoryId')}
         label="Category"
@@ -242,7 +244,7 @@ const UnifiedItemForm = ({
         required
         darkMode={darkMode}
       />
-      
+
       <SelectField
         {...form.getFieldProps('accountId')}
         label="Funding Account"
@@ -250,7 +252,7 @@ const UnifiedItemForm = ({
         required
         darkMode={darkMode}
       />
-      
+
       <SelectField
         {...form.getFieldProps('priorityState')}
         label="Status"
@@ -258,7 +260,7 @@ const UnifiedItemForm = ({
         required
         darkMode={darkMode}
       />
-      
+
       {form.values.type === 'expense' ? (
         // Expense-specific fields
         <>
@@ -269,7 +271,7 @@ const UnifiedItemForm = ({
               darkMode={darkMode}
             />
           </div>
-          
+
           {form.values.usePercentage ? (
             <TextField
               {...form.getFieldProps('percentageAmount')}
@@ -293,7 +295,7 @@ const UnifiedItemForm = ({
               hint={currentPay > 0 ? `Approx. ${dollarToPercentage(parseFloat(form.values.amount) || 0, currentPay).toFixed(1)}% of income` : ''}
             />
           )}
-          
+
           <SelectField
             {...form.getFieldProps('frequency')}
             label="Frequency"
@@ -301,20 +303,20 @@ const UnifiedItemForm = ({
             required
             darkMode={darkMode}
           />
-          
+
           <DateField
             {...form.getFieldProps('dueDate')}
             label="Due Date"
             required
             darkMode={darkMode}
           />
-          
+
           <CheckboxField
             {...form.getFieldProps('isRecurring')}
             label="This is a recurring expense"
             darkMode={darkMode}
           />
-          
+
           <SelectField
             {...form.getFieldProps('priority')}
             label="Priority"
@@ -336,7 +338,7 @@ const UnifiedItemForm = ({
           darkMode={darkMode}
         />
       )}
-      
+
       {form.values.type === 'goal' && (
         <CurrencyField
           {...form.getFieldProps('alreadySaved')}

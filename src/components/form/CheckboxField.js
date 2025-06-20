@@ -2,7 +2,6 @@
  * CheckboxField component
  * A standardized checkbox input for forms
  */
-import React from 'react';
 
 const CheckboxField = ({
   id,
@@ -13,10 +12,11 @@ const CheckboxField = ({
   error = '',
   hint = '',
   className = '',
+  darkMode, // Accept but don't pass to DOM
   ...props
 }) => {
   const fieldId = id || name || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
-  
+
   const handleChange = (e) => {
     if (onChange) {
       onChange(e);
@@ -36,27 +36,27 @@ const CheckboxField = ({
         aria-describedby={error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined}
         {...props}
       />
-      
+
       <div className="flex flex-col">
         <label htmlFor={fieldId} className="text-sm text-theme-primary">
           {label}
         </label>
-        
+
         {/* Error message */}
         {error && (
-          <div 
-            id={`${fieldId}-error`} 
+          <div
+            id={`${fieldId}-error`}
             className="text-xs text-red-500 mt-1"
             role="alert"
           >
             {error}
           </div>
         )}
-        
+
         {/* Hint text */}
         {hint && !error && (
-          <div 
-            id={`${fieldId}-hint`} 
+          <div
+            id={`${fieldId}-hint`}
             className="text-xs text-theme-tertiary mt-1"
           >
             {hint}

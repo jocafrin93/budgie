@@ -3,7 +3,6 @@
  * Utility functions for calculating funding progress and related metrics
  */
 
-import { getRelevantPaychecks } from './dateUtils';
 
 /**
  * Get friendly frequency label
@@ -38,22 +37,23 @@ export const getTimelineMessage = ({
     lastPaycheckDate,
     requiredAllocation,
     currentAllocation,
-    paySchedule
+    paySchedule = {} // Provide default empty object
 }) => {
-    // Guard against undefined paySchedule
-    if (!paySchedule) {
-        return 'Unable to calculate timeline (no pay schedule)';
-    }
+    // Provide safe default for paySchedule
+    const safePaySchedule = {
+        frequency: 'bi-weekly',
+        ...paySchedule
+    };
 
-    const frequencyLabel = getFrequencyLabel(paySchedule.frequency);
+    const frequencyLabel = getFrequencyLabel(safePaySchedule.frequency);
 
     if (isOnTrack && fundingDate) {
         return `Ready in ${paychecksNeeded} ${frequencyLabel}${paychecksNeeded === 1 ? '' : 's'} (${fundingDate.toLocaleDateString()})`;
     }
 
     if (!isOnTrack && lastPaycheckDate) {
-        const shortfall = requiredAllocation - currentAllocation;
-        return `Behind schedule - need $${requiredAllocation.toFixed(2)}/${frequencyLabel.slice(0, -1)} (currently $${currentAllocation.toFixed(2)}) - shortfall: $${shortfall.toFixed(2)}/${frequencyLabel.slice(0, -1)}`;
+        const shortfall = (requiredAllocation || 0) - (currentAllocation || 0);
+        return `Behind schedule - need $${(requiredAllocation || 0).toFixed(2)}/${frequencyLabel.slice(0, -1)} (currently $${(currentAllocation || 0).toFixed(2)}) - shortfall: $${shortfall.toFixed(2)}/${frequencyLabel.slice(0, -1)}`;
     }
 
     return 'Unable to calculate timeline';
@@ -206,46 +206,37 @@ const calculateFundingTimelineInternal = ({
 
 /**
  * Calculate funding timeline for an expense or goal
- * @param {Object|Object} itemOrParams - Either the expense/goal item or parameter object
- * @param {Object} paySchedule - The pay schedule configuration
- * @param {Array} accounts - Array of account objects
- * @param {number} biweeklyAllocation - The biweekly allocation amount
+ * @param {Object} params - Parameters object
+ * @param {number} params.amount - Target amount needed
+ * @param {number} params.alreadySaved - Amount already saved
+ * @param {string} params.dueDate - Due date
+ * @param {number} params.biweeklyAmount - Biweekly allocation amount
+ * @param {Array} params.relevantPaychecks - Relevant paychecks
+ * @param {Object} params.paySchedule - Pay schedule configuration
  * @returns {Object} Funding timeline information
  */
-export const calculateFundingTimeline = (itemOrParams, paySchedule, accounts, biweeklyAllocation) => {
-    // Check if first argument is an object with the new calling pattern properties
-    if (itemOrParams && typeof itemOrParams === 'object' && 'amount' in itemOrParams && 'dueDate' in itemOrParams) {
-        // New format: single object with all properties
-        const {
-            amount,
-            alreadySaved = 0,
-            dueDate,
-            biweeklyAmount,
-            relevantPaychecks = []
-        } = itemOrParams;
+export const calculateFundingTimeline = ({
+    amount,
+    alreadySaved = 0,
+    dueDate,
+    biweeklyAmount = 0,
+    relevantPaychecks = [],
+    paySchedule = {}
+}) => {
+    // Provide safe defaults
+    const safePaySchedule = {
+        frequency: 'bi-weekly',
+        startDate: new Date().toISOString().split('T')[0],
+        splitPaycheck: false,
+        primaryAmount: 0,
+        secondaryAmount: 0,
+        primaryAccountId: 1,
+        secondaryAccountId: 1,
+        secondaryDaysEarly: 0,
+        ...paySchedule
+    };
 
-        return calculateFundingTimelineInternal({
-            amount,
-            alreadySaved,
-            dueDate,
-            biweeklyAmount,
-            relevantPaychecks
-        });
-    }
-
-    // Original format with separate parameters
-    // Guard against undefined paySchedule
-    if (!paySchedule) {
-        return {
-            hasDeadline: false,
-            message: 'No pay schedule defined',
-            status: 'ongoing'
-        };
-    }
-
-    const item = itemOrParams;
-    const deadlineDate = item.dueDate || item.targetDate;
-    if (!deadlineDate) {
+    if (!dueDate) {
         return {
             hasDeadline: false,
             message: 'No deadline set',
@@ -253,9 +244,7 @@ export const calculateFundingTimeline = (itemOrParams, paySchedule, accounts, bi
         };
     }
 
-    const relevantPaychecks = getRelevantPaychecks(deadlineDate, item.accountId, paySchedule, accounts);
-    const totalNeeded = item.targetAmount || item.amount;
-    const alreadySaved = item.alreadySaved || 0;
+    const totalNeeded = amount || 0;
     const remainingNeeded = Math.max(0, totalNeeded - alreadySaved);
 
     if (remainingNeeded <= 0) {
@@ -269,7 +258,7 @@ export const calculateFundingTimeline = (itemOrParams, paySchedule, accounts, bi
     }
 
     // Calculate how many paychecks needed at current allocation rate
-    const paychecksNeeded = Math.ceil(remainingNeeded / biweeklyAllocation);
+    const paychecksNeeded = biweeklyAmount > 0 ? Math.ceil(remainingNeeded / biweeklyAmount) : 0;
     const availablePaychecks = relevantPaychecks.length;
 
     // Find the funding completion date
@@ -277,9 +266,10 @@ export const calculateFundingTimeline = (itemOrParams, paySchedule, accounts, bi
     let runningTotal = alreadySaved;
 
     for (let i = 0; i < Math.min(paychecksNeeded, availablePaychecks); i++) {
-        runningTotal += biweeklyAllocation;
+        runningTotal += biweeklyAmount;
         if (runningTotal >= totalNeeded) {
-            fundingDate = relevantPaychecks[i].date;
+            fundingDate = relevantPaychecks[i] && relevantPaychecks[i].date ?
+                relevantPaychecks[i].date : null;
             break;
         }
     }
@@ -290,7 +280,7 @@ export const calculateFundingTimeline = (itemOrParams, paySchedule, accounts, bi
     // Calculate required allocation to hit deadline
     const requiredAllocation = availablePaychecks > 0 ? remainingNeeded / availablePaychecks : 0;
 
-    return {
+    const timeline = {
         hasDeadline: true,
         isFullyFunded: false,
         totalNeeded,
@@ -302,17 +292,18 @@ export const calculateFundingTimeline = (itemOrParams, paySchedule, accounts, bi
         lastPaycheckDate,
         isOnTrack,
         requiredAllocation,
-        currentAllocation: biweeklyAllocation,
-        status: isOnTrack ? 'on-track' : 'behind',
-        message: getTimelineMessage({
-            isOnTrack,
-            paychecksNeeded,
-            availablePaychecks,
-            fundingDate,
-            lastPaycheckDate,
-            requiredAllocation,
-            currentAllocation: biweeklyAllocation,
-            paySchedule
-        })
+        currentAllocation: biweeklyAmount,
+        status: isOnTrack ? 'on-track' : 'behind'
+    };
+
+    // Generate message with safe parameters
+    const message = getTimelineMessage({
+        ...timeline,
+        paySchedule: safePaySchedule
+    });
+
+    return {
+        ...timeline,
+        message
     };
 };

@@ -1,6 +1,6 @@
 // hooks/usePaycheckTimeline.js
-import { usePaycheckDates } from './usePaycheckDates';
 import { useItemTimelines } from './useItemTimelines';
+import { usePaycheckDates } from './usePaycheckDates';
 import { useUrgencyScoring } from './useUrgencyScoring';
 
 /**
@@ -18,18 +18,40 @@ import { useUrgencyScoring } from './useUrgencyScoring';
  * @returns {Object} Timeline data and helper functions
  */
 export const usePaycheckTimeline = (params) => {
+  // Provide default values to prevent undefined errors
+  const safeParams = {
+    planningItems: [],
+    activeBudgetAllocations: [],
+    expenses: [],
+    savingsGoals: [],
+    accounts: [],
+    expenseAllocations: [],
+    goalAllocations: [],
+    paySchedule: {
+      frequency: 'bi-weekly',
+      startDate: new Date().toISOString().split('T')[0],
+      splitPaycheck: false,
+      primaryAmount: 0,
+      secondaryAmount: 0,
+      primaryAccountId: 1,
+      secondaryAccountId: 1,
+      secondaryDaysEarly: 0
+    },
+    ...params
+  };
+
   // Generate paycheck dates
   const { paycheckDates, getRelevantPaychecksForItem } = usePaycheckDates({
-    paySchedule: params.paySchedule
+    paySchedule: safeParams.paySchedule
   });
-  
-  // Calculate item timelines
+
+  // Calculate item timelines with all required parameters
   const timelineItems = useItemTimelines({
-    ...params,
+    ...safeParams,
     paycheckDates,
     getRelevantPaychecksForItem
   });
-  
+
   // Categorize items by urgency
   const {
     categorizedItems: timelines,
@@ -40,7 +62,7 @@ export const usePaycheckTimeline = (params) => {
   } = useUrgencyScoring({
     timelineItems
   });
-  
+
   return {
     timelines,
     getTimelineForItem,

@@ -184,9 +184,18 @@ const App = () => {
     };
 
     // Set Theme
+    // Set Theme - only apply to DOM, don't update state
     useEffect(() => {
-        updateTheme(theme);
-    }, [theme, updateTheme]);
+        // Apply theme to document
+        document.documentElement.setAttribute('data-theme', theme);
+
+        // Update meta theme-color for mobile browsers
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content',
+                theme.includes('dark') ? '#1f2937' : '#ffffff');
+        }
+    }, [theme]); // Remove updateTheme from dependencies
 
     // Sync category allocations on app load
     useEffect(() => {

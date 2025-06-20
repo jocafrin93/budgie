@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export const useLocalStorage = (key, initialValue) => {
+    // Use a ref to track if we're currently updating to prevent infinite loops
+    const isUpdating = useRef(false);
+
     const [storedValue, setStoredValue] = useState(() => {
         try {
             const item = window.localStorage.getItem(key);
@@ -11,29 +14,34 @@ export const useLocalStorage = (key, initialValue) => {
         }
     });
 
-    const setValue = (value) => {
+    const setValue = useCallback((value) => {
+        // Prevent recursive updates
+        if (isUpdating.current) {
+            return; // Silently return instead of warning
+        }
+
         try {
+            isUpdating.current = true;
+
             const valueToStore = value instanceof Function ? value(storedValue) : value;
-            setStoredValue(valueToStore);
-            window.localStorage.setItem(key, JSON.stringify(valueToStore));
+
+            // Only update if the value has actually changed
+            const currentValueString = JSON.stringify(storedValue);
+            const newValueString = JSON.stringify(valueToStore);
+
+            if (newValueString !== currentValueString) {
+                setStoredValue(valueToStore);
+                window.localStorage.setItem(key, newValueString);
+            }
         } catch (error) {
             console.error(`Error setting localStorage key "${key}":`, error);
+        } finally {
+            // Reset the flag after a brief delay to ensure state has settled
+            setTimeout(() => {
+                isUpdating.current = false;
+            }, 0);
         }
-    };
-    const migrateCategoriesData = (categories) => {
-        return categories.map(category => ({
-            ...category,
-            // Add envelope fields
-            allocated: category.allocated || 0,
-            spent: category.spent || 0,
-            lastFunded: category.lastFunded || null,
-            targetBalance: category.targetBalance || 0,
-            autoFunding: category.autoFunding || {
-                enabled: false,
-                maxAmount: 500,
-                priority: 'medium'
-            }
-        }));
-    };
+    }, [key, storedValue]);
+
     return [storedValue, setValue];
 };
