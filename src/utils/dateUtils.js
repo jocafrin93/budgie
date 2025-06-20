@@ -10,7 +10,20 @@
  * @returns {Array} Array of paycheck objects with dates and amounts
  */
 export const generatePaycheckDates = (paySchedule, monthsAhead = 12) => {
+    // Return empty array if paySchedule is undefined
+    if (!paySchedule) {
+        // Silent fail - return empty array without warning
+        return [];
+    }
+
     const { startDate, frequency, splitPaycheck, primaryAmount, secondaryAmount, secondaryDaysEarly } = paySchedule;
+
+    // Check if startDate exists
+    if (!startDate) {
+        // Silent fail - return empty array without warning
+        return [];
+    }
+
     const start = new Date(startDate);
     const paychecks = [];
 
@@ -71,6 +84,10 @@ export const generatePaycheckDates = (paySchedule, monthsAhead = 12) => {
  */
 export const getRelevantPaychecks = (targetDate, accountId, paySchedule, accounts) => {
     if (!targetDate) return [];
+    if (!paySchedule) {
+        // Silent fail - return empty array without warning
+        return [];
+    }
 
     const allPaychecks = generatePaycheckDates(paySchedule);
     const target = new Date(targetDate);
@@ -106,9 +123,9 @@ export const getRelevantPaychecks = (targetDate, accountId, paySchedule, account
  */
 export const formatDate = (date, options = {}) => {
     if (!date) return '';
-    
+
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    
+
     return dateObj.toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -126,11 +143,11 @@ export const formatDate = (date, options = {}) => {
 export const daysBetween = (date1, date2) => {
     const d1 = typeof date1 === 'string' ? new Date(date1) : date1;
     const d2 = typeof date2 === 'string' ? new Date(date2) : date2;
-    
+
     // Convert to UTC to avoid timezone issues
     const utc1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
     const utc2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
-    
+
     // Calculate difference in days
     return Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
 };
@@ -142,15 +159,15 @@ export const daysBetween = (date1, date2) => {
  */
 export const isDateInPast = (date) => {
     if (!date) return false;
-    
+
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     const today = new Date();
-    
+
     // Set both dates to midnight for comparison
     today.setHours(0, 0, 0, 0);
     const compareDate = new Date(dateObj);
     compareDate.setHours(0, 0, 0, 0);
-    
+
     return compareDate < today;
 };
 

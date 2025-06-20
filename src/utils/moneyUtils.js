@@ -100,23 +100,23 @@ export const calculateRemaining = (total, allocated) => {
  */
 export const calculateBiweeklyAllocation = (amount, frequency, frequencyOptions, roundingOption = 0) => {
     if (!amount || amount <= 0) return 0;
-    
+
     // Handle per-paycheck frequency
     if (frequency === 'per-paycheck') {
         if (roundingOption === 0) return amount;
         return roundToIncrement(amount, roundingOption);
     }
-    
+
     // Find frequency data
     const freqData = frequencyOptions.find(f => f && f.value === frequency);
     if (!freqData || !freqData.weeksPerYear || freqData.weeksPerYear <= 0) {
         console.warn(`Invalid frequency data for ${frequency}:`, freqData);
         return 0;
     }
-    
+
     const yearlyAmount = amount * freqData.weeksPerYear;
     const biweeklyAmount = yearlyAmount / 26;
-    
+
     if (roundingOption === 0) return biweeklyAmount;
     return roundToIncrement(biweeklyAmount, roundingOption);
 };
@@ -130,17 +130,17 @@ export const calculateBiweeklyAllocation = (amount, frequency, frequencyOptions,
  */
 export const calculateMonthlyAmount = (amount, frequency, frequencyOptions) => {
     if (!amount || amount <= 0) return 0;
-    
+
     // Handle monthly frequency
     if (frequency === 'monthly') return amount;
-    
+
     // Find frequency data
     const freqData = frequencyOptions.find(f => f && f.value === frequency);
     if (!freqData || !freqData.weeksPerYear || freqData.weeksPerYear <= 0) {
         console.warn(`Invalid frequency data for ${frequency}:`, freqData);
         return 0;
     }
-    
+
     const yearlyAmount = amount * freqData.weeksPerYear;
     return yearlyAmount / 12;
 };
@@ -155,21 +155,49 @@ export const calculateMonthlyAmount = (amount, frequency, frequencyOptions) => {
  */
 export const convertFrequency = (amount, fromFrequency, toFrequency, frequencyOptions) => {
     if (!amount || amount <= 0) return 0;
-    
+
     // If frequencies are the same, return the original amount
     if (fromFrequency === toFrequency) return amount;
-    
+
     // Find frequency data
     const fromFreqData = frequencyOptions.find(f => f && f.value === fromFrequency);
     const toFreqData = frequencyOptions.find(f => f && f.value === toFrequency);
-    
+
     if (!fromFreqData || !fromFreqData.weeksPerYear || fromFreqData.weeksPerYear <= 0 ||
         !toFreqData || !toFreqData.weeksPerYear || toFreqData.weeksPerYear <= 0) {
         console.warn(`Invalid frequency data for conversion from ${fromFrequency} to ${toFrequency}`);
         return 0;
     }
-    
+
     // Convert to yearly first, then to target frequency
     const yearlyAmount = amount * fromFreqData.weeksPerYear;
     return yearlyAmount / toFreqData.weeksPerYear;
+};
+
+/**
+ * Calculate biweekly allocation for a savings goal
+ * @param {Object} goal - The savings goal object
+ * @param {number} roundingOption - The rounding option (0 for no rounding)
+ * @returns {number} Biweekly allocation amount
+ */
+export const calculateGoalBiweeklyAllocation = (goal, roundingOption = 0) => {
+    if (!goal) return 0;
+
+    // If the goal is paused, complete, or has allocationPaused set, return 0
+    if (goal.priorityState === 'paused' ||
+        goal.priorityState === 'complete' ||
+        goal.allocationPaused) {
+        return 0;
+    }
+
+    // Get the monthly contribution
+    const monthlyContribution = parseFloat(goal.monthlyContribution) || 0;
+    if (monthlyContribution <= 0) return 0;
+
+    // Convert monthly to biweekly (monthly * 12 / 26)
+    const biweeklyAmount = (monthlyContribution * 12) / 26;
+
+    // Apply rounding if needed
+    if (roundingOption === 0) return biweeklyAmount;
+    return roundToIncrement(biweeklyAmount, roundingOption);
 };

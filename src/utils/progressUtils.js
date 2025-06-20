@@ -6,85 +6,23 @@
 import { getRelevantPaychecks } from './dateUtils';
 
 /**
- * Calculate funding timeline for an expense or goal
- * @param {Object} item - The expense or goal item
- * @param {Object} paySchedule - The pay schedule configuration
- * @param {Array} accounts - Array of account objects
- * @param {number} biweeklyAllocation - The biweekly allocation amount
- * @returns {Object} Funding timeline information
+ * Get friendly frequency label
+ * @param {string} frequency - The frequency value
+ * @returns {string} Friendly label for the frequency
  */
-export const calculateFundingTimeline = (item, paySchedule, accounts, biweeklyAllocation) => {
-    const deadlineDate = item.dueDate || item.targetDate;
-    if (!deadlineDate) {
-        return {
-            hasDeadline: false,
-            message: 'No deadline set',
-            status: 'ongoing'
-        };
+export const getFrequencyLabel = (frequency) => {
+    // Default to bi-weekly if frequency is undefined
+    if (!frequency) {
+        return 'paycheck';
     }
 
-    const relevantPaychecks = getRelevantPaychecks(deadlineDate, item.accountId, paySchedule, accounts);
-    const totalNeeded = item.targetAmount || item.amount;
-    const alreadySaved = item.alreadySaved || 0;
-    const remainingNeeded = Math.max(0, totalNeeded - alreadySaved);
-
-    if (remainingNeeded <= 0) {
-        return {
-            hasDeadline: true,
-            isFullyFunded: true,
-            message: 'Fully funded!',
-            status: 'complete',
-            overfunded: alreadySaved - totalNeeded
-        };
+    switch (frequency) {
+        case 'weekly': return 'paycheck';
+        case 'bi-weekly': return 'paycheck';
+        case 'semi-monthly': return 'pay period';
+        case 'monthly': return 'payment';
+        default: return 'paycheck';
     }
-
-    // Calculate how many paychecks needed at current allocation rate
-    const paychecksNeeded = Math.ceil(remainingNeeded / biweeklyAllocation);
-    const availablePaychecks = relevantPaychecks.length;
-
-    // Find the funding completion date
-    let fundingDate = null;
-    let runningTotal = alreadySaved;
-
-    for (let i = 0; i < Math.min(paychecksNeeded, availablePaychecks); i++) {
-        runningTotal += biweeklyAllocation;
-        if (runningTotal >= totalNeeded) {
-            fundingDate = relevantPaychecks[i].date;
-            break;
-        }
-    }
-
-    const isOnTrack = paychecksNeeded <= availablePaychecks;
-    const lastPaycheckDate = relevantPaychecks[availablePaychecks - 1]?.date;
-
-    // Calculate required allocation to hit deadline
-    const requiredAllocation = availablePaychecks > 0 ? remainingNeeded / availablePaychecks : 0;
-
-    return {
-        hasDeadline: true,
-        isFullyFunded: false,
-        totalNeeded,
-        alreadySaved,
-        remainingNeeded,
-        paychecksNeeded,
-        availablePaychecks,
-        fundingDate,
-        lastPaycheckDate,
-        isOnTrack,
-        requiredAllocation,
-        currentAllocation: biweeklyAllocation,
-        status: isOnTrack ? 'on-track' : 'behind',
-        message: getTimelineMessage({
-            isOnTrack,
-            paychecksNeeded,
-            availablePaychecks,
-            fundingDate,
-            lastPaycheckDate,
-            requiredAllocation,
-            currentAllocation: biweeklyAllocation,
-            paySchedule
-        })
-    };
 };
 
 /**
@@ -102,6 +40,11 @@ export const getTimelineMessage = ({
     currentAllocation,
     paySchedule
 }) => {
+    // Guard against undefined paySchedule
+    if (!paySchedule) {
+        return 'Unable to calculate timeline (no pay schedule)';
+    }
+
     const frequencyLabel = getFrequencyLabel(paySchedule.frequency);
 
     if (isOnTrack && fundingDate) {
@@ -114,21 +57,6 @@ export const getTimelineMessage = ({
     }
 
     return 'Unable to calculate timeline';
-};
-
-/**
- * Get friendly frequency label
- * @param {string} frequency - The frequency value
- * @returns {string} Friendly label for the frequency
- */
-export const getFrequencyLabel = (frequency) => {
-    switch (frequency) {
-        case 'weekly': return 'paycheck';
-        case 'bi-weekly': return 'paycheck';
-        case 'semi-monthly': return 'pay period';
-        case 'monthly': return 'payment';
-        default: return 'paycheck';
-    }
 };
 
 /**
@@ -201,4 +129,190 @@ export const getFundingStatusText = (progress) => {
     if (progress >= 50) return 'Halfway There';
     if (progress >= 25) return 'Getting Started';
     return 'Just Beginning';
+};
+
+/**
+ * Internal implementation of calculateFundingTimeline that accepts a single params object
+ * @param {Object} params - Parameters for timeline calculation
+ * @returns {Object} Funding timeline information
+ */
+const calculateFundingTimelineInternal = ({
+    amount,
+    alreadySaved = 0,
+    dueDate,
+    biweeklyAmount,
+    relevantPaychecks = []
+}) => {
+    if (!dueDate) {
+        return {
+            hasDeadline: false,
+            message: 'No deadline set',
+            status: 'ongoing'
+        };
+    }
+
+    const totalNeeded = amount;
+    const remainingNeeded = Math.max(0, totalNeeded - alreadySaved);
+
+    if (remainingNeeded <= 0) {
+        return {
+            hasDeadline: true,
+            isFullyFunded: true,
+            message: 'Fully funded!',
+            status: 'complete',
+            overfunded: alreadySaved - totalNeeded
+        };
+    }
+
+    // Calculate how many paychecks needed at current allocation rate
+    const paychecksNeeded = Math.ceil(remainingNeeded / biweeklyAmount);
+    const availablePaychecks = relevantPaychecks.length;
+
+    // Find the funding completion date
+    let fundingDate = null;
+    let runningTotal = alreadySaved;
+
+    for (let i = 0; i < Math.min(paychecksNeeded, availablePaychecks); i++) {
+        runningTotal += biweeklyAmount;
+        if (runningTotal >= totalNeeded) {
+            fundingDate = relevantPaychecks[i].date;
+            break;
+        }
+    }
+
+    const isOnTrack = paychecksNeeded <= availablePaychecks;
+    const lastPaycheckDate = relevantPaychecks[availablePaychecks - 1]?.date;
+
+    // Calculate required allocation to hit deadline
+    const requiredAllocation = availablePaychecks > 0 ? remainingNeeded / availablePaychecks : 0;
+
+    return {
+        hasDeadline: true,
+        isFullyFunded: false,
+        totalNeeded,
+        alreadySaved,
+        remainingNeeded,
+        paychecksNeeded,
+        availablePaychecks,
+        fundingDate,
+        lastPaycheckDate,
+        isOnTrack,
+        requiredAllocation,
+        currentAllocation: biweeklyAmount,
+        status: isOnTrack ? 'on-track' : 'behind',
+        message: 'Timeline available'
+    };
+};
+
+/**
+ * Calculate funding timeline for an expense or goal
+ * @param {Object|Object} itemOrParams - Either the expense/goal item or parameter object
+ * @param {Object} paySchedule - The pay schedule configuration
+ * @param {Array} accounts - Array of account objects
+ * @param {number} biweeklyAllocation - The biweekly allocation amount
+ * @returns {Object} Funding timeline information
+ */
+export const calculateFundingTimeline = (itemOrParams, paySchedule, accounts, biweeklyAllocation) => {
+    // Check if first argument is an object with the new calling pattern properties
+    if (itemOrParams && typeof itemOrParams === 'object' && 'amount' in itemOrParams && 'dueDate' in itemOrParams) {
+        // New format: single object with all properties
+        const {
+            amount,
+            alreadySaved = 0,
+            dueDate,
+            biweeklyAmount,
+            relevantPaychecks = []
+        } = itemOrParams;
+
+        return calculateFundingTimelineInternal({
+            amount,
+            alreadySaved,
+            dueDate,
+            biweeklyAmount,
+            relevantPaychecks
+        });
+    }
+
+    // Original format with separate parameters
+    // Guard against undefined paySchedule
+    if (!paySchedule) {
+        return {
+            hasDeadline: false,
+            message: 'No pay schedule defined',
+            status: 'ongoing'
+        };
+    }
+
+    const item = itemOrParams;
+    const deadlineDate = item.dueDate || item.targetDate;
+    if (!deadlineDate) {
+        return {
+            hasDeadline: false,
+            message: 'No deadline set',
+            status: 'ongoing'
+        };
+    }
+
+    const relevantPaychecks = getRelevantPaychecks(deadlineDate, item.accountId, paySchedule, accounts);
+    const totalNeeded = item.targetAmount || item.amount;
+    const alreadySaved = item.alreadySaved || 0;
+    const remainingNeeded = Math.max(0, totalNeeded - alreadySaved);
+
+    if (remainingNeeded <= 0) {
+        return {
+            hasDeadline: true,
+            isFullyFunded: true,
+            message: 'Fully funded!',
+            status: 'complete',
+            overfunded: alreadySaved - totalNeeded
+        };
+    }
+
+    // Calculate how many paychecks needed at current allocation rate
+    const paychecksNeeded = Math.ceil(remainingNeeded / biweeklyAllocation);
+    const availablePaychecks = relevantPaychecks.length;
+
+    // Find the funding completion date
+    let fundingDate = null;
+    let runningTotal = alreadySaved;
+
+    for (let i = 0; i < Math.min(paychecksNeeded, availablePaychecks); i++) {
+        runningTotal += biweeklyAllocation;
+        if (runningTotal >= totalNeeded) {
+            fundingDate = relevantPaychecks[i].date;
+            break;
+        }
+    }
+
+    const isOnTrack = paychecksNeeded <= availablePaychecks;
+    const lastPaycheckDate = relevantPaychecks[availablePaychecks - 1]?.date;
+
+    // Calculate required allocation to hit deadline
+    const requiredAllocation = availablePaychecks > 0 ? remainingNeeded / availablePaychecks : 0;
+
+    return {
+        hasDeadline: true,
+        isFullyFunded: false,
+        totalNeeded,
+        alreadySaved,
+        remainingNeeded,
+        paychecksNeeded,
+        availablePaychecks,
+        fundingDate,
+        lastPaycheckDate,
+        isOnTrack,
+        requiredAllocation,
+        currentAllocation: biweeklyAllocation,
+        status: isOnTrack ? 'on-track' : 'behind',
+        message: getTimelineMessage({
+            isOnTrack,
+            paychecksNeeded,
+            availablePaychecks,
+            fundingDate,
+            lastPaycheckDate,
+            requiredAllocation,
+            currentAllocation: biweeklyAllocation,
+            paySchedule
+        })
+    };
 };

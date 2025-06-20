@@ -17,14 +17,14 @@ export const useConfigSettings = () => {
     dayOfMonth: 1,
     excludeWeekends: true
   });
-  
+
   // Budget settings
   const [roundingOption, setRoundingOption] = useLocalStorage('budgetCalc_roundingOption', 'round');
   const [bufferPercentage, setBufferPercentage] = useLocalStorage('budgetCalc_bufferPercentage', 10);
-  
+
   // Theme settings
   const [theme, setTheme] = useLocalStorage('budgetCalc_theme', 'light');
-  
+
   // Frequency options for expenses
   const payFrequencyOptions = [
     { value: 'weekly', label: 'Weekly' },
@@ -32,7 +32,7 @@ export const useConfigSettings = () => {
     { value: 'monthly', label: 'Monthly' },
     { value: 'semimonthly', label: 'Twice a Month' }
   ];
-  
+
   // Frequency options for expenses
   const frequencyOptions = [
     { value: 'once', label: 'One Time' },
@@ -43,7 +43,7 @@ export const useConfigSettings = () => {
     { value: 'semiannually', label: 'Twice a Year' },
     { value: 'annually', label: 'Yearly' }
   ];
-  
+
   // Category colors
   const categoryColors = [
     'bg-gradient-to-r from-purple-500 to-pink-500',
@@ -57,7 +57,7 @@ export const useConfigSettings = () => {
     'bg-gradient-to-r from-purple-600 to-indigo-600',
     'bg-gradient-to-r from-green-600 to-teal-600'
   ];
-  
+
   /**
    * Update pay settings
    */
@@ -65,11 +65,11 @@ export const useConfigSettings = () => {
     if (settings.currentPay !== undefined) {
       setCurrentPay(settings.currentPay);
     }
-    
+
     if (settings.payFrequency !== undefined) {
       setPayFrequency(settings.payFrequency);
     }
-    
+
     if (settings.paySchedule !== undefined) {
       setPaySchedule(prev => ({
         ...prev,
@@ -77,7 +77,7 @@ export const useConfigSettings = () => {
       }));
     }
   }, [setCurrentPay, setPayFrequency, setPaySchedule]);
-  
+
   /**
    * Update budget settings
    */
@@ -85,29 +85,29 @@ export const useConfigSettings = () => {
     if (settings.roundingOption !== undefined) {
       setRoundingOption(settings.roundingOption);
     }
-    
+
     if (settings.bufferPercentage !== undefined) {
       setBufferPercentage(settings.bufferPercentage);
     }
   }, [setRoundingOption, setBufferPercentage]);
-  
+
   /**
    * Update theme
    */
   const updateTheme = useCallback((newTheme) => {
     setTheme(newTheme);
-    
+
     // Apply theme to document
     document.documentElement.setAttribute('data-theme', newTheme);
-    
+
     // Update meta theme-color for mobile browsers
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', 
+      metaThemeColor.setAttribute('content',
         newTheme.includes('dark') ? '#1f2937' : '#ffffff');
     }
   }, [setTheme]);
-  
+
   /**
    * Get the number of days between paychecks based on frequency
    */
@@ -125,7 +125,7 @@ export const useConfigSettings = () => {
         return 14; // Default to biweekly
     }
   }, [payFrequency]);
-  
+
   /**
    * Get the number of paychecks per year based on frequency
    */
@@ -143,7 +143,7 @@ export const useConfigSettings = () => {
         return 26; // Default to biweekly
     }
   }, [payFrequency]);
-  
+
   /**
    * Calculate monthly income based on current pay and frequency
    */
@@ -161,7 +161,7 @@ export const useConfigSettings = () => {
         return currentPay * 2.17; // Default to biweekly
     }
   }, [currentPay, payFrequency]);
-  
+
   return {
     // Pay settings
     currentPay,
@@ -170,22 +170,22 @@ export const useConfigSettings = () => {
     setPayFrequency,
     paySchedule,
     setPaySchedule,
-    
+
     // Budget settings
     roundingOption,
     setRoundingOption,
     bufferPercentage,
     setBufferPercentage,
-    
+
     // Theme settings
     theme,
     setTheme,
-    
+
     // Options
     payFrequencyOptions,
     frequencyOptions,
     categoryColors,
-    
+
     // Functions
     updatePaySettings,
     updateBudgetSettings,

@@ -211,7 +211,10 @@ const App = () => {
         }
 
         // Recalculate category allocations after any item changes
-        setTimeout(() => calculateCorrectCategoryAllocations(), 100);
+        setTimeout(() => {
+            // Pass current state to ensure calculations use the most up-to-date data
+            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+        }, 100);
     };
 
     const handleDeleteExpense = (expenseId) => {
@@ -219,7 +222,10 @@ const App = () => {
         setConfirmDelete(null);
 
         // Recalculate category allocations after deletion
-        setTimeout(() => calculateCorrectCategoryAllocations(), 100);
+        setTimeout(() => {
+            // Pass current state to ensure calculations use the most up-to-date data
+            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+        }, 100);
     };
 
     const handleDeleteGoal = (goalId) => {
@@ -227,7 +233,10 @@ const App = () => {
         setConfirmDelete(null);
 
         // Recalculate category allocations after deletion
-        setTimeout(() => calculateCorrectCategoryAllocations(), 100);
+        setTimeout(() => {
+            // Pass current state to ensure calculations use the most up-to-date data
+            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+        }, 100);
     };
 
     const handleDeleteCategory = (categoryId) => {
@@ -279,14 +288,20 @@ const App = () => {
         toggleItemActive(itemId, isActive);
 
         // IMMEDIATELY recalculate category allocations after any change
-        setTimeout(() => calculateCorrectCategoryAllocations(), 100);
+        setTimeout(() => {
+            // Pass current state to ensure calculations use the most up-to-date data
+            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+        }, 100);
     };
 
     const handleMoveItem = (itemId, newCategoryId) => {
         moveItem(itemId, newCategoryId);
 
         // Recalculate category allocations for both old and new categories
-        setTimeout(() => calculateCorrectCategoryAllocations(), 100);
+        setTimeout(() => {
+            // Pass current state to ensure calculations use the most up-to-date data
+            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+        }, 100);
     };
 
     // Streamlined tabs
@@ -308,7 +323,7 @@ const App = () => {
 
                     <button
                         onClick={() => {
-                            calculateCorrectCategoryAllocations();
+                            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
                             alert('Category money synced with active items!');
                         }}
                         className="btn-warning px-3 py-2 rounded-lg text-sm"
@@ -328,7 +343,7 @@ const App = () => {
                         <div className="flex space-x-2">
                             <ThemeSelector
                                 currentTheme={theme}
-                                setCurrentTheme={setTheme}
+                                setCurrentTheme={updateTheme}
                             />
 
                             <div className="bg-theme-secondary px-4 py-2 rounded-lg">
@@ -524,7 +539,12 @@ const App = () => {
                             categories={categories}
                             onAddTransaction={openAddTransactionModal}
                             onEditTransaction={openEditTransactionModal}
-                            onDeleteTransaction={openConfirmDeleteDialog}
+                            onDeleteTransaction={(transaction) => openConfirmDeleteDialog(
+                                'transaction',
+                                transaction.id,
+                                transaction.payee || 'Unnamed Transaction',
+                                `Delete this transaction?`
+                            )}
                         />
                     )}
 

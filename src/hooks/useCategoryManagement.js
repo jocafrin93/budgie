@@ -154,10 +154,16 @@ export const useCategoryManagement = () => {
   /**
    * Update category allocations based on active budget items
    */
-  const calculateCorrectCategoryAllocations = useCallback(() => {
+  const calculateCorrectCategoryAllocations = useCallback((planningItems = [], allocations = []) => {
     try {
-      const currentPlanningItems = JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
-      const currentAllocations = JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+      // Use provided state variables if available, otherwise fall back to localStorage
+      const currentPlanningItems = planningItems.length > 0
+        ? planningItems
+        : JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+
+      const currentAllocations = allocations.length > 0
+        ? allocations
+        : JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
 
       // Calculate what each category SHOULD have allocated based on active items only
       const calculatedCategoryTotals = {};

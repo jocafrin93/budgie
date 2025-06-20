@@ -306,12 +306,8 @@ const TransactionsTab = ({
                                         </button>
                                         <button
                                             onClick={() => onDeleteTransaction({
-                                                type: 'transaction',
                                                 id: transaction.id,
-                                                name: transaction.transfer
-                                                    ? `Transfer to ${transferAccount?.name}`
-                                                    : transaction.payee,
-                                                message: 'Delete this transaction?',
+                                                payee: transaction.payee || 'Unnamed Transaction'
                                             })}
                                             className="p-1 rounded hover:bg-theme-hover text-theme-red transition-colors"
                                             title="Delete"
