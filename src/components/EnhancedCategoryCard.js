@@ -36,7 +36,8 @@ const EnhancedPlanningItem = ({
     onEdit,
     onDelete,
     onToggleActive,
-    showFundingInfo = false
+    showFundingInfo = false,
+    onFund = null
 }) => {
     const [{ isDragging }, drag] = useDrag({
         type: DND_TYPES.PLANNING_ITEM,
@@ -193,6 +194,19 @@ const EnhancedPlanningItem = ({
                                 }
                             </div>
                         )}
+
+                        {/* Fund Button (Funding Mode Only) */}
+                        {viewMode === 'funding' && onFund && (
+                            <div className="mt-2 flex items-center justify-end">
+                                <button
+                                    onClick={() => onFund(item.id, displayInfo.perPaycheckAmount)}
+                                    className="btn-success px-3 py-1 text-xs rounded-lg flex items-center space-x-1"
+                                >
+                                    <DollarSign className="w-3 h-3" />
+                                    <span>Fund ${displayInfo.perPaycheckAmount.toFixed(0)}</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -287,8 +301,8 @@ const EnhancedCategoryCard = ({
 
     // Calculate category statistics
     const stats = useMemo(() => {
-        const activeItems = planningItems.filter(item => item.isActive);
-        const planningOnlyItems = planningItems.filter(item => !item.isActive);
+        const activeItems = categoryPlanningItems.filter(item => item.isActive);
+        const planningOnlyItems = categoryPlanningItems.filter(item => !item.isActive);
 
         // Calculate monthly needs from active items
         const monthlyNeeds = activeItems.reduce((total, item) => {
@@ -316,7 +330,7 @@ const EnhancedCategoryCard = ({
         const isHealthy = currentBalance >= monthlyNeeds;
 
         return {
-            totalItems: planningItems.length,
+            totalItems: categoryPlanningItems.length,
             activeItems: activeItems.length,
             planningOnlyItems: planningOnlyItems.length,
             monthlyNeeds: monthlyNeeds || 0,
@@ -327,7 +341,7 @@ const EnhancedCategoryCard = ({
             isHealthy,
             fundingGap: Math.max(0, (monthlyNeeds || 0) - currentBalance)
         };
-    }, [planningItems, category, payFrequency, payFrequencyOptions]);
+    }, [categoryPlanningItems, category, payFrequency, payFrequencyOptions]);
 
 
     const handleFundCategory = () => {
@@ -491,7 +505,7 @@ const EnhancedCategoryCard = ({
             {/* Category Items */}
             {!category.collapsed && (
                 <div className="p-4">
-                    {planningItems.length === 0 ? (
+                    {categoryPlanningItems.length === 0 ? (
                         <div className="text-center py-8 text-theme-secondary">
                             <Ghost className="w-8 h-8 mx-auto mb-2 opacity-50" />
                             <p>No items in this category yet</p>
@@ -507,7 +521,7 @@ const EnhancedCategoryCard = ({
                             {/* Show items based on mode */}
                             {viewMode === 'planning' ? (
                                 // Planning mode: show all items
-                                planningItems.map(item => (
+                                categoryPlanningItems.map(item => (
                                     <EnhancedPlanningItem
                                         key={item.id}
                                         item={item}
@@ -521,7 +535,7 @@ const EnhancedCategoryCard = ({
                                 ))
                             ) : (
                                 // Funding mode: show only active items
-                                planningItems
+                                categoryPlanningItems
                                     .filter(item => item.isActive)
                                     .map(item => (
                                         <EnhancedPlanningItem
@@ -534,11 +548,12 @@ const EnhancedCategoryCard = ({
                                             onDelete={onDeleteItem}
                                             onToggleActive={onToggleItemActive}
                                             showFundingInfo={true}
+                                            onFund={handleFundCategory}
                                         />
                                     ))
                             )}
 
-                            {viewMode === 'funding' && planningItems.filter(item => item.isActive).length === 0 && (
+                            {viewMode === 'funding' && categoryPlanningItems.filter(item => item.isActive).length === 0 && (
                                 <div className="text-center py-6 text-theme-secondary">
                                     <Clock className="w-6 h-6 mx-auto mb-2 opacity-50" />
                                     <p className="text-sm">No active items in this category</p>

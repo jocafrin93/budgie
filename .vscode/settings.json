@@ -1,5 +1,14 @@
 {
     "search.exclude": {
-        "archive/**": true
-    }
+        "archive/**": true,
+        "../budgie-archive/**": true
+    },
+    "files.exclude": {
+        "node_modules": true,
+        "build": true
+    },
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "editor.formatOnSave": true
 }

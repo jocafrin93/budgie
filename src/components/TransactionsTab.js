@@ -1,6 +1,6 @@
 // components/TransactionsTab.js
-import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Search, Filter, Calendar, Repeat, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit2, Plus, Repeat, Search, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 const TransactionsTab = ({
     transactions,
@@ -12,8 +12,8 @@ const TransactionsTab = ({
     onDeleteTransaction
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterType, setFilterType] = useState('all');
-    const [filterAccount, setFilterAccount] = useState('all');
+    const [typeFilter, setTypeFilter] = useState('all');
+    const [accountFilter, setAccountFilter] = useState('all');
     const [sortBy, setSortBy] = useState('date');
     const [sortOrder, setSortOrder] = useState('desc');
 
@@ -21,11 +21,11 @@ const TransactionsTab = ({
         .filter(transaction => {
             const matchesSearch = transaction.payee?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 transaction.memo?.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesType = filterType === 'all' ||
-                (filterType === 'income' && transaction.amount > 0) ||
-                (filterType === 'expense' && transaction.amount < 0) ||
-                (filterType === 'transfer' && transaction.transfer);
-            const matchesAccount = filterAccount === 'all' || transaction.accountId === parseInt(filterAccount);
+            const matchesType = typeFilter === 'all' ||
+                (typeFilter === 'income' && transaction.amount > 0) ||
+                (typeFilter === 'expense' && transaction.amount < 0) ||
+                (typeFilter === 'transfer' && transaction.transfer);
+            const matchesAccount = accountFilter === 'all' || transaction.accountId === parseInt(accountFilter);
             return matchesSearch && matchesType && matchesAccount;
         })
         .sort((a, b) => {
@@ -138,8 +138,10 @@ const TransactionsTab = ({
 
                     {/* Type Filter */}
                     <select
-                        value={filterType}
-                        onChange={(e) => setFilterType(e.target.value)}
+                        id="typeFilter"
+                        aria-label="Transaction Type"
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
                         className="p-2 rounded border bg-theme-primary border-theme-primary text-theme-primary"
                     >
                         <option value="all">All Types</option>
@@ -150,8 +152,10 @@ const TransactionsTab = ({
 
                     {/* Account Filter */}
                     <select
-                        value={filterAccount}
-                        onChange={(e) => setFilterAccount(e.target.value)}
+                        id="accountFilter"
+                        aria-label="Account Filter"
+                        value={accountFilter}
+                        onChange={(e) => setAccountFilter(e.target.value)}
                         className="p-2 rounded border bg-theme-primary border-theme-primary text-theme-primary"
                     >
                         <option value="all">All Accounts</option>
@@ -166,8 +170,8 @@ const TransactionsTab = ({
                     <button
                         onClick={() => {
                             setSearchTerm('');
-                            setFilterType('all');
-                            setFilterAccount('all');
+                            setTypeFilter('all');
+                            setAccountFilter('all');
                         }}
                         className="px-4 py-2 rounded border bg-theme-primary border-theme-primary hover:bg-theme-hover text-theme-primary"
                     >

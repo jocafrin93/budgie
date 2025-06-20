@@ -1,108 +1,80 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BaseForm, TextField, ColorPickerField } from './form';
+import { useForm } from '../hooks/useForm';
 
 const AddCategoryForm = ({
-    onSave,
-    onCancel,
-    categoryColors,
-    darkMode,
-    category = null,
+  onSave,
+  onCancel,
+  categoryColors,
+  darkMode,
+  category = null,
 }) => {
-    const [formData, setFormData] = useState({
-        name: category?.name || '',
-        color: category?.color || categoryColors[0],
-    });
+  // Initialize form with useForm hook
+  const form = useForm({
+    initialValues: {
+      name: category?.name || '',
+      color: category?.color || categoryColors[0],
+    },
+    onSubmit: (values, options) => {
+      onSave(values, options?.addAnother);
+      
+      // Reset form if adding another
+      if (options?.addAnother) {
+        form.resetForm();
+        setTimeout(() => {
+          const nameInput = document.querySelector('input[name="name"]');
+          if (nameInput) nameInput.focus();
+        }, 100);
+      }
+    },
+    validate: (values) => {
+      const errors = {};
+      
+      if (!values.name) {
+        errors.name = 'Category name is required';
+      }
+      
+      return errors;
+    },
+  });
 
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (e.shiftKey) {
-                handleSubmit(true);
-            } else {
-                handleSubmit(false);
-            }
-        } else if (e.key === 'Escape') {
-            onCancel();
-        }
-    };
+  // Handle form submission
+  const handleSubmit = () => {
+    form.handleSubmit();
+  };
+  
+  // Handle "save and add another" submission
+  const handleSubmitAnother = () => {
+    form.handleSubmit(null, { addAnother: true });
+  };
 
-    const handleSubmit = (addAnother = false) => {
-        if (formData.name) {
-            onSave(formData, addAnother);
-            if (addAnother) {
-                setFormData({
-                    name: '',
-                    color: categoryColors[0],
-                });
-                setTimeout(() => {
-                    const nameInput = document.querySelector('input[placeholder="Category name"]');
-                    if (nameInput) nameInput.focus();
-                }, 100);
-            }
-        }
-    };
-
-    return (
-        <div className="space-y-4" onKeyDown={handleKeyDown}>
-            <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Category name"
-                className={`w-full p-2 border rounded ${darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
-                    }`}
-                autoFocus
-            />
-
-            <div>
-                <label className="block text-sm font-medium mb-2">Color</label>
-                <div className="grid grid-cols-2 gap-3">
-                    {categoryColors.map((color, index) => (
-                        <button
-                            key={color}
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, color }))}
-                            className={`h-12 rounded-lg ${color} border-3 ${formData.color === color
-                                ? 'border-blue-500 ring-2 ring-blue-300'
-                                : 'border-transparent hover:border-gray-400'
-                                } shadow-lg transition-all duration-200 hover:scale-105 flex items-center justify-center`}
-                            title={`Aurora Gradient ${index + 1}`}
-                        >
-                            <div className="w-full h-full rounded-md opacity-80"></div>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            <div className="flex space-x-2">
-                <button
-                    onClick={() => handleSubmit(false)}
-                    className="flex-1 btn-theme-primary text-theme-primary py-2 px-4 rounded hover:bg-purple-700"
-                    disabled={!formData.name}
-                >
-                    {category ? 'Update' : 'Add'} Category
-                </button>
-                <button
-                    onClick={() => handleSubmit(true)}
-                    className="bg-green-600 text-theme-primary py-2 px-3 rounded hover:bg-green-700"
-                    disabled={!formData.name}
-                    title="Save and add another (Shift+Enter)"
-                >
-                    +
-                </button>
-                <button
-                    onClick={onCancel}
-                    className={`py-2 px-4 rounded border ${darkMode ? 'border-theme-primary' : 'border-theme-primary'
-                        }`}
-                >
-                    Cancel
-                </button>
-            </div>
-
-            <div className="text-xs text-theme-tertiary mt-2">
-                💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
-            </div>
-        </div>
-    );
+  return (
+    <BaseForm
+      onSubmit={handleSubmit}
+      onSubmitAnother={handleSubmitAnother}
+      onCancel={onCancel}
+      submitLabel={category ? 'Update Category' : 'Add Category'}
+      isSubmitDisabled={!form.values.name}
+      isSubmitAnotherDisabled={!form.values.name}
+      showSubmitAnother={!category}
+    >
+      <TextField
+        {...form.getFieldProps('name')}
+        label="Category Name"
+        placeholder="Category name"
+        autoFocus
+        required
+        darkMode={darkMode}
+      />
+      
+      <ColorPickerField
+        {...form.getFieldProps('color')}
+        label="Color"
+        colors={categoryColors}
+        required
+      />
+    </BaseForm>
+  );
 };
 
-export default AddCategoryForm; 
+export default AddCategoryForm;

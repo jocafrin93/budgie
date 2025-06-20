@@ -13,7 +13,9 @@ import {
     Calculator,
     Lightbulb,
     PieChart,
-    RefreshCw
+    RefreshCw,
+    ToggleLeft,
+    ToggleRight
 } from 'lucide-react';
 import CurrencyInput from './CurrencyInput';
 
@@ -22,9 +24,20 @@ const FundingSuggestion = ({
     suggestion,
     onAccept,
     onCustomAmount,
-    availableFunds
+    availableFunds,
+    fundingMode
 }) => {
-    const [customAmount, setCustomAmount] = useState(suggestion.amount);
+    // Initialize custom amount based on current funding mode
+    const [customAmount, setCustomAmount] = useState(
+        fundingMode === 'monthly' ? suggestion.monthlyAmount : suggestion.perPaycheckAmount
+    );
+
+    // Update custom amount when funding mode changes
+    useEffect(() => {
+        setCustomAmount(fundingMode === 'monthly' ?
+            Math.min(suggestion.monthlyAmount || 0, availableFunds) :
+            Math.min(suggestion.perPaycheckAmount || 0, availableFunds));
+    }, [fundingMode, suggestion, availableFunds]);
 
     const getPriorityColor = () => {
         switch (suggestion.priority) {
@@ -84,7 +97,7 @@ const FundingSuggestion = ({
                         ${suggestion.amount.toFixed(2)}
                     </div>
                     <div className="text-xs text-theme-secondary">
-                        {suggestion.priority.toUpperCase()}
+                        {suggestion.frequencyLabel || suggestion.priority.toUpperCase()}
                     </div>
                 </div>
             </div>
@@ -106,11 +119,19 @@ const FundingSuggestion = ({
                 </div>
 
                 <button
-                    onClick={() => onAccept(suggestion)}
-                    disabled={suggestion.amount > availableFunds}
+                    onClick={() => onAccept({
+                        ...suggestion,
+                        amount: fundingMode === 'monthly' ?
+                            Math.min(suggestion.monthlyAmount || 0, availableFunds) :
+                            Math.min(suggestion.perPaycheckAmount || 0, availableFunds)
+                    })}
+                    disabled={(fundingMode === 'monthly' ? suggestion.monthlyAmount : suggestion.perPaycheckAmount) > availableFunds}
                     className="btn-success px-4 py-2 text-sm rounded disabled:opacity-50 flex items-center space-x-1"
                 >
-                    <span>Fund ${suggestion.amount.toFixed(0)}</span>
+                    <span>Fund ${(fundingMode === 'monthly' ?
+                        Math.min(suggestion.monthlyAmount || 0, availableFunds) :
+                        Math.min(suggestion.perPaycheckAmount || 0, availableFunds)).toFixed(0)}</span>
+                    <span className="text-xs">{suggestion.buttonLabel}</span>
                     <ArrowRight className="w-3 h-3" />
                 </button>
             </div>
@@ -163,16 +184,74 @@ const ImprovedFundingMode = ({
     onFundCategory,
     paySchedule,
     planningItems = [],
-    activeBudgetAllocations = []
+    activeBudgetAllocations = [],
+    payFrequency,
+    payFrequencyOptions
 }) => {
     const [availableFunds, setAvailableFunds] = useState(initialAvailableFunds);
     const [fundingAllocations, setFundingAllocations] = useState([]);
     const [showAdvanced, setShowAdvanced] = useState(false);
+    const [fundingMode, setFundingMode] = useState('per-paycheck'); // 'monthly' or 'per-paycheck'
 
     useEffect(() => {
         setAvailableFunds(initialAvailableFunds);
     }, [initialAvailableFunds]);
 
+
+    // Helper function to get per-paycheck amount based on frequency
+    const getPerPaycheckAmount = (item) => {
+        if (!item) return 0;
+
+        // Get paycheck frequency multiplier
+        const payFreqOption = payFrequencyOptions?.find(opt => opt.value === payFrequency) ||
+            { value: 'bi-weekly', paychecksPerMonth: 2.17 };
+        const paychecksPerMonth = payFreqOption.paychecksPerMonth || 2.17;
+
+        if (item.type === 'savings-goal') {
+            // For savings goals, convert monthly contribution to per-paycheck
+            return (item.monthlyContribution || 0) / paychecksPerMonth;
+        } else {
+            // For expenses, handle based on frequency
+            const frequencyMap = {
+                'weekly': (item.amount || 0) / (paychecksPerMonth / 4.33),
+                'bi-weekly': (item.amount || 0) / (paychecksPerMonth / 2.17),
+                'every-3-weeks': (item.amount || 0) / (paychecksPerMonth / 1.44),
+                'monthly': (item.amount || 0) / paychecksPerMonth,
+                'every-6-weeks': (item.amount || 0) / (paychecksPerMonth / 0.72),
+                'every-7-weeks': (item.amount || 0) / (paychecksPerMonth / 0.62),
+                'every-8-weeks': (item.amount || 0) / (paychecksPerMonth / 0.54),
+                'quarterly': (item.amount || 0) / (paychecksPerMonth * 3),
+                'annually': (item.amount || 0) / (paychecksPerMonth * 12),
+                'per-paycheck': item.amount || 0
+            };
+
+            return frequencyMap[item.frequency] || (item.amount || 0) / paychecksPerMonth;
+        }
+    };
+
+    // Get frequency label for display
+    const getFrequencyLabel = (item) => {
+        if (!item) return '';
+
+        if (item.type === 'savings-goal') {
+            return 'monthly contribution';
+        }
+
+        const frequencyLabels = {
+            'weekly': 'weekly',
+            'bi-weekly': 'every 2 weeks',
+            'every-3-weeks': 'every 3 weeks',
+            'monthly': 'monthly',
+            'every-6-weeks': 'every 6 weeks',
+            'every-7-weeks': 'every 7 weeks',
+            'every-8-weeks': 'every 8 weeks',
+            'quarterly': 'quarterly',
+            'annually': 'annually',
+            'per-paycheck': 'per paycheck'
+        };
+
+        return frequencyLabels[item.frequency] || '';
+    };
 
     // Calculate funding needs and priorities
     const fundingAnalysis = useMemo(() => {
@@ -182,25 +261,45 @@ const ImprovedFundingMode = ({
                 item.categoryId === category.id && item.isActive
             );
 
-            // Calculate monthly needs
-            const monthlyNeeds = activeItems.reduce((total, item) => {
-                if (item.type === 'savings-goal') {
-                    return total + (item.monthlyContribution || 0);
-                } else {
-                    const frequencyMap = {
-                        'weekly': item.amount * 4.33,
-                        'bi-weekly': item.amount * 2.17,
-                        'monthly': item.amount,
-                        'quarterly': item.amount / 3,
-                        'annually': item.amount / 12
-                    };
-                    return total + (frequencyMap[item.frequency] || item.amount);
-                }
-            }, 0);
 
-            // Current envelope balance
+            // Calculate needs based on funding mode
+            const itemNeeds = activeItems.map(item => {
+                const perPaycheckAmount = getPerPaycheckAmount(item);
+                const monthlyAmount = item.type === 'savings-goal'
+                    ? (item.monthlyContribution || 0)
+                    : perPaycheckAmount * (payFrequencyOptions?.find(opt => opt.value === payFrequency)?.paychecksPerMonth || 2.17);
+
+                // Calculate how much is already allocated for this item
+                const alreadySaved = item.alreadySaved || 0;
+                const totalNeeded = item.type === 'savings-goal' ? item.targetAmount : item.amount;
+                const remainingNeeded = Math.max(0, totalNeeded - alreadySaved);
+
+                // Adjust amounts based on what's already saved
+                const adjustedPerPaycheckAmount = remainingNeeded > 0 ? perPaycheckAmount : 0;
+                const adjustedMonthlyAmount = remainingNeeded > 0 ? monthlyAmount : 0;
+
+                return {
+                    item,
+                    perPaycheckAmount: adjustedPerPaycheckAmount,
+                    monthlyAmount: adjustedMonthlyAmount,
+                    frequencyLabel: getFrequencyLabel(item),
+                    originalAmount: item.type === 'savings-goal' ? item.targetAmount : item.amount,
+                    alreadySaved,
+                    remainingNeeded
+                };
+            });
+
+            // Calculate total needs
+            const monthlyNeeds = itemNeeds.reduce((total, data) => total + data.monthlyAmount, 0);
+            const perPaycheckNeeds = itemNeeds.reduce((total, data) => total + data.perPaycheckAmount, 0);
+
+            // Calculate current envelope balance
             const currentBalance = (category.allocated || 0) - (category.spent || 0);
-            const shortfall = Math.max(0, monthlyNeeds - currentBalance);
+            const monthlyShortfall = Math.max(0, monthlyNeeds - currentBalance);
+            const perPaycheckShortfall = Math.max(0, perPaycheckNeeds - (currentBalance / (payFrequencyOptions?.find(opt => opt.value === payFrequency)?.paychecksPerMonth || 2.17)));
+
+            // Use the appropriate shortfall based on funding mode
+            const shortfall = fundingMode === 'monthly' ? monthlyShortfall : perPaycheckShortfall;
 
             // Find urgent items (due soon)
             const urgentItems = activeItems.filter(item => {
@@ -259,13 +358,15 @@ const ImprovedFundingMode = ({
                 categoryName: category.name,
                 categoryColor: category.color,
                 monthlyNeeds,
+                perPaycheckNeeds,
                 currentBalance,
                 shortfall,
                 urgentItems,
                 priority,
                 priorityScore,
                 reason,
-                suggestedAmount: Math.min(shortfall || monthlyNeeds * 0.25, availableFunds)
+                itemNeeds,
+                suggestedAmount: Math.min(shortfall || (fundingMode === 'monthly' ? monthlyNeeds : perPaycheckNeeds) * 0.25, availableFunds)
             };
         }).filter(analysis => analysis.shortfall > 0 || analysis.urgentItems.length > 0)
             .sort((a, b) => b.priorityScore - a.priorityScore);
@@ -281,26 +382,67 @@ const ImprovedFundingMode = ({
         fundingAnalysis.forEach(analysis => {
             if (remainingFunds <= 0) return;
 
+            // Get the appropriate needs value based on funding mode
+            const needsValue = fundingMode === 'monthly' ? analysis.monthlyNeeds : analysis.perPaycheckNeeds;
+
+            // Calculate the suggested amount based on the funding mode
             const suggestedAmount = Math.min(
-                analysis.shortfall || analysis.monthlyNeeds * 0.25,
+                analysis.shortfall || needsValue * 0.25,
                 remainingFunds
             );
 
             if (suggestedAmount > 0) {
-                suggestions.push({
-                    categoryId: analysis.categoryId,
-                    categoryName: analysis.categoryName,
-                    amount: suggestedAmount,
-                    priority: analysis.priority,
-                    reason: analysis.reason,
-                    urgentItems: analysis.urgentItems
-                });
-                remainingFunds -= suggestedAmount;
+                // For urgent items, prioritize funding them directly
+                if (analysis.urgentItems.length > 0) {
+                    // Find the most urgent item
+                    const mostUrgentItem = analysis.urgentItems[0];
+                    const itemNeed = analysis.itemNeeds.find(need => need.item.id === mostUrgentItem.id);
+
+                    if (itemNeed) {
+                        const itemAmount = fundingMode === 'monthly'
+                            ? itemNeed.monthlyAmount
+                            : itemNeed.perPaycheckAmount;
+
+                        // Store both amounts to allow toggling without recalculating
+                        const itemSuggestion = {
+                            categoryId: analysis.categoryId,
+                            categoryName: analysis.categoryName,
+                            amount: Math.min(itemAmount, remainingFunds),
+                            monthlyAmount: itemNeed.monthlyAmount,
+                            perPaycheckAmount: itemNeed.perPaycheckAmount,
+                            priority: analysis.priority,
+                            reason: `Due soon: ${mostUrgentItem.name}`,
+                            urgentItems: [mostUrgentItem],
+                            frequencyLabel: itemNeed.frequencyLabel,
+                            buttonLabel: fundingMode === 'monthly' ? '/month' : '/paycheck',
+                            originalFrequency: itemNeed.item.frequency,
+                            originalAmount: itemNeed.originalAmount
+                        };
+
+                        suggestions.push(itemSuggestion);
+                        remainingFunds -= itemSuggestion.amount;
+                    }
+                } else {
+                    // General category funding
+                    suggestions.push({
+                        categoryId: analysis.categoryId,
+                        categoryName: analysis.categoryName,
+                        amount: suggestedAmount,
+                        monthlyAmount: analysis.monthlyNeeds,
+                        perPaycheckAmount: analysis.perPaycheckNeeds,
+                        priority: analysis.priority,
+                        reason: analysis.reason,
+                        urgentItems: analysis.urgentItems,
+                        frequencyLabel: fundingMode === 'monthly' ? 'monthly need' : 'per paycheck',
+                        buttonLabel: fundingMode === 'monthly' ? '/month' : '/paycheck'
+                    });
+                    remainingFunds -= suggestedAmount;
+                }
             }
         });
 
         return suggestions;
-    }, [fundingAnalysis, availableFunds]);
+    }, [fundingAnalysis, availableFunds, fundingMode]);
 
     // Handle funding actions
     const handleAcceptSuggestion = (suggestion) => {
@@ -347,7 +489,8 @@ const ImprovedFundingMode = ({
         setFundingAllocations([]);
     };
 
-    const totalSuggested = smartSuggestions.reduce((sum, s) => sum + s.amount, 0);
+    const totalSuggested = smartSuggestions.reduce((sum, s) => sum + (s.amount || 0), 0);
+    const isOverallocated = availableFunds < 0;
 
     return (
         <div className="space-y-6">
@@ -366,44 +509,67 @@ const ImprovedFundingMode = ({
 
                     <div className="text-right">
                         <div className="text-sm text-theme-secondary">Available to Allocate</div>
-                        <div className="text-3xl font-bold text-green-600">
-                            ${availableFunds.toFixed(2)}
+                        <div className="flex items-center justify-end space-x-2">
+                            {availableFunds < 0 && <AlertTriangle className="w-5 h-5 text-red-600" />}
+                            <div className={`text-3xl font-bold ${availableFunds >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {availableFunds >= 0 ? '$' : '-$'}{Math.abs(availableFunds).toFixed(2)}
+                            </div>
                         </div>
                         <div className="text-sm text-theme-tertiary">
-                            from your account balances
+                            {availableFunds >= 0 ? 'from account balances' : 'allocated beyond balances'}
                         </div>
                     </div>
                 </div>
-
-                {/* Quick Actions */}
-                <div className="flex flex-wrap gap-3">
-                    <button
-                        onClick={handleAutoFundAll}
-                        disabled={smartSuggestions.length === 0 || totalSuggested > availableFunds}
-                        className="btn-success px-4 py-2 rounded-lg flex items-center space-x-2 disabled:opacity-50"
-                    >
-                        <Zap className="w-4 h-4" />
-                        <span>Auto-Fund All (${totalSuggested.toFixed(0)})</span>
-                    </button>
-
-                    <button
-                        onClick={handleResetFunding}
-                        className="btn-secondary px-4 py-2 rounded-lg flex items-center space-x-2"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                        <span>Reset</span>
-                    </button>
-
-                    <button
-                        onClick={() => setShowAdvanced(!showAdvanced)}
-                        className="btn-secondary px-4 py-2 rounded-lg flex items-center space-x-2"
-                    >
-                        <Calculator className="w-4 h-4" />
-                        <span>{showAdvanced ? 'Hide' : 'Show'} Advanced</span>
-                    </button>
-                </div>
             </div>
 
+            {/* Funding Mode Toggle */}
+            <div className="mb-4 flex items-center justify-end">
+                <span className="text-sm text-theme-secondary mr-2">Funding Mode:</span>
+                <button
+                    onClick={() => setFundingMode(fundingMode === 'monthly' ? 'per-paycheck' : 'monthly')}
+                    className="flex items-center space-x-1 px-3 py-1 rounded-lg bg-theme-secondary text-sm"
+                >
+                    {fundingMode === 'per-paycheck' ? (
+                        <>
+                            <span>Per Paycheck</span>
+                            <ToggleRight className="w-4 h-4 text-green-500" />
+                        </>
+                    ) : (
+                        <>
+                            <span>Monthly</span>
+                            <ToggleLeft className="w-4 h-4" />
+                        </>
+                    )}
+                </button>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-3">
+                <button
+                    onClick={handleAutoFundAll}
+                    disabled={smartSuggestions.length === 0 || isOverallocated || totalSuggested > availableFunds}
+                    className="btn-success px-4 py-2 rounded-lg flex items-center space-x-2 disabled:opacity-50"
+                >
+                    <Zap className="w-4 h-4" />
+                    <span>Auto-Fund All (${totalSuggested.toFixed(0)})</span>
+                </button>
+
+                <button
+                    onClick={handleResetFunding}
+                    className="btn-secondary px-4 py-2 rounded-lg flex items-center space-x-2"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Reset</span>
+                </button>
+
+                <button
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className="btn-secondary px-4 py-2 rounded-lg flex items-center space-x-2"
+                >
+                    <Calculator className="w-4 h-4" />
+                    <span>{showAdvanced ? 'Hide' : 'Show'} Advanced</span>
+                </button>
+            </div>
             {/* Funding Suggestions */}
             <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-theme-primary flex items-center">
@@ -430,6 +596,7 @@ const ImprovedFundingMode = ({
                                 onAccept={handleAcceptSuggestion}
                                 onCustomAmount={handleCustomFunding}
                                 availableFunds={availableFunds}
+                                fundingMode={fundingMode}
                             />
                         ))}
                     </div>

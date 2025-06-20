@@ -7,6 +7,48 @@
 Resources:
 previewer:https://claude.ai/public/artifacts/e01f0441-ca05-41ac-be05-237035d158fd
 
+## **🏗️ Code Architecture**
+
+The application follows a modular architecture with clear separation of concerns:
+
+### Data Layer
+- **Unified Data Model**: Uses `planningItems` and `activeBudgetAllocations` as the single source of truth
+- **Custom Hooks**: Specialized hooks for different aspects of state management
+  - `useDataModel`: Core data model management
+  - `useCategoryManagement`: Category-related operations
+  - `useAccountManagement`: Account-related operations
+  - `useTransactionManagement`: Transaction-related operations
+  - `useUIState`: UI state management
+  - `useConfigSettings`: Configuration and settings
+
+### Calculation Layer
+- **Specialized Calculation Hooks**: Broken down by responsibility
+  - `useExpenseAllocations`: Expense allocation calculations
+  - `useGoalAllocations`: Savings goal allocation calculations
+  - `useBudgetSummary`: Buffer and remaining income calculations
+  - `useCategorizedItems`: Category organization
+  - `usePaycheckDates`: Paycheck date generation
+  - `useItemTimelines`: Funding timeline calculations
+  - `useUrgencyScoring`: Urgency categorization
+
+### Utility Layer
+- **Specialized Utility Functions**: Organized by domain
+  - `dateUtils.js`: Date calculations and formatting
+  - `moneyUtils.js`: Currency and financial calculations
+  - `frequencyUtils.js`: Payment frequency conversions
+  - `progressUtils.js`: Funding progress calculations
+  - `formatUtils.js`: Display and formatting utilities
+
+### UI Layer
+- **Reusable Form System**: Standardized form components
+  - `BaseForm`: Common form structure and behavior
+  - Field components: `TextField`, `SelectField`, `DateField`, etc.
+  - `useForm` hook: Form state management and validation
+- **Generic UI Components**:
+  - `SummaryCard`: Configurable card for summary information
+  - `ModalSystem`: Reusable modal system
+  - `ConsolidatedCategoryCard`: Unified category display
+
 ## **✅Complete✅**
  - [x] Calendar view
  - [x] Adding income transactions
@@ -31,7 +73,12 @@ previewer:https://claude.ai/public/artifacts/e01f0441-ca05-41ac-be05-237035d158f
  - [X] Require due dates for recurring expenses
  - [X] Slim down categories and items when collapsed
  - [X] Dark mode hover on goals, expenses
-
+ - [X] Code refactoring and architecture improvements
+  - [X] Standardized data model
+  - [X] Extracted utility functions
+  - [X] Consolidated form components
+  - [X] Broke down calculation hooks
+  - [X] Simplified summary cards
 
 
 

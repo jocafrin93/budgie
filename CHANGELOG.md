@@ -6,8 +6,18 @@
 - Drag and drop reordering for categories, expenses, and goals
 - Dark mode hover state fixes
 
+### Changed
+- Standardized data model using planningItems and activeBudgetAllocations
+- Extracted utility functions for common calculations into specialized files
+- Consolidated form components with a reusable form system
+- Broke down calculation hooks into smaller, more focused hooks
+- Simplified summary cards with a generic component approach
+- Separated Budget Buddy pet into its own component
+
 ### Fixed
 - Text readability in dark mode on hover
+- Improved code maintainability and reduced duplication
+- Enhanced separation of concerns across components
 
 ## [1.0.0] - 2025-06-07
 ### Added
