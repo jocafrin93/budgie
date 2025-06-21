@@ -1,23 +1,21 @@
-import React, { useState, useMemo } from 'react';
-import { useDrag, useDrop } from 'react-dnd';
 import {
-    Plus,
-    Edit2,
-    Trash2,
-    Target,
+    Calculator,
     Calendar,
-    DollarSign,
-    ToggleLeft,
-    ToggleRight,
+    CheckCircle,
     ChevronDown,
     ChevronRight,
-    Calculator,
-    AlertCircle,
-    CheckCircle,
     Clock,
+    Edit2,
+    Ghost,
     GripVertical,
-    Ghost
+    Plus,
+    Target,
+    ToggleLeft,
+    ToggleRight,
+    Trash2
 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useDrag, useDrop } from 'react-dnd';
 
 const DND_TYPES = {
     PLANNING_ITEM: 'planning_item',
@@ -50,6 +48,13 @@ const PlanningItem = ({
 
     const getAmountDisplayInfo = (item, payFrequency, payFrequencyOptions) => {
         const isGoal = item.type === 'savings-goal';
+        const dueDate = item.dueDate ? new Date(item.dueDate) : null;
+        const today = new Date();
+
+        // Get paycheck frequency info
+        const payFreqOption = payFrequencyOptions?.find(opt => opt.value === payFrequency);
+        const paychecksPerMonth = payFreqOption?.paychecksPerMonth || 2.17; // Default to bi-weekly if not set
+        const daysPerPaycheck = Math.ceil(30 / paychecksPerMonth);
 
         let monthlyAmount = 0;
         if (isGoal) {
@@ -65,27 +70,37 @@ const PlanningItem = ({
                 'every-8-weeks': (item.amount || 0) * 0.54,
                 'quarterly': (item.amount || 0) / 3,
                 'annually': (item.amount || 0) / 12,
-                'per-paycheck': (item.amount || 0) * 2.17
+                'per-paycheck': (item.amount || 0) * paychecksPerMonth
             };
             monthlyAmount = frequencyMap[item.frequency] || (item.amount || 0);
         }
 
-        if (!payFrequencyOptions || !payFrequency) {
-            return {
-                monthlyAmount: monthlyAmount || 0,
-                perPaycheckAmount: (monthlyAmount || 0) / 2.17,
-                payFrequencyLabel: 'Bi-weekly'
-            };
+        // Calculate remaining paychecks and amount per paycheck
+        let paychecksUntilDue = null;
+        let perPaycheckAmount = 0;
+
+        if (dueDate) {
+            // Calculate days until due, accounting for timezone
+            const dueTime = new Date(dueDate.getTime() + dueDate.getTimezoneOffset() * 60000);
+            const todayTime = new Date(today.getTime() + today.getTimezoneOffset() * 60000);
+            const daysUntilDue = Math.ceil((dueTime - todayTime) / (24 * 60 * 60 * 1000));
+
+            // Calculate remaining paychecks
+            paychecksUntilDue = Math.max(0, Math.ceil(daysUntilDue / daysPerPaycheck));
+
+            // Calculate per-paycheck amount based on remaining amount and paychecks
+            const allocated = item.allocated || 0;
+            const remaining = Math.max(0, (isGoal ? item.targetAmount : item.amount) - allocated);
+            perPaycheckAmount = paychecksUntilDue > 0 ? remaining / paychecksUntilDue : 0;
+        } else {
+            // No due date - use standard monthly calculation
+            perPaycheckAmount = monthlyAmount / paychecksPerMonth;
         }
 
-        const payFreqOption = payFrequencyOptions.find(opt => opt.value === payFrequency);
-        const paychecksPerMonth = payFreqOption?.paychecksPerMonth || 2.17;
-        const perPaycheckAmount = (monthlyAmount || 0) / paychecksPerMonth;
-
         return {
-            monthlyAmount: monthlyAmount || 0,
-            perPaycheckAmount: perPaycheckAmount || 0,
-            payFrequencyLabel: payFreqOption?.label || 'Bi-weekly'
+            monthlyAmount,
+            perPaycheckAmount,
+            paychecksUntilDue
         };
     };
 
@@ -119,7 +134,11 @@ const PlanningItem = ({
         }
         if (item.dueDate) {
             const date = new Date(item.dueDate);
-            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            return date.toLocaleString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                timeZone: 'UTC'
+            });
         }
         return null;
     };
@@ -242,13 +261,20 @@ const PlanningCategory = ({
             } else {
                 // Convert frequency to monthly amount
                 const frequencyMap = {
-                    'weekly': item.amount * 4.33,
-                    'bi-weekly': item.amount * 2.17,
-                    'monthly': item.amount,
-                    'quarterly': item.amount / 3,
-                    'annually': item.amount / 12
+                    'weekly': (item.amount || 0) * 4.33,
+                    'bi-weekly': (item.amount || 0) * 2.17,
+                    'every-3-weeks': (item.amount || 0) * 1.44,
+                    'monthly': (item.amount || 0),
+                    'every-6-weeks': (item.amount || 0) * 0.72,
+                    'every-7-weeks': (item.amount || 0) * 0.62,
+                    'every-8-weeks': (item.amount || 0) * 0.54,
+                    'quarterly': (item.amount || 0) / 3,
+                    'annually': (item.amount || 0) / 12,
+                    'per-paycheck': (item.amount || 0) * (payFrequencyOptions?.find(opt => opt.value === payFrequency)?.paychecksPerMonth || 2.17)
                 };
-                return total + (frequencyMap[item.frequency] || item.amount);
+                const monthlyAmount = frequencyMap[item.frequency] || (item.amount || 0);
+                const allocated = item.allocated || 0;
+                return total + Math.max(0, monthlyAmount - allocated);
             }
         }, 0);
     };
@@ -408,13 +434,65 @@ const PlanningMode = ({
     onDeleteCategory,
     onAddCategory,
     onMoveItem,
-    onToggleCollapse
+    onToggleCollapse,
+    cleanupInvalidItems // Add this new prop
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'active', 'planning'
     const [showStats, setShowStats] = useState(true);
+    const [cleanupStatus, setCleanupStatus] = useState({ running: false, removed: 0, complete: false });
+    // DEBUG: Log planning items to identify ghost items
+    useEffect(() => {
+        console.log("DEBUG - All planning items:", planningItems);
 
+        // Check for items with missing or invalid categoryId
+        const itemsWithoutValidCategory = planningItems.filter(
+            item => !item.categoryId || !categories.some(cat => cat.id === item.categoryId)
+        );
 
+        // Reset cleanup status when planningItems changes
+        if (cleanupStatus.complete && itemsWithoutValidCategory.length === 0) {
+            setCleanupStatus({ running: false, removed: 0, complete: false });
+        }
+
+        if (itemsWithoutValidCategory.length > 0) {
+            console.log("DEBUG - Items with invalid categoryId:", itemsWithoutValidCategory);
+        }
+
+        // Group items by category to identify potential issues
+        const itemsByCategory = categories.map(category => {
+            const categoryItems = planningItems.filter(item => item.categoryId === category.id);
+            return {
+                categoryId: category.id,
+                categoryName: category.name,
+                itemCount: categoryItems.length,
+                items: categoryItems
+            };
+        });
+
+        console.log("DEBUG - Items by category:", itemsByCategory);
+    }, [planningItems, categories, cleanupStatus.complete]);
+
+    // Handle cleanup of ghost items
+    const handleCleanupGhostItems = () => {
+        if (!cleanupInvalidItems) return;
+
+        setCleanupStatus({ running: true, removed: 0, complete: false });
+
+        // Slightly delay to allow UI to update
+        setTimeout(() => {
+            const removedCount = cleanupInvalidItems();
+            setCleanupStatus({ running: false, removed: removedCount, complete: true });
+        }, 100);
+    };
+
+    // Define validItems earlier so it can be used throughout the component
+    const validItems = planningItems.filter(
+        item => item.categoryId && categories.some(cat => cat.id === item.categoryId)
+    );
+
+    // Count invalid items
+    const invalidItemsCount = planningItems.length - validItems.length;
 
     // Filter and search items
     const filteredCategories = useMemo(() => {
@@ -447,34 +525,43 @@ const PlanningMode = ({
 
     // Calculate summary stats
     const stats = useMemo(() => {
-        const activeItems = planningItems.filter(item => item.isActive);
-        const planningOnlyItems = planningItems.filter(item => !item.isActive);
+        // Filter out items with invalid categoryIds
+        const activeItems = validItems.filter(item => item.isActive);
+        const planningOnlyItems = validItems.filter(item => !item.isActive);
 
         const totalMonthlyNeeds = activeItems.reduce((total, item) => {
             if (item.type === 'savings-goal') {
                 return total + (item.monthlyContribution || 0);
             } else {
                 const frequencyMap = {
-                    'weekly': item.amount * 4.33,
-                    'bi-weekly': item.amount * 2.17,
-                    'monthly': item.amount,
-                    'quarterly': item.amount / 3,
-                    'annually': item.amount / 12
+                    'weekly': (item.amount || 0) * 4.33,
+                    'bi-weekly': (item.amount || 0) * 2.17,
+                    'every-3-weeks': (item.amount || 0) * 1.44,
+                    'monthly': (item.amount || 0),
+                    'every-6-weeks': (item.amount || 0) * 0.72,
+                    'every-7-weeks': (item.amount || 0) * 0.62,
+                    'every-8-weeks': (item.amount || 0) * 0.54,
+                    'quarterly': (item.amount || 0) / 3,
+                    'annually': (item.amount || 0) / 12,
+                    'per-paycheck': (item.amount || 0) * (payFrequencyOptions?.find(opt => opt.value === payFrequency)?.paychecksPerMonth || 2.17)
                 };
-                return total + (frequencyMap[item.frequency] || item.amount);
+                const monthlyAmount = frequencyMap[item.frequency] || (item.amount || 0);
+                const allocated = item.allocated || 0;
+                return total + Math.max(0, monthlyAmount - allocated);
             }
         }, 0);
 
         return {
-            totalItems: planningItems.length,
+            totalItems: validItems.length,
             activeItems: activeItems.length,
             planningOnlyItems: planningOnlyItems.length,
             totalMonthlyNeeds,
             categoriesWithItems: categories.filter(cat =>
                 planningItems.some(item => item.categoryId === cat.id)
-            ).length
+            ).length,
+            invalidItemsCount
         };
-    }, [planningItems, categories]);
+    }, [planningItems, categories, validItems, invalidItemsCount]);
 
     return (
         <div className="space-y-6">
@@ -535,7 +622,7 @@ const PlanningMode = ({
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
                         <div>
                             <div className="text-theme-secondary">Total Items</div>
                             <div className="text-xl font-bold text-theme-primary">{stats.totalItems}</div>
@@ -553,9 +640,47 @@ const PlanningMode = ({
                             <div className="text-xl font-bold text-blue-600">${stats.totalMonthlyNeeds.toFixed(0)}</div>
                         </div>
                     </div>
+
+                    {/* Ghost Item Cleanup Section */}
+                    <div className="border-t border-theme-tertiary pt-3 mt-1">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <Ghost className="w-4 h-4 mr-2 text-theme-tertiary" />
+                                <span className="text-theme-secondary text-sm">
+                                    {stats.invalidItemsCount > 0 ? (
+                                        <>{stats.invalidItemsCount} ghost items detected (invisible items with invalid categories)</>
+                                    ) : (
+                                        <>No ghost items detected</>
+                                    )}
+                                </span>
+                            </div>
+
+                            {stats.invalidItemsCount > 0 && (
+                                <button
+                                    onClick={handleCleanupGhostItems}
+                                    disabled={cleanupStatus.running}
+                                    className="btn-secondary py-1 px-3 rounded text-sm flex items-center"
+                                >
+                                    {cleanupStatus.running ? (
+                                        <>Processing...</>
+                                    ) : (
+                                        <>
+                                            <Trash2 className="w-3 h-3 mr-1" />
+                                            Clean up ghost items
+                                        </>
+                                    )}
+                                </button>
+                            )}
+
+                            {cleanupStatus.complete && (
+                                <span className="text-green-600 text-sm">
+                                    Removed {cleanupStatus.removed} ghost items successfully!
+                                </span>
+                            )}
+                        </div>
+                    </div>
                 </div>
             )}
-
             {/* Categories */}
             <div className="space-y-4">
                 {filteredCategories.length === 0 ? (

@@ -132,8 +132,12 @@ export const convertToUnifiedModel = (expenses = [], savingsGoals = []) => {
  * @returns {Array} Active budget allocations
  */
 export const createActiveBudgetAllocations = (planningItems = []) => {
-  const activeItems = planningItems.filter(item => item.isActive);
-  return activeItems.map((item, index) => {
+  // Only create allocations for items that don't need allocation
+  const readyItems = planningItems.filter(item =>
+    item.isActive && !item.needsAllocation && item.allocated > 0
+  );
+
+  return readyItems.map((item, index) => {
     const monthlyAmount = item.type === 'savings-goal'
       ? item.monthlyContribution
       : item.amount;
@@ -142,7 +146,7 @@ export const createActiveBudgetAllocations = (planningItems = []) => {
       id: index + 1,
       planningItemId: item.id,
       categoryId: item.categoryId,
-      monthlyAllocation: monthlyAmount,
+      monthlyAllocation: item.allocated || monthlyAmount,
       perPaycheckAmount: 0, // This will be calculated later
       sourceAccountId: item.accountId || 1,
       isPaused: false,
@@ -286,60 +290,23 @@ export const calculatePerPaycheckAmounts = (allocations = [], payFrequency, payF
  * @param {Array} accounts - Accounts array
  * @returns {Object} Updated planning items and allocations
  */
-export const togglePlanningItemActive = (planningItems = [], itemId, isActive, allocations = [], accounts = []) => {
-  // Update the planning item
+export const togglePlanningItemActive = (planningItems = [], itemId, isActive) => {
+  // Only update the planning item's active state
   const updatedItems = planningItems.map(item => {
     if (item.id === itemId) {
       return {
         ...item,
         isActive,
         allocationPaused: !isActive,
-        priorityState: isActive ? 'active' : 'paused'
+        priorityState: isActive ? 'active' : 'paused',
+        needsAllocation: isActive // Track items that need allocation
       };
     }
     return item;
   });
 
-  // Find the updated item
-  const updatedItem = updatedItems.find(item => item.id === itemId);
-
-  let updatedAllocations = [...allocations];
-
-  if (isActive) {
-    // Check if an allocation already exists
-    const existingAllocation = allocations.find(alloc => alloc.planningItemId === itemId);
-
-    if (!existingAllocation) {
-      // Create a new allocation
-      const monthlyAmount = updatedItem.type === 'savings-goal'
-        ? updatedItem.monthlyContribution
-        : updatedItem.amount;
-
-      const newAllocation = {
-        id: Math.max(...allocations.map(a => a.id || 0), 0) + 1,
-        planningItemId: itemId,
-        categoryId: updatedItem.categoryId,
-        monthlyAllocation: monthlyAmount,
-        perPaycheckAmount: 0, // Will be calculated later
-        sourceAccountId: updatedItem.accountId || accounts[0]?.id || 1,
-        isPaused: false,
-        createdAt: new Date().toISOString()
-      };
-
-      updatedAllocations = [...updatedAllocations, newAllocation];
-    } else {
-      // Update existing allocation to not be paused
-      updatedAllocations = updatedAllocations.map(alloc =>
-        alloc.planningItemId === itemId ? { ...alloc, isPaused: false } : alloc
-      );
-    }
-  } else {
-    // Remove the allocation or mark it as paused
-    updatedAllocations = updatedAllocations.filter(alloc => alloc.planningItemId !== itemId);
-  }
-
   return {
     planningItems: updatedItems,
-    allocations: updatedAllocations
+    allocations: [] // Return empty array to maintain interface
   };
 };

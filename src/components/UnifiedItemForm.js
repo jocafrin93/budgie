@@ -26,28 +26,35 @@ const UnifiedItemForm = ({
   const isGoal = item?.targetAmount !== undefined;
   const initialType = isGoal ? 'goal' : 'expense';
 
-  // Initialize form with useForm hook
-  const form = useForm({
-    initialValues: {
-      type: initialType,
-      name: item?.name || '',
-      amount: item?.amount || '',
-      usePercentage: item?.usePercentage || false,
-      percentageAmount: item?.percentageAmount || '',
-      frequency: item?.frequency || 'monthly',
-      dueDate: item?.dueDate || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // 30 days from now
-      categoryId: item?.categoryId || preselectedCategory?.id || (categories[0]?.id || ''),
-      accountId: item?.accountId || (accounts[0]?.id || ''),
-      priorityState: item?.priorityState || 'active',
-      isRecurring: item?.isRecurring !== false, // Default to true for new items
-      priority: item?.priority || 'medium',
+  console.log('DEBUG - UnifiedItemForm rendering with categories:', categories);
+  console.log('DEBUG - UnifiedItemForm rendering with preselectedCategory:', preselectedCategory);
 
-      // Goal-specific fields
-      targetAmount: item?.targetAmount || '',
-      targetDate: item?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)), // 1 year from now
-      monthlyContribution: item?.monthlyContribution || '',
-      alreadySaved: item?.alreadySaved || 0,
-    },
+  // Initialize form with useForm hook
+  const initialValues = {
+    type: initialType,
+    name: item?.name || '',
+    amount: item?.amount || '',
+    usePercentage: item?.usePercentage || false,
+    percentageAmount: item?.percentageAmount || '',
+    frequency: item?.frequency || 'monthly',
+    dueDate: item?.dueDate || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // 30 days from now
+    categoryId: item?.categoryId || preselectedCategory?.id || (categories[0]?.id || ''),
+    accountId: item?.accountId || (accounts[0]?.id || ''),
+    priorityState: item?.priorityState || 'active',
+    isRecurring: item?.isRecurring !== false, // Default to true for new items
+    priority: item?.priority || 'medium',
+
+    // Goal-specific fields
+    targetAmount: item?.targetAmount || '',
+    targetDate: item?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)), // 1 year from now
+    monthlyContribution: item?.monthlyContribution || '',
+    alreadySaved: item?.alreadySaved || 0,
+  };
+
+  console.log('DEBUG - Form initialValues:', initialValues);
+
+  const form = useForm({
+    initialValues,
     onSubmit: (values) => {
       // Prepare the data based on item type
       const commonData = {
@@ -118,21 +125,13 @@ const UnifiedItemForm = ({
           errors.dueDate = 'Due date is required';
         }
       } else {
-        // Goal validations are handled by GoalFieldGroup
-        // We need at least 2 of the 3 goal fields
-        const hasTargetAmount = !!values.targetAmount;
-        const hasTargetDate = !!values.targetDate;
-        const hasMonthlyContribution = !!values.monthlyContribution;
-
-        const filledFieldsCount = [
-          hasTargetAmount,
-          hasTargetDate,
-          hasMonthlyContribution
-        ].filter(Boolean).length;
-
-        if (filledFieldsCount < 2) {
-          errors.goalFields = 'Please fill at least 2 of the 3 goal fields';
+        // Simplified goal validation - only require name and target amount
+        // Name is already validated above
+        if (!values.targetAmount) {
+          errors.targetAmount = 'Target amount is required';
         }
+        // Target date is already preset with a default value
+        // Monthly contribution can be calculated or set manually
       }
 
       return errors;
@@ -199,14 +198,34 @@ const UnifiedItemForm = ({
 
   // Handle form submission
   const handleSubmit = () => {
-    console.log('Form values before submit:', form.values);
-    console.log('Form errors:', form.errors);
-    form.handleSubmit();
+    console.log('DEBUG - Form submit button clicked');
+    console.log('DEBUG - Form values before submit:', {
+      name: form.values.name,
+      type: form.values.type,
+      targetAmount: form.values.targetAmount,
+      monthlyContribution: form.values.monthlyContribution,
+      targetDate: form.values.targetDate
+    });
+    console.log('DEBUG - Form errors:', form.errors);
+    console.log('DEBUG - Form isValid:', form.isValid);
+    console.log('DEBUG - onSave function type:', typeof onSave);
+    try {
+      form.handleSubmit();
+      console.log('DEBUG - form.handleSubmit() called successfully');
+    } catch (error) {
+      console.error('DEBUG - Error in form.handleSubmit():', error);
+    }
   };
 
   // Handle "Save & Add Another" button
   const handleSubmitAnother = () => {
-    form.handleSubmit();
+    console.log('DEBUG - Save & Add Another button clicked');
+    try {
+      form.handleSubmit();
+      console.log('DEBUG - form.handleSubmit() called successfully from handleSubmitAnother');
+    } catch (error) {
+      console.error('DEBUG - Error in handleSubmitAnother:', error);
+    }
     // The parent component will handle the "add another" logic
   };
 
@@ -217,7 +236,7 @@ const UnifiedItemForm = ({
       onCancel={onCancel}
       submitLabel={item ? 'Update Item' : 'Add Item'}
       submitAnotherLabel="Save & Add Another"
-      isSubmitDisabled={!form.isValid}
+      isSubmitDisabled={false} // Temporarily bypass validation for all item types
     >
       <SelectField
         {...form.getFieldProps('type')}
@@ -327,16 +346,22 @@ const UnifiedItemForm = ({
         </>
       ) : (
         // Goal-specific fields
-        <GoalFieldGroup
-          targetAmount={form.values.targetAmount}
-          targetDate={form.values.targetDate}
-          monthlyContribution={form.values.monthlyContribution}
-          onTargetAmountChange={(value) => form.setFieldValue('targetAmount', value)}
-          onTargetDateChange={(value) => form.setFieldValue('targetDate', value)}
-          onMonthlyContributionChange={(value) => form.setFieldValue('monthlyContribution', value)}
-          error={form.errors.goalFields}
-          darkMode={darkMode}
-        />
+        <>
+          {console.log('DEBUG - Rendering goal fields with values:', {
+            targetAmount: form.values.targetAmount,
+            targetDate: form.values.targetDate,
+            monthlyContribution: form.values.monthlyContribution
+          })}
+          <GoalFieldGroup
+            formValues={form.values}
+            onChange={(e) => {
+              console.log('DEBUG - GoalFieldGroup onChange:', e.target.name, e.target.value);
+              form.setFieldValue(e.target.name, e.target.value);
+            }}
+            errors={form.errors}
+            darkMode={darkMode}
+          />
+        </>
       )}
 
       {form.values.type === 'goal' && (

@@ -2,7 +2,6 @@
  * BaseForm component
  * A base component for all forms with common structure and behavior
  */
-import React from 'react';
 
 const BaseForm = ({
   onSubmit,
@@ -36,7 +35,7 @@ const BaseForm = ({
     <div className={`space-y-4 ${className}`} onKeyDown={handleKeyDown}>
       {/* Form content */}
       {children}
-      
+
       {/* Action buttons */}
       <div className="flex space-x-2">
         <button
@@ -47,7 +46,7 @@ const BaseForm = ({
         >
           {submitLabel}
         </button>
-        
+
         {showSubmitAnother && onSubmitAnother && (
           <button
             type="button"
@@ -59,7 +58,7 @@ const BaseForm = ({
             {submitAnotherLabel}
           </button>
         )}
-        
+
         {onCancel && (
           <button
             type="button"
@@ -70,7 +69,7 @@ const BaseForm = ({
           </button>
         )}
       </div>
-      
+
       {/* Keyboard shortcuts help */}
       <div className="text-xs text-theme-tertiary mt-2">
         💡 Press Enter to save

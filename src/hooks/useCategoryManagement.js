@@ -168,6 +168,14 @@ export const useCategoryManagement = () => {
       // Calculate what each category SHOULD have allocated based on active items only
       const calculatedCategoryTotals = {};
 
+      // Helper function to validate amount
+      const validateAmount = (amount) => {
+        if (typeof amount !== 'number' || isNaN(amount)) return 0;
+        // Cap at reasonable maximum (e.g., $100,000)
+        return Math.min(Math.max(amount, 0), 100000);
+      };
+
+      // Calculate allocations based on planning items
       currentAllocations.forEach(allocation => {
         const planningItem = currentPlanningItems.find(item => item.id === allocation.planningItemId);
 
@@ -176,23 +184,49 @@ export const useCategoryManagement = () => {
           if (!calculatedCategoryTotals[allocation.categoryId]) {
             calculatedCategoryTotals[allocation.categoryId] = 0;
           }
-          // Convert monthly allocation to current balance (for now, using monthly amount)
-          calculatedCategoryTotals[allocation.categoryId] += allocation.monthlyAllocation || 0;
+
+          let amount = validateAmount(allocation.monthlyAllocation || 0);
+
+          // Convert monthly allocation to current balance based on frequency
+          switch (planningItem.frequency) {
+            case 'weekly':
+              amount = (amount * 52) / 12; // Convert weekly to monthly
+              break;
+            case 'biweekly':
+              amount = (amount * 26) / 12; // Convert biweekly to monthly
+              break;
+            case 'quarterly':
+              amount = amount / 3; // Convert quarterly to monthly
+              break;
+            case 'annually':
+              amount = amount / 12; // Convert annual to monthly
+              break;
+            // Monthly is default, no conversion needed
+          }
+
+          calculatedCategoryTotals[allocation.categoryId] += amount;
         }
+      });
+
+      // Validate final totals
+      Object.keys(calculatedCategoryTotals).forEach(categoryId => {
+        calculatedCategoryTotals[categoryId] = validateAmount(calculatedCategoryTotals[categoryId]);
       });
 
       // Update categories to match calculated totals
       let totalReclaimed = 0;
       setCategories(prev => prev.map(category => {
-        const shouldHaveAllocated = calculatedCategoryTotals[category.id] || 0;
-        const currentlyAllocated = category.allocated || 0;
+        const shouldHaveAllocated = validateAmount(calculatedCategoryTotals[category.id] || 0);
+        const currentlyAllocated = validateAmount(category.allocated || 0);
 
         // Only update if there's a meaningful discrepancy (more than 1 cent)
         if (Math.abs(currentlyAllocated - shouldHaveAllocated) > 0.01) {
           const difference = currentlyAllocated - shouldHaveAllocated;
           totalReclaimed += difference;
 
-          console.log(`Correcting ${category.name}: was $${currentlyAllocated.toFixed(2)}, should be $${shouldHaveAllocated.toFixed(2)} (${difference > 0 ? 'reclaiming' : 'allocating'} $${Math.abs(difference).toFixed(2)})`);
+          if (Math.abs(difference) > 0.01) {
+            console.log(`Adjusting ${category.name} allocation by ${difference > 0 ? '-' : '+'}$${Math.abs(difference).toFixed(2)}`);
+          }
 
           return {
             ...category,

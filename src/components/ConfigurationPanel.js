@@ -1,8 +1,6 @@
-import React from 'react';
-import { Calculator, Download, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
-import CurrencyInput from './CurrencyInput';
-
-
+import { Calculator, Calendar, ChevronDown, ChevronRight, Download } from 'lucide-react';
+import { useState } from 'react';
+import PaycheckManager from './PaycheckManager';
 
 const ConfigurationPanel = ({
     showConfig,
@@ -22,264 +20,206 @@ const ConfigurationPanel = ({
     setShowAddAccount,
     onExport,
     payFrequency,
-    setPayFrequency, payFrequencyOptions
+    setPayFrequency,
+    payFrequencyOptions,
+    // Multi-paycheck system props
+    paychecks,
+    addPaycheck,
+    updatePaycheck,
+    deletePaycheck,
+    togglePaycheckActive,
+    recordPaycheckReceived
 }) => {
+    // State to manage active section
+    const [activeSection, setActiveSection] = useState('paychecks');
+
+    // Toggle section visibility
+    const toggleSection = (section) => {
+        setActiveSection(activeSection === section ? null : section);
+    };
+
     return (
-        <div>
-            {/* Add this as the FIRST section in your existing return */}
-            <div className="bg-theme-primary rounded-lg p-6 border border-theme-secondary mb-6">
-                <h3 className="text-lg font-semibold text-theme-primary mb-4 flex items-center">
-                    <Calendar className="w-5 h-5 mr-2" />
-                    Pay Schedule Configuration
-                </h3>
-
-
-
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                        <label className="block text-sm font-medium text-theme-primary mb-2">
-                            How often are you paid?
-                        </label>
-                        <select
-                            value={payFrequency}
-                            onChange={(e) => setPayFrequency(e.target.value)}
-                            className="w-full p-2 border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary"
-                        >
-                            {payFrequencyOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-theme-tertiary mt-1">
-                            This affects how per-paycheck amounts are calculated throughout the app
-                        </p>
-                    </div>
-
-                    <div className="bg-theme-secondary rounded-lg p-4">
-                        <h4 className="font-medium text-theme-primary mb-2">Calculation Preview</h4>
-                        <div className="text-sm space-y-1">
-                            <div className="flex justify-between">
-                                <span className="text-theme-secondary">Pay frequency:</span>
-                                <span className="text-theme-primary">
-                                    {payFrequencyOptions.find(opt => opt.value === payFrequency)?.label}
-                                </span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-theme-secondary">Paychecks/month:</span>
-                                <span className="text-theme-primary">
-                                    {payFrequencyOptions.find(opt => opt.value === payFrequency)?.paychecksPerMonth}
-                                </span>
-                            </div>
-                            <div className="flex justify-between border-t border-theme-primary pt-1">
-                                <span className="text-theme-secondary">$100/month becomes:</span>
-                                <span className="text-theme-primary font-medium">
-                                    ${(100 / (payFrequencyOptions.find(opt => opt.value === payFrequency)?.paychecksPerMonth || 2.17)).toFixed(2)}/paycheck
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+        <div className="space-y-6">
+            {/* Paychecks Section */}
+            <div className="border border-theme-primary rounded-lg overflow-hidden">
+                <div
+                    className="bg-theme-primary bg-opacity-5 p-4 flex justify-between items-center cursor-pointer"
+                    onClick={() => toggleSection('paychecks')}
+                >
+                    <h3 className="text-lg font-semibold text-theme-primary flex items-center">
+                        <Calendar className="w-5 h-5 mr-2" />
+                        Paychecks
+                    </h3>
+                    {activeSection === 'paychecks' ? (
+                        <ChevronDown className="w-5 h-5 text-theme-primary" />
+                    ) : (
+                        <ChevronRight className="w-5 h-5 text-theme-primary" />
+                    )}
                 </div>
+
+                {activeSection === 'paychecks' && (
+                    <div className="p-4">
+                        <PaycheckManager
+                            accounts={accounts}
+                            paychecks={paychecks}
+                            addPaycheck={addPaycheck}
+                            updatePaycheck={updatePaycheck}
+                            deletePaycheck={deletePaycheck}
+                            togglePaycheckActive={togglePaycheckActive}
+                            recordPaycheckReceived={recordPaycheckReceived}
+                        />
+                    </div>
+                )}
             </div>
 
+            {/* Budget Settings Section */}
+            <div className="border border-theme-primary rounded-lg overflow-hidden">
+                <div
+                    className="bg-theme-primary bg-opacity-5 p-4 flex justify-between items-center cursor-pointer"
+                    onClick={() => toggleSection('budgetSettings')}
+                >
+                    <h3 className="text-lg font-semibold text-theme-primary flex items-center">
+                        <Calculator className="w-5 h-5 mr-2" />
+                        Budget Settings
+                    </h3>
+                    {activeSection === 'budgetSettings' ? (
+                        <ChevronDown className="w-5 h-5 text-theme-primary" />
+                    ) : (
+                        <ChevronRight className="w-5 h-5 text-theme-primary" />
+                    )}
+                </div>
 
-
-
-
-            {showConfig && (
-                <div className="space-y-4">
-                    {/* Split paycheck section */}
-                    <div className="p-4 rounded border border-theme-primary bg-theme-secondary">
-                        <div className="flex items-center mb-2">
-                            <input
-                                type="checkbox"
-                                id="splitPaycheck"
-                                checked={paySchedule.splitPaycheck}
-                                onChange={(e) => setPaySchedule(prev => ({
-                                    ...prev,
-                                    splitPaycheck: e.target.checked,
-                                }))}
-                                className="mr-2"
-                            />
-                            <label htmlFor="splitPaycheck" className="text-sm font-medium text-theme-primary">
-                                I receive split paychecks (direct deposit to multiple accounts)
-                            </label>
-                            {paySchedule.splitPaycheck && accounts.length >= 2 && (
-                                <span className="ml-2 text-xs bg-purple-400 text-theme-primary px-2 py-1 rounded">
-                                    Split Pay
-                                </span>
-                            )}
-                        </div>
-
-                        {paySchedule.splitPaycheck && accounts.length < 2 && (
-                            <div className="p-3 rounded border border-yellow-400 bg-yellow-100 mb-4">
-                                <div className="flex items-center text-sm">
-                                    <span className="mr-2">💡</span>
-                                    <span className="text-yellow-800">You'll need a second account to split your paycheck.</span>
-                                    <button
-                                        onClick={() => setShowAddAccount(true)}
-                                        className="ml-2 hover:underline text-blue-600 hover:text-blue-700"
-                                    >
-                                        Add Account
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {paySchedule.splitPaycheck && accounts.length >= 2 && (
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1 text-theme-primary">Primary Account</label>
-                                        <select
-                                            value={paySchedule.primaryAccountId}
-                                            onChange={(e) => setPaySchedule(prev => ({
-                                                ...prev,
-                                                primaryAccountId: parseInt(e.target.value),
-                                            }))}
-                                            className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                                        >
-                                            {accounts.map(account => (
-                                                <option key={account.id} value={account.id}>
-                                                    {account.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1 text-theme-primary">Primary Amount</label>
-                                        <CurrencyInput
-                                            value={paySchedule.primaryAmount}
-                                            onChange={(e) => setPaySchedule(prev => ({
-                                                ...prev,
-                                                primaryAmount: parseFloat(e.target.value) || 0,
-                                            }))}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1 text-theme-primary">Secondary Account</label>
-                                        <select
-                                            value={paySchedule.secondaryAccountId}
-                                            onChange={(e) => setPaySchedule(prev => ({
-                                                ...prev,
-                                                secondaryAccountId: parseInt(e.target.value),
-                                            }))}
-                                            className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                                        >
-                                            {accounts
-                                                .filter(acc => acc.id !== paySchedule.primaryAccountId)
-                                                .map(account => (
-                                                    <option key={account.id} value={account.id}>
-                                                        {account.name}
-                                                    </option>
-                                                ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1 text-theme-primary">Secondary Amount</label>
-                                        <CurrencyInput
-                                            value={paySchedule.secondaryAmount}
-                                            onChange={(e) => setPaySchedule(prev => ({
-                                                ...prev,
-                                                secondaryAmount: parseFloat(e.target.value) || 0,
-                                            }))}
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1 text-theme-primary">Days Early</label>
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            max="7"
-                                            value={paySchedule.secondaryDaysEarly}
-                                            onChange={(e) => setPaySchedule(prev => ({
-                                                ...prev,
-                                                secondaryDaysEarly: parseInt(e.target.value) || 0,
-                                            }))}
-                                            className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Main config row */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-theme-primary">
-                                {whatIfMode ? 'What-If Pay' : 'Take-home Pay'} (bi-weekly)
-                            </label>
-                            {paySchedule.splitPaycheck ? (
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-theme-tertiary">$</span>
-                                    <div className="w-full pl-8 p-2 border rounded bg-theme-tertiary border-theme-primary text-theme-secondary">
-                                        {(paySchedule.primaryAmount + paySchedule.secondaryAmount).toFixed(2)}
-                                    </div>
-                                </div>
-                            ) : (
-                                <CurrencyInput
-                                    value={whatIfMode ? whatIfPay : takeHomePay}
-                                    onChange={(e) =>
-                                        whatIfMode
-                                            ? setWhatIfPay(parseFloat(e.target.value) || 0)
-                                            : setTakeHomePay(parseFloat(e.target.value) || 0)
-                                    }
-                                    className={whatIfMode ? 'ring-2 ring-blue-500' : ''}
-                                />
-                            )}
-                            {!paySchedule.splitPaycheck && (
+                {activeSection === 'budgetSettings' && (
+                    <div className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1 text-theme-primary">Rounding</label>
+                                <select
+                                    value={roundingOption}
+                                    onChange={(e) => setRoundingOption(parseInt(e.target.value))}
+                                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
+                                >
+                                    <option value={0}>No rounding</option>
+                                    <option value={5}>Round to $5</option>
+                                    <option value={10}>Round to $10</option>
+                                </select>
                                 <div className="text-xs text-theme-tertiary mt-1">
-                                    Complete bi-weekly amount
+                                    Automatically round budget amounts
                                 </div>
-                            )}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1 text-theme-primary">Buffer (%)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="20"
+                                    value={bufferPercentage}
+                                    onChange={(e) => setBufferPercentage(parseFloat(e.target.value) || 0)}
+                                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
+                                />
+                                <div className="text-xs text-theme-tertiary mt-1">
+                                    Extra padding for your budget allocations
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1 text-theme-primary">Pay Frequency</label>
+                                <select
+                                    value={payFrequency}
+                                    onChange={(e) => setPayFrequency(e.target.value)}
+                                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
+                                >
+                                    {payFrequencyOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="text-xs text-theme-tertiary mt-1">
+                                    Default for new paychecks
+                                </div>
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-theme-primary">Rounding</label>
-                            <select
-                                value={roundingOption}
-                                onChange={(e) => setRoundingOption(parseInt(e.target.value))}
-                                className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                            >
-                                <option value={0}>No rounding</option>
-                                <option value={5}>Round to $5</option>
-                                <option value={10}>Round to $10</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-theme-primary">Buffer (%)</label>
-                            <input
-                                type="number"
-                                min="0"
-                                max="20"
-                                value={bufferPercentage}
-                                onChange={(e) => setBufferPercentage(parseFloat(e.target.value) || 0)}
-                                className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-theme-primary">Next Paycheck Date</label>
-                            <input
-                                type="date"
-                                value={paySchedule.startDate}
-                                onChange={(e) => setPaySchedule(prev => ({
-                                    ...prev,
-                                    startDate: e.target.value,
-                                }))}
-                                className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                            // style={{ colorScheme: 'dark' }}
-                            />
+                        <div className="mt-6 bg-theme-secondary bg-opacity-10 p-4 rounded">
+                            <h4 className="font-medium text-theme-primary mb-2">Calculation Preview</h4>
+                            <div className="text-sm space-y-1">
+                                <div className="flex justify-between">
+                                    <span className="text-theme-secondary">Pay frequency:</span>
+                                    <span className="text-theme-primary">
+                                        {payFrequencyOptions.find(opt => opt.value === payFrequency)?.label}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-theme-secondary">Paychecks/month:</span>
+                                    <span className="text-theme-primary">
+                                        {payFrequencyOptions.find(opt => opt.value === payFrequency)?.paychecksPerMonth}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between border-t border-theme-primary border-opacity-20 pt-1 mt-1">
+                                    <span className="text-theme-secondary">$100/month becomes:</span>
+                                    <span className="text-theme-primary font-medium">
+                                        ${(100 / (payFrequencyOptions.find(opt => opt.value === payFrequency)?.paychecksPerMonth || 2.17)).toFixed(2)}/paycheck
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                )}
+            </div>
+
+            {/* Export/Import Section */}
+            <div className="border border-theme-primary rounded-lg overflow-hidden">
+                <div
+                    className="bg-theme-primary bg-opacity-5 p-4 flex justify-between items-center cursor-pointer"
+                    onClick={() => toggleSection('exportImport')}
+                >
+                    <h3 className="text-lg font-semibold text-theme-primary flex items-center">
+                        <Download className="w-5 h-5 mr-2" />
+                        Export & Import
+                    </h3>
+                    {activeSection === 'exportImport' ? (
+                        <ChevronDown className="w-5 h-5 text-theme-primary" />
+                    ) : (
+                        <ChevronRight className="w-5 h-5 text-theme-primary" />
+                    )}
+                </div>
+
+                {activeSection === 'exportImport' && (
+                    <div className="p-4">
+                        <div className="flex flex-col space-y-4">
+                            <button
+                                onClick={onExport}
+                                className="bg-theme-primary text-white px-4 py-2 rounded hover:bg-opacity-90 flex items-center"
+                            >
+                                <Download className="w-4 h-4 mr-2" />
+                                Export Budget Data
+                            </button>
+
+                            <div className="text-sm text-theme-secondary">
+                                Export your budget data as a JSON file for backup or transfer to another device.
+                            </div>
+
+                            {/* Add import functionality in the future */}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Legacy compatibility - hidden form elements to maintain existing state management */}
+            {showConfig && (
+                <div className="hidden">
+                    <input
+                        type="checkbox"
+                        checked={paySchedule.splitPaycheck || false}
+                        onChange={() => { }}
+                    />
+                    <input
+                        type="date"
+                        value={paySchedule.startDate || ''}
+                        onChange={() => { }}
+                    />
                 </div>
             )}
         </div>

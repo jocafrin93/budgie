@@ -1,13 +1,15 @@
-import { AlertTriangle, Calculator, Calendar, DollarSign, Plus, Settings, Target } from 'lucide-react';
+import { AlertTriangle, Calculator, Calendar, DollarSign, PackageOpen, Plus, Settings, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Import NEW streamlined components
-import ConsolidatedCategoryCard from './components/ConsolidatedCategoryCard';
 import ModalSystem from './components/ModalSystem';
 import SimplifiedSummaryCards from './components/SimplifiedSummaryCards';
 import UnifiedItemForm from './components/UnifiedItemForm';
+// Import our new envelope budgeting system components
+import EnvelopeBudgetingSystem from './components/EnvelopeBudgetingSystem';
+
 // Import existing components we're keeping
 import AccountsSection from './components/AccountsSection';
 import AddAccountForm from './components/AddAccountForm';
@@ -16,7 +18,6 @@ import AddTransactionForm from './components/AddTransactionForm';
 import CalendarView from './components/CalendarView';
 import ConfigurationPanel from './components/ConfigurationPanel';
 import ConfirmDialog from './components/ConfirmDialog';
-import ImprovedFundingMode from './components/ImprovedFundingMode';
 import PlanningMode from './components/PlanningMode';
 import ThemeSelector from './components/ThemeSelector';
 import TransactionsTab from './components/TransactionsTab';
@@ -29,6 +30,7 @@ import { usePaycheckTimeline } from './hooks/usePaycheckTimeline';
 import { useAccountManagement } from './hooks/useAccountManagement';
 import { useCategoryManagement } from './hooks/useCategoryManagement';
 import { useConfigSettings } from './hooks/useConfigSettings';
+import { usePaycheckManagement } from './hooks/usePaycheckManagement';
 import { useTransactionManagement } from './hooks/useTransactionManagement';
 import { useUIState } from './hooks/useUIState';
 
@@ -46,7 +48,8 @@ const App = () => {
         updateItem,
         removeItem,
         toggleItemActive,
-        moveItem
+        moveItem,
+        cleanupInvalidItems
     } = useDataModel();
 
     const {
@@ -148,6 +151,22 @@ const App = () => {
         calculateMonthlyIncome
     } = useConfigSettings();
 
+    // Initialize the multi-paycheck management system
+    const {
+        paychecks,
+        addPaycheck,
+        updatePaycheck,
+        deletePaycheck,
+        togglePaycheckActive,
+        recordPaycheckReceived,
+        paycheckHistory,
+        getUpcomingPaychecks,
+        getTotalMonthlyIncome
+    } = usePaycheckManagement(accounts);
+
+    // State for budget mode (item-based vs envelope)
+    const [budgetMode, setBudgetMode] = useState('item-based'); // 'item-based' or 'envelope'
+
     // State for what-if mode (keeping this in App.js for now)
     const [whatIfMode, setWhatIfMode] = useState(false);
     const [whatIfPay, setWhatIfPay] = useState(currentPay);
@@ -205,25 +224,40 @@ const App = () => {
 
     // Handler functions
     const handleSaveItem = (itemData, addAnother = false) => {
-        if (editingItem) {
-            // Update existing item
-            updateItem(editingItem.id, itemData);
-            setEditingItem(null);
-        } else {
-            // Add new item
-            addItem(itemData);
+        console.log('DEBUG - App.js handleSaveItem called with data:', itemData);
+        console.log('DEBUG - editingItem:', editingItem);
+        console.log('DEBUG - addAnother:', addAnother);
 
-            if (!addAnother) {
-                setShowAddItem(false);
-                setPreselectedCategory(null);
+        try {
+            if (editingItem) {
+                // Update existing item
+                console.log('DEBUG - Updating existing item with ID:', editingItem.id);
+                updateItem(editingItem.id, itemData);
+                setEditingItem(null);
+            } else {
+                // Add new item
+                console.log('DEBUG - Adding new item');
+                addItem(itemData);
+                console.log('DEBUG - After addItem call');
+
+                if (!addAnother) {
+                    setShowAddItem(false);
+                    setPreselectedCategory(null);
+                }
             }
-        }
 
-        // Recalculate category allocations after any item changes
-        setTimeout(() => {
-            // Pass current state to ensure calculations use the most up-to-date data
-            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
-        }, 100);
+            // Recalculate category allocations after any item changes
+            console.log('DEBUG - Setting timeout for recalculation');
+            setTimeout(() => {
+                console.log('DEBUG - Recalculating category allocations');
+                // Pass current state to ensure calculations use the most up-to-date data
+                calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+            }, 100);
+
+            console.log('DEBUG - handleSaveItem completed successfully');
+        } catch (error) {
+            console.error('DEBUG - Error in handleSaveItem:', error);
+        }
     };
 
     const handleDeleteExpense = (expenseId) => {
@@ -294,13 +328,26 @@ const App = () => {
     };
 
     const handleToggleItemActive = (itemId, isActive) => {
+        // Toggle item active state and mark for allocation if being activated
         toggleItemActive(itemId, isActive);
 
-        // IMMEDIATELY recalculate category allocations after any change
-        setTimeout(() => {
-            // Pass current state to ensure calculations use the most up-to-date data
-            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
-        }, 100);
+        // Force immediate sync
+        const updatedItems = planningItems.map(item => {
+            if (item.id === itemId) {
+                return {
+                    ...item,
+                    isActive,
+                    needsAllocation: isActive // Mark for allocation if being activated
+                };
+            }
+            return item;
+        });
+
+        // Update derived states
+        const derivedExpenses = getExpensesFromPlanningItems(updatedItems);
+        const derivedSavingsGoals = getSavingsGoalsFromPlanningItems(updatedItems);
+        setExpenses(derivedExpenses);
+        setSavingsGoals(derivedSavingsGoals);
     };
 
     const handleMoveItem = (itemId, newCategoryId) => {
@@ -365,17 +412,20 @@ const App = () => {
                                 </div>
                             </div>
 
-                            {/* Planning/Funding Mode Toggle (only show on budget tab) */}
+                            {/* Simplified Budget Mode Toggle */}
                             {activeTab === 'budget' && (
-                                <button
-                                    onClick={toggleViewMode}
-                                    className={`btn-secondary p-2 rounded-lg flex items-center space-x-2 ${viewMode === 'funding' ? 'btn-success' : ''}`}
-                                >
-                                    {viewMode === 'planning' ? <Target className="w-4 h-4" /> : <DollarSign className="w-4 h-4" />}
-                                    <span className="text-sm hidden sm:inline">
-                                        {viewMode === 'planning' ? 'Planning' : 'Funding'}
-                                    </span>
-                                </button>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => setBudgetMode(budgetMode === 'item-based' ? 'envelope' : 'item-based')}
+                                        className={`btn-secondary p-2 rounded-lg flex items-center space-x-2 ${budgetMode === 'envelope' ? 'btn-info' : ''}`}
+                                        title={budgetMode === 'item-based' ? 'Switch to Envelope Budgeting' : 'Switch to Item-Based Planning'}
+                                    >
+                                        {budgetMode === 'item-based' ? <PackageOpen className="w-4 h-4" /> : <Target className="w-4 h-4" />}
+                                        <span className="text-sm hidden sm:inline">
+                                            {budgetMode === 'item-based' ? 'Item-Based' : 'Envelope'}
+                                        </span>
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -435,12 +485,12 @@ const App = () => {
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 className="text-2xl font-bold text-theme-primary">
-                                        {viewMode === 'planning' ? '📋 Budget Planning' : '💰 Smart Category Funding'}
+                                        {budgetMode === 'envelope' ? '💰 Envelope Budgeting' : '📋 Item-Based Budget'}
                                     </h2>
                                     <p className="text-theme-secondary">
-                                        {viewMode === 'planning'
-                                            ? 'Plan your expenses and goals by category - toggle items between active funding and planning-only'
-                                            : 'Get intelligent funding recommendations based on priorities, deadlines, and current balances'
+                                        {budgetMode === 'envelope'
+                                            ? 'Give every dollar a job with YNAB-style envelope budgeting'
+                                            : 'Plan and manage expenses and goals with flexible active/planning states'
                                         }
                                     </p>
                                 </div>
@@ -453,91 +503,78 @@ const App = () => {
                                 </button>
                             </div>
 
-                            {/* Conditional Rendering Based on View Mode */}
-                            {viewMode === 'planning' ? (
-                                <PlanningMode
+                            {/* Conditional Rendering Based on Budget Mode */}
+                            {budgetMode === 'envelope' ? (
+                                /* Envelope Budgeting Mode */
+                                <EnvelopeBudgetingSystem
                                     categories={categories}
+                                    setCategories={setCategories}
                                     planningItems={planningItems}
-                                    expenses={expenses}
-                                    savingsGoals={savingsGoals}
-                                    payFrequency={payFrequency}
-                                    payFrequencyOptions={payFrequencyOptions}
-                                    onAddItem={openAddItemModal}
-                                    onEditItem={openEditItemModal}
-                                    onDeleteItem={(item) => openConfirmDeleteDialog(
-                                        item.type === 'savings-goal' ? 'goal' : 'expense',
-                                        item.id,
-                                        item.name,
-                                        `Delete "${item.name}"?`
-                                    )}
-                                    onToggleItemActive={handleToggleItemActive}
-                                    onEditCategory={openEditCategoryModal}
-                                    onDeleteCategory={(cat) => openConfirmDeleteDialog(
-                                        'category',
-                                        cat.id,
-                                        cat.name,
-                                        `Delete "${cat.name}"? All items will be moved to the first category.`
-                                    )}
-                                    onAddCategory={openAddCategoryModal}
-                                    onMoveItem={handleMoveItem}
-                                    onToggleCollapse={toggleCategoryCollapse}
+                                    transactions={transactions}
+                                    accounts={accounts}
+                                    paychecks={paychecks}
+                                    onAddCategory={addCategory}
+                                    onEditCategory={updateCategory}
+                                    onDeleteCategory={deleteCategory}
+                                    onAddItem={addItem}
+                                    onEditItem={updateItem}
+                                    onDeleteItem={(itemId) => {
+                                        // Find the item to get its category and amount
+                                        const item = planningItems.find(i => i.id === itemId);
+                                        if (item && item.categoryId) {
+                                            // Return funds to the category before removing the item
+                                            const category = categories.find(c => c.id === item.categoryId);
+                                            if (category && category.available > 0) {
+                                                fundCategory(item.categoryId, -category.available);
+                                            }
+                                        }
+                                        removeItem(itemId);
+                                        // Recalculate category allocations after deletion
+                                        setTimeout(() => {
+                                            calculateCorrectCategoryAllocations();
+                                        }, 100);
+                                    }}
+                                    onToggleItemActive={toggleItemActive}
+                                    recordPaycheckReceived={recordPaycheckReceived}
                                 />
                             ) : (
+                                /* Item-Based Planning Mode */
                                 <div className="space-y-6">
-                                    <ImprovedFundingMode
+                                    <PlanningMode
                                         categories={categories}
+                                        planningItems={planningItems}
+                                        expenses={expenses}
+                                        savingsGoals={savingsGoals}
+                                        payFrequency={payFrequency}
+                                        payFrequencyOptions={payFrequencyOptions}
+                                        onAddItem={openAddItemModal}
+                                        onEditItem={openEditItemModal}
+                                        onDeleteItem={(item) => openConfirmDeleteDialog(
+                                            item.type === 'savings-goal' ? 'goal' : 'expense',
+                                            item.id,
+                                            item.name,
+                                            `Delete "${item.name}"?`
+                                        )}
+                                        onToggleItemActive={handleToggleItemActive}
+                                        onEditCategory={openEditCategoryModal}
+                                        onDeleteCategory={(cat) => openConfirmDeleteDialog(
+                                            'category',
+                                            cat.id,
+                                            cat.name,
+                                            `Delete "${cat.name}"? All items will be moved to the first category.`
+                                        )}
+                                        onAddCategory={openAddCategoryModal}
+                                        onMoveItem={handleMoveItem}
+                                        onToggleCollapse={toggleCategoryCollapse}
+                                        cleanupInvalidItems={cleanupInvalidItems}
                                         availableFunds={allocationData.toBeAllocated}
                                         onFundCategory={fundCategory}
                                         paySchedule={paySchedule}
-                                        planningItems={planningItems}
                                         activeBudgetAllocations={activeBudgetAllocations}
-                                        payFrequency={payFrequency}
-                                        payFrequencyOptions={payFrequencyOptions}
                                     />
-
-                                    <div>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-lg font-semibold text-theme-primary">Manual Category Funding</h3>
-                                            <div className="text-sm text-theme-secondary">
-                                                Or fund categories individually below
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            {categories.map(category => (
-                                                <ConsolidatedCategoryCard
-                                                    key={category.id}
-                                                    category={category}
-                                                    planningItems={planningItems}
-                                                    timeline={timelineData}
-                                                    viewMode={viewMode}
-                                                    onFund={fundCategory}
-                                                    onEditCategory={openEditCategoryModal}
-                                                    onDeleteCategory={(cat) => openConfirmDeleteDialog(
-                                                        'category',
-                                                        cat.id,
-                                                        cat.name,
-                                                        `Delete "${cat.name}"? All items will be moved to the first category.`
-                                                    )}
-                                                    onAddItem={openAddItemModal}
-                                                    onEditItem={openEditItemModal}
-                                                    onDeleteItem={(item) => openConfirmDeleteDialog(
-                                                        item.type === 'savings-goal' ? 'goal' : 'expense',
-                                                        item.id,
-                                                        item.name,
-                                                        `Delete "${item.name}"?`
-                                                    )}
-                                                    onToggleItemActive={handleToggleItemActive}
-                                                    onToggleCollapse={toggleCategoryCollapse}
-                                                    onMoveItem={handleMoveItem}
-                                                    payFrequency={payFrequency}
-                                                    payFrequencyOptions={payFrequencyOptions}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
                                 </div>
                             )}
+
                         </div>
                     )}
 
@@ -596,6 +633,13 @@ const App = () => {
                                 payFrequency={payFrequency}
                                 setPayFrequency={setPayFrequency}
                                 payFrequencyOptions={payFrequencyOptions}
+                                // Multi-paycheck system props
+                                paychecks={paychecks}
+                                addPaycheck={addPaycheck}
+                                updatePaycheck={updatePaycheck}
+                                deletePaycheck={deletePaycheck}
+                                togglePaycheckActive={togglePaycheckActive}
+                                recordPaycheckReceived={recordPaycheckReceived}
                             />
                         </div>
                     )}

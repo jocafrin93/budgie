@@ -3,9 +3,8 @@
  * A standardized currency input field for forms
  * Uses the CurrencyInput component internally with "cash register" style input
  */
-import React from 'react';
-import FormField from './FormField';
 import CurrencyInput from '../CurrencyInput';
+import FormField from './FormField';
 
 const CurrencyField = ({
   name,
@@ -22,8 +21,20 @@ const CurrencyField = ({
   ...props
 }) => {
   const handleChange = (e) => {
+    console.log('DEBUG - CurrencyField handleChange:', { name, value: e.target.value });
+
     if (onChange) {
-      onChange(e);
+      // Create a new synthetic event with the proper field name
+      const updatedEvent = {
+        ...e,
+        target: {
+          ...e.target,
+          name: name, // Add the field name to the event
+          value: e.target.value
+        }
+      };
+
+      onChange(updatedEvent);
     }
   };
 
