@@ -34,9 +34,9 @@ export const useExpenseAllocations = ({
   return useMemo(() => {
     // Determine which data model to use
     const useUnifiedModel = planningItems.length > 0;
-    
+
     // If using unified model, derive expenses
-    const effectiveExpenses = useUnifiedModel 
+    const effectiveExpenses = useUnifiedModel
       ? getExpensesFromPlanningItems(planningItems)
       : expenses;
 
@@ -54,44 +54,65 @@ export const useExpenseAllocations = ({
     // Process expenses with error handling
     const expenseAllocations = effectiveExpenses.map(expense => {
       try {
+        // Parse and calculate important values first
+        const amount = parseFloat(expense.amount) || 0;
+        const alreadySaved = parseFloat(expense.alreadySaved) || 0;
+        const remainingNeeded = calculateRemainingNeeded(amount, alreadySaved);
+        const fundingProgress = calculateFundingProgress(amount, alreadySaved);
+        const fullyFunded = isFullyFunded(fundingProgress);
+
         // If using unified model and we have active allocations, use those values
         if (useUnifiedModel && activeBudgetAllocations.length > 0) {
           // Find the corresponding planning item
-          const planningItem = planningItems.find(item => 
+          const planningItem = planningItems.find(item =>
             item.type === 'expense' && item.id === expense.id
           );
-          
+
           // Find the corresponding allocation
           const allocation = planningItem && planningItem.isActive
             ? activeBudgetAllocations.find(alloc => alloc.planningItemId === expense.id)
             : null;
-            
-          // If we have an allocation, use its values
+
+          // If we have an allocation, use its values, but adjust for remaining needed
           if (allocation) {
-            const amount = parseFloat(expense.amount) || 0;
-            const alreadySaved = parseFloat(expense.alreadySaved) || 0;
-            const remainingNeeded = calculateRemainingNeeded(amount, alreadySaved);
-            const fundingProgress = calculateFundingProgress(amount, alreadySaved);
-            const fullyFunded = isFullyFunded(fundingProgress);
-            
+            let adjustedBiweeklyAmount = allocation.perPaycheckAmount || 0;
+
+            // If fully funded, set to 0
+            if (fullyFunded) {
+              adjustedBiweeklyAmount = 0;
+            }
+            // For partially funded expenses, adjust the per-paycheck amount based on remaining needed
+            else if (remainingNeeded < amount) {
+              // Calculate the proportion of the original amount that still needs to be funded
+              const remainingProportion = remainingNeeded / amount;
+              // Scale the per-paycheck amount by this proportion
+              adjustedBiweeklyAmount = adjustedBiweeklyAmount * remainingProportion;
+            }
+
             return {
               ...expense,
-              biweeklyAmount: allocation.perPaycheckAmount || 0,
-              percentage: calculatePercentage(allocation.perPaycheckAmount, currentPay),
+              biweeklyAmount: adjustedBiweeklyAmount,
+              percentage: calculatePercentage(adjustedBiweeklyAmount, currentPay),
               remainingNeeded,
               fundingProgress,
               isFullyFunded: fullyFunded,
             };
           }
         }
-        
-        // Fall back to calculating from scratch
-        const biweeklyAmount = calculateBiweeklyAllocation(expense, frequencyOptions, roundingOption);
-        const amount = parseFloat(expense.amount) || 0;
-        const alreadySaved = parseFloat(expense.alreadySaved) || 0;
-        const remainingNeeded = calculateRemainingNeeded(amount, alreadySaved);
-        const fundingProgress = calculateFundingProgress(amount, alreadySaved);
-        const fullyFunded = isFullyFunded(fundingProgress);
+
+        // Fall back to calculating from scratch - use remaining needed instead of total amount
+        let biweeklyAmount = 0;
+
+        if (remainingNeeded > 0 && !fullyFunded) {
+          // Create a modified expense object with the remaining amount
+          const modifiedExpense = {
+            ...expense,
+            amount: remainingNeeded
+          };
+
+          // Calculate biweekly amount based on the remaining needed
+          biweeklyAmount = calculateBiweeklyAllocation(modifiedExpense, frequencyOptions, roundingOption);
+        }
 
         return {
           ...expense,
@@ -116,7 +137,7 @@ export const useExpenseAllocations = ({
 
     // Calculate total expense allocation
     const totalExpenseAllocation = expenseAllocations.reduce(
-      (sum, exp) => sum + (exp.biweeklyAmount || 0), 
+      (sum, exp) => sum + (exp.biweeklyAmount || 0),
       0
     );
 

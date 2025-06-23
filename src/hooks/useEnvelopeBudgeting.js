@@ -149,20 +149,14 @@ export const useEnvelopeBudgeting = ({
       }
     }
 
-    // Only allow allocation if:
-    // 1. It's removing funds (negative amount)
-    // 2. It's part of paycheck workflow (has paycheckId)
-    // 3. It's a manual allocation AND no items need allocation
-    if (!isRemoving && !paycheckId) {
-      // Check if any items in this category need allocation
-      const categoryItems = planningItems.filter(item => item.categoryId === categoryId);
-      const hasItemsNeedingAllocation = categoryItems.some(item => item.needsAllocation);
+    // Get items in this category that need allocation
+    const categoryItems = planningItems.filter(item =>
+      item.categoryId === categoryId &&
+      (item.isActive || (!item.allocationPaused && item.priorityState === 'active'))
+    );
 
-      if (hasItemsNeedingAllocation) {
-        console.log('Skipping automatic allocation - items need manual allocation');
-        return false;
-      }
-    }
+    // For manual allocations, we'll update the items' allocated amounts
+    const isManualAllocation = !paycheckId;
 
     // Update category
     setCategories(currentCategories =>
@@ -194,19 +188,38 @@ export const useEnvelopeBudgeting = ({
       }
     ]);
 
-    // Update item allocation if this is part of paycheck workflow
-    if (paycheckId && validatedAmount > 0) {
-      const categoryItems = planningItems.filter(item =>
-        item.categoryId === categoryId &&
-        item.needsAllocation
-      );
+    // Update item allocation for both paycheck workflow and manual allocation
+    if (validatedAmount > 0) {
+      // For paycheck workflow, only update items that need allocation
+      const itemsToUpdate = paycheckId
+        ? planningItems.filter(item =>
+          item.categoryId === categoryId &&
+          item.needsAllocation
+        )
+        : categoryItems.filter(item =>
+          !item.isFullyFunded &&
+          item.amount > (item.allocated || 0)
+        );
 
-      if (categoryItems.length > 0) {
-        // Distribute the amount among items needing allocation
-        const amountPerItem = validatedAmount / categoryItems.length;
-        categoryItems.forEach(item => {
+      if (itemsToUpdate.length > 0) {
+        // Distribute the amount among items
+        const amountPerItem = validatedAmount / itemsToUpdate.length;
+        itemsToUpdate.forEach(item => {
+          // Mark as not needing allocation
           item.needsAllocation = false;
-          item.allocated = (item.allocated || 0) + amountPerItem;
+
+          // Update allocated amount
+          const currentAllocated = item.allocated || 0;
+          const targetAmount = item.type === 'savings-goal'
+            ? item.targetAmount
+            : item.amount;
+
+          // Don't allocate more than needed
+          const remainingNeeded = Math.max(0, targetAmount - currentAllocated);
+          const allocateAmount = Math.min(amountPerItem, remainingNeeded);
+
+          item.allocated = currentAllocated + allocateAmount;
+          item.alreadySaved = item.allocated; // Update alreadySaved to match allocated
         });
       }
     }

@@ -32,7 +32,7 @@ export const useGoalAllocations = ({
   return useMemo(() => {
     // Determine which data model to use
     const useUnifiedModel = planningItems.length > 0;
-    
+
     // If using unified model, derive savings goals
     const effectiveSavingsGoals = useUnifiedModel
       ? getSavingsGoalsFromPlanningItems(planningItems)
@@ -52,44 +52,66 @@ export const useGoalAllocations = ({
     // Process goals with error handling
     const goalAllocations = effectiveSavingsGoals.map(goal => {
       try {
+        // Parse and calculate important values first
+        const targetAmount = parseFloat(goal.targetAmount) || 0;
+        const alreadySaved = parseFloat(goal.alreadySaved) || 0;
+        const remainingNeeded = calculateRemainingNeeded(targetAmount, alreadySaved);
+        const fundingProgress = calculateFundingProgress(targetAmount, alreadySaved);
+        const fullyFunded = isFullyFunded(fundingProgress);
+
         // If using unified model and we have active allocations, use those values
         if (useUnifiedModel && activeBudgetAllocations.length > 0) {
           // Find the corresponding planning item
-          const planningItem = planningItems.find(item => 
+          const planningItem = planningItems.find(item =>
             item.type === 'savings-goal' && item.id === goal.id
           );
-          
+
           // Find the corresponding allocation
           const allocation = planningItem && planningItem.isActive
             ? activeBudgetAllocations.find(alloc => alloc.planningItemId === goal.id)
             : null;
-            
-          // If we have an allocation, use its values
+
+          // If we have an allocation, use its values but adjust for remaining needed
           if (allocation) {
-            const targetAmount = parseFloat(goal.targetAmount) || 0;
-            const alreadySaved = parseFloat(goal.alreadySaved) || 0;
-            const remainingNeeded = calculateRemainingNeeded(targetAmount, alreadySaved);
-            const fundingProgress = calculateFundingProgress(targetAmount, alreadySaved);
-            const fullyFunded = isFullyFunded(fundingProgress);
-            
+            let adjustedBiweeklyAmount = allocation.perPaycheckAmount || 0;
+
+            // If fully funded, set to 0
+            if (fullyFunded) {
+              adjustedBiweeklyAmount = 0;
+            }
+            // For partially funded goals, adjust the per-paycheck amount based on remaining needed
+            else if (remainingNeeded < targetAmount) {
+              // Calculate the proportion of the target amount that still needs to be funded
+              const remainingProportion = remainingNeeded / targetAmount;
+              // Scale the per-paycheck amount by this proportion
+              adjustedBiweeklyAmount = adjustedBiweeklyAmount * remainingProportion;
+            }
+
             return {
               ...goal,
-              biweeklyAmount: allocation.perPaycheckAmount || 0,
-              percentage: calculatePercentage(allocation.perPaycheckAmount, currentPay),
+              biweeklyAmount: adjustedBiweeklyAmount,
+              percentage: calculatePercentage(adjustedBiweeklyAmount, currentPay),
               remainingNeeded,
               fundingProgress,
               isFullyFunded: fullyFunded,
             };
           }
         }
-        
-        // Fall back to calculating from scratch
-        const biweeklyAmount = calculateGoalBiweeklyAllocation(goal, roundingOption);
-        const targetAmount = parseFloat(goal.targetAmount) || 0;
-        const alreadySaved = parseFloat(goal.alreadySaved) || 0;
-        const remainingNeeded = calculateRemainingNeeded(targetAmount, alreadySaved);
-        const fundingProgress = calculateFundingProgress(targetAmount, alreadySaved);
-        const fullyFunded = isFullyFunded(fundingProgress);
+
+        // Fall back to calculating from scratch - use remaining needed instead of total amount
+        let biweeklyAmount = 0;
+
+        if (remainingNeeded > 0 && !fullyFunded) {
+          // Create a modified goal object with the remaining amount
+          const modifiedGoal = {
+            ...goal,
+            targetAmount: remainingNeeded,
+            monthlyContribution: goal.monthlyContribution
+          };
+
+          // Calculate biweekly amount based on the remaining needed
+          biweeklyAmount = calculateGoalBiweeklyAllocation(modifiedGoal, roundingOption);
+        }
 
         return {
           ...goal,
@@ -114,7 +136,7 @@ export const useGoalAllocations = ({
 
     // Calculate total goal allocation
     const totalGoalAllocation = goalAllocations.reduce(
-      (sum, goal) => sum + (goal.biweeklyAmount || 0), 
+      (sum, goal) => sum + (goal.biweeklyAmount || 0),
       0
     );
 

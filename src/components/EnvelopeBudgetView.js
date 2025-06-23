@@ -199,15 +199,25 @@ const EnvelopeBudgetView = ({
 
   // Handle submit of moving money
   const handleSubmitMoveMoney = () => {
-    console.log(`Moving $${moveAmount} from ${moveFromCategory?.name} to ${moveToCategoryId === READY_TO_ASSIGN_ID ? 'Ready to Assign' : categories.find(c => c.id === moveToCategoryId)?.name}`);
+    // Convert ID to number if it's not the special READY_TO_ASSIGN_ID
+    const categoryId = moveToCategoryId === READY_TO_ASSIGN_ID ?
+      READY_TO_ASSIGN_ID :
+      parseInt(moveToCategoryId, 10);
 
-    if (!moveFromCategory || !moveToCategoryId || moveAmount <= 0) {
+    // Find category by numeric ID for proper name display
+    const targetCategory = categoryId === READY_TO_ASSIGN_ID ?
+      { name: 'Ready to Assign' } :
+      categories.find(c => c.id === parseInt(categoryId, 10));
+
+    console.log(`Moving $${moveAmount} from ${moveFromCategory?.name} to ${targetCategory?.name || 'Unknown category'}`);
+
+    if (!moveFromCategory || !categoryId || moveAmount <= 0) {
       console.error("Invalid move parameters");
       return;
     }
 
     // Handle moving to Ready to Assign (special case)
-    if (moveToCategoryId === READY_TO_ASSIGN_ID) {
+    if (categoryId === READY_TO_ASSIGN_ID) {
       const success = fundCategory(moveFromCategory.id, -moveAmount);
       if (success) {
         console.log(`Successfully moved ${moveAmount} from ${moveFromCategory.name} to Ready to Assign`);
@@ -217,9 +227,9 @@ const EnvelopeBudgetView = ({
     }
     // Handle moving from Ready to Assign (special case)
     else if (moveFromCategory.id === READY_TO_ASSIGN_ID) {
-      const success = fundCategory(moveToCategoryId, moveAmount);
+      const success = fundCategory(categoryId, moveAmount);
       if (success) {
-        console.log(`Successfully moved ${moveAmount} from Ready to Assign to category ${moveToCategoryId}`);
+        console.log(`Successfully moved ${moveAmount} from Ready to Assign to ${targetCategory?.name || 'category ' + categoryId}`);
       } else {
         console.error("Failed to move money from Ready to Assign");
       }
