@@ -1,6 +1,8 @@
 // src/hooks/useConfigSettings.js
 import { useCallback } from 'react';
+import { frequencyOptions } from '../utils/constants';
 import { useLocalStorage } from './useLocalStorage';
+
 
 /**
  * Custom hook for managing configuration and settings
@@ -31,17 +33,6 @@ export const useConfigSettings = () => {
     { value: 'biweekly', label: 'Biweekly' },
     { value: 'monthly', label: 'Monthly' },
     { value: 'semimonthly', label: 'Twice a Month' }
-  ];
-
-  // Frequency options for expenses
-  const frequencyOptions = [
-    { value: 'once', label: 'One Time' },
-    { value: 'weekly', label: 'Weekly' },
-    { value: 'biweekly', label: 'Every 2 Weeks' },
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'quarterly', label: 'Quarterly' },
-    { value: 'semiannually', label: 'Twice a Year' },
-    { value: 'annually', label: 'Yearly' }
   ];
 
   // Category colors

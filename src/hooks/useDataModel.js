@@ -154,7 +154,9 @@ export const useDataModel = ({
     if (itemWithId.isActive) {
       itemWithId.needsAllocation = true;
     }
-  }, [setPlanningItems, setActiveBudgetAllocations, accounts, payFrequency, payFrequencyOptions]);
+  }, [setPlanningItems, setActiveBudgetAllocations, accounts, payFrequency, payFrequencyOptions, categories, planningItems]);
+
+
 
   // Update an existing planning item
   const updateItem = useCallback((itemId, updatedItem) => {

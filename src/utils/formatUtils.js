@@ -47,9 +47,9 @@ export const formatPercentage = (value, decimals = 1, includeSymbol = true) => {
  */
 export const formatDate = (date, options = {}) => {
     if (!date) return '';
-    
+
     const dateObj = typeof date === 'string' ? new Date(date) : date;
-    
+
     return dateObj.toLocaleDateString(undefined, {
         year: 'numeric',
         month: 'short',
@@ -83,18 +83,21 @@ export const formatNumber = (number, decimals = 0) => {
 export const formatFrequency = (frequency) => {
     switch (frequency) {
         case 'weekly': return 'Weekly';
-        case 'bi-weekly': return 'Every 2 Weeks';
-        case 'semi-monthly': return 'Twice a Month';
-        case 'monthly': return 'Monthly';
+        case 'bi-weekly': return 'Bi-weekly';
         case 'every-3-weeks': return 'Every 3 Weeks';
+        case 'monthly': return 'Monthly';
+        case 'every-5-weeks': return 'Every 5 Weeks';
         case 'every-6-weeks': return 'Every 6 Weeks';
         case 'every-7-weeks': return 'Every 7 Weeks';
-        case 'every-8-weeks': return 'Every 8 Weeks';
+        case 'bi-monthly': return 'Every Other Month';
         case 'quarterly': return 'Quarterly';
+        case 'semi-annually': return 'Every 6 Months';
         case 'annually': return 'Annually';
         case 'per-paycheck': return 'Per Paycheck';
-        case 'once': return 'One Time';
-        default: return frequency;
+        // Handle any legacy values
+        case 'biweekly': return 'Bi-weekly';
+        case 'semiannually': return 'Every 6 Months';
+        default: return frequency ? frequency.charAt(0).toUpperCase() + frequency.slice(1) : 'Monthly';
     }
 };
 
@@ -176,27 +179,27 @@ export const formatBudgetItem = (item, viewMode = 'amount', income = 0, frequenc
     const itemName = item.name || 'Unnamed Item';
     const amount = item.biweeklyAmount || 0;
     const percentage = income > 0 ? (amount / income) * 100 : 0;
-    const frequency = item.frequency ? 
-        frequencyOptions.find(f => f.value === item.frequency)?.label.toLowerCase() || item.frequency : 
+    const frequency = item.frequency ?
+        frequencyOptions.find(f => f.value === item.frequency)?.label.toLowerCase() || item.frequency :
         'unknown';
     const isPaused = item.priorityState === 'paused';
     const isComplete = item.isFullyFunded || item.priorityState === 'complete';
-    
+
     let formattedAmount;
     if (viewMode === 'amount') {
         formattedAmount = `$${amount.toFixed(2)}`;
     } else {
         formattedAmount = `${percentage.toFixed(1)}%`;
     }
-    
+
     let result = `${itemName}${itemType === 'Goal' ? ' (Goal)' : ''}: ${formattedAmount}/paycheck`;
-    
+
     if (itemType === 'Expense') {
         result += ` (${item.amount} ${frequency})`;
     }
-    
+
     if (isPaused) result += ' [PAUSED]';
     if (isComplete) result += itemType === 'Goal' ? ' [COMPLETE]' : ' [FUNDED]';
-    
+
     return result;
 };

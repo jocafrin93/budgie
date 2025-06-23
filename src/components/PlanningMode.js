@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
+import { frequencyOptions } from '../utils/constants';
+
 
 const DND_TYPES = {
     PLANNING_ITEM: 'planning_item',
@@ -51,71 +53,88 @@ const PlanningItem = ({
         const dueDate = item.dueDate ? new Date(item.dueDate) : null;
         const today = new Date();
 
-        // Get paycheck frequency info
-        const payFreqOption = payFrequencyOptions?.find(opt => opt.value === payFrequency);
-        const paychecksPerMonth = payFreqOption?.paychecksPerMonth || 2.17; // Default to bi-weekly if not set
-        const daysPerPaycheck = Math.ceil(30 / paychecksPerMonth);
+        // Conservative paycheck info (built into your constants!)
+        const getConservativePaycheckInfo = (payFreq) => {
+            switch (payFreq) {
+                case 'weekly': return { conservative: 4, average: 4.33, bonusPerYear: 4 };
+                case 'biweekly': case 'bi-weekly': return { conservative: 2, average: 2.17, bonusPerYear: 2 };
+                case 'semimonthly': return { conservative: 2, average: 2, bonusPerYear: 0 };
+                case 'monthly': return { conservative: 1, average: 1, bonusPerYear: 0 };
+                default: return { conservative: 2, average: 2.17, bonusPerYear: 2 };
+            }
+        };
+
+        const paycheckInfo = getConservativePaycheckInfo(payFrequency);
+        const daysPerPaycheck = Math.ceil(30 / paycheckInfo.average);
 
         let monthlyAmount = 0;
+        let perPaycheckAmount = 0;
+        const freqOption = frequencyOptions.find(opt => opt.value === item.frequency);
+
         if (isGoal) {
+            // For savings goals, always use conservative approach
             monthlyAmount = item.monthlyContribution || 0;
+            perPaycheckAmount = monthlyAmount / paycheckInfo.conservative;
         } else {
-            const frequencyMap = {
-                'weekly': (item.amount || 0) * 4.33,
-                'bi-weekly': (item.amount || 0) * 2.17,
-                'every-3-weeks': (item.amount || 0) * 1.44,
-                'monthly': (item.amount || 0),
-                'every-6-weeks': (item.amount || 0) * 0.72,
-                'every-7-weeks': (item.amount || 0) * 0.62,
-                'every-8-weeks': (item.amount || 0) * 0.54,
-                'quarterly': (item.amount || 0) / 3,
-                'annually': (item.amount || 0) / 12,
-                'per-paycheck': (item.amount || 0) * paychecksPerMonth
-            };
-            monthlyAmount = frequencyMap[item.frequency] || (item.amount || 0);
+            // For expenses, use your perfect hybrid approach from constants
+            const itemAmount = item.amount || 0;
+            const freqOption = frequencyOptions.find(opt => opt.value === item.frequency);
+
+            if (freqOption) {
+                // Convert item amount to monthly equivalent
+                monthlyAmount = itemAmount * (freqOption.weeksPerYear / 12);
+
+                // Use your isRegular flag for hybrid strategy!
+                if (freqOption.isRegular) {
+                    // CONSERVATIVE: Use minimum paycheck count for regular expenses
+                    perPaycheckAmount = monthlyAmount / paycheckInfo.conservative;
+                } else {
+                    // TRUE AVERAGE: Use accurate average for irregular expenses  
+                    perPaycheckAmount = monthlyAmount / paycheckInfo.average;
+                }
+            } else {
+                // Fallback for unknown frequencies
+                monthlyAmount = itemAmount;
+                perPaycheckAmount = itemAmount / paycheckInfo.conservative;
+            }
         }
 
-        // Calculate remaining paychecks and amount per paycheck
+        // Handle due dates
         let paychecksUntilDue = null;
-        let perPaycheckAmount = 0;
-
         if (dueDate) {
-            // Calculate days until due, accounting for timezone
             const dueTime = new Date(dueDate.getTime() + dueDate.getTimezoneOffset() * 60000);
             const todayTime = new Date(today.getTime() + today.getTimezoneOffset() * 60000);
             const daysUntilDue = Math.ceil((dueTime - todayTime) / (24 * 60 * 60 * 1000));
 
-            // Calculate remaining paychecks
             paychecksUntilDue = Math.max(0, Math.ceil(daysUntilDue / daysPerPaycheck));
 
-            // Calculate per-paycheck amount based on remaining amount and paychecks
-            const allocated = item.allocated || 0;
-            const remaining = Math.max(0, (isGoal ? item.targetAmount : item.amount) - allocated);
-            perPaycheckAmount = paychecksUntilDue > 0 ? remaining / paychecksUntilDue : 0;
-        } else {
-            // No due date - use standard monthly calculation
-            perPaycheckAmount = monthlyAmount / paychecksPerMonth;
+            if (paychecksUntilDue > 0) {
+                const allocated = item.allocated || 0;
+                const targetAmount = isGoal ? item.targetAmount : monthlyAmount;
+                const remaining = Math.max(0, targetAmount - allocated);
+                perPaycheckAmount = remaining / paychecksUntilDue;
+            }
         }
 
         return {
             monthlyAmount,
             perPaycheckAmount,
-            paychecksUntilDue
+            paychecksUntilDue,
+            usingConservative: !freqOption || freqOption.isRegular,
+            paycheckInfo
         };
     };
+
 
     const displayInfo = getAmountDisplayInfo(item, payFrequency, payFrequencyOptions);
 
     const getFrequencyDisplay = () => {
-        if (isGoal) return `Target: $${amount?.toFixed(2)}`;
-        const freqMap = {
-            'weekly': 'weekly',
-            'bi-weekly': 'bi-weekly',
-            'monthly': 'monthly',
-            'quarterly': 'quarterly',
-            'annually': 'yearly'
-        };
-        return `$${amount?.toFixed(2)} ${freqMap[item.frequency] || item.frequency}`; // Changed this line
+        if (isGoal) return `Target: $${(item.targetAmount || 0).toFixed(2)}`;
+
+        const freqOption = frequencyOptions.find(opt => opt.value === item.frequency);
+        const freqLabel = freqOption ? freqOption.label.toLowerCase() : (item.frequency || 'monthly');
+
+        return `$${(item.amount || 0).toFixed(2)} ${freqLabel}`;
     };
 
     const getStatusIcon = () => {

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useForm } from '../hooks/useForm';
+import { frequencyOptions } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
 import { dollarToPercentage, percentageToDollar } from '../utils/moneyUtils';
 import {
@@ -11,6 +12,11 @@ import {
   SelectField,
   TextField
 } from './form';
+
+const formFrequencyOptions = frequencyOptions.map(freq => ({
+  value: freq.value,
+  label: freq.label
+}));
 
 const UnifiedItemForm = ({
   item = null,
@@ -165,15 +171,7 @@ const UnifiedItemForm = ({
     label: account.name
   }));
 
-  // Frequency options
-  const frequencyOptions = [
-    { value: 'one-time', label: 'One-time' },
-    { value: 'weekly', label: 'Weekly' },
-    { value: 'biweekly', label: 'Every 2 weeks' },
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'quarterly', label: 'Quarterly' },
-    { value: 'annually', label: 'Annually' }
-  ];
+
 
   // Priority state options
   const priorityStateOptions = [
@@ -318,10 +316,11 @@ const UnifiedItemForm = ({
           <SelectField
             {...form.getFieldProps('frequency')}
             label="Frequency"
-            options={frequencyOptions}
+            options={formFrequencyOptions}  // NOW uses your perfect constants!
             required
             darkMode={darkMode}
           />
+
 
           <DateField
             {...form.getFieldProps('dueDate')}
