@@ -283,24 +283,42 @@ export const useDataModel = ({
           return {
             ...item,
             isActive,
-            needsAllocation: isActive, // Set needsAllocation when activating
-            allocated: isActive ? 0 : item.allocated // Reset allocation when activating
+            allocationPaused: !isActive
           };
         }
         return item;
       });
-
-      // Force immediate sync to prevent reappearance
-      if (!isSyncing.current) {
-        const derivedExpenses = getExpensesFromPlanningItems(updatedItems);
-        const derivedSavingsGoals = getSavingsGoalsFromPlanningItems(updatedItems);
-        setExpenses(derivedExpenses);
-        setSavingsGoals(derivedSavingsGoals);
-      }
-
       return updatedItems;
     });
-  }, [setPlanningItems, setExpenses, setSavingsGoals]);
+
+    // Update budget allocations based on active state
+    setActiveBudgetAllocations(prev => {
+      if (isActive) {
+        // If activating and no allocation exists, create one
+        const existingAllocation = prev.find(a => a.planningItemId === itemId);
+        if (!existingAllocation) {
+          const item = planningItems.find(i => i.id === itemId);
+          if (item) {
+            const newAllocation = {
+              id: Math.max(...prev.map(a => a.id), 0) + 1,
+              planningItemId: itemId,
+              categoryId: item.categoryId,
+              monthlyAllocation: item.type === 'savings-goal' ? item.monthlyContribution : item.amount,
+              perPaycheckAmount: 0,
+              sourceAccountId: item.accountId || accounts[0]?.id || 1,
+              isPaused: false,
+              createdAt: new Date().toISOString()
+            };
+            return calculatePerPaycheckAmounts([...prev, newAllocation], payFrequency, payFrequencyOptions);
+          }
+        }
+        return prev;
+      } else {
+        // If deactivating, remove the allocation
+        return prev.filter(a => a.planningItemId !== itemId);
+      }
+    });
+  }, [setPlanningItems, setActiveBudgetAllocations, planningItems, accounts, payFrequency, payFrequencyOptions]);
 
   // Move an item to a different category
   const moveItem = useCallback((itemId, newCategoryId) => {
