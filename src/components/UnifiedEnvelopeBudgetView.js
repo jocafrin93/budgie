@@ -1,9 +1,11 @@
 // src/components/UnifiedEnvelopeBudgetView.js
 import {
     AlertTriangle,
+    ArrowRight,
     Calendar,
     ChevronDown,
     ChevronRight,
+    DollarSign,
     Edit,
     Plus,
     ToggleLeft,
@@ -55,6 +57,7 @@ const UnifiedEnvelopeBudgetView = ({
     const [showAddCategory, setShowAddCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryType, setNewCategoryType] = useState('single');
+    const [showAssignModal, setShowAssignModal] = useState(false);
 
     // Toggle category expansion
     const toggleCategoryExpanded = (categoryId) => {
@@ -286,21 +289,45 @@ const UnifiedEnvelopeBudgetView = ({
             </div>
 
             {/* Ready to Assign */}
-            <div className="bg-white rounded-lg p-4 border-l-4 border-green-500 shadow-sm">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h3 className="font-semibold text-gray-900">Ready to Assign</h3>
-                        <p className="text-gray-600 text-sm">Money available for allocation</p>
-                    </div>
-                    <div className="text-2xl font-bold text-green-600">
-                        ${toBeAllocated.toFixed(2)}
+            <div className="bg-white rounded-lg border-l-4 border-green-500 shadow-sm overflow-hidden">
+                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                                <DollarSign className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">Ready to Assign</h3>
+                                <p className="text-sm text-gray-600">Money available for allocation</p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <div className="text-right">
+                                <div className="text-3xl font-bold text-green-600">
+                                    ${toBeAllocated.toFixed(2)}
+                                </div>
+                                <div className="text-xs text-gray-500">Available to assign</div>
+                            </div>
+
+                            {/* NEW: Assign Money Button */}
+                            <button
+                                onClick={() => setShowAssignModal(true)}
+                                disabled={toBeAllocated <= 0}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                            >
+                                <ArrowRight className="w-4 h-4" />
+                                Assign Money
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
+
             {/* Categories */}
             <div className="space-y-4">
-                <div className="flex justify-end">
+                {/* <div className="flex justify-end">
                     <button
                         onClick={() => setShowAddCategory(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -308,7 +335,7 @@ const UnifiedEnvelopeBudgetView = ({
                         <Plus className="w-4 h-4" />
                         Add Category
                     </button>
-                </div>
+                </div> */}
                 {categories.map(category => {
                     const categoryData = getCategoryData(category);
                     const isExpanded = expandedCategories[category.id];
@@ -338,6 +365,21 @@ const UnifiedEnvelopeBudgetView = ({
                     );
                 })}
             </div>
+            {showAssignModal && (
+                <AssignMoneyModal
+                    availableAmount={toBeAllocated}
+                    categories={categories}
+                    onAssign={(categoryId, amount) => {
+                        if (transferFunds) {
+                            transferFunds('toBeAllocated', categoryId, amount);
+                        } else if (fundCategory) {
+                            fundCategory(categoryId, amount);
+                        }
+                        setShowAssignModal(false);
+                    }}
+                    onClose={() => setShowAssignModal(false)}
+                />
+            )}
         </div>
     );
 };
@@ -359,8 +401,13 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
         if (selectedCategoryId && moveAmount) {
             const parsedAmount = parseFloat(moveAmount);
             const source = sourceCategory.id;
-            const destination = selectedCategoryId === 'ready-to-assign' ? 'toBeAllocated' : parseInt(selectedCategoryId, 10);
-
+            let destination;
+            if (selectedCategoryId === 'ready-to-assign') {
+                destination = 'toBeAllocated';
+            } else {
+                // Convert string category ID to number
+                destination = parseInt(selectedCategoryId, 10);
+            }
             console.log('Attempting to move money:', {
                 source,
                 destination,
@@ -422,8 +469,10 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                             <option value="ready-to-assign">Ready to Assign</option>
                             {categories.map(cat => (
                                 cat.id !== sourceCategory.id && (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.name}
+                                    <option key=
+                                        {cat.id} value={cat.id}>
+                                        {cat.name} (${(cat.available || 0).toFixed(2)} available)
+
                                     </option>
                                 )
                             ))}
@@ -809,6 +858,113 @@ const UnifiedCategoryCard = ({
                     onClose={() => setShowMoveModal(false)}
                 />
             )}
+        </div>
+    );
+};
+
+const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) => {
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
+    const [assignAmount, setAssignAmount] = useState('');
+
+    const handleAssign = () => {
+        if (selectedCategoryId && assignAmount) {
+            const parsedAmount = parseFloat(assignAmount);
+            if (!isNaN(parsedAmount) && parsedAmount > 0 && parsedAmount <= availableAmount) {
+                onAssign(parseInt(selectedCategoryId, 10), parsedAmount);
+            }
+        }
+    };
+
+    const setQuickAmount = (amount) => {
+        setAssignAmount(Math.min(amount, availableAmount).toString());
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
+                <h3 className="text-lg font-semibold mb-4">Assign Money to Category</h3>
+
+                <div className="space-y-4">
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="text-sm text-green-700">Available to assign:</div>
+                        <div className="text-2xl font-bold text-green-600">
+                            ${availableAmount.toFixed(2)}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            To Category
+                        </label>
+                        <select
+                            value={selectedCategoryId}
+                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                            <option value="">Select a category...</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>
+                                    {cat.name} (${(cat.available || 0).toFixed(2)} available)
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Amount
+                        </label>
+                        <div className="relative mb-2">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                            <input
+                                type="number"
+                                placeholder="0.00"
+                                value={assignAmount}
+                                onChange={(e) => setAssignAmount(e.target.value)}
+                                className="w-full pl-8 pr-16 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                step="0.01"
+                                max={availableAmount}
+                            />
+                            <button
+                                onClick={() => setAssignAmount(availableAmount.toString())}
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
+                            >
+                                All
+                            </button>
+                        </div>
+
+                        {/* Quick amount buttons */}
+                        <div className="grid grid-cols-4 gap-2">
+                            {[25, 50, 100, 200].map(amount => (
+                                <button
+                                    key={amount}
+                                    onClick={() => setQuickAmount(amount)}
+                                    disabled={amount > availableAmount}
+                                    className="py-1 px-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    ${amount}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleAssign}
+                        disabled={!selectedCategoryId || !assignAmount || parseFloat(assignAmount) <= 0}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Assign Money
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };

@@ -363,6 +363,62 @@ const App = () => {
             console.log('Category allocations synced after item removal');
         }, 200);
     };
+    const handleTransferFunds = (fromCategoryId, toCategoryId, amount) => {
+        console.log('handleTransferFunds called:', { fromCategoryId, toCategoryId, amount });
+
+        try {
+            // Case 1: Moving from a category to "Ready to Assign" (toBeAllocated)
+            if (toCategoryId === 'toBeAllocated') {
+                // Remove money from the source category (negative amount)
+                const success = fundCategory(fromCategoryId, -amount);
+                if (success) {
+                    console.log(`Successfully moved $${amount} from category ${fromCategoryId} to Ready to Assign`);
+                    return true;
+                } else {
+                    console.error('Failed to move money to Ready to Assign');
+                    return false;
+                }
+            }
+
+            // Case 2: Moving from "Ready to Assign" to a category
+            else if (fromCategoryId === 'toBeAllocated') {
+                // Add money to the destination category
+                const success = fundCategory(toCategoryId, amount);
+                if (success) {
+                    console.log(`Successfully moved $${amount} from Ready to Assign to category ${toCategoryId}`);
+                    return true;
+                } else {
+                    console.error('Failed to move money from Ready to Assign');
+                    return false;
+                }
+            }
+
+            // Case 3: Moving between two categories
+            else {
+                // First remove from source category
+                const removeSuccess = fundCategory(fromCategoryId, -amount);
+                if (removeSuccess) {
+                    // Then add to destination category
+                    const addSuccess = fundCategory(toCategoryId, amount);
+                    if (addSuccess) {
+                        console.log(`Successfully moved $${amount} from category ${fromCategoryId} to category ${toCategoryId}`);
+                        return true;
+                    } else {
+                        // If adding failed, revert the removal
+                        fundCategory(fromCategoryId, amount);
+                        console.error('Failed to add money to destination category, reverted transaction');
+                        return false;
+                    }
+                } else {
+                    console.error('Failed to remove money from source category');
+                    return false;
+                }
+            }
+        } catch (error) {
+            console.error('Error in handleTransferFunds:', error);
+            return false;
+        }
+    };
 
     const handleToggleItemActiveWithSync = (itemId, isActive) => {
         console.log('Toggling item active with manual sync:', itemId, isActive);
@@ -695,7 +751,8 @@ const App = () => {
 
                                     // Functions from enhanced category management
                                     fundCategory={fundCategory}
-                                    moveMoney={() => { }} // TODO: Implement if needed
+                                    transferFunds={handleTransferFunds}
+                                    moveMoney={() => { }}
 
                                     // Actions
                                     onAddCategory={handleAddCategory}
