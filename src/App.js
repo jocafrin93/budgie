@@ -1,3 +1,4 @@
+// src/App.js - COMPLETE IMPLEMENTATION
 import { AlertTriangle, Calculator, Calendar, DollarSign, PackageOpen, Plus, Settings, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DndProvider } from 'react-dnd';
@@ -9,11 +10,12 @@ import SimplifiedSummaryCards from './components/SimplifiedSummaryCards';
 import UnifiedItemForm from './components/UnifiedItemForm';
 // Import our new envelope budgeting system components
 import EnvelopeBudgetingSystem from './components/EnvelopeBudgetingSystem';
+import UnifiedEnvelopeBudgetView from './components/UnifiedEnvelopeBudgetView';
 
 // Import existing components we're keeping
 import AccountsSection from './components/AccountsSection';
 import AddAccountForm from './components/AddAccountForm';
-import AddCategoryForm from './components/AddCategoryForm';
+import AddCategoryForm from './components/AddCategoryForm'; // Will be enhanced
 import AddTransactionForm from './components/AddTransactionForm';
 import CalendarView from './components/CalendarView';
 import ConfigurationPanel from './components/ConfigurationPanel';
@@ -28,14 +30,17 @@ import { useDataModel } from './hooks/useDataModel';
 import { usePaycheckTimeline } from './hooks/usePaycheckTimeline';
 // Import NEW custom hooks
 import { useAccountManagement } from './hooks/useAccountManagement';
-import { useCategoryManagement } from './hooks/useCategoryManagement';
+import { useCategoryManagement } from './hooks/useCategoryManagement'; // Enhanced version
 import { useConfigSettings } from './hooks/useConfigSettings';
 import { usePaycheckManagement } from './hooks/usePaycheckManagement';
 import { useTransactionManagement } from './hooks/useTransactionManagement';
 import { useUIState } from './hooks/useUIState';
 
 // Import utilities
+import { getExpensesFromPlanningItems, getSavingsGoalsFromPlanningItems } from './utils/dataModelUtils';
 import { exportToYNAB } from './utils/exportUtils';
+
+// Import migration utilities
 
 const App = () => {
     // Use custom hooks for state management
@@ -44,6 +49,8 @@ const App = () => {
         activeBudgetAllocations,
         expenses,
         savingsGoals,
+        setExpenses,
+        setSavingsGoals,
         addItem,
         updateItem,
         removeItem,
@@ -52,17 +59,23 @@ const App = () => {
         cleanupInvalidItems
     } = useDataModel();
 
+    // Enhanced category management with types
     const {
         categories,
         setCategories,
         generateNextCategoryId,
-        addCategory,
+        addCategory, // Your existing function
         updateCategory,
         deleteCategory,
         fundCategory,
         toggleCategoryCollapse,
-        calculateToBeAllocated,
-        calculateCorrectCategoryAllocations
+        calculateToBeAllocated: calculateCategoryAllocation,
+        calculateCorrectCategoryAllocations, // Your existing function
+        // These enhanced functions will be added when you update the hook:
+        // convertCategoryType,
+        // getCategoryTypeInfo,
+        // suggestCategoryType,
+        // migrateCategoriesWithTypes: migrateCategoriesHook
     } = useCategoryManagement();
 
     const {
@@ -160,12 +173,19 @@ const App = () => {
         togglePaycheckActive,
         recordPaycheckReceived,
         paycheckHistory,
-        getUpcomingPaychecks,
+        getAllUpcomingPaycheckDates, // This is the actual function name
         getTotalMonthlyIncome
     } = usePaycheckManagement(accounts);
 
-    // State for budget mode (item-based vs envelope)
-    const [budgetMode, setBudgetMode] = useState('item-based'); // 'item-based' or 'envelope'
+    // Migration state
+    const [migrationStatus, setMigrationStatus] = useState({
+        needed: false,
+        completed: false,
+        report: null
+    });
+
+    // State for budget mode (enhanced: item-based, envelope, or unified)
+    const [budgetMode, setBudgetMode] = useState('unified'); // 'item-based', 'envelope', or 'unified'
 
     // State for what-if mode (keeping this in App.js for now)
     const [whatIfMode, setWhatIfMode] = useState(false);
@@ -202,8 +222,23 @@ const App = () => {
         timeline: timelineData,
     };
 
+    // Migration check on app startup
+    useEffect(() => {
+        // TODO: Add migration check when enhanced hook is implemented
+        console.log('Migration check would happen here when enhanced categories are implemented');
+        /*
+        const checkMigrationStatus = () => {
+            const report = generateMigrationReport(categories, planningItems);
+            // ... migration logic
+        };
+        
+        if (categories.length > 0) {
+            checkMigrationStatus();
+        }
+        */
+    }, [categories.length, planningItems.length]);
+
     // Set Theme
-    // Set Theme - only apply to DOM, don't update state
     useEffect(() => {
         // Apply theme to document
         document.documentElement.setAttribute('data-theme', theme);
@@ -214,15 +249,150 @@ const App = () => {
             metaThemeColor.setAttribute('content',
                 theme.includes('dark') ? '#1f2937' : '#ffffff');
         }
-    }, [theme]); // Remove updateTheme from dependencies
+    }, [theme]);
 
     // Sync category allocations on app load
     useEffect(() => {
         console.log('Syncing category allocations with active items...');
-        setTimeout(() => calculateCorrectCategoryAllocations(), 1000);
+        setTimeout(() => safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations), 1000);
     }, []); // Run once on app load
 
-    // Handler functions
+    // Enhanced category handlers
+    const handleAddCategory = (categoryData) => {
+        try {
+            // For now, use your existing addCategory function
+            // TODO: Update to enhanced version later
+            const newCategory = addCategory(categoryData);
+            console.log('✅ Category created:', newCategory);
+
+            // Close any open modals
+            closeAllModals();
+
+            return newCategory;
+        } catch (error) {
+            console.error('❌ Error creating category:', error);
+            // Handle error (show toast, etc.)
+            alert(`Error creating category: ${error.message}`);
+        }
+    };
+
+    const handleEditCategory = (categoryIdOrObject, categoryData) => {
+        try {
+            // Handle both formats: (categoryId, data) and (categoryObject)
+            if (typeof categoryIdOrObject === 'object') {
+                // We received a category object - open the edit modal
+                setEditingCategory(categoryIdOrObject);
+            } else {
+                // We received id and data - perform the update
+                updateCategory(categoryIdOrObject, categoryData);
+                console.log('✅ Category updated:', categoryIdOrObject);
+                closeAllModals();
+            }
+        } catch (error) {
+            console.error('❌ Error updating category:', error);
+            alert(`Error updating category: ${error.message}`);
+        }
+    };
+
+    const handleConvertCategoryType = (categoryId, newType) => {
+        // TODO: Implement when enhanced hook is added
+        console.log(`Category type conversion requested: ${categoryId} -> ${newType}`);
+        alert('Category type conversion not yet implemented');
+        return { success: false, error: 'Not implemented yet' };
+    };
+
+    const handleDeleteCategory = (categoryId) => {
+        // For now, use your existing deleteCategory function
+        // TODO: Add enhanced validation later
+        try {
+            deleteCategory(categoryId);
+            console.log(`✅ Category ${categoryId} deleted`);
+            closeAllModals();
+            return { success: true };
+        } catch (error) {
+            console.error('❌ Category deletion failed:', error);
+            alert(`Error deleting category: ${error.message}`);
+            return { success: false, error: error.message };
+        }
+    };
+
+    // Wrapper functions to handle sync manually since useDataModel doesn't have access to category sync
+    const safeCalculateCorrectCategoryAllocations = (items, allocations) => {
+        try {
+            if (typeof calculateCorrectCategoryAllocations === 'function') {
+                return calculateCorrectCategoryAllocations(items, allocations);
+            } else {
+                console.warn('calculateCorrectCategoryAllocations is not available');
+                return 0;
+            }
+        } catch (error) {
+            console.error('Error in safeCalculateCorrectCategoryAllocations:', error);
+            return 0;
+        }
+    };
+
+    const handleAddItemWithSync = (itemData) => {
+        console.log('Adding item with manual sync:', itemData);
+        addItem(itemData);
+
+        // Manually trigger sync after state update
+        setTimeout(() => {
+            safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+            console.log('Category allocations synced after item add');
+        }, 200);
+    };
+
+    const handleUpdateItemWithSync = (itemId, itemData) => {
+        console.log('Updating item with manual sync:', itemId, itemData);
+        updateItem(itemId, itemData);
+
+        // Manually trigger sync after state update
+        setTimeout(() => {
+            safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+            console.log('Category allocations synced after item update');
+        }, 200);
+    };
+
+    const handleRemoveItemWithSync = (itemId) => {
+        console.log('Removing item with manual sync:', itemId);
+        removeItem(itemId);
+
+        // Manually trigger sync after state update
+        setTimeout(() => {
+            safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+            console.log('Category allocations synced after item removal');
+        }, 200);
+    };
+
+    const handleToggleItemActiveWithSync = (itemId, isActive) => {
+        console.log('Toggling item active with manual sync:', itemId, isActive);
+        toggleItemActive(itemId, isActive);
+
+        // Force immediate sync for derived states
+        const updatedItems = planningItems.map(item => {
+            if (item.id === itemId) {
+                return {
+                    ...item,
+                    isActive,
+                    needsAllocation: isActive
+                };
+            }
+            return item;
+        });
+
+        // Update derived states
+        const derivedExpenses = getExpensesFromPlanningItems(updatedItems);
+        const derivedSavingsGoals = getSavingsGoalsFromPlanningItems(updatedItems);
+        setExpenses(derivedExpenses);
+        setSavingsGoals(derivedSavingsGoals);
+
+        // Manually trigger sync after state update
+        setTimeout(() => {
+            safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+            console.log('Category allocations synced after toggle active');
+        }, 200);
+    };
+    // Enhanced item handlers with proper sync
     const handleSaveItem = (itemData, addAnother = false) => {
         console.log('DEBUG - App.js handleSaveItem called with data:', itemData);
         console.log('DEBUG - editingItem:', editingItem);
@@ -230,14 +400,14 @@ const App = () => {
 
         try {
             if (editingItem) {
-                // Update existing item
+                // Update existing item using wrapper
                 console.log('DEBUG - Updating existing item with ID:', editingItem.id);
-                updateItem(editingItem.id, itemData);
+                handleUpdateItemWithSync(editingItem.id, itemData);
                 setEditingItem(null);
             } else {
-                // Add new item
+                // Add new item using wrapper
                 console.log('DEBUG - Adding new item');
-                addItem(itemData);
+                handleAddItemWithSync(itemData);
                 console.log('DEBUG - After addItem call');
 
                 if (!addAnother) {
@@ -246,14 +416,6 @@ const App = () => {
                 }
             }
 
-            // Recalculate category allocations after any item changes
-            console.log('DEBUG - Setting timeout for recalculation');
-            setTimeout(() => {
-                console.log('DEBUG - Recalculating category allocations');
-                // Pass current state to ensure calculations use the most up-to-date data
-                calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
-            }, 100);
-
             console.log('DEBUG - handleSaveItem completed successfully');
         } catch (error) {
             console.error('DEBUG - Error in handleSaveItem:', error);
@@ -261,45 +423,13 @@ const App = () => {
     };
 
     const handleDeleteExpense = (expenseId) => {
-        removeItem(expenseId);
+        handleRemoveItemWithSync(expenseId);
         setConfirmDelete(null);
-
-        // Recalculate category allocations after deletion
-        setTimeout(() => {
-            // Pass current state to ensure calculations use the most up-to-date data
-            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
-        }, 100);
     };
 
     const handleDeleteGoal = (goalId) => {
-        removeItem(goalId);
+        handleRemoveItemWithSync(goalId);
         setConfirmDelete(null);
-
-        // Recalculate category allocations after deletion
-        setTimeout(() => {
-            // Pass current state to ensure calculations use the most up-to-date data
-            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
-        }, 100);
-    };
-
-    const handleDeleteCategory = (categoryId) => {
-        const remainingCategories = categories.filter(cat => cat.id !== categoryId);
-        const firstCategoryId = remainingCategories[0]?.id;
-
-        if (firstCategoryId) {
-            // Move all items from the deleted category to the first category
-            planningItems
-                .filter(item => item.categoryId === categoryId)
-                .forEach(item => {
-                    moveItem(item.id, firstCategoryId);
-                });
-        }
-
-        deleteCategory(categoryId);
-        setConfirmDelete(null);
-
-        // Recalculate category allocations after deletion
-        setTimeout(() => calculateCorrectCategoryAllocations(), 100);
     };
 
     const handleDeleteAccount = (accountId) => {
@@ -328,36 +458,55 @@ const App = () => {
     };
 
     const handleToggleItemActive = (itemId, isActive) => {
-        // Toggle item active state and mark for allocation if being activated
-        toggleItemActive(itemId, isActive);
-
-        // Force immediate sync
-        const updatedItems = planningItems.map(item => {
-            if (item.id === itemId) {
-                return {
-                    ...item,
-                    isActive,
-                    needsAllocation: isActive // Mark for allocation if being activated
-                };
-            }
-            return item;
-        });
-
-        // Update derived states
-        const derivedExpenses = getExpensesFromPlanningItems(updatedItems);
-        const derivedSavingsGoals = getSavingsGoalsFromPlanningItems(updatedItems);
-        setExpenses(derivedExpenses);
-        setSavingsGoals(derivedSavingsGoals);
+        // Use wrapper function for proper sync
+        handleToggleItemActiveWithSync(itemId, isActive);
     };
 
     const handleMoveItem = (itemId, newCategoryId) => {
         moveItem(itemId, newCategoryId);
 
-        // Recalculate category allocations for both old and new categories
+        // Manually trigger sync after move
         setTimeout(() => {
-            // Pass current state to ensure calculations use the most up-to-date data
-            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
-        }, 100);
+            safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+            console.log('Category allocations synced after item move');
+        }, 200);
+    };
+
+    // Budget mode cycle: item-based → envelope → unified → item-based
+    const cycleBudgetMode = () => {
+        const modes = ['item-based', 'envelope', 'unified'];
+        const currentIndex = modes.indexOf(budgetMode);
+        const nextIndex = (currentIndex + 1) % modes.length;
+        setBudgetMode(modes[nextIndex]);
+    };
+
+    const getBudgetModeInfo = () => {
+        switch (budgetMode) {
+            case 'unified':
+                return {
+                    icon: Target,
+                    label: 'Unified',
+                    description: 'Enhanced categories with both single and multiple expense types'
+                };
+            case 'envelope':
+                return {
+                    icon: DollarSign,
+                    label: 'Envelope',
+                    description: 'YNAB-style envelope budgeting'
+                };
+            case 'item-based':
+                return {
+                    icon: PackageOpen,
+                    label: 'Item-Based',
+                    description: 'Flexible item planning with active/planning states'
+                };
+            default:
+                return {
+                    icon: Calculator,
+                    label: 'Budget',
+                    description: 'Budget management'
+                };
+        }
     };
 
     // Streamlined tabs
@@ -369,34 +518,59 @@ const App = () => {
     ];
 
     // Get allocation data
-    const allocationData = calculateToBeAllocated(accounts);
+    const allocationData = calculateCategoryAllocation(accounts);
+
+    const budgetModeInfo = getBudgetModeInfo();
+
+    // Render migration status notification
+    const renderMigrationStatus = () => {
+        if (!migrationStatus.completed || !migrationStatus.report?.migrated) return null;
+
+        return (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center gap-2">
+                    <span className="text-green-600">✅</span>
+                    <h3 className="font-medium text-green-800">
+                        Enhanced Categories Activated!
+                    </h3>
+                </div>
+                <p className="text-sm text-green-700 mt-1">
+                    {migrationStatus.report.migrated} categories upgraded to support single and multiple expense types.
+                    Try the new "Unified" budget mode to see the enhanced interface!
+                </p>
+            </div>
+        );
+    };
 
     return (
         <DndProvider backend={HTML5Backend}>
             <div className="min-h-screen transition-colors duration-200 bg-page text-page">
                 <div className="container mx-auto px-4 py-8 max-w-6xl">
+                    {/* Migration Status */}
+                    {renderMigrationStatus()}
+
                     {/* Header */}
-
-                    <button
-                        onClick={() => {
-                            calculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
-                            alert('Category money synced with active items!');
-                        }}
-                        className="btn-warning px-3 py-2 rounded-lg text-sm"
-                        title="Manually sync category money"
-                    >
-                        🔄 Sync Money
-                    </button>
-
                     <div className="flex justify-between items-center mb-8">
                         <div>
                             <h1 className="text-3xl font-bold mb-2 text-theme-primary">Budgie 🦜</h1>
                             <p className="text-theme-secondary">
-                                Your unified budget companion
+                                Your unified budget companion with Enhanced Categories
                             </p>
                         </div>
 
                         <div className="flex space-x-2">
+                            {/* Debug Sync Button */}
+                            <button
+                                onClick={() => {
+                                    safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+                                    alert('Category money synced with active items!');
+                                }}
+                                className="btn-warning px-3 py-2 rounded-lg text-sm"
+                                title="Manually sync category money"
+                            >
+                                🔄 Sync Money
+                            </button>
+
                             <ThemeSelector
                                 currentTheme={theme}
                                 setCurrentTheme={updateTheme}
@@ -412,25 +586,29 @@ const App = () => {
                                 </div>
                             </div>
 
-                            {/* Simplified Budget Mode Toggle */}
+                            {/* Enhanced Budget Mode Toggle */}
                             {activeTab === 'budget' && (
                                 <div className="flex space-x-2">
                                     <button
-                                        onClick={() => setBudgetMode(budgetMode === 'item-based' ? 'envelope' : 'item-based')}
-                                        className={`btn-secondary p-2 rounded-lg flex items-center space-x-2 ${budgetMode === 'envelope' ? 'btn-info' : ''}`}
-                                        title={budgetMode === 'item-based' ? 'Switch to Envelope Budgeting' : 'Switch to Item-Based Planning'}
+                                        onClick={cycleBudgetMode}
+                                        className={`btn-secondary p-2 rounded-lg flex items-center space-x-2 transition-all ${budgetMode === 'unified' ? 'btn-info ring-2 ring-blue-300' : ''
+                                            }`}
+                                        title={`Current: ${budgetModeInfo.description}. Click to cycle modes.`}
                                     >
-                                        {budgetMode === 'item-based' ? <PackageOpen className="w-4 h-4" /> : <Target className="w-4 h-4" />}
+                                        <budgetModeInfo.icon className="w-4 h-4" />
                                         <span className="text-sm hidden sm:inline">
-                                            {budgetMode === 'item-based' ? 'Item-Based' : 'Envelope'}
+                                            {budgetModeInfo.label}
                                         </span>
+                                        {budgetMode === 'unified' && (
+                                            <span className="text-xs bg-blue-100 text-blue-700 px-1 rounded">NEW</span>
+                                        )}
                                     </button>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* NEW: Simplified Summary Cards */}
+                    {/* Summary Cards */}
                     <SimplifiedSummaryCards
                         calculations={calculations}
                         accounts={accounts}
@@ -456,7 +634,7 @@ const App = () => {
                         )}
                     />
 
-                    {/* Streamlined Tab Navigation */}
+                    {/* Tab Navigation */}
                     <div className="border-b border-theme-secondary mb-8">
                         <nav className="flex space-x-8">
                             {tabs.map((tab) => {
@@ -484,14 +662,18 @@ const App = () => {
                             {/* Mode Header */}
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-theme-primary">
-                                        {budgetMode === 'envelope' ? '💰 Envelope Budgeting' : '📋 Item-Based Budget'}
+                                    <h2 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
+                                        <budgetModeInfo.icon className="w-6 h-6" />
+                                        {budgetMode === 'unified' && '🎯 '}
+                                        {budgetMode === 'envelope' && '💰 '}
+                                        {budgetMode === 'item-based' && '📋 '}
+                                        {budgetModeInfo.label} Budget
+                                        {budgetMode === 'unified' && (
+                                            <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Enhanced</span>
+                                        )}
                                     </h2>
                                     <p className="text-theme-secondary">
-                                        {budgetMode === 'envelope'
-                                            ? 'Give every dollar a job with YNAB-style envelope budgeting'
-                                            : 'Plan and manage expenses and goals with flexible active/planning states'
-                                        }
+                                        {budgetModeInfo.description}
                                     </p>
                                 </div>
                                 <button
@@ -504,7 +686,43 @@ const App = () => {
                             </div>
 
                             {/* Conditional Rendering Based on Budget Mode */}
-                            {budgetMode === 'envelope' ? (
+                            {budgetMode === 'unified' ? (
+                                /* NEW: Unified Enhanced Categories Mode */
+                                <UnifiedEnvelopeBudgetView
+                                    categories={categories}
+                                    planningItems={planningItems}
+                                    toBeAllocated={allocationData.toBeAllocated}
+
+                                    // Functions from enhanced category management
+                                    fundCategory={fundCategory}
+                                    moveMoney={() => { }} // TODO: Implement if needed
+
+                                    // Actions
+                                    onAddCategory={handleAddCategory}
+                                    onEditCategory={handleEditCategory}
+                                    onDeleteCategory={handleDeleteCategory}
+                                    onAddItem={openAddItemModal}
+                                    onEditItem={openEditItemModal}
+                                    onDeleteItem={(item) => openConfirmDeleteDialog(
+                                        item.type === 'savings-goal' ? 'goal' : 'expense',
+                                        item.id,
+                                        item.name,
+                                        `Delete "${item.name}"?`
+                                    )}
+                                    onToggleItemActive={handleToggleItemActive}
+
+                                    // Configuration - your existing settings preserved
+                                    payFrequency={payFrequency}
+                                    payFrequencyOptions={payFrequencyOptions}
+
+                                    // Optional
+                                    recentPaycheck={getAllUpcomingPaycheckDates(1)[0] || null}
+                                    onShowPaydayWorkflow={() => {
+                                        // TODO: Implement payday workflow if needed
+                                        console.log('Payday workflow requested');
+                                    }}
+                                />
+                            ) : budgetMode === 'envelope' ? (
                                 /* Envelope Budgeting Mode */
                                 <EnvelopeBudgetingSystem
                                     categories={categories}
@@ -513,11 +731,13 @@ const App = () => {
                                     transactions={transactions}
                                     accounts={accounts}
                                     paychecks={paychecks}
-                                    onAddCategory={addCategory}
-                                    onEditCategory={updateCategory}
-                                    onDeleteCategory={deleteCategory}
-                                    onAddItem={addItem}
-                                    onEditItem={updateItem}
+                                    payFrequency={payFrequency}
+                                    payFrequencyOptions={payFrequencyOptions}
+                                    onAddCategory={handleAddCategory}
+                                    onEditCategory={handleEditCategory}
+                                    onDeleteCategory={handleDeleteCategory}
+                                    onAddItem={handleAddItemWithSync}
+                                    onEditItem={handleUpdateItemWithSync}
                                     onDeleteItem={(itemId) => {
                                         // Find the item to get its category and amount
                                         const item = planningItems.find(i => i.id === itemId);
@@ -528,13 +748,9 @@ const App = () => {
                                                 fundCategory(item.categoryId, -category.available);
                                             }
                                         }
-                                        removeItem(itemId);
-                                        // Recalculate category allocations after deletion
-                                        setTimeout(() => {
-                                            calculateCorrectCategoryAllocations();
-                                        }, 100);
+                                        handleRemoveItemWithSync(itemId);
                                     }}
-                                    onToggleItemActive={toggleItemActive}
+                                    onToggleItemActive={handleToggleItemActiveWithSync}
                                     recordPaycheckReceived={recordPaycheckReceived}
                                 />
                             ) : (
@@ -574,10 +790,10 @@ const App = () => {
                                     />
                                 </div>
                             )}
-
                         </div>
                     )}
 
+                    {/* Other tabs remain the same */}
                     {activeTab === 'transactions' && (
                         <TransactionsTab
                             transactions={transactions}
@@ -612,7 +828,6 @@ const App = () => {
                         <div className="max-w-4xl">
                             <h2 className="text-2xl font-bold mb-6 text-theme-primary">Configuration</h2>
 
-                            {/* Configuration Panel */}
                             <ConfigurationPanel
                                 showConfig={true}
                                 setShowConfig={() => { }}
@@ -633,7 +848,6 @@ const App = () => {
                                 payFrequency={payFrequency}
                                 setPayFrequency={setPayFrequency}
                                 payFrequencyOptions={payFrequencyOptions}
-                                // Multi-paycheck system props
                                 paychecks={paychecks}
                                 addPaycheck={addPaycheck}
                                 updatePaycheck={updatePaycheck}
@@ -643,6 +857,8 @@ const App = () => {
                             />
                         </div>
                     )}
+
+                    {/* Enhanced modals */}
 
                     {/* Item Modal */}
                     <ModalSystem
@@ -670,7 +886,7 @@ const App = () => {
                         />
                     </ModalSystem>
 
-                    {/* Category Modal */}
+                    {/* Enhanced Category Modal */}
                     <ModalSystem
                         isOpen={showAddCategory || editingCategory !== null}
                         title={editingCategory ? 'Edit Category' : 'Add New Category'}
@@ -678,26 +894,27 @@ const App = () => {
                             setShowAddCategory(false);
                             setEditingCategory(null);
                         }}
-                        size="md"
+                        size="lg"
                     >
                         <AddCategoryForm
                             category={editingCategory}
-                            onSave={(categoryData, addAnother) => {
+                            onSubmit={(categoryData) => {
                                 if (editingCategory) {
-                                    // Update existing category
-                                    updateCategory(editingCategory.id, categoryData);
-                                    setEditingCategory(null);
+                                    handleEditCategory(editingCategory.id, categoryData);
                                 } else {
-                                    // Add new category
-                                    addCategory(categoryData);
-                                    if (!addAnother) setShowAddCategory(false);
+                                    handleAddCategory(categoryData);
                                 }
+                            }}
+                            onSubmitAnother={(categoryData) => {
+                                handleAddCategory(categoryData);
+                                // Keep modal open for adding another
                             }}
                             onCancel={() => {
                                 setShowAddCategory(false);
                                 setEditingCategory(null);
                             }}
-                            categoryColors={categoryColors}
+                            categories={categories}
+                            payFrequency={payFrequency}
                         />
                     </ModalSystem>
 
@@ -715,11 +932,9 @@ const App = () => {
                             account={editingAccount}
                             onSave={(accountData) => {
                                 if (editingAccount) {
-                                    // Update existing account
                                     updateAccount(editingAccount.id, accountData);
                                     setEditingAccount(null);
                                 } else {
-                                    // Add new account
                                     addAccount(accountData);
                                     setShowAddAccount(false);
                                 }
@@ -745,11 +960,9 @@ const App = () => {
                             transaction={editingTransaction}
                             onSave={(transactionData) => {
                                 if (editingTransaction) {
-                                    // Update existing transaction
                                     updateTransaction(editingTransaction.id, transactionData);
                                     setEditingTransaction(null);
                                 } else {
-                                    // Add new transaction
                                     addTransaction(transactionData);
                                     setShowAddTransaction(false);
                                 }

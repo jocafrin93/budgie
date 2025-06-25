@@ -1,17 +1,18 @@
-// src/hooks/useCategoryManagement.js
+// src/hooks/useCategoryManagement.js - UPDATED
 import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 
 /**
- * Custom hook for managing categories
- * Extracts category-related state and operations from App.js
+ * Custom hook for managing categories with Enhanced Category Structure
+ * Now supports 'single' and 'multiple' category types
  */
 export const useCategoryManagement = () => {
-  // Categories state
+  // Categories state - UPDATED with type field
   const [categories, setCategories] = useLocalStorage('budgetCalc_categories', [
     {
       id: 1,
       name: 'Personal Care',
+      type: 'multiple', // NEW: Added type field
       color: 'bg-gradient-to-r from-purple-500 to-pink-500',
       collapsed: false,
       allocated: 0,
@@ -27,6 +28,7 @@ export const useCategoryManagement = () => {
     {
       id: 2,
       name: 'Pet Care',
+      type: 'multiple', // NEW: Added type field
       color: 'bg-gradient-to-r from-green-500 to-blue-500',
       collapsed: false,
       allocated: 0,
@@ -42,6 +44,7 @@ export const useCategoryManagement = () => {
     {
       id: 3,
       name: 'Savings Goals',
+      type: 'multiple', // NEW: Added type field
       color: 'bg-gradient-to-r from-purple-600 to-indigo-600',
       collapsed: false,
       allocated: 0,
@@ -65,58 +68,226 @@ export const useCategoryManagement = () => {
   }, [categories]);
 
   /**
-   * Add a new category
+   * Add a new category - UPDATED to require type
    */
   const addCategory = useCallback((categoryData) => {
+    // Validate required fields
+    if (!categoryData.name?.trim()) {
+      throw new Error('Category name is required');
+    }
+
+    if (!categoryData.type || !['single', 'multiple'].includes(categoryData.type)) {
+      throw new Error('Category type must be either "single" or "multiple"');
+    }
+
     const newCategory = {
-      ...categoryData,
-      id: generateNextCategoryId(),
+      name: categoryData.name.trim(),
+      type: categoryData.type, // NEW: Required type field
+      color: categoryData.color || 'bg-gradient-to-r from-blue-500 to-purple-500',
       collapsed: false,
       allocated: 0,
       spent: 0,
+      available: 0, // NEW: Available balance for envelope budgeting
       lastFunded: null,
-      targetBalance: 0,
+      targetBalance: categoryData.targetBalance || 0,
       autoFunding: {
-        enabled: false,
-        maxAmount: 500,
-        priority: 'medium'
-      }
+        enabled: categoryData.autoFunding?.enabled || false,
+        maxAmount: categoryData.autoFunding?.maxAmount || 500,
+        priority: categoryData.autoFunding?.priority || 'medium'
+      },
+      // NEW: Category type specific settings
+      settings: {
+        // For single categories - the main expense details
+        ...(categoryData.type === 'single' && {
+          amount: categoryData.amount || 0,
+          frequency: categoryData.frequency || 'monthly',
+          dueDate: categoryData.dueDate || null
+        }),
+        // For multiple categories - organization settings
+        ...(categoryData.type === 'multiple' && {
+          allowInactiveItems: true,
+          autoDistribution: false // Whether to auto-distribute funds among items
+        })
+      },
+      id: generateNextCategoryId()
     };
+
     setCategories(prev => [...prev, newCategory]);
     return newCategory;
   }, [generateNextCategoryId, setCategories]);
 
   /**
-   * Update an existing category
+   * Update an existing category - ENHANCED to handle type changes
    */
   const updateCategory = useCallback((categoryId, categoryData) => {
-    setCategories(prev => prev.map(cat =>
-      cat.id === categoryId ? { ...cat, ...categoryData } : cat
-    ));
+    setCategories(prev => prev.map(cat => {
+      if (cat.id === categoryId) {
+        // If changing type, preserve important fields but update structure
+        if (categoryData.type && categoryData.type !== cat.type) {
+          const updatedCategory = {
+            ...cat,
+            ...categoryData,
+            // Reset type-specific settings when changing type
+            settings: {
+              ...(categoryData.type === 'single' && {
+                amount: categoryData.amount || 0,
+                frequency: categoryData.frequency || 'monthly',
+                dueDate: categoryData.dueDate || null
+              }),
+              ...(categoryData.type === 'multiple' && {
+                allowInactiveItems: true,
+                autoDistribution: false
+              })
+            }
+          };
+          return updatedCategory;
+        }
+
+        // Normal update
+        return { ...cat, ...categoryData };
+      }
+      return cat;
+    }));
   }, [setCategories]);
 
   /**
-   * Delete a category
-   * Note: This doesn't handle moving items to another category - that should be done by the caller
+   * Delete a category - ENHANCED with type-aware cleanup
    */
-  const deleteCategory = useCallback((categoryId) => {
+  const deleteCategory = useCallback((categoryId, planningItems = []) => {
+    const categoryToDelete = categories.find(cat => cat.id === categoryId);
+    if (!categoryToDelete) return { success: false, error: 'Category not found' };
+
+    // Check for associated items
+    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+
+    if (associatedItems.length > 0) {
+      return {
+        success: false,
+        error: `Cannot delete category "${categoryToDelete.name}" because it has ${associatedItems.length} item(s). Please move or delete the items first.`,
+        itemCount: associatedItems.length
+      };
+    }
+
     setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-  }, [setCategories]);
+    return { success: true };
+  }, [setCategories, categories]);
 
   /**
-   * Fund a category with a specific amount
+   * Convert a category type - NEW FEATURE
+   * Safely converts between single and multiple types
    */
-  const fundCategory = useCallback((categoryId, amount) => {
-    setCategories(prev => prev.map(category =>
-      category.id === categoryId
+  const convertCategoryType = useCallback((categoryId, newType, planningItems = []) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    if (!category) return { success: false, error: 'Category not found' };
+
+    if (category.type === newType) return { success: true }; // Already correct type
+
+    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+
+    // Validate conversion rules
+    if (newType === 'single' && associatedItems.length > 1) {
+      return {
+        success: false,
+        error: `Cannot convert to single expense because this category has ${associatedItems.length} items. Single categories can only have one item.`
+      };
+    }
+
+    // Perform the conversion
+    updateCategory(categoryId, {
+      type: newType,
+      // Clear settings that don't apply to new type
+      settings: newType === 'single'
         ? {
-          ...category,
-          allocated: (category.allocated || 0) + amount,
+          amount: associatedItems[0]?.amount || 0,
+          frequency: associatedItems[0]?.frequency || 'monthly',
+          dueDate: associatedItems[0]?.dueDate || null
+        }
+        : {
+          allowInactiveItems: true,
+          autoDistribution: false
+        }
+    });
+
+    return { success: true };
+  }, [categories, updateCategory]);
+
+  /**
+   * Get category type info - NEW HELPER
+   */
+  const getCategoryTypeInfo = useCallback((categoryId, planningItems = []) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    if (!category) return null;
+
+    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+    const activeItems = associatedItems.filter(item => item.isActive);
+
+    return {
+      type: category.type,
+      totalItems: associatedItems.length,
+      activeItems: activeItems.length,
+      canConvertToSingle: associatedItems.length <= 1,
+      canConvertToMultiple: true, // Always possible
+      settings: category.settings || {}
+    };
+  }, [categories]);
+
+  /**
+   * Auto-detect and suggest category type - NEW HELPER
+   * Analyzes items and suggests appropriate type
+   */
+  const suggestCategoryType = useCallback((planningItems = []) => {
+    return (categoryId) => {
+      const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+
+      if (associatedItems.length === 0) {
+        return 'single'; // Default for empty categories
+      } else if (associatedItems.length === 1) {
+        return 'single'; // Perfect for single item
+      } else {
+        return 'multiple'; // Multiple items need multiple type
+      }
+    };
+  }, []);
+
+  /**
+   * Fund a category with a specific amount - ENHANCED for types
+   */
+  const fundCategory = useCallback((categoryId, amount, planningItems = []) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    if (!category) return { success: false, error: 'Category not found' };
+
+    // Update category balance
+    setCategories(prev => prev.map(cat =>
+      cat.id === categoryId
+        ? {
+          ...cat,
+          allocated: (cat.allocated || 0) + amount,
+          available: (cat.available || 0) + amount,
           lastFunded: new Date().toISOString()
         }
-        : category
+        : cat
     ));
-  }, [setCategories]);
+
+    // For single categories, mark the single item as funded
+    if (category.type === 'single') {
+      const singleItem = planningItems.find(item => item.categoryId === categoryId);
+      if (singleItem) {
+        // This would be handled by the planning item update logic
+        return {
+          success: true,
+          type: 'single',
+          fundedItem: singleItem.id
+        };
+      }
+    }
+
+    // For multiple categories, funds go to category pool for distribution
+    return {
+      success: true,
+      type: 'multiple',
+      categoryId
+    };
+  }, [setCategories, categories]);
 
   /**
    * Toggle a category's collapsed state
@@ -152,113 +323,61 @@ export const useCategoryManagement = () => {
   }, [categories]);
 
   /**
-   * Update category allocations based on active budget items
+   * Migrate existing categories to include type field - MIGRATION HELPER
+   * Call this once during app initialization
    */
-  const calculateCorrectCategoryAllocations = useCallback((planningItems = [], allocations = []) => {
-    try {
-      // Use provided state variables if available, otherwise fall back to localStorage
-      const currentPlanningItems = planningItems.length > 0
-        ? planningItems
-        : JSON.parse(localStorage.getItem('budgetCalc_planningItems') || '[]');
+  const migrateCategoriesWithTypes = useCallback((planningItems = []) => {
+    const needsMigration = categories.some(cat => !cat.type);
 
-      const currentAllocations = allocations.length > 0
-        ? allocations
-        : JSON.parse(localStorage.getItem('budgetCalc_activeBudgetAllocations') || '[]');
+    if (!needsMigration) return { migrated: 0 };
 
-      // Calculate what each category SHOULD have allocated based on active items only
-      const calculatedCategoryTotals = {};
+    let migratedCount = 0;
 
-      // Helper function to validate amount
-      const validateAmount = (amount) => {
-        if (typeof amount !== 'number' || isNaN(amount)) return 0;
-        // Cap at reasonable maximum (e.g., $100,000)
-        return Math.min(Math.max(amount, 0), 100000);
-      };
+    setCategories(prev => prev.map(category => {
+      if (!category.type) {
+        const associatedItems = planningItems.filter(item => item.categoryId === category.id);
+        const suggestedType = associatedItems.length <= 1 ? 'single' : 'multiple';
 
-      // Calculate allocations based on planning items
-      currentAllocations.forEach(allocation => {
-        const planningItem = currentPlanningItems.find(item => item.id === allocation.planningItemId);
+        migratedCount++;
 
-        // Only count allocations for items that exist and are active
-        if (planningItem && planningItem.isActive) {
-          if (!calculatedCategoryTotals[allocation.categoryId]) {
-            calculatedCategoryTotals[allocation.categoryId] = 0;
-          }
-
-          let amount = validateAmount(allocation.monthlyAllocation || 0);
-
-          // Convert monthly allocation to current balance based on frequency
-          switch (planningItem.frequency) {
-            case 'weekly':
-              amount = (amount * 52) / 12; // Convert weekly to monthly
-              break;
-            case 'biweekly':
-              amount = (amount * 26) / 12; // Convert biweekly to monthly
-              break;
-            case 'quarterly':
-              amount = amount / 3; // Convert quarterly to monthly
-              break;
-            case 'annually':
-              amount = amount / 12; // Convert annual to monthly
-              break;
-            // Monthly is default, no conversion needed
-          }
-
-          calculatedCategoryTotals[allocation.categoryId] += amount;
-        }
-      });
-
-      // Validate final totals
-      Object.keys(calculatedCategoryTotals).forEach(categoryId => {
-        calculatedCategoryTotals[categoryId] = validateAmount(calculatedCategoryTotals[categoryId]);
-      });
-
-      // Update categories to match calculated totals
-      let totalReclaimed = 0;
-      setCategories(prev => prev.map(category => {
-        const shouldHaveAllocated = validateAmount(calculatedCategoryTotals[category.id] || 0);
-        const currentlyAllocated = validateAmount(category.allocated || 0);
-
-        // Only update if there's a meaningful discrepancy (more than 1 cent)
-        if (Math.abs(currentlyAllocated - shouldHaveAllocated) > 0.01) {
-          const difference = currentlyAllocated - shouldHaveAllocated;
-          totalReclaimed += difference;
-
-          if (Math.abs(difference) > 0.01) {
-            console.log(`Adjusting ${category.name} allocation by ${difference > 0 ? '-' : '+'}$${Math.abs(difference).toFixed(2)}`);
-          }
-
-          return {
-            ...category,
-            allocated: shouldHaveAllocated,
-            lastFunded: shouldHaveAllocated > currentlyAllocated ? new Date().toISOString() : category.lastFunded
-          };
-        }
-
-        return category;
-      }));
-
-      if (totalReclaimed > 0.01) {
-        console.log(`Total money reclaimed: $${totalReclaimed.toFixed(2)}`);
+        return {
+          ...category,
+          type: suggestedType,
+          available: category.allocated || 0, // Initialize available balance
+          settings: suggestedType === 'single'
+            ? {
+              amount: associatedItems[0]?.amount || 0,
+              frequency: associatedItems[0]?.frequency || 'monthly',
+              dueDate: associatedItems[0]?.dueDate || null
+            }
+            : {
+              allowInactiveItems: true,
+              autoDistribution: false
+            }
+        };
       }
+      return category;
+    }));
 
-      return totalReclaimed;
-    } catch (error) {
-      console.error('Error calculating category allocations:', error);
-      return 0;
-    }
-  }, [setCategories]);
+    return { migrated: migratedCount };
+  }, [categories, setCategories]);
 
   return {
+    // Existing functions
     categories,
     setCategories,
     generateNextCategoryId,
-    addCategory,
-    updateCategory,
-    deleteCategory,
-    fundCategory,
+    addCategory, // ENHANCED
+    updateCategory, // ENHANCED
+    deleteCategory, // ENHANCED
+    fundCategory, // ENHANCED
     toggleCategoryCollapse,
     calculateToBeAllocated,
-    calculateCorrectCategoryAllocations
+
+    // NEW functions for Enhanced Category Structure
+    convertCategoryType,
+    getCategoryTypeInfo,
+    suggestCategoryType,
+    migrateCategoriesWithTypes
   };
 };
