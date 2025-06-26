@@ -7,14 +7,22 @@ import {
     ChevronRight,
     DollarSign,
     Edit,
+    GripVertical,
     Plus,
     ToggleLeft,
     ToggleRight,
     Trash2
 } from 'lucide-react';
 import { useState } from 'react';
+import { useDrag, useDrop } from 'react-dnd';
 import { frequencyOptions } from '../utils/constants';
 import CurrencyInput from './CurrencyInput';
+
+// Drag and Drop Constants
+const DND_TYPES = {
+    PLANNING_ITEM: 'planning_item',
+    CATEGORY: 'category'
+};
 
 /**
  * Unified EnvelopeBudgetView component
@@ -41,6 +49,9 @@ const UnifiedEnvelopeBudgetView = ({
     onEditItem,
     onDeleteItem,
     onToggleItemActive,
+    onMoveItem,
+    onReorderItems,
+    onReorderCategories, // For category reordering
 
     // Optional
     onShowPaydayWorkflow,
@@ -57,6 +68,8 @@ const UnifiedEnvelopeBudgetView = ({
     const [showAddCategory, setShowAddCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryType, setNewCategoryType] = useState('single');
+
+    // State for Ready to Assign money movement
     const [showAssignModal, setShowAssignModal] = useState(false);
 
     // Toggle category expansion
@@ -288,7 +301,7 @@ const UnifiedEnvelopeBudgetView = ({
                 )}
             </div>
 
-            {/* Ready to Assign */}
+            {/* Enhanced Ready to Assign */}
             <div className="bg-white rounded-lg border-l-4 border-green-500 shadow-sm overflow-hidden">
                 <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50">
                     <div className="flex items-center justify-between">
@@ -310,7 +323,7 @@ const UnifiedEnvelopeBudgetView = ({
                                 <div className="text-xs text-gray-500">Available to assign</div>
                             </div>
 
-                            {/* NEW: Assign Money Button */}
+                            {/* Assign Money Button */}
                             <button
                                 onClick={() => setShowAssignModal(true)}
                                 disabled={toBeAllocated <= 0}
@@ -324,10 +337,9 @@ const UnifiedEnvelopeBudgetView = ({
                 </div>
             </div>
 
-
             {/* Categories */}
             <div className="space-y-4">
-                {/* <div className="flex justify-end">
+                <div className="flex justify-end">
                     <button
                         onClick={() => setShowAddCategory(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -335,17 +347,18 @@ const UnifiedEnvelopeBudgetView = ({
                         <Plus className="w-4 h-4" />
                         Add Category
                     </button>
-                </div> */}
-                {categories.map(category => {
+                </div>
+                {categories.map((category, index) => {
                     const categoryData = getCategoryData(category);
                     const isExpanded = expandedCategories[category.id];
                     const isOverspent = category.available < 0;
 
                     return (
-                        <UnifiedCategoryCard
+                        <DraggableCategory
                             key={category.id}
                             category={category}
                             categoryData={categoryData}
+                            index={index}
                             isExpanded={isExpanded}
                             isOverspent={isOverspent}
                             onToggleExpand={() => toggleCategoryExpanded(category.id)}
@@ -356,8 +369,11 @@ const UnifiedEnvelopeBudgetView = ({
                             onEditItem={onEditItem}
                             onDeleteItem={onDeleteItem}
                             onToggleItemActive={onToggleItemActive}
+                            onMoveItem={onMoveItem}
+                            onReorderCategories={onReorderCategories}
                             payFrequency={payFrequency}
                             getAmountDisplayInfo={getAmountDisplayInfo}
+                            onReorderItems={onReorderItems}
                             getFrequencyLabel={getFrequencyLabel}
                             categories={categories}
                             transferFunds={transferFunds}
@@ -365,6 +381,8 @@ const UnifiedEnvelopeBudgetView = ({
                     );
                 })}
             </div>
+
+            {/* Money Assignment Modal */}
             {showAssignModal && (
                 <AssignMoneyModal
                     availableAmount={toBeAllocated}
@@ -384,484 +402,7 @@ const UnifiedEnvelopeBudgetView = ({
     );
 };
 
-// Individual Category Card Component
-// Money Movement Modal Component
-const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClose }) => {
-    const [selectedCategoryId, setSelectedCategoryId] = useState('');
-    const [moveAmount, setMoveAmount] = useState(amount.toFixed(2));
-
-    const handleMove = () => {
-        console.log('Money Movement Debug:', {
-            selectedCategory: selectedCategoryId,
-            moveAmount,
-            sourceCategory,
-            availableAmount: amount
-        });
-
-        if (selectedCategoryId && moveAmount) {
-            const parsedAmount = parseFloat(moveAmount);
-            const source = sourceCategory.id;
-            let destination;
-            if (selectedCategoryId === 'ready-to-assign') {
-                destination = 'toBeAllocated';
-            } else {
-                // Convert string category ID to number
-                destination = parseInt(selectedCategoryId, 10);
-            }
-            console.log('Attempting to move money:', {
-                source,
-                destination,
-                parsedAmount,
-                isValid: !isNaN(parsedAmount) && parsedAmount > 0
-            });
-
-            if (!isNaN(parsedAmount) && parsedAmount > 0) {
-                console.log('Calling transferFunds with:', {
-                    source,
-                    destination,
-                    amount: parsedAmount
-                });
-                onMove(source, destination, parsedAmount);
-                onClose();
-            } else {
-                console.warn('Invalid amount:', {
-                    moveAmount,
-                    parsedAmount,
-                    isNaN: isNaN(parsedAmount),
-                    isPositive: parsedAmount > 0
-                });
-            }
-        } else {
-            console.warn('Missing required fields:', {
-                hasSelectedCategory: Boolean(selectedCategoryId),
-                hasMoveAmount: Boolean(moveAmount)
-            });
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
-                <h3 className="text-lg font-semibold mb-4">Move Money</h3>
-
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Amount
-                        </label>
-                        <CurrencyInput
-                            value={moveAmount}
-                            onChange={(e) => setMoveAmount(e.target.value)}
-                            className="border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            To Category
-                        </label>
-                        <select
-                            value={selectedCategoryId}
-                            onChange={(e) => setSelectedCategoryId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">Select a category...</option>
-                            <option value="ready-to-assign">Ready to Assign</option>
-                            {categories.map(cat => (
-                                cat.id !== sourceCategory.id && (
-                                    <option key=
-                                        {cat.id} value={cat.id}>
-                                        {cat.name} (${(cat.available || 0).toFixed(2)} available)
-
-                                    </option>
-                                )
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3 mt-6">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleMove}
-                        disabled={!selectedCategoryId || !moveAmount}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        OK
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const UnifiedCategoryCard = ({
-    categories,
-    transferFunds,
-    category,
-    categoryData,
-    isExpanded,
-    isOverspent,
-    onToggleExpand,
-    onFund,
-    onEditCategory,
-    onDeleteCategory,
-    onAddItem,
-    onEditItem,
-    onDeleteItem,
-    onToggleItemActive,
-    payFrequency,
-    getAmountDisplayInfo,
-    getFrequencyLabel
-}) => {
-    const [fundAmount, setFundAmount] = useState('');
-    const [showMoveModal, setShowMoveModal] = useState(false);
-
-    const handleFund = () => {
-        const amount = parseFloat(fundAmount);
-        if (amount > 0 && onFund) {
-            onFund(category.id, amount);
-            setFundAmount('');
-        }
-    };
-
-    return (
-        <div className={`bg-white rounded-lg border ${isOverspent ? 'border-red-300' : 'border-gray-200'} overflow-hidden shadow-sm`}>
-            {/* Header */}
-            <div
-                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={onToggleExpand}
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        {categoryData.type === 'multiple' ? (
-                            isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
-                        ) : null}
-
-                        <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full ${category.color || 'bg-gray-400'} shadow-lg border-2 border-white`} />
-                            <div>
-                                <h3 className="font-semibold text-gray-900">{category.name}</h3>
-
-                                {categoryData.type === 'single' ? (
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                                            Single
-                                        </span>
-                                        {categoryData.singleData?.dueDate && (
-                                            <span className="text-xs text-gray-600 flex items-center gap-1">
-                                                • <Calendar className="w-3.5 h-3.5" />
-                                                {new Date(categoryData.singleData.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}
-                                                {categoryData.paychecksUntilDue !== null && (
-                                                    <span className="ml-1">• {categoryData.paychecksUntilDue} paychecks remaining</span>
-                                                )}
-                                            </span>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                                        Multiple ({categoryData.activeItems?.length || 0} active)
-                                    </span>
-                                )}
-                            </div>
-
-                            {categoryData.urgencyInfo && (
-                                <div className={`text-sm ${categoryData.urgencyInfo.color} flex items-center gap-1 mt-1`}>
-                                    <AlertTriangle className="w-3 h-3" />
-                                    {categoryData.urgencyInfo.message}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Category Controls */}
-                        <div className="flex items-center gap-1 ml-auto mr-4">
-                            {/* Add Item (Multiple categories only) */}
-                            {categoryData.type === 'multiple' && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onAddItem) onAddItem({ categoryId: category.id });
-                                    }}
-                                    className="p-1 text-gray-500 hover:text-green-600 transition-colors"
-                                    title="Add item to this category"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </button>
-                            )}
-
-                            {/* Edit Category */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onEditCategory) onEditCategory(category); // Pass just the category object
-                                }}
-                                className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
-                                title="Edit category"
-                            >
-                                <Edit className="w-4 h-4" />
-                            </button>
-
-                            {/* Delete Category */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onDeleteCategory) onDeleteCategory(category.id);
-                                }}
-                                className="p-1 text-gray-500 hover:text-red-600 transition-colors"
-                                title="Delete category"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="text-right">
-                        <div
-                            className={`text-lg font-semibold ${isOverspent ? 'text-red-600' : 'text-green-600'} cursor-pointer hover:opacity-80`}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowMoveModal(true);
-                            }}
-                        >
-                            ${(category.available || 0).toFixed(2)} available
-                        </div>
-                        {categoryData.monthlyNeed > 0 && (
-                            <div className="text-sm text-gray-600">
-                                ${categoryData.monthlyNeed.toFixed(2)} needed/month
-                            </div>
-                        )}
-                        {categoryData.perPaycheckNeed > 0 && (
-                            <div className="text-xs text-gray-500">
-                                ${categoryData.perPaycheckNeed.toFixed(2)} per {getFrequencyLabel()}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Expanded Content for Multiple Categories AND Item Details */}
-            {isExpanded && (
-                <div className="border-t border-gray-200 p-4">
-                    {categoryData.type === 'single' && categoryData.singleData ? (
-                        /* Single Category - Show the one expense details */
-                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div>
-                                        <div className="font-medium text-gray-900">{category.name} Details</div>
-                                        <div className="text-sm text-gray-600">
-                                            ${categoryData.singleData.amount} {categoryData.singleData.frequency}
-                                            {categoryData.singleData.dueDate && (
-                                                <>
-                                                    <span className="ml-2 inline-flex items-center gap-1">•<Calendar className="w-3.5 h-3.5" /> {new Date(categoryData.singleData.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}</span>
-                                                    {categoryData.paychecksUntilDue !== null && (
-                                                        <span className="ml-2 text-xs text-gray-600">• {categoryData.paychecksUntilDue} paychecks remaining</span>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (onEditCategory) onEditCategory(category); // Pass just the category object
-                                        }}
-                                        className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
-                                        title="Edit category"
-                                    >
-                                        <Edit className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ) : categoryData.type === 'multiple' ? (
-                        /* Multiple Categories - Show item list with full functionality */
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="font-medium text-gray-900">Items in this category</h4>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onAddItem) onAddItem({ categoryId: category.id });
-                                    }}
-                                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                    Add Item
-                                </button>
-                            </div>
-
-                            {categoryData.items.length === 0 ? (
-                                <div className="text-center py-6 text-gray-500">
-                                    <div className="w-8 h-8 mx-auto mb-2 opacity-50">📦</div>
-                                    <p>No items in this category yet</p>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (onAddItem) onAddItem({ categoryId: category.id });
-                                        }}
-                                        className="text-blue-600 hover:text-blue-700 text-sm mt-2"
-                                    >
-                                        Add your first item
-                                    </button>
-                                </div>
-                            ) : (
-                                categoryData.items.map(item => {
-                                    const displayInfo = getAmountDisplayInfo(item, payFrequency);
-                                    const needed = Math.max(0, displayInfo.perPaycheckAmount - (item.allocated || 0));
-                                    const isActive = item.isActive;
-                                    const isGoal = item.type === 'savings-goal';
-
-                                    return (
-                                        <div
-                                            key={item.id}
-                                            className={`flex items-center justify-between py-3 px-4 rounded-lg transition-all ${isActive
-                                                ? 'bg-green-50 border border-green-200'
-                                                : 'bg-gray-50 border border-gray-200'
-                                                }`}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div>
-                                                    <div className="font-medium text-gray-900">{item.name}</div>
-                                                    <div className="text-sm text-gray-600">
-                                                        ${displayInfo.perPaycheckAmount.toFixed(2)}/{getFrequencyLabel()} • ${displayInfo.monthlyAmount.toFixed(2)} monthly
-                                                        {item.dueDate && (
-                                                            <>
-                                                                <span className="ml-2 inline-flex items-center gap-1">•<Calendar className="w-3.5 h-3.5" /> {new Date(item.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}</span>
-                                                                {displayInfo.paychecksUntilDue !== null && (
-                                                                    <span className="ml-2 text-xs text-gray-600">• {displayInfo.paychecksUntilDue} paychecks remaining</span>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2">
-                                                <div className="text-right text-sm">
-                                                    <div className="font-medium">
-                                                        ${(item.allocated || 0).toFixed(2)} allocated
-                                                    </div>
-                                                    <div className="text-gray-600">
-                                                        ${needed.toFixed(2)} needed per {getFrequencyLabel()}
-                                                    </div>
-                                                </div>
-
-                                                {/* Item Controls */}
-                                                <div className="flex items-center gap-1 ml-3">
-                                                    {/* Active/Planning Toggle */}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (onToggleItemActive) onToggleItemActive(item.id, !isActive);
-                                                        }}
-                                                        className={`p-1 rounded transition-colors ${isActive
-                                                            ? 'text-green-600 hover:text-green-700'
-                                                            : 'text-gray-400 hover:text-gray-600'
-                                                            }`}
-                                                        title={isActive ? 'Mark as planning only' : 'Mark as active'}
-                                                    >
-                                                        {isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                                                    </button>
-
-                                                    {/* Edit Item */}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (onEditItem) onEditItem(item);
-                                                        }}
-                                                        className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
-                                                        title="Edit item"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </button>
-
-                                                    {/* Delete Item */}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (onDeleteItem) onDeleteItem(item);
-                                                        }}
-                                                        className="p-1 text-gray-500 hover:text-red-600 transition-colors"
-                                                        title="Delete item"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
-                    ) : (
-                        /* Single Category - Needs Configuration */
-                        <div className="text-center py-6 text-orange-600">
-                            <div className="w-8 h-8 mx-auto mb-2 opacity-50">⚙️</div>
-                            <p>This single category needs configuration</p>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onEditCategory) onEditCategory(category); // Pass full category object
-                                }}
-                                className="text-blue-600 hover:text-blue-700 text-sm mt-2"
-                            >
-                                Configure expense details
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Funding Interface */}
-            {categoryData.perPaycheckNeed > 0 && (
-                <div className="border-t border-gray-200 p-4 bg-gray-50">
-                    <div className="flex gap-3">
-                        <CurrencyInput
-                            value={fundAmount}
-                            onChange={(e) => setFundAmount(e.target.value)}
-                            placeholder={categoryData.perPaycheckNeed.toFixed(2)}
-                            className="border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                        />
-                        <button
-                            onClick={() => setFundAmount(categoryData.perPaycheckNeed.toFixed(2))}
-                            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
-                        >
-                            Need
-                        </button>
-                        <button
-                            onClick={handleFund}
-                            disabled={!fundAmount || parseFloat(fundAmount) <= 0}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                        >
-                            Fund
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Money Movement Modal */}
-            {showMoveModal && (
-                <MoneyMovementModal
-                    amount={category.available || 0}
-                    sourceCategory={category}
-                    categories={categories}
-                    onMove={transferFunds}
-                    onClose={() => setShowMoveModal(false)}
-                />
-            )}
-        </div>
-    );
-};
-
+// Simple Money Assignment Modal
 const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) => {
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
     const [assignAmount, setAssignAmount] = useState('');
@@ -962,6 +503,750 @@ const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) =>
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Assign Money
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// NEW: Draggable Category Wrapper Component
+const DraggableCategory = ({
+    category,
+    categoryData,
+    index,
+    isExpanded,
+    isOverspent,
+    onToggleExpand,
+    onFund,
+    onEditCategory,
+    onDeleteCategory,
+    onAddItem,
+    onEditItem,
+    onDeleteItem,
+    onToggleItemActive,
+    onMoveItem,
+    onReorderCategories,
+    onReorderItems,
+    payFrequency,
+    getAmountDisplayInfo,
+    getFrequencyLabel,
+    categories,
+    transferFunds
+}) => {
+    // Drag functionality for category reordering
+    const [{ isDraggingCategory }, dragCategory] = useDrag({
+        type: DND_TYPES.CATEGORY,
+        item: { id: category.id, index },
+        collect: (monitor) => ({
+            isDraggingCategory: monitor.isDragging(),
+        }),
+    });
+
+    // Drop functionality for category reordering
+    const [{ isOverCategory }, dropCategory] = useDrop({
+        accept: DND_TYPES.CATEGORY,
+        drop: (draggedItem) => {
+            console.log('Category drop triggered:', { draggedIndex: draggedItem.index, targetIndex: index });
+            if (draggedItem.index !== index && onReorderCategories) {
+                onReorderCategories(draggedItem.index, index);
+            }
+        },
+        collect: (monitor) => ({
+            isOverCategory: monitor.isOver(),
+        }),
+    });
+
+    return (
+        <div
+            ref={dropCategory}
+            className={`transition-all duration-200 ease-in-out ${isDraggingCategory ? 'z-50' : 'z-10'}`}
+            style={{
+                ...(isDraggingCategory && {
+                    opacity: 0.7,
+                    transform: 'scale(1.02) rotate(1deg)',
+                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
+                    border: '2px dashed #3b82f6',
+                    backgroundColor: '#f0f9ff'
+                }),
+                ...(isOverCategory && !isDraggingCategory && {
+                    transform: 'translateY(-2px) scale(1.01)',
+                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.3)',
+                    border: '2px solid #3b82f6'
+                })
+            }}
+        >
+            <UnifiedCategoryCard
+                category={category}
+                categoryData={categoryData}
+                isExpanded={isExpanded}
+                isOverspent={isOverspent}
+                onToggleExpand={onToggleExpand}
+                onFund={onFund}
+                onEditCategory={onEditCategory}
+                onDeleteCategory={onDeleteCategory}
+                onAddItem={onAddItem}
+                onEditItem={onEditItem}
+                onDeleteItem={onDeleteItem}
+                onToggleItemActive={onToggleItemActive}
+                onMoveItem={onMoveItem}
+                onReorderItems={(fromIndex, toIndex) => {
+                    console.log('UnifiedCategoryCard: Reordering items', fromIndex, '->', toIndex, 'in category', category.id);
+                    if (onReorderItems) {
+                        onReorderItems(category.id, fromIndex, toIndex);
+                    }
+                }}
+                payFrequency={payFrequency}
+                getAmountDisplayInfo={getAmountDisplayInfo}
+                getFrequencyLabel={getFrequencyLabel}
+                categories={categories}
+                transferFunds={transferFunds}
+                dragCategoryRef={dragCategory}
+                isDraggingCategory={isDraggingCategory}
+            />
+        </div>
+    );
+};
+
+// Individual Category Card Component with Drag and Drop
+const UnifiedCategoryCard = ({
+    categories,
+    transferFunds,
+    category,
+    categoryData,
+    isExpanded,
+    isOverspent,
+    onToggleExpand,
+    onFund,
+    onEditCategory,
+    onDeleteCategory,
+    onAddItem,
+    onEditItem,
+    onDeleteItem,
+    onToggleItemActive,
+    onMoveItem,
+    onReorderItems,
+    payFrequency,
+    getAmountDisplayInfo,
+    getFrequencyLabel,
+    dragCategoryRef,
+    isDraggingCategory
+}) => {
+    const [fundAmount, setFundAmount] = useState('');
+    const [showMoveModal, setShowMoveModal] = useState(false);
+
+
+
+    // Drop functionality for planning items - enhanced with validation
+    const [{ isOver, canDrop }, drop] = useDrop({
+        accept: DND_TYPES.PLANNING_ITEM,
+        canDrop: (draggedItem) => {
+            // Don't handle same-category items at all - let them pass through to items
+            if (draggedItem.categoryId === category.id) {
+                return undefined; // Let child components handle it
+            }
+
+            // Don't allow dropping items into single-item categories
+            if (categoryData.type === 'single') return false;
+
+            return true; // Allow cross-category moves to multi-item categories
+        },
+        drop: (draggedItem, monitor) => {
+            // Only handle cross-category moves that didn't get handled by children
+            if (draggedItem.categoryId !== category.id && !monitor.didDrop() && onMoveItem) {
+                console.log('Moving item', draggedItem.id, 'to category', category.id);
+                onMoveItem(draggedItem.id, category.id);
+            }
+        },
+        collect: (monitor) => ({
+            isOver: monitor.isOver({ shallow: true }),
+            canDrop: monitor.canDrop(),
+        }),
+    });
+    // const handleReorderItems = (categoryId, fromIndex, toIndex) => {
+    //     if (fromIndex === toIndex) return;
+
+    //     console.log(`Reordering items in category ${categoryId}: ${fromIndex} -> ${toIndex}`);
+
+    //     // This needs to call a parent function to update the planning items
+    //     // Since we can't directly modify the planningItems prop
+    //     if (onReorderItems) {
+    //         onReorderItems(categoryId, fromIndex, toIndex);
+    //     }
+    // };
+    const handleFund = () => {
+        const amount = parseFloat(fundAmount);
+        if (amount > 0 && onFund) {
+            onFund(category.id, amount);
+            setFundAmount('');
+        }
+    };
+
+    const getBorderStyle = () => {
+        if (isOverspent) return 'border-red-300';
+        // Only show green border for valid cross-category moves
+        if (isOver && canDrop === true) return 'border-green-500 border-2';
+        // Only show red border for explicitly invalid drops (not undefined)
+        if (isOver && canDrop === false) return 'border-red-500 border-2';
+        return 'border-gray-200';
+    };
+
+    return (
+        <div
+            ref={drop}
+            className={`bg-white rounded-lg border ${getBorderStyle()} overflow-hidden shadow-sm transition-all duration-200`}
+        >
+            {/* Header */}
+            <div
+                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={onToggleExpand}
+            >
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        {/* Category Drag Handle */}
+                        <div
+                            ref={dragCategoryRef}
+                            className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 p-1"
+                            title="Drag to reorder categories"
+                            onClick={(e) => e.stopPropagation()} // Prevent category expand when grabbing handle
+                        >
+                            <GripVertical className="w-4 h-4" />
+                        </div>
+
+                        {categoryData.type === 'multiple' ? (
+                            isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+                        ) : null}
+
+                        <div className="flex items-center gap-3">
+                            <div className={`w-6 h-6 rounded-full ${category.color || 'bg-gray-400'} shadow-lg border-2 border-white`} />
+                            <div>
+                                <h3 className="font-semibold text-gray-900">{category.name}</h3>
+
+                                {categoryData.type === 'single' ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                                            Single
+                                        </span>
+                                        {!canDrop && isOver && (
+                                            <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
+                                                No multi-items
+                                            </span>
+                                        )}
+                                        {categoryData.singleData?.dueDate && (
+                                            <span className="text-xs text-gray-600 flex items-center gap-1">
+                                                • <Calendar className="w-3.5 h-3.5" />
+                                                {new Date(categoryData.singleData.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}
+                                                {categoryData.paychecksUntilDue !== null && (
+                                                    <span className="ml-1">• {categoryData.paychecksUntilDue} paychecks remaining</span>
+                                                )}
+                                            </span>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
+                                            Multiple ({categoryData.activeItems?.length || 0} active)
+                                        </span>
+                                        {canDrop && isOver && (
+                                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                                                Drop here
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {categoryData.urgencyInfo && (
+                                <div className={`text-sm ${categoryData.urgencyInfo.color} flex items-center gap-1 mt-1`}>
+                                    <AlertTriangle className="w-3 h-3" />
+                                    {categoryData.urgencyInfo.message}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Category Controls */}
+                        <div className="flex items-center gap-1 ml-auto mr-4">
+                            {/* Add Item (Multiple categories only) */}
+                            {categoryData.type === 'multiple' && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onAddItem) onAddItem({ categoryId: category.id });
+                                    }}
+                                    className="p-1 text-gray-500 hover:text-green-600 transition-colors"
+                                    title="Add item to this category"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </button>
+                            )}
+
+                            {/* Edit Category */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onEditCategory) onEditCategory(category);
+                                }}
+                                className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+                                title="Edit category"
+                            >
+                                <Edit className="w-4 h-4" />
+                            </button>
+
+                            {/* Delete Category */}
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onDeleteCategory) onDeleteCategory(category.id);
+                                }}
+                                className="p-1 text-gray-500 hover:text-red-600 transition-colors"
+                                title="Delete category"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="text-right">
+                        <div
+                            className={`text-lg font-semibold ${isOverspent ? 'text-red-600' : 'text-green-600'} cursor-pointer hover:opacity-80`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setShowMoveModal(true);
+                            }}
+                        >
+                            ${(category.available || 0).toFixed(2)} available
+                        </div>
+                        {categoryData.monthlyNeed > 0 && (
+                            <div className="text-sm text-gray-600">
+                                ${categoryData.monthlyNeed.toFixed(2)} needed/month
+                            </div>
+                        )}
+                        {categoryData.perPaycheckNeed > 0 && (
+                            <div className="text-xs text-gray-500">
+                                ${categoryData.perPaycheckNeed.toFixed(2)} per {getFrequencyLabel()}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Expanded Content for Multiple Categories AND Item Details */}
+            {isExpanded && (
+                <div className="border-t border-gray-200 p-4">
+                    {categoryData.type === 'single' && categoryData.singleData ? (
+                        /* Single Category - Show the one expense details */
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div>
+                                        <div className="font-medium text-gray-900">{category.name} Details</div>
+                                        <div className="text-sm text-gray-600">
+                                            ${categoryData.singleData.amount} {categoryData.singleData.frequency}
+                                            {categoryData.singleData.dueDate && (
+                                                <>
+                                                    <span className="ml-2 inline-flex items-center gap-1">•<Calendar className="w-3.5 h-3.5" /> {new Date(categoryData.singleData.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                                    {categoryData.paychecksUntilDue !== null && (
+                                                        <span className="ml-2 text-xs text-gray-600">• {categoryData.paychecksUntilDue} paychecks remaining</span>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (onEditCategory) onEditCategory(category);
+                                        }}
+                                        className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+                                        title="Edit category"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : categoryData.type === 'multiple' ? (
+                        /* Multiple Categories - Show item list with full functionality and drag/drop */
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-medium text-gray-900">Items in this category</h4>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onAddItem) onAddItem({ categoryId: category.id });
+                                    }}
+                                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                    Add Item
+                                </button>
+                            </div>
+
+                            {categoryData.items.length === 0 ? (
+                                <div className="text-center py-6 text-gray-500">
+                                    <div className="w-8 h-8 mx-auto mb-2 opacity-50">📦</div>
+                                    <p>No items in this category yet</p>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (onAddItem) onAddItem({ categoryId: category.id });
+                                        }}
+                                        className="text-blue-600 hover:text-blue-700 text-sm mt-2"
+                                    >
+                                        Add your first item
+                                    </button>
+                                </div>
+                            ) : (
+                                categoryData.items.map((item, itemIndex) => (
+                                    <DraggableItem
+                                        key={item.id}
+                                        item={item}
+                                        index={itemIndex}
+                                        category={category}
+                                        getAmountDisplayInfo={getAmountDisplayInfo}
+                                        getFrequencyLabel={getFrequencyLabel}
+                                        payFrequency={payFrequency}
+                                        onEditItem={onEditItem}
+                                        onDeleteItem={onDeleteItem}
+                                        onToggleItemActive={onToggleItemActive}
+                                        onReorderItems={onReorderItems}
+
+                                    />
+                                ))
+                            )}
+                        </div>
+                    ) : (
+                        /* Single Category - Needs Configuration */
+                        <div className="text-center py-6 text-orange-600">
+                            <div className="w-8 h-8 mx-auto mb-2 opacity-50">⚙️</div>
+                            <p>This single category needs configuration</p>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onEditCategory) onEditCategory(category);
+                                }}
+                                className="text-blue-600 hover:text-blue-700 text-sm mt-2"
+                            >
+                                Configure expense details
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Funding Interface */}
+            {categoryData.perPaycheckNeed > 0 && (
+                <div className="border-t border-gray-200 p-4 bg-gray-50">
+                    <div className="flex gap-3">
+                        <CurrencyInput
+                            value={fundAmount}
+                            onChange={(e) => setFundAmount(e.target.value)}
+                            placeholder={categoryData.perPaycheckNeed.toFixed(2)}
+                            className="border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <button
+                            onClick={() => setFundAmount(categoryData.perPaycheckNeed.toFixed(2))}
+                            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
+                        >
+                            Need
+                        </button>
+                        <button
+                            onClick={handleFund}
+                            disabled={!fundAmount || parseFloat(fundAmount) <= 0}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                        >
+                            Fund
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Money Movement Modal */}
+            {showMoveModal && (
+                <MoneyMovementModal
+                    amount={category.available || 0}
+                    sourceCategory={category}
+                    categories={categories}
+                    onMove={transferFunds}
+                    onClose={() => setShowMoveModal(false)}
+                />
+            )}
+        </div>
+    );
+};
+
+// NEW: Draggable Item Component
+// Enhanced DraggableItem component - UPDATE your existing one in UnifiedEnvelopeBudgetView.js
+const DraggableItem = ({
+    item,
+    category,
+    index, // Add this prop
+    getAmountDisplayInfo,
+    getFrequencyLabel,
+    payFrequency,
+    onEditItem,
+    onDeleteItem,
+    onToggleItemActive,
+    onReorderItems // Add this prop
+}) => {
+    // Enhanced drag functionality with both moving and reordering
+    const [{ isDragging }, drag, dragPreview] = useDrag({
+        type: DND_TYPES.PLANNING_ITEM,
+        item: {
+            id: item.id,
+            categoryId: item.categoryId,
+            index, // Include index for reordering
+            sourceCategory: category.id
+        },
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+
+    // Drop functionality for reordering within same category
+    const [{ isOver, canDrop }, drop] = useDrop({ // ADD canDrop to collect
+        accept: DND_TYPES.PLANNING_ITEM,
+        canDrop: (draggedItem) => {
+            // Allow drops from same category (for reordering)
+            return draggedItem.categoryId === item.categoryId;
+        },
+        drop: (draggedItem) => {
+            console.log('DraggableItem drop triggered:', {
+                draggedItemId: draggedItem.id,
+                targetItemId: item.id,
+                draggedIndex: draggedItem.index,
+                targetIndex: index,
+                sameCategory: draggedItem.categoryId === item.categoryId
+            });
+
+            if (draggedItem.id !== item.id && draggedItem.categoryId === item.categoryId) {
+                console.log('Calling onReorderItems:', draggedItem.index, '->', index);
+                if (onReorderItems) {
+                    onReorderItems(draggedItem.index, index);
+                }
+            }
+        },
+        collect: (monitor) => ({
+            isOver: monitor.isOver(),
+            canDrop: monitor.canDrop(), // ADD THIS
+        }),
+    });
+
+    // Combine refs
+    const combinedRef = (node) => {
+        drag(node);
+        drop(node);
+        dragPreview(node);
+    };
+
+    const displayInfo = getAmountDisplayInfo(item, payFrequency);
+    const needed = Math.max(0, displayInfo.perPaycheckAmount - (item.allocated || 0));
+    const isActive = item.isActive;
+
+    // Enhanced drag styles with better visual feedback
+    const getDragStyles = () => {
+        if (isDragging) {
+            return {
+                opacity: 0.8,
+                transform: 'scale(1.05) rotate(-1deg)',
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
+                borderColor: '#10b981',
+                borderWidth: '2px',
+                borderStyle: 'dashed',
+                backgroundColor: isActive ? '#ecfdf5' : '#f9fafb',
+                zIndex: 1000
+            };
+        }
+
+        if (isOver && canDrop) {
+            return {
+                transform: 'translateY(-2px) scale(1.02)',
+                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
+                borderColor: '#10b981',
+                borderWidth: '2px',
+                borderStyle: 'solid'
+            };
+        }
+
+        return {};
+    };
+
+    return (
+        <div
+            ref={combinedRef}
+            style={getDragStyles()}
+            className={`flex items-center justify-between py-3 px-4 rounded-lg transition-all duration-200 ease-in-out ${isActive
+                ? 'bg-green-50 border border-green-200'
+                : 'bg-gray-50 border border-gray-200'
+                } ${isDragging ? 'z-50' : 'z-10'}`}
+        >
+            <div className="flex items-center gap-3">
+                {/* Enhanced Drag Handle */}
+                <div
+                    className={`cursor-grab active:cursor-grabbing transition-all duration-150 p-1 rounded hover:bg-gray-200 ${isDragging ? 'bg-green-100 scale-110' : ''
+                        }`}
+                    title="Drag to reorder or move to another category"
+                >
+                    <GripVertical className={`w-4 h-4 transition-colors ${isDragging ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'
+                        }`} />
+                </div>
+
+                <div>
+                    <div className="font-medium text-gray-900">{item.name}</div>
+                    <div className="text-sm text-gray-600">
+                        ${displayInfo.perPaycheckAmount.toFixed(2)}/{getFrequencyLabel()} • ${displayInfo.monthlyAmount.toFixed(2)} monthly
+                        {item.dueDate && (
+                            <>
+                                <span className="ml-2 inline-flex items-center gap-1">
+                                    •<Calendar className="w-3.5 h-3.5" />
+                                    {new Date(item.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}
+                                </span>
+                                {displayInfo.paychecksUntilDue !== null && (
+                                    <span className="ml-2 text-xs text-gray-600">
+                                        • {displayInfo.paychecksUntilDue} paychecks remaining
+                                    </span>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+                <div className="text-right text-sm">
+                    <div className="font-medium">
+                        ${(item.allocated || 0).toFixed(2)} allocated
+                    </div>
+                    <div className="text-gray-600">
+                        ${needed.toFixed(2)} needed per {getFrequencyLabel()}
+                    </div>
+                </div>
+
+                {/* Item Controls */}
+                <div className="flex items-center gap-1 ml-3">
+                    {/* Active/Planning Toggle */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onToggleItemActive) onToggleItemActive(item.id, !isActive);
+                        }}
+                        className={`p-1 rounded transition-colors ${isActive
+                            ? 'text-green-600 hover:text-green-700'
+                            : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                        title={isActive ? 'Mark as planning only' : 'Mark as active'}
+                    >
+                        {isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                    </button>
+
+                    {/* Edit Item */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onEditItem) onEditItem(item);
+                        }}
+                        className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+                        title="Edit item"
+                    >
+                        <Edit className="w-4 h-4" />
+                    </button>
+
+                    {/* Delete Item */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (onDeleteItem) onDeleteItem(item);
+                        }}
+                        className="p-1 text-gray-500 hover:text-red-600 transition-colors"
+                        title="Delete item"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Money Movement Modal Component (unchanged)
+const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClose }) => {
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
+    const [moveAmount, setMoveAmount] = useState(amount.toFixed(2));
+
+    const handleMove = () => {
+        if (selectedCategoryId && moveAmount) {
+            const parsedAmount = parseFloat(moveAmount);
+            const source = sourceCategory.id;
+
+            let destination;
+            if (selectedCategoryId === 'ready-to-assign') {
+                destination = 'toBeAllocated';
+            } else {
+                destination = parseInt(selectedCategoryId, 10);
+            }
+
+            if (!isNaN(parsedAmount) && parsedAmount > 0) {
+                onMove(source, destination, parsedAmount);
+                onClose();
+            }
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
+                <h3 className="text-lg font-semibold mb-4">Move Money</h3>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Amount
+                        </label>
+                        <CurrencyInput
+                            value={moveAmount}
+                            onChange={(e) => setMoveAmount(e.target.value)}
+                            className="border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            To Category
+                        </label>
+                        <select
+                            value={selectedCategoryId}
+                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Select a category...</option>
+                            <option value="ready-to-assign">Ready to Assign</option>
+                            {categories.map(cat => (
+                                cat.id !== sourceCategory.id && (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                )
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleMove}
+                        disabled={!selectedCategoryId || !moveAmount}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                        OK
                     </button>
                 </div>
             </div>

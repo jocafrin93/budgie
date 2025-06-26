@@ -1,5 +1,5 @@
 // src/App.js - COMPLETE IMPLEMENTATION
-import { AlertTriangle, Calculator, Calendar, DollarSign, PackageOpen, Plus, Settings, Target } from 'lucide-react';
+import { AlertTriangle, Calculator, Calendar, DollarSign, Plus, Settings, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -9,8 +9,11 @@ import ModalSystem from './components/ModalSystem';
 import SimplifiedSummaryCards from './components/SimplifiedSummaryCards';
 import UnifiedItemForm from './components/UnifiedItemForm';
 // Import our new envelope budgeting system components
-import EnvelopeBudgetingSystem from './components/EnvelopeBudgetingSystem';
+// COMMENTED OUT - Not needed for unified mode only
+// import EnvelopeBudgetingSystem from './components/EnvelopeBudgetingSystem';
+import PaydayWorkflow from './components/PaydayWorkflow';
 import UnifiedEnvelopeBudgetView from './components/UnifiedEnvelopeBudgetView';
+
 
 // Import existing components we're keeping
 import AccountsSection from './components/AccountsSection';
@@ -20,7 +23,8 @@ import AddTransactionForm from './components/AddTransactionForm';
 import CalendarView from './components/CalendarView';
 import ConfigurationPanel from './components/ConfigurationPanel';
 import ConfirmDialog from './components/ConfirmDialog';
-import PlanningMode from './components/PlanningMode';
+// COMMENTED OUT - Not needed for unified mode only
+// import PlanningMode from './components/PlanningMode';
 import ThemeSelector from './components/ThemeSelector';
 import TransactionsTab from './components/TransactionsTab';
 
@@ -46,6 +50,7 @@ const App = () => {
     // Use custom hooks for state management
     const {
         planningItems,
+        setPlanningItems,
         activeBudgetAllocations,
         expenses,
         savingsGoals,
@@ -185,7 +190,14 @@ const App = () => {
     });
 
     // State for budget mode (enhanced: item-based, envelope, or unified)
-    const [budgetMode, setBudgetMode] = useState('unified'); // 'item-based', 'envelope', or 'unified'
+    // SIMPLIFIED: Fixed to unified mode only
+    const budgetMode = 'unified'; // Fixed to unified mode only
+    // COMMENTED OUT: Budget mode switching functionality
+    // const [budgetMode, setBudgetMode] = useState('unified'); // 'item-based', 'envelope', or 'unified'
+
+    // Keep payday workflow state for unified view
+    const [showPaydayWorkflow, setShowPaydayWorkflow] = useState(false);
+    const [activePaycheckForWorkflow, setActivePaycheckForWorkflow] = useState(null);
 
     // State for what-if mode (keeping this in App.js for now)
     const [whatIfMode, setWhatIfMode] = useState(false);
@@ -419,7 +431,30 @@ const App = () => {
             return false;
         }
     };
+    const handleReorderCategories = (fromIndex, toIndex) => {
+        console.log('=== CATEGORY REORDER DEBUG ===');
+        console.log('From index:', fromIndex);
+        console.log('To index:', toIndex);
+        console.log('Current categories:', categories.map((c, i) => `${i}: ${c.name}`));
 
+        if (fromIndex === toIndex) {
+            console.log('Same index, no reorder needed');
+            return;
+        }
+
+        setCategories(prev => {
+            console.log('Previous categories:', prev.map((c, i) => `${i}: ${c.name}`));
+
+            const newCategories = [...prev];
+            const [movedCategory] = newCategories.splice(fromIndex, 1);
+            console.log('Moved category:', movedCategory.name);
+
+            newCategories.splice(toIndex, 0, movedCategory);
+            console.log('New categories order:', newCategories.map((c, i) => `${i}: ${c.name}`));
+
+            return newCategories;
+        });
+    };
     const handleToggleItemActiveWithSync = (itemId, isActive) => {
         console.log('Toggling item active with manual sync:', itemId, isActive);
         toggleItemActive(itemId, isActive);
@@ -528,6 +563,57 @@ const App = () => {
         }, 200);
     };
 
+    // Handle showing the payday workflow
+    const handleShowPaydayWorkflow = (paycheck = null) => {
+        console.log('Opening payday workflow...');
+
+        // Use provided paycheck or get recent one or create mock one
+        const workflowPaycheck = paycheck ||
+            getAllUpcomingPaycheckDates(1)[0] || {
+            id: 'current-paycheck',
+            amount: currentPay,
+            date: new Date().toISOString(),
+            description: 'Current Paycheck',
+            fullyAllocated: false
+        };
+
+        console.log('Payday workflow paycheck:', workflowPaycheck);
+        setActivePaycheckForWorkflow(workflowPaycheck);
+        setShowPaydayWorkflow(true);
+    };
+
+    // Handle completing the payday workflow
+    const handlePaydayWorkflowComplete = (result) => {
+        console.log('Payday workflow completed:', result);
+
+        // Mark the paycheck as allocated if needed
+        if (result.completed && result.paycheck) {
+            recordPaycheckReceived(result.paycheck.id, {
+                ...result.paycheck,
+                fullyAllocated: true,
+                dateAllocated: new Date().toISOString(),
+                allocations: result.allocations
+            });
+        }
+
+        // Close the workflow
+        setShowPaydayWorkflow(false);
+        setActivePaycheckForWorkflow(null);
+    };
+
+    // Add helper functions for PaydayWorkflow
+    const handleAutoFundCategories = () => {
+        console.log('Auto-fund categories requested');
+        return true;
+    };
+
+    const handleGetFundingSuggestions = () => {
+        console.log('Funding suggestions requested');
+        return [];
+    };
+
+    // COMMENTED OUT: Budget mode cycling functionality
+    /*
     // Budget mode cycle: item-based → envelope → unified → item-based
     const cycleBudgetMode = () => {
         const modes = ['item-based', 'envelope', 'unified'];
@@ -564,6 +650,7 @@ const App = () => {
                 };
         }
     };
+    */
 
     // Streamlined tabs
     const tabs = [
@@ -576,7 +663,8 @@ const App = () => {
     // Get allocation data
     const allocationData = calculateCategoryAllocation(accounts);
 
-    const budgetModeInfo = getBudgetModeInfo();
+    // COMMENTED OUT: Budget mode info (not needed for unified only)
+    // const budgetModeInfo = getBudgetModeInfo();
 
     // Render migration status notification
     const renderMigrationStatus = () => {
@@ -642,7 +730,8 @@ const App = () => {
                                 </div>
                             </div>
 
-                            {/* Enhanced Budget Mode Toggle */}
+                            {/* COMMENTED OUT: Enhanced Budget Mode Toggle */}
+                            {/*
                             {activeTab === 'budget' && (
                                 <div className="flex space-x-2">
                                     <button
@@ -661,6 +750,7 @@ const App = () => {
                                     </button>
                                 </div>
                             )}
+                            */}
                         </div>
                     </div>
 
@@ -676,6 +766,43 @@ const App = () => {
                         planningItems={planningItems}
                         activeBudgetAllocations={activeBudgetAllocations}
                     />
+                    {/* Payday Workflow */}
+                    {showPaydayWorkflow && activePaycheckForWorkflow && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-theme-primary rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto m-4 border border-theme-secondary">
+                                <div className="p-4 border-b border-theme-secondary">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-xl font-bold text-theme-primary">Payday Workflow</h2>
+                                        <button
+                                            onClick={() => {
+                                                setShowPaydayWorkflow(false);
+                                                setActivePaycheckForWorkflow(null);
+                                            }}
+                                            className="text-theme-secondary hover:text-theme-primary transition-colors"
+                                        >
+                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <PaydayWorkflow
+                                    paycheck={activePaycheckForWorkflow}
+                                    accounts={accounts}
+                                    payFrequency={payFrequency}
+                                    payFrequencyOptions={payFrequencyOptions}
+                                    categories={categories}
+                                    toBeAllocated={allocationData.toBeAllocated}
+                                    planningItems={planningItems}
+                                    onEditItem={handleUpdateItemWithSync}
+                                    fundCategory={fundCategory}
+                                    autoFundfCategories={handleAutoFundCategories}
+                                    getFundingSuggestions={handleGetFundingSuggestions}
+                                    onComplete={handlePaydayWorkflowComplete}
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     {/* Accounts Section */}
                     <AccountsSection
@@ -715,21 +842,16 @@ const App = () => {
                     {/* Tab Content */}
                     {activeTab === 'budget' && (
                         <div>
-                            {/* Mode Header */}
+                            {/* Mode Header - SIMPLIFIED for unified only */}
                             <div className="flex justify-between items-center mb-6">
                                 <div>
                                     <h2 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
-                                        <budgetModeInfo.icon className="w-6 h-6" />
-                                        {budgetMode === 'unified' && '🎯 '}
-                                        {budgetMode === 'envelope' && '💰 '}
-                                        {budgetMode === 'item-based' && '📋 '}
-                                        {budgetModeInfo.label} Budget
-                                        {budgetMode === 'unified' && (
-                                            <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Enhanced</span>
-                                        )}
+                                        <Target className="w-6 h-6" />
+                                        🎯 Unified Budget
+                                        <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Enhanced</span>
                                     </h2>
                                     <p className="text-theme-secondary">
-                                        {budgetModeInfo.description}
+                                        Enhanced categories with both single and multiple expense types
                                     </p>
                                 </div>
                                 <button
@@ -741,112 +863,84 @@ const App = () => {
                                 </button>
                             </div>
 
-                            {/* Conditional Rendering Based on Budget Mode */}
+                            {/* SIMPLIFIED: Always show Unified View only */}
+                            <UnifiedEnvelopeBudgetView
+                                categories={categories}
+                                planningItems={planningItems}
+                                toBeAllocated={allocationData.toBeAllocated}
+
+                                // Functions from enhanced category management
+                                fundCategory={fundCategory}
+                                transferFunds={handleTransferFunds}
+                                moveMoney={() => { }}
+
+                                // Actions
+                                onAddCategory={handleAddCategory}
+                                onEditCategory={handleEditCategory}
+                                onDeleteCategory={handleDeleteCategory}
+                                onAddItem={openAddItemModal}
+                                onEditItem={openEditItemModal}
+                                onDeleteItem={(item) => openConfirmDeleteDialog(
+                                    item.type === 'savings-goal' ? 'goal' : 'expense',
+                                    item.id,
+                                    item.name,
+                                    `Delete "${item.name}"?`
+                                )}
+                                onToggleItemActive={handleToggleItemActive}
+                                onMoveItem={handleMoveItem}
+                                onReorderCategories={handleReorderCategories}
+                                onReorderItems={(categoryId, fromIndex, toIndex) => {
+                                    console.log(`App: Reordering items in category ${categoryId}: ${fromIndex} -> ${toIndex}`);
+
+                                    // Get items for this category
+                                    const categoryItems = planningItems.filter(item => item.categoryId === categoryId);
+                                    const otherItems = planningItems.filter(item => item.categoryId !== categoryId);
+
+                                    console.log('Category items before reorder:', categoryItems.map(i => i.name));
+
+                                    // Reorder the category items
+                                    const reorderedItems = [...categoryItems];
+                                    const [movedItem] = reorderedItems.splice(fromIndex, 1);
+                                    reorderedItems.splice(toIndex, 0, movedItem);
+
+                                    console.log('Category items after reorder:', reorderedItems.map(i => i.name));
+
+                                    // Update planning items using the setPlanningItems function from useDataModel
+                                    const newPlanningItems = [...otherItems, ...reorderedItems];
+                                    setPlanningItems(newPlanningItems);
+
+                                    console.log('Successfully reordered items!');
+                                }}
+                                // Configuration - your existing settings preserved
+                                payFrequency={payFrequency}
+                                payFrequencyOptions={payFrequencyOptions}
+
+                                // Optional
+                                recentPaycheck={getAllUpcomingPaycheckDates(1)[0] || null}
+                                onShowPaydayWorkflow={handleShowPaydayWorkflow}
+                            />
+
+                            {/* COMMENTED OUT: Conditional rendering for other modes */}
+                            {/*
                             {budgetMode === 'unified' ? (
-                                /* NEW: Unified Enhanced Categories Mode */
+                                // NEW: Unified Enhanced Categories Mode
                                 <UnifiedEnvelopeBudgetView
-                                    categories={categories}
-                                    planningItems={planningItems}
-                                    toBeAllocated={allocationData.toBeAllocated}
-
-                                    // Functions from enhanced category management
-                                    fundCategory={fundCategory}
-                                    transferFunds={handleTransferFunds}
-                                    moveMoney={() => { }}
-
-                                    // Actions
-                                    onAddCategory={handleAddCategory}
-                                    onEditCategory={handleEditCategory}
-                                    onDeleteCategory={handleDeleteCategory}
-                                    onAddItem={openAddItemModal}
-                                    onEditItem={openEditItemModal}
-                                    onDeleteItem={(item) => openConfirmDeleteDialog(
-                                        item.type === 'savings-goal' ? 'goal' : 'expense',
-                                        item.id,
-                                        item.name,
-                                        `Delete "${item.name}"?`
-                                    )}
-                                    onToggleItemActive={handleToggleItemActive}
-
-                                    // Configuration - your existing settings preserved
-                                    payFrequency={payFrequency}
-                                    payFrequencyOptions={payFrequencyOptions}
-
-                                    // Optional
-                                    recentPaycheck={getAllUpcomingPaycheckDates(1)[0] || null}
-                                    onShowPaydayWorkflow={() => {
-                                        // TODO: Implement payday workflow if needed
-                                        console.log('Payday workflow requested');
-                                    }}
+                                    // ... all props
                                 />
                             ) : budgetMode === 'envelope' ? (
-                                /* Envelope Budgeting Mode */
+                                // Envelope Budgeting Mode
                                 <EnvelopeBudgetingSystem
-                                    categories={categories}
-                                    setCategories={setCategories}
-                                    planningItems={planningItems}
-                                    transactions={transactions}
-                                    accounts={accounts}
-                                    paychecks={paychecks}
-                                    payFrequency={payFrequency}
-                                    payFrequencyOptions={payFrequencyOptions}
-                                    onAddCategory={handleAddCategory}
-                                    onEditCategory={handleEditCategory}
-                                    onDeleteCategory={handleDeleteCategory}
-                                    onAddItem={handleAddItemWithSync}
-                                    onEditItem={handleUpdateItemWithSync}
-                                    onDeleteItem={(itemId) => {
-                                        // Find the item to get its category and amount
-                                        const item = planningItems.find(i => i.id === itemId);
-                                        if (item && item.categoryId) {
-                                            // Return funds to the category before removing the item
-                                            const category = categories.find(c => c.id === item.categoryId);
-                                            if (category && category.available > 0) {
-                                                fundCategory(item.categoryId, -category.available);
-                                            }
-                                        }
-                                        handleRemoveItemWithSync(itemId);
-                                    }}
-                                    onToggleItemActive={handleToggleItemActiveWithSync}
-                                    recordPaycheckReceived={recordPaycheckReceived}
+                                    // ... all props
                                 />
                             ) : (
-                                /* Item-Based Planning Mode */
+                                // Item-Based Planning Mode
                                 <div className="space-y-6">
                                     <PlanningMode
-                                        categories={categories}
-                                        planningItems={planningItems}
-                                        expenses={expenses}
-                                        savingsGoals={savingsGoals}
-                                        payFrequency={payFrequency}
-                                        payFrequencyOptions={payFrequencyOptions}
-                                        onAddItem={openAddItemModal}
-                                        onEditItem={openEditItemModal}
-                                        onDeleteItem={(item) => openConfirmDeleteDialog(
-                                            item.type === 'savings-goal' ? 'goal' : 'expense',
-                                            item.id,
-                                            item.name,
-                                            `Delete "${item.name}"?`
-                                        )}
-                                        onToggleItemActive={handleToggleItemActive}
-                                        onEditCategory={openEditCategoryModal}
-                                        onDeleteCategory={(cat) => openConfirmDeleteDialog(
-                                            'category',
-                                            cat.id,
-                                            cat.name,
-                                            `Delete "${cat.name}"? All items will be moved to the first category.`
-                                        )}
-                                        onAddCategory={openAddCategoryModal}
-                                        onMoveItem={handleMoveItem}
-                                        onToggleCollapse={toggleCategoryCollapse}
-                                        cleanupInvalidItems={cleanupInvalidItems}
-                                        availableFunds={allocationData.toBeAllocated}
-                                        onFundCategory={fundCategory}
-                                        paySchedule={paySchedule}
-                                        activeBudgetAllocations={activeBudgetAllocations}
+                                        // ... all props
                                     />
                                 </div>
                             )}
+                            */}
                         </div>
                     )}
 
