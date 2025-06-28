@@ -1070,7 +1070,8 @@ const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) =>
                             name="assignAmount"
                             value={assignAmount}
                             onChange={(e) => setAssignAmount(e.target.value)}
-                            className="..."
+                            placeholder="0.00"
+                            className="w-full border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-blue"
                             hideLabel={true}
                         />
                     </div>
@@ -1129,39 +1130,15 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
 
                 <div className="space-y-4">
                     <div className="p-3 bg-theme-secondary border border-theme-secondary rounded-lg">
-                        <div className="text-sm text-theme-secondary">From: {sourceCategory.name}</div>
-                        <div className="text-lg font-bold text-theme-primary">
-                            ${maxAmount.toFixed(2)} available
+                        <div className="text-sm text-theme-secondary">Moving from:</div>
+                        <div className="font-semibold text-theme-primary">
+                            {sourceCategory.name} (${(sourceCategory.available || 0).toFixed(2)} available)
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-theme-primary mb-1">
-                            Amount to Move
-                        </label>
-                        <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-theme-secondary">$</span>
-                            <input
-                                type="number"
-                                value={moveAmount}
-                                onChange={(e) => setMoveAmount(e.target.value)}
-                                className="w-full pl-8 pr-16 py-2 border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-blue"
-                                step="0.01"
-                                max={maxAmount}
-                                min="0"
-                            />
-                            <button
-                                onClick={() => setMoveAmount(maxAmount.toFixed(2))}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-theme-tertiary text-theme-secondary rounded text-xs hover:bg-theme-quaternary"
-                            >
-                                All
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-theme-primary mb-1">
-                            To
+                            To Category
                         </label>
                         <select
                             value={selectedCategoryId}
@@ -1170,14 +1147,34 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                         >
                             <option value="">Select destination...</option>
                             <option value="ready-to-assign">Ready to Assign</option>
-                            {categories.map(cat => (
-                                cat.id !== sourceCategory.id && (
+                            {categories
+                                .filter(cat => cat.id !== sourceCategory.id)
+                                .map(cat => (
                                     <option key={cat.id} value={cat.id}>
                                         {cat.name} (${(cat.available || 0).toFixed(2)} available)
                                     </option>
-                                )
-                            ))}
+                                ))
+                            }
                         </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-theme-primary mb-1">
+                            Amount
+                        </label>
+                        <CurrencyField
+                            name="moveAmount"
+                            value={moveAmount}
+                            onChange={(e) => setMoveAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="w-full border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-blue"
+                            hideLabel={true}
+                        />
+                        {maxAmount > 0 && (
+                            <div className="text-xs text-theme-secondary mt-1">
+                                Maximum: ${maxAmount.toFixed(2)}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -1191,7 +1188,7 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                     <button
                         onClick={handleMove}
                         disabled={!selectedCategoryId || !moveAmount || parseFloat(moveAmount) <= 0}
-                        className="btn-primary px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="btn-success px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Move Money
                     </button>
@@ -1200,5 +1197,6 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
         </div>
     );
 };
+
 
 export default UnifiedEnvelopeBudgetView;

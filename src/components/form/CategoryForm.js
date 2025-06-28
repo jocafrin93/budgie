@@ -5,6 +5,8 @@ import { frequencyOptions } from '../../utils/constants';
 import {
   BaseForm,
   ColorPickerField,
+  CurrencyField // Added CurrencyField import
+  ,
   TextField
 } from './';
 
@@ -21,23 +23,23 @@ const CategoryForm = ({
   // Add state for category type and related fields
   const [categoryType, setCategoryType] = useState(initialCategoryType);
 
-  // Single category specific fields
-  const [amount, setAmount] = useState(category?.amount?.toString() || '');
+  // Single category specific fields - Changed: amount now stores numeric value
+  const [amount, setAmount] = useState(category?.amount || 0);
   const [frequency, setFrequency] = useState(category?.frequency || 'monthly');
   const [dueDate, setDueDate] = useState(category?.dueDate || '');
 
-  // Auto-funding settings
+  // Auto-funding settings - Changed: maxAutoFunding now stores numeric value
   const [autoFundingEnabled, setAutoFundingEnabled] = useState(
     category?.autoFunding?.enabled || false
   );
   const [maxAutoFunding, setMaxAutoFunding] = useState(
-    (category?.autoFunding?.maxAmount || 500).toString()
+    category?.autoFunding?.maxAmount || 500
   );
 
   // Initialize form with useForm hook for base fields
   const initialValues = {
     name: category?.name || '',
-    color: category?.color || 'bg-gradient-to-r from-purple-500 to-pink-500', // Default to purple-pink gradient
+    color: category?.color || 'bg-gradient-to-r from-purple-500 to-pink-500',
     description: category?.description || ''
   };
 
@@ -55,7 +57,7 @@ const CategoryForm = ({
         },
         // Include single category specific data
         ...(categoryType === 'single' && {
-          amount: parseFloat(amount),
+          amount: parseFloat(amount) || 0,  // Ensure numeric
           frequency,
           dueDate: dueDate || null
         }),
@@ -200,33 +202,22 @@ const CategoryForm = ({
             </h4>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Amount */}
-              <div>
-                <label className="block text-sm font-medium text-theme-primary mb-1">
-                  Amount *
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-theme-secondary">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="0.00"
-                    className={`w-full pl-7 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${form.errors.amount ? 'border-red-300' : 'border-theme-secondary'
-                      }`}
-                  />
-                </div>
-                {form.errors.amount && (
-                  <p className="text-red-600 text-sm mt-1">{form.errors.amount}</p>
-                )}
-              </div>
+              {/* Amount - FIXED: Now uses CurrencyField */}
+              <CurrencyField
+                name="amount"
+                label="Amount *"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                required
+                darkMode={darkMode}
+                error={form.errors.amount}
+              />
 
               {/* Frequency */}
               <div>
                 <label className="block text-sm font-medium text-theme-primary mb-1">
-                  Frequencye
+                  Frequency
                 </label>
                 <select
                   value={frequency}
@@ -294,22 +285,15 @@ const CategoryForm = ({
 
           {autoFundingEnabled && (
             <div className="pl-6 space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-theme-primary mb-1">
-                  Maximum auto-funding amount
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-theme-secondary">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={maxAutoFunding}
-                    onChange={(e) => setMaxAutoFunding(e.target.value)}
-                    className="w-full pl-7 pr-3 py-2 border border-theme-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
+              {/* Maximum auto-funding amount - FIXED: Now uses CurrencyField */}
+              <CurrencyField
+                name="maxAutoFunding"
+                label="Maximum auto-funding amount"
+                value={maxAutoFunding}
+                onChange={(e) => setMaxAutoFunding(e.target.value)}
+                placeholder="500.00"
+                darkMode={darkMode}
+              />
               <div className="flex items-start gap-2 p-3 bg-yellow-50 rounded border border-yellow-200">
                 <Info className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-yellow-800">

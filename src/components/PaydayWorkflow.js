@@ -1,6 +1,6 @@
 // src/components/PaydayWorkflow.js
 import { useCallback, useEffect, useState } from 'react';
-import { CurrencyField } from './form';
+import { CurrencyField } from './form'; // Changed from CurrencyInput
 
 /**
  * PaydayWorkflow component
@@ -70,284 +70,173 @@ const PaydayWorkflow = ({
     return account ? account.name : 'Unknown Account';
   };
 
-  // Helper function to calculate remaining paychecks until due date
-  const calculatePaychecksUntilDue = (dueDate) => {
-    if (!dueDate) return null;
-
-    // Get paycheck frequency info
-    const payFreqOption = payFrequencyOptions?.find(opt => opt.value === payFrequency);
-    const daysPerPaycheck = Math.ceil(30 / (payFreqOption?.paychecksPerMonth || 2.17));
-
-    // Convert dates to UTC
-    const today = new Date();
-    const due = new Date(dueDate);
-    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-    const dueUTC = new Date(Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate()));
-
-    // Calculate days between dates
-    const daysUntilDue = Math.ceil((dueUTC - todayUTC) / (24 * 60 * 60 * 1000));
-
-    // Calculate remaining paychecks
-    return Math.max(0, Math.ceil(daysUntilDue / daysPerPaycheck));
-  };
-
-  // Helper function to format dates consistently
-  const formatDate = (date) => {
-    if (!date) return '';
-    const d = new Date(date);
-    return d.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      timeZone: 'UTC'
-    });
-  };
-
-  // Initialize on mount or when paycheck changes
+  // Initialize paycheck data when paycheck prop changes
   useEffect(() => {
     const validatedPaycheck = validatePaycheckData(paycheck);
     if (validatedPaycheck) {
       setRemaining(validatedPaycheck.amount);
-
-      // Get funding suggestions and prioritize items needing allocation
-      const fundingSuggestions = getFundingSuggestions().map(suggestion => {
-        const itemsInCategory = planningItems.filter(item => item.categoryId === suggestion.categoryId);
-        const hasItemsNeedingAllocation = itemsInCategory.some(item => item.needsAllocation);
-        const nextDueDate = itemsInCategory
-          .map(item => item.dueDate)
-          .filter(Boolean)
-          .sort((a, b) => new Date(a) - new Date(b))[0];
-
-        return {
-          ...suggestion,
-          priority: hasItemsNeedingAllocation ? 2 : nextDueDate ? 1 : 0,
-          paychecksUntilDue: nextDueDate ? calculatePaychecksUntilDue(nextDueDate) : null
-        };
-      }).sort((a, b) => {
-        // Sort by priority first, then by paychecks until due
-        if (a.priority !== b.priority) return b.priority - a.priority;
-        if (a.paychecksUntilDue !== null && b.paychecksUntilDue !== null) {
-          return a.paychecksUntilDue - b.paychecksUntilDue;
-        }
-        return 0;
-      });
-
-      setSuggestions(fundingSuggestions);
-
-      // Initialize allocations object
-      const initialAllocations = {};
-      categories.forEach(category => {
-        initialAllocations[category.id] = 0;
-      });
-      setAllocations(initialAllocations);
-
-      setTotalAllocated(0);
     }
-  }, [paycheck, categories, getFundingSuggestions, planningItems]);
+  }, [paycheck]);
 
-  // Handle manual allocation to a category
-  const handleAllocateToCategory = (categoryId, amount) => {
+  // Update total allocated and remaining when allocations change
+  useEffect(() => {
+    const total = Object.values(allocations).reduce((sum, amount) => {
+      return sum + validateAmount(amount);
+    }, 0);
+    setTotalAllocated(total);
+
+    const paycheckAmount = validatePaycheckData(paycheck)?.amount || 0;
+    setRemaining(paycheckAmount - total);
+  }, [allocations, paycheck]);
+
+  // Get funding suggestions when component mounts or dependencies change
+  useEffect(() => {
+    if (getFundingSuggestions && categories && planningItems) {
+      const fundingSuggestions = getFundingSuggestions();
+      setSuggestions(fundingSuggestions);
+    }
+  }, [getFundingSuggestions, categories, planningItems]);
+
+  // Handle allocation to a specific category
+  const handleAllocateToCategory = useCallback((categoryId, amount) => {
     const validatedAmount = validateAmount(amount);
-
-    // Update allocations
     setAllocations(prev => ({
       ...prev,
       [categoryId]: validatedAmount
     }));
+  }, []);
 
-    // Recalculate totals with validation
-    const newTotal = validateAmount(Object.entries(allocations)
-      .reduce((sum, [id, value]) => {
-        return sum + validateAmount(id === categoryId.toString() ? validatedAmount : value);
-      }, 0));
-
-    setTotalAllocated(newTotal);
-    setRemaining(validateAmount(validateAmount(paycheck.amount) - newTotal));
-  };
-
-  // Handle running auto-allocation - wrapped in useCallback to handle dependency properly
+  // Handle auto-allocation
   const handleAutoAllocate = useCallback(() => {
-    const validatedPaycheckAmount = validateAmount(paycheck.amount);
-    const amountToAutoAllocate = validateAmount((validatedPaycheckAmount * autoAllocationPercent) / 100);
+    if (!autoFundCategories || !paycheck) return;
 
-    const result = autoFundCategories(amountToAutoAllocate, paycheck.id);
+    const paycheckAmount = validatePaycheckData(paycheck)?.amount || 0;
+    const amountToAllocate = (paycheckAmount * autoAllocationPercent) / 100;
 
-    // Update UI state based on auto-allocation results with validation
-    const validatedTotalFunded = validateAmount(result.totalFunded);
-    const validatedRemaining = validateAmount(result.remainingToAllocate);
-    setTotalAllocated(validatedTotalFunded);
-    setRemaining(validatedRemaining);
+    const autoAllocations = autoFundCategories(amountToAllocate);
+    setAllocations(autoAllocations);
+  }, [autoFundCategories, paycheck, autoAllocationPercent]);
 
-    // Update allocations state to reflect what was funded
-    const newAllocations = { ...allocations };
-    result.fundingResults.forEach(item => {
-      if (item.success) {
-        newAllocations[item.categoryId] = validateAmount(item.amount);
-      }
-    });
-    setAllocations(newAllocations);
-  }, [paycheck, autoAllocationPercent, autoFundCategories, allocations, setAllocations, setTotalAllocated, setRemaining]);
+  // Handle completing the workflow
+  const handleComplete = useCallback(() => {
+    if (!fundCategory) return;
 
-  // Handle completing the workflow and actually funding categories
-  const handleCompleteAllocation = () => {
-    const validatedPaycheck = validatePaycheckData(paycheck);
-    if (!validatedPaycheck) return;
-
-    // Fund each category with the allocated amount
+    // Apply all allocations
     Object.entries(allocations).forEach(([categoryId, amount]) => {
-      const validatedAmount = validateAmount(amount);
-      if (validatedAmount > 0) {
-        fundCategory(parseInt(categoryId, 10), validatedAmount, validatedPaycheck.id);
-
-        // Clear needsAllocation flag for items in funded categories
-        const itemsToUpdate = planningItems.filter(item =>
-          item.categoryId === parseInt(categoryId, 10) && item.needsAllocation
-        );
-
-        itemsToUpdate.forEach(item => {
-          onEditItem(item.id, {
-            ...item,
-            needsAllocation: false
-          });
-        });
+      if (amount > 0) {
+        fundCategory(parseInt(categoryId), amount);
       }
     });
 
-    // Move to complete step
     setStep('complete');
 
-    // Call onComplete callback if provided
     if (onComplete) {
-      onComplete({
-        paycheck: validatedPaycheck,
-        totalAllocated: validateAmount(totalAllocated),
-        remaining: validateAmount(remaining),
-        allocations: Object.fromEntries(
-          Object.entries(allocations).map(([id, amount]) => [id, validateAmount(amount)])
-        ),
-        completed: true
-      });
+      onComplete();
     }
-  };
+  }, [allocations, fundCategory, onComplete]);
 
-  // Reset the workflow
-  const handleReset = () => {
-    setStep('start');
-    setAllocations({});
-    setTotalAllocated(0);
-    setRemaining(paycheck ? validateAmount(paycheck.amount) : 0);
-    setUseAutoAllocation(false);
-    setAutoAllocationPercent(100);
-  };
+  const validatedPaycheck = validatePaycheckData(paycheck);
 
-  // Auto-allocation effect - MOVED TO TOP LEVEL before any conditional returns
-  useEffect(() => {
-    if (step === 'allocate' && useAutoAllocation) {
-      handleAutoAllocate();
-    }
-  }, [step, useAutoAllocation, handleAutoAllocate]);
-
-  // If no paycheck, don't render
-  if (!paycheck) {
-    return null;
+  if (!validatedPaycheck) {
+    return (
+      <div className="payday-workflow p-4">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Payday Workflow</h2>
+          <p className="text-theme-secondary">No valid paycheck information available.</p>
+        </div>
+      </div>
+    );
   }
 
-  // Start step - welcome and options
-  if (step === 'start') {
+  if (step === 'complete') {
     return (
-      <div className="payday-workflow bg-theme-primary rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-4">🎉 Payday!</h2>
-
-        <div className="mb-6">
-          <p className="mb-2">You've received a paycheck of:</p>
-          <div className="text-3xl font-bold text-theme-accent">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(validateAmount(paycheck?.amount || 0))}
-          </div>
-          <p className="text-sm text-theme-secondary mt-1">
-            Deposited to: {getAccountName(paycheck?.accountId)}
+      <div className="payday-workflow p-4">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-4 text-green-600">Allocation Complete!</h2>
+          <p className="text-theme-secondary mb-4">
+            Successfully allocated ${totalAllocated.toFixed(2)} from your paycheck.
           </p>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-2">How would you like to allocate this money?</h3>
-
-          <div className="flex items-center mb-2">
-            <input
-              type="checkbox"
-              id="useAutoAllocation"
-              checked={useAutoAllocation}
-              onChange={e => setUseAutoAllocation(e.target.checked)}
-              className="mr-2"
-            />
-            <label htmlFor="useAutoAllocation">Use auto-allocation based on monthly budget</label>
-          </div>
-
-          {useAutoAllocation && (
-            <div className="ml-6 mb-4">
-              <label className="block mb-1">Percentage to auto-allocate:</label>
-              <div className="flex items-center">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={autoAllocationPercent}
-                  onChange={e => setAutoAllocationPercent(parseInt(e.target.value, 10))}
-                  className="mr-2"
-                />
-                <span>{autoAllocationPercent}%</span>
-              </div>
-              <p className="text-sm text-theme-secondary mt-1">
-                {autoAllocationPercent < 100 ?
-                  `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(validateAmount((paycheck?.amount || 0) * autoAllocationPercent / 100))} will be auto-allocated` :
-                  'All money will be auto-allocated'}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="flex justify-end">
           <button
-            onClick={() => setStep('allocate')}
-            className="btn-primary px-4 py-2 rounded"
+            onClick={() => setStep('start')}
+            className="btn-primary px-6 py-2 rounded-lg"
           >
-            Continue
+            Start New Allocation
           </button>
         </div>
       </div>
     );
   }
 
-  // Allocate step - distribute money to categories
-  if (step === 'allocate') {
-
-    return (
-      <div className="payday-workflow bg-theme-primary rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-4">Allocate Your Money</h2>
-
-        <div className="flex justify-between mb-6">
-          <div>
-            <p className="text-sm">Total to Allocate:</p>
-            <div className="text-xl font-bold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(validateAmount(paycheck?.amount || 0))}</div>
+  return (
+    <div className="payday-workflow p-4">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold mb-2">Payday Workflow</h2>
+        <div className="bg-theme-secondary p-4 rounded-lg">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-theme-secondary">Paycheck Amount:</span>
+            <span className="font-semibold text-lg">
+              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(validatedPaycheck.amount)}
+            </span>
           </div>
-          <div>
-            <p className="text-sm">Allocated:</p>
-            <div className="text-xl font-bold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAllocated)}</div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-theme-secondary">Account:</span>
+            <span>{getAccountName(validatedPaycheck.accountId)}</span>
           </div>
-          <div>
-            <p className="text-sm">Remaining:</p>
-            <div className={`text-xl font-bold ${remaining < 0 ? 'text-red-500' : ''}`}>
+          <div className="flex justify-between items-center">
+            <span className="text-theme-secondary">Remaining to Allocate:</span>
+            <span className={`font-semibold ${remaining < 0 ? 'text-red-600' : 'text-green-600'}`}>
               {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(remaining)}
-            </div>
+            </span>
           </div>
         </div>
+      </div>
 
-        {/* Category allocation table */}
-        <div className="mb-6 overflow-y-auto max-h-96">
-          <table className="w-full">
-            <thead className="bg-theme-secondary bg-opacity-10">
-              <tr>
+      {/* Auto-allocation options */}
+      <div className="mb-6">
+        <div className="flex items-center gap-4 mb-4">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={useAutoAllocation}
+              onChange={(e) => setUseAutoAllocation(e.target.checked)}
+              className="mr-2"
+            />
+            <span>Use auto-allocation</span>
+          </label>
+          {useAutoAllocation && (
+            <div className="flex items-center gap-2">
+              <span>Allocate</span>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={autoAllocationPercent}
+                onChange={(e) => setAutoAllocationPercent(parseInt(e.target.value) || 100)}
+                className="w-16 p-1 border rounded text-center"
+              />
+              <span>% of paycheck</span>
+              <button
+                onClick={handleAutoAllocate}
+                className="btn-secondary px-3 py-1 rounded"
+              >
+                Auto-Allocate
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Category allocation table */}
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold mb-4">Allocate to Categories</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-theme-secondary">
                 <th className="text-left p-2">Category</th>
-                <th className="text-right p-2">Current</th>
-                <th className="text-right p-2">Needed</th>
+                <th className="text-right p-2">Current Balance</th>
+                <th className="text-right p-2">Suggested</th>
                 <th className="text-right p-2">Allocate</th>
               </tr>
             </thead>
@@ -390,7 +279,6 @@ const PaydayWorkflow = ({
           </table>
         </div>
 
-        {/* Quick allocation buttons */}
         {/* Items Needing Allocation */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold mb-2">Items Needing Allocation:</h3>
@@ -413,8 +301,8 @@ const PaydayWorkflow = ({
                         <span>{item.name}</span>
                         <span className="font-medium">
                           {item.type === 'savings-goal'
-                            ? `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.monthlyContribution)}/month`
-                            : `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.amount)}/${item.frequency}`}
+                            ? `Goal: $${(item.targetAmount || 0).toFixed(2)}`
+                            : `$${(item.amount || 0).toFixed(2)} ${item.frequency || 'monthly'}`}
                         </span>
                       </li>
                     ))}
@@ -424,183 +312,26 @@ const PaydayWorkflow = ({
             })}
           </div>
         </div>
-
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-2">Quick Allocate:</h3>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => {
-                const validatedRemaining = validateAmount(remaining);
-                const newAllocations = { ...allocations };
-
-                // Sort categories by priority (based on suggestions)
-                const sortedCategories = [...categories]
-                  .map(category => {
-                    const suggestion = suggestions.find(s => s.categoryId === category.id);
-                    return {
-                      ...category,
-                      needed: validateAmount(suggestion ? suggestion.suggestedFunding : 0)
-                    };
-                  })
-                  .sort((a, b) => b.needed - a.needed);
-
-                // Allocate remaining money to categories with highest need
-                let allocated = 0;
-                for (const category of sortedCategories) {
-                  if (category.needed > 0 && allocated < validatedRemaining) {
-                    const toAllocate = validateAmount(
-                      Math.min(category.needed, validatedRemaining - allocated)
-                    );
-                    const currentAllocation = validateAmount(newAllocations[category.id] || 0);
-                    newAllocations[category.id] = validateAmount(currentAllocation + toAllocate);
-                    allocated = validateAmount(allocated + toAllocate);
-
-                    if (allocated >= validatedRemaining) break;
-                  }
-                }
-
-                setAllocations(newAllocations);
-                setTotalAllocated(validateAmount(totalAllocated + allocated));
-                setRemaining(validateAmount(validatedRemaining - allocated));
-              }}
-              className="btn-secondary px-3 py-1 text-sm rounded"
-            >
-              Allocate to Needs
-            </button>
-
-            <button
-              onClick={() => {
-                // Divide remaining equally between all categories
-                const validatedRemaining = validateAmount(remaining);
-                const perCategory = validateAmount(validatedRemaining / categories.length);
-                const newAllocations = { ...allocations };
-
-                categories.forEach(category => {
-                  const currentAllocation = validateAmount(newAllocations[category.id] || 0);
-                  newAllocations[category.id] = validateAmount(currentAllocation + perCategory);
-                });
-
-                setAllocations(newAllocations);
-                setTotalAllocated(validateAmount(paycheck.amount));
-                setRemaining(0);
-              }}
-              className="btn-secondary px-3 py-1 text-sm rounded"
-            >
-              Divide Evenly
-            </button>
-
-            <button
-              onClick={() => {
-                // Reset all allocations
-                const validatedPaycheck = validatePaycheckData(paycheck);
-                const newAllocations = {};
-                categories.forEach(category => {
-                  newAllocations[category.id] = 0;
-                });
-
-                setAllocations(newAllocations);
-                setTotalAllocated(0);
-                setRemaining(validatedPaycheck ? validateAmount(validatedPaycheck.amount) : 0);
-              }}
-              className="btn-secondary px-3 py-1 text-sm rounded"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
-        <div className="flex justify-between">
-          <button
-            onClick={() => setStep('start')}
-            className="btn-secondary px-4 py-2 rounded"
-          >
-            Back
-          </button>
-
-          <button
-            onClick={handleCompleteAllocation}
-            className="btn-primary px-4 py-2 rounded"
-            disabled={totalAllocated <= 0}
-          >
-            {remaining > 0
-              ? `Complete & Leave ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(remaining)} Unallocated`
-              : 'Complete Allocation'}
-          </button>
-        </div>
       </div>
-    );
-  }
 
-  // Complete step - summary and finish
-  if (step === 'complete') {
-    return (
-      <div className="payday-workflow bg-theme-primary rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold mb-4">Allocation Complete!</h2>
-
-        <div className="mb-6">
-          <p className="mb-2">You've allocated:</p>
-          <div className="text-3xl font-bold text-theme-accent">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalAllocated)}
-          </div>
-
-          {remaining > 0 && (
-            <p className="mt-2">
-              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(remaining)} remains unallocated and is available for future budgeting.
-            </p>
-          )}
-        </div>
-
-        <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-2">Summary:</h3>
-          <ul className="max-h-48 overflow-y-auto">
-            {Object.entries(allocations)
-              .filter(([_, amount]) => validateAmount(amount) > 0)
-              .map(([categoryId, amount]) => {
-                const category = categories.find(c => c.id === parseInt(categoryId, 10));
-                const validatedAmount = validateAmount(amount);
-                return (
-                  <li key={categoryId} className="flex justify-between py-1">
-                    <span>{category ? category.name : `Category ${categoryId}`}</span>
-                    <span>{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(validatedAmount)}</span>
-                  </li>
-                );
-              })}
-          </ul>
-        </div>
-
-        <div className="flex justify-end">
-          <button
-            onClick={handleReset}
-            className="btn-secondary px-4 py-2 rounded mr-2"
-          >
-            Start Over
-          </button>
-
-          <button
-            onClick={() => {
-              if (onComplete) {
-                const validatedPaycheck = validatePaycheckData(paycheck);
-                onComplete({
-                  paycheck: validatedPaycheck,
-                  totalAllocated: validateAmount(totalAllocated),
-                  remaining: validateAmount(remaining),
-                  allocations: Object.fromEntries(
-                    Object.entries(allocations).map(([id, amount]) => [id, validateAmount(amount)])
-                  ),
-                  completed: true
-                });
-              }
-            }}
-            className="btn-primary px-4 py-2 rounded"
-          >
-            Done
-          </button>
-        </div>
+      {/* Action buttons */}
+      <div className="flex justify-between">
+        <button
+          onClick={() => setStep('start')}
+          className="btn-secondary px-4 py-2 rounded-lg"
+        >
+          Reset
+        </button>
+        <button
+          onClick={handleComplete}
+          disabled={totalAllocated <= 0}
+          className="btn-primary px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Complete Allocation
+        </button>
       </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 };
 
 export default PaydayWorkflow;
