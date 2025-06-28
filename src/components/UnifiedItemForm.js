@@ -9,6 +9,7 @@ import {
   CurrencyField,
   DateField,
   GoalFieldGroup,
+  PercentageField,
   SelectField,
   TextField
 } from './form';
@@ -43,17 +44,18 @@ const UnifiedItemForm = ({
     usePercentage: item?.usePercentage || false,
     percentageAmount: item?.percentageAmount || 0,
     frequency: item?.frequency || 'monthly',
-    dueDate: item?.dueDate || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // 30 days from now
+    dueDate: item?.dueDate || '',
     categoryId: preselectedCategory?.preselectedCategory?.id || '', // Note the nested property
     accountId: item?.accountId || (accounts[0]?.id || ''),
     priorityState: item?.priorityState || 'active',
-    isRecurring: item?.isRecurring !== false, // Default to true for new items
+    isRecurring: item?.isRecurring || false,
     priority: item?.priority || 'medium',
 
     // Goal-specific fields
     targetAmount: item?.targetAmount || 0,
     targetDate: item?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)), // 1 year from now
     monthlyContribution: item?.monthlyContribution || 0,
+    monthlyPercentage: item?.monthlyPercentage || 0, // Add this line
     alreadySaved: item?.alreadySaved || 0,
   };
 
@@ -125,42 +127,36 @@ const UnifiedItemForm = ({
             errors.amount = 'Amount is required';
           }
         }
-
-        if (!values.frequency) {
-          errors.frequency = 'Frequency is required';
-        }
-
-        if (!values.dueDate) {
-          errors.dueDate = 'Due date is required';
+        if (values.isRecurring && !values.frequency) {
+          errors.frequency = 'Frequency is required when expense is recurring';
         }
       } else {
-        // Simplified goal validation - only require name and target amount
-        // Name is already validated above
+        // Goal validation remains the same
         if (!values.targetAmount) {
           errors.targetAmount = 'Target amount is required';
         }
-        // Target date is already preset with a default value
-        // Monthly contribution can be calculated or set manually
       }
 
       return errors;
     },
   });
 
-  // Handle dollar/percentage conversion for expenses
+
   useEffect(() => {
     if (form.values.type === 'expense' && currentPay > 0) {
+      // Only perform automatic conversion when user manually changes a field
+      // This prevents infinite loops while allowing manual toggle conversion
       if (form.values.usePercentage && form.values.amount && !form.values.percentageAmount) {
-        // Convert dollar to percentage
+        // Convert dollar to percentage when switching to percentage mode
         const percentage = dollarToPercentage(parseFloat(form.values.amount) || 0, currentPay);
-        form.setFieldValue('percentageAmount', percentage.toFixed(1));
+        form.setFieldValue('percentageAmount', parseFloat(percentage.toFixed(1)));
       } else if (!form.values.usePercentage && form.values.percentageAmount && !form.values.amount) {
-        // Convert percentage to dollar
+        // Convert percentage to dollar when switching to dollar mode  
         const amount = percentageToDollar(parseFloat(form.values.percentageAmount) || 0, currentPay);
-        form.setFieldValue('amount', amount.toFixed(2));
+        form.setFieldValue('amount', parseFloat(amount.toFixed(2)));
       }
     }
-  }, [form.values.usePercentage, form.values.amount, form.values.percentageAmount, currentPay]);
+  }, [form.values.usePercentage, form.values.amount, form.values.percentageAmount, currentPay, form]);
 
   // Category options
   const categoryOptions = categories.map(category => ({
@@ -325,11 +321,11 @@ const UnifiedItemForm = ({
         usePercentage: false,
         percentageAmount: '',
         frequency: currentFrequency,
-        dueDate: formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+        dueDate: item?.dueDate || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // 30 days from now
         categoryId: currentCategoryId,
         accountId: currentAccountId,
         priorityState: currentPriorityState,
-        isRecurring: currentIsRecurring,
+        isRecurring: false,
         priority: currentPriority,
         // Goal fields
         targetAmount: '',
@@ -359,14 +355,55 @@ const UnifiedItemForm = ({
       submitAnotherLabel="Save & Add Another"
       isSubmitDisabled={false} // Temporarily bypass validation for all item types
     >
-      <SelectField
-        {...form.getFieldProps('type')}
-        label="Item Type"
-        options={typeOptions}
-        disabled={!!item} // Can't change type when editing
-        required
-        darkMode={darkMode}
-      />
+
+      {/* Type Selection - Only show if not editing, use buttons instead of dropdown */}
+      {!item && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-theme-primary">What are you adding?</label>
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => form.setFieldValue('type', 'expense')}
+              className={`flex-1 py-2 px-4 rounded flex items-center justify-center space-x-2 transition-colors ${form.values.type === 'expense'
+                ? 'btn-primary'
+                : 'btn-secondary'
+                }`}
+            >
+              <span>💸</span>
+              <span>Expense</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => form.setFieldValue('type', 'goal')}
+              className={`flex-1 py-2 px-4 rounded flex items-center justify-center space-x-2 transition-colors ${form.values.type === 'goal'
+                ? 'btn-success'
+                : 'btn-secondary'
+                }`}
+            >
+              <span>🎯</span>
+              <span>Goal</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Show current type when editing (read-only) */}
+      {item && (
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-theme-primary">Item Type</label>
+          <div className={`py-2 px-4 rounded border border-theme-secondary ${form.values.type === 'expense'
+            ? 'bg-theme-secondary text-theme-primary'
+            : 'bg-theme-tertiary text-theme-primary'
+            }`}>
+            <div className="flex items-center space-x-2">
+              <span>{form.values.type === 'expense' ? '💸' : '🎯'}</span>
+              <span className="font-medium">
+                {form.values.type === 'expense' ? 'Expense' : 'Savings Goal'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <TextField
         {...form.getFieldProps('name')}
@@ -404,29 +441,63 @@ const UnifiedItemForm = ({
       {form.values.type === 'expense' ? (
         // Expense-specific fields
         <>
-          <div className="flex items-center mb-4">
-            <CheckboxField
-              {...form.getFieldProps('usePercentage')}
-              label="Use percentage of income"
-              darkMode={darkMode}
-            />
-          </div>
+          {form.values.type === 'expense' && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-theme-primary">
+                How do you want to set the amount?
+              </label>
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Convert percentage to dollar if switching from percentage mode
+                    if (form.values.usePercentage && form.values.percentageAmount && currentPay > 0) {
+                      const convertedAmount = percentageToDollar(form.values.percentageAmount, currentPay);
+                      form.setFieldValue('amount', convertedAmount);
+                    }
+                    form.setFieldValue('usePercentage', false);
+                  }}
+                  className={`flex-1 py-2 px-3 rounded text-sm transition-colors ${!form.values.usePercentage
+                    ? 'btn-primary'
+                    : 'bg-theme-secondary text-theme-primary hover:bg-theme-hover'
+                    }`}
+                >
+                  <span className="mr-1">💰</span>
+                  Dollar Amount
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Convert dollar to percentage if switching from dollar mode
+                    if (!form.values.usePercentage && form.values.amount && currentPay > 0) {
+                      const convertedPercentage = dollarToPercentage(form.values.amount, currentPay);
+                      form.setFieldValue('percentageAmount', convertedPercentage);
+                    }
+                    form.setFieldValue('usePercentage', true);
+                  }}
+                  className={`flex-1 py-2 px-3 rounded text-sm transition-colors ${form.values.usePercentage
+                    ? 'btn-success'
+                    : 'bg-theme-secondary text-theme-primary hover:bg-theme-hover'
+                    }`}
+                >
+                  <span className="mr-1">📊</span>
+                  % of Paycheck
+                </button>
+              </div>
+            </div>
+          )}
 
           {form.values.usePercentage ? (
-            <TextField
+            <PercentageField
               name="percentageAmount"
               label="Percentage of Income"
-              value={form.values.percentageAmount ? form.values.percentageAmount.toString() : ''}
+              value={form.values.percentageAmount ? form.values.percentageAmount : 0}
               onChange={(e) => {
                 const numericValue = parseFloat(e.target.value) || 0;
-                console.log('DEBUG - PercentageAmount onChange - string:', e.target.value, 'number:', numericValue);
+                console.log('DEBUG - PercentageField onChange - string:', e.target.value, 'number:', numericValue);
                 form.setFieldValue('percentageAmount', numericValue); // Store as NUMBER
               }}
               placeholder="0.0"
-              type="number"
-              step="0.1"
-              min="0"
-              max="100"
               required
               darkMode={darkMode}
               error={form.errors.percentageAmount}
@@ -450,35 +521,32 @@ const UnifiedItemForm = ({
             />
           )}
 
-          <SelectField
-            {...form.getFieldProps('frequency')}
-            label="Frequency"
-            options={formFrequencyOptions}  // NOW uses your perfect constants!
-            required
-            darkMode={darkMode}
-          />
-
-
           <DateField
             {...form.getFieldProps('dueDate')}
             label="Due Date"
-            required
+            required={false} // CHANGED: Not required anymore
             darkMode={darkMode}
+            hint="Optional - leave blank if no specific due date"
           />
 
-          <CheckboxField
-            {...form.getFieldProps('isRecurring')}
-            label="This is a recurring expense"
-            darkMode={darkMode}
-          />
+          {form.values.dueDate && (
+            <CheckboxField
+              {...form.getFieldProps('isRecurring')}
+              label="This is a recurring expense"
+              darkMode={darkMode}
+            />
+          )}
 
-          <SelectField
-            {...form.getFieldProps('priority')}
-            label="Priority"
-            options={priorityOptions}
-            required
-            darkMode={darkMode}
-          />
+          {form.values.dueDate && form.values.isRecurring && (
+            <SelectField
+              {...form.getFieldProps('frequency')}
+              label="Frequency"
+              options={formFrequencyOptions}
+              required={true} // CHANGED: Required when visible
+              darkMode={darkMode}
+              hint="How often does this expense repeat?"
+            />
+          )}
         </>
       ) : (
         // Goal-specific fields
@@ -496,9 +564,11 @@ const UnifiedItemForm = ({
             }}
             errors={form.errors}
             darkMode={darkMode}
+            currentPay={currentPay} // Add this line to pass currentPay
           />
         </>
-      )}
+      )
+      }
 
       {form.values.type === 'goal' && (
         <CurrencyField
