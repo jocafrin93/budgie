@@ -432,6 +432,7 @@ const App = () => {
         console.log('To index:', toIndex);
         console.log('Current categories:', categories.map((c, i) => `${i}: ${c.name}`));
 
+        // Early return if indices are the same
         if (fromIndex === toIndex) {
             console.log('Same index, no reorder needed');
             return;
@@ -1038,6 +1039,9 @@ const App = () => {
                                 setEditingCategory(null);
                             }}
                             darkMode={theme.includes('dark')}
+                            accounts={accounts}
+                            currentPay={currentPay}
+                            payFrequency={payFrequency}
                         />
                     </ModalSystem>
 

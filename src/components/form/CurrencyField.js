@@ -95,7 +95,7 @@ const CurrencyField = ({
     e.target.select();
   };
 
-  const baseClassName = `w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary ${error ? 'border-red-500' : ''
+  const baseClassName = `w-full p-2 border rounded bg-theme-secondary border-theme-primary text-theme-primary ${error ? 'border-red-500' : ''
     } ${className}`;
 
   const inputElement = (

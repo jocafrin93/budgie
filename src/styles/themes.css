@@ -10,17 +10,19 @@
     --bg-hover: #f3f4f6;
     --bg-active: #e5e7eb;
 
-
     /* Border colors */
     --border-primary: #e5e7eb;
     --border-secondary: #d1d5db;
+    --border-tertiary: #9ca3af;
+    --border-accent: #6b7280;
 
     /* Text colors */
     --text-primary: #111827;
     --text-secondary: #6b7280;
     --text-tertiary: #9ca3af;
+    --text-quaternary: #d1d5db;
+    --text-accent: #374151;
     --text-inverse: #ffffff;
-
     --page-text: #111827;
 
     /* Interactive colors */
@@ -30,12 +32,29 @@
     --color-red: #dc2626;
     --color-yellow: #d97706;
 
+    /* Selection states */
+    --selection-primary-bg: #eff6ff;
+    --selection-primary-border: #3b82f6;
+    --selection-primary-text: #1e40af;
+
+    --selection-secondary-bg: #faf5ff;
+    --selection-secondary-border: #8b5cf6;
+    --selection-secondary-text: #7c3aed;
+
+    /* Callout boxes */
+    --callout-info-bg: #eff6ff;
+    --callout-info-border: #dbeafe;
+    --callout-info-text: #1e40af;
+
+    --callout-success-bg: #f0fdf4;
+    --callout-success-border: #dcfce7;
+    --callout-success-text: #166534;
+
     /* Table specific */
     --table-header-bg: #f9fafb;
     --table-row-even: #ffffff;
     --table-row-odd: #f9fafb;
     --table-row-hover: #f3f4f6;
-
 
     /* Button colors*/
     --btn-primary-bg: #3b82f6;
@@ -70,17 +89,19 @@
     --bg-active: #6b7280;
     --page-bg: #272241;
 
-
     /* Border colors */
     --border-primary: #4b5563;
     --border-secondary: #6b7280;
+    --border-tertiary: #8077a8;
+    --border-accent: #9ca3af;
 
     /* Text colors */
     --text-primary: #f9fafb;
     --text-secondary: #c0bdd1;
     --text-tertiary: #fca5a5;
+    --text-quaternary: #8077a8;
+    --text-accent: #e5e7eb;
     --text-inverse: #111827;
-
     --page-text: #f9fafb;
 
     /* Interactive colors */
@@ -89,6 +110,25 @@
     --color-green: #c9e7d5;
     --color-red: #ef4444;
     --color-yellow: #fef3c7;
+
+    /* Selection states */
+    --selection-primary-bg: #cac376;
+    --selection-primary-border: #e4dd91;
+    --selection-primary-text: #8077a8;
+
+    --selection-secondary-bg: #581c87;
+    --selection-secondary-border: #8b5cf6;
+    --selection-secondary-text: #c084fc;
+
+
+    /* Callout boxes */
+    --callout-info-bg: #e7aac3;
+    --callout-info-border: #fee2e2;
+    --callout-info-text: #a17788;
+
+    --callout-success-bg: #14532d;
+    --callout-success-border: #16a34a;
+    --callout-success-text: #86efac;
 
     /* Table specific */
     --table-header-bg: #374151;
@@ -116,7 +156,6 @@
     --btn-warning-bg: #fbbf24;
     --btn-warning-hover: #f59e0b;
     --btn-warning-text: #1f2937;
-
 }
 
 /* Spring theme */
@@ -132,11 +171,15 @@
     /* Border colors */
     --border-primary: #e9d5ff;
     --border-secondary: #d8b4fe;
+    --border-tertiary: #c084fc;
+    --border-accent: #a855f7;
 
     /* Text colors */
     --text-primary: #581c87;
     --text-secondary: #7c3aed;
     --text-tertiary: #a855f7;
+    --text-quaternary: #c084fc;
+    --text-accent: #6b21a8;
     --text-inverse: #ffffff;
 
     /* Interactive colors */
@@ -145,6 +188,24 @@
     --color-green: #10b981;
     --color-red: #f43f5e;
     --color-yellow: #f59e0b;
+
+    /* Selection states */
+    --selection-primary-bg: #ede9fe;
+    --selection-primary-border: #8b5cf6;
+    --selection-primary-text: #6b21a8;
+
+    --selection-secondary-bg: #ecfdf5;
+    --selection-secondary-border: #10b981;
+    --selection-secondary-text: #047857;
+
+    /* Callout boxes */
+    --callout-info-bg: #ede9fe;
+    --callout-info-border: #d8b4fe;
+    --callout-info-text: #6b21a8;
+
+    --callout-success-bg: #ecfdf5;
+    --callout-success-border: #bbf7d0;
+    --callout-success-text: #047857;
 
     /* Table specific */
     --table-header-bg: #fae8ff;
@@ -186,11 +247,15 @@
     /* Border colors */
     --border-primary: #fed7aa;
     --border-secondary: #fdba74;
+    --border-tertiary: #fb923c;
+    --border-accent: #f97316;
 
     /* Text colors */
     --text-primary: #92400e;
     --text-secondary: #d97706;
     --text-tertiary: #f59e0b;
+    --text-quaternary: #fbbf24;
+    --text-accent: #b45309;
     --text-inverse: #ffffff;
 
     /* Interactive colors */
@@ -199,6 +264,24 @@
     --color-green: #10b981;
     --color-red: #ef4444;
     --color-yellow: #f59e0b;
+
+    /* Selection states */
+    --selection-primary-bg: #fef3c7;
+    --selection-primary-border: #f59e0b;
+    --selection-primary-text: #92400e;
+
+    --selection-secondary-bg: #ecfdf5;
+    --selection-secondary-border: #10b981;
+    --selection-secondary-text: #047857;
+
+    /* Callout boxes */
+    --callout-info-bg: #fef3c7;
+    --callout-info-border: #fed7aa;
+    --callout-info-text: #92400e;
+
+    --callout-success-bg: #ecfdf5;
+    --callout-success-border: #bbf7d0;
+    --callout-success-text: #047857;
 
     /* Table specific */
     --table-header-bg: #fef3c7;
@@ -240,11 +323,15 @@
     /* Border colors */
     --border-primary: #fecaca;
     --border-secondary: #fca5a5;
+    --border-tertiary: #f87171;
+    --border-accent: #ef4444;
 
     /* Text colors */
     --text-primary: #991b1b;
     --text-secondary: #dc2626;
     --text-tertiary: #ef4444;
+    --text-quaternary: #f87171;
+    --text-accent: #7f1d1d;
     --text-inverse: #ffffff;
 
     /* Interactive colors */
@@ -253,6 +340,24 @@
     --color-green: #10b981;
     --color-red: #dc2626;
     --color-yellow: #d97706;
+
+    /* Selection states */
+    --selection-primary-bg: #fee2e2;
+    --selection-primary-border: #dc2626;
+    --selection-primary-text: #991b1b;
+
+    --selection-secondary-bg: #ecfdf5;
+    --selection-secondary-border: #10b981;
+    --selection-secondary-text: #047857;
+
+    /* Callout boxes */
+    --callout-info-bg: #fee2e2;
+    --callout-info-border: #fecaca;
+    --callout-info-text: #991b1b;
+
+    --callout-success-bg: #ecfdf5;
+    --callout-success-border: #bbf7d0;
+    --callout-success-text: #047857;
 
     /* Table specific */
     --table-header-bg: #fee2e2;
@@ -294,11 +399,15 @@
     /* Border colors */
     --border-primary: #bae6fd;
     --border-secondary: #7dd3fc;
+    --border-tertiary: #38bdf8;
+    --border-accent: #0284c7;
 
     /* Text colors */
     --text-primary: #0c4a6e;
     --text-secondary: #0369a1;
     --text-tertiary: #0284c7;
+    --text-quaternary: #0ea5e9;
+    --text-accent: #075985;
     --text-inverse: #ffffff;
 
     /* Interactive colors */
@@ -307,6 +416,24 @@
     --color-green: #10b981;
     --color-red: #ef4444;
     --color-yellow: #f59e0b;
+
+    /* Selection states */
+    --selection-primary-bg: #e0f2fe;
+    --selection-primary-border: #0284c7;
+    --selection-primary-text: #0c4a6e;
+
+    --selection-secondary-bg: #ecfdf5;
+    --selection-secondary-border: #10b981;
+    --selection-secondary-text: #047857;
+
+    /* Callout boxes */
+    --callout-info-bg: #e0f2fe;
+    --callout-info-border: #bae6fd;
+    --callout-info-text: #0c4a6e;
+
+    --callout-success-bg: #ecfdf5;
+    --callout-success-border: #bbf7d0;
+    --callout-success-text: #047857;
 
     /* Table specific */
     --table-header-bg: #e0f2fe;
@@ -348,11 +475,15 @@
     /* Border colors */
     --border-primary: #4c3566;
     --border-secondary: #6b4c8a;
+    --border-tertiary: #8b5cf6;
+    --border-accent: #a855f7;
 
     /* Text colors */
     --text-primary: #f5f0ff;
     --text-secondary: #d8b4fe;
     --text-tertiary: #c084fc;
+    --text-quaternary: #a855f7;
+    --text-accent: #e9d5ff;
     --text-inverse: #1a0f26;
     --page-text: #f5f0ff;
 
@@ -362,6 +493,24 @@
     --color-green: #4ade80;
     --color-red: #fb7185;
     --color-yellow: #fde047;
+
+    /* Selection states */
+    --selection-primary-bg: #581c87;
+    --selection-primary-border: #c084fc;
+    --selection-primary-text: #f3e8ff;
+
+    --selection-secondary-bg: #14532d;
+    --selection-secondary-border: #4ade80;
+    --selection-secondary-text: #bbf7d0;
+
+    /* Callout boxes */
+    --callout-info-bg: #581c87;
+    --callout-info-border: #7c3aed;
+    --callout-info-text: #f3e8ff;
+
+    --callout-success-bg: #14532d;
+    --callout-success-border: #16a34a;
+    --callout-success-text: #bbf7d0;
 
     /* Table specific */
     --table-header-bg: #3d2954;
@@ -404,11 +553,15 @@
     /* Border colors */
     --border-primary: #9a3412;
     --border-secondary: #c2410c;
+    --border-tertiary: #ea580c;
+    --border-accent: #f97316;
 
     /* Text colors */
     --text-primary: #fef7ed;
     --text-secondary: #fed7aa;
     --text-tertiary: #fdba74;
+    --text-quaternary: #fb923c;
+    --text-accent: #ffedd5;
     --text-inverse: #451a03;
     --page-text: #fef7ed;
 
@@ -418,6 +571,24 @@
     --color-green: #22d3ee;
     --color-red: #ef4444;
     --color-yellow: #eab308;
+
+    /* Selection states */
+    --selection-primary-bg: #9a2502;
+    --selection-primary-border: #fb923c;
+    --selection-primary-text: #fed7aa;
+
+    --selection-secondary-bg: #134e4a;
+    --selection-secondary-border: #22d3ee;
+    --selection-secondary-text: #a7f3d0;
+
+    /* Callout boxes */
+    --callout-info-bg: #9a2502;
+    --callout-info-border: #c2410c;
+    --callout-info-text: #fed7aa;
+
+    --callout-success-bg: #134e4a;
+    --callout-success-border: #0f766e;
+    --callout-success-text: #a7f3d0;
 
     /* Table specific */
     --table-header-bg: #7c2d12;
@@ -460,11 +631,15 @@
     /* Border colors */
     --border-primary: #991b1b;
     --border-secondary: #b91c1c;
+    --border-tertiary: #dc2626;
+    --border-accent: #ef4444;
 
     /* Text colors */
     --text-primary: #fef2f2;
     --text-secondary: #fecaca;
     --text-tertiary: #fca5a5;
+    --text-quaternary: #f87171;
+    --text-accent: #fee2e2;
     --text-inverse: #4c1d1d;
     --page-text: #fef2f2;
 
@@ -474,6 +649,24 @@
     --color-green: #34d399;
     --color-red: #dc2626;
     --color-yellow: #f59e0b;
+
+    /* Selection states */
+    --selection-primary-bg: #7f1d1d;
+    --selection-primary-border: #f87171;
+    --selection-primary-text: #fecaca;
+
+    --selection-secondary-bg: #064e3b;
+    --selection-secondary-border: #34d399;
+    --selection-secondary-text: #a7f3d0;
+
+    /* Callout boxes */
+    --callout-info-bg: #7f1d1d;
+    --callout-info-border: #991b1b;
+    --callout-info-text: #fecaca;
+
+    --callout-success-bg: #064e3b;
+    --callout-success-border: #047857;
+    --callout-success-text: #a7f3d0;
 
     /* Table specific */
     --table-header-bg: #7f1d1d;
@@ -514,10 +707,14 @@
 
     --border-primary: #334155;
     --border-secondary: #475569;
+    --border-tertiary: #64748b;
+    --border-accent: #94a3b8;
 
     --text-primary: #f1f5f9;
     --text-secondary: #cbd5e1;
     --text-tertiary: #94a3b8;
+    --text-quaternary: #64748b;
+    --text-accent: #e2e8f0;
     --text-inverse: #0f172a;
     --page-text: #f1f5f9;
 
@@ -526,6 +723,24 @@
     --color-green: #22d3ee;
     --color-red: #f43f5e;
     --color-yellow: #facc15;
+
+    /* Selection states */
+    --selection-primary-bg: #1e3a8a;
+    --selection-primary-border: #7dd3fc;
+    --selection-primary-text: #bfdbfe;
+
+    --selection-secondary-bg: #134e4a;
+    --selection-secondary-border: #22d3ee;
+    --selection-secondary-text: #a7f3d0;
+
+    /* Callout boxes */
+    --callout-info-bg: #1e3a8a;
+    --callout-info-border: #1d4ed8;
+    --callout-info-text: #bfdbfe;
+
+    --callout-success-bg: #134e4a;
+    --callout-success-border: #0f766e;
+    --callout-success-text: #a7f3d0;
 
     --table-header-bg: #1e293b;
     --table-row-even: #0f172a;
@@ -594,6 +809,14 @@
     border-color: var(--border-secondary);
 }
 
+.border-theme-tertiary {
+    border-color: var(--border-tertiary);
+}
+
+.border-theme-accent {
+    border-color: var(--border-accent);
+}
+
 .text-theme-primary {
     color: var(--text-primary);
 }
@@ -604,6 +827,14 @@
 
 .text-theme-tertiary {
     color: var(--text-tertiary);
+}
+
+.text-theme-quaternary {
+    color: var(--text-quaternary);
+}
+
+.text-theme-accent {
+    color: var(--text-accent);
 }
 
 .text-theme-inverse {
@@ -636,6 +867,32 @@
 
 .hover\:text-theme-blue:hover {
     color: var(--color-blue);
+}
+
+/* Selection state classes */
+.selection-primary-active {
+    background-color: var(--selection-primary-bg);
+    border-color: var(--selection-primary-border);
+    color: var(--selection-primary-text);
+}
+
+.selection-secondary-active {
+    background-color: var(--selection-secondary-bg);
+    border-color: var(--selection-secondary-border);
+    color: var(--selection-secondary-text);
+}
+
+/* Callout box classes */
+.callout-info {
+    background-color: var(--callout-info-bg);
+    border-color: var(--callout-info-border);
+    color: var(--callout-info-text);
+}
+
+.callout-success {
+    background-color: var(--callout-success-bg);
+    border-color: var(--callout-success-border);
+    color: var(--callout-success-text);
 }
 
 /* Table-specific utility classes */

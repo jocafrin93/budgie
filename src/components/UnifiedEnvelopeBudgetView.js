@@ -758,14 +758,14 @@ const CategoryTableRow = ({
                     <div className="flex items-center gap-2 flex-shrink-0">
                         <div
                             ref={dragCategory}
-                            className="cursor-grab active:cursor-grabbing text-theme-tertiary hover:text-theme-secondary p-1 flex-shrink-0"
+                            className="cursor-grab active:cursor-grabbing text-theme-secondary hover:text-theme-secondary p-1 flex-shrink-0"
                             title="Drag to reorder categories"
                         >
                             <GripVertical className="w-3 h-3" />
                         </div>
                         <button
                             onClick={onToggleExpand}
-                            className="text-theme-tertiary hover:text-theme-secondary p-1 flex-shrink-0"
+                            className="text-theme-secondary hover:text-theme-secondary p-1 flex-shrink-0"
                         >
                             {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </button>

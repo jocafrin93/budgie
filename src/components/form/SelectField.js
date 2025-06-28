@@ -25,7 +25,7 @@ const SelectField = ({
     }
   };
 
-  const baseClassName = `w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary ${error ? 'border-red-500' : ''
+  const baseClassName = `w-full p-2 border rounded bg-theme-secondary border-theme-primary text-theme-primary ${error ? 'border-red-500' : ''
     } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`;
 
   return (

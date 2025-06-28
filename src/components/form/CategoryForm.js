@@ -1,38 +1,61 @@
-import { DollarSign, Info, Package, Target } from 'lucide-react';
+// Enhanced CategoryForm.js with full UnifiedItemForm functionality for single categories
+
+import { DollarSign, Package, Target } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from '../../hooks/useForm';
 import { frequencyOptions } from '../../utils/constants';
+import { formatDate } from '../../utils/dateUtils';
+import { dollarToPercentage, percentageToDollar } from '../../utils/moneyUtils';
 import {
   BaseForm,
+  CheckboxField,
   ColorPickerField,
-  CurrencyField // Added CurrencyField import
-  ,
-
-
-
-
+  CurrencyField,
+  DateField,
+  GoalFieldGroup,
+  PercentageField,
+  SelectField,
   TextField
 } from './';
+
+const formFrequencyOptions = frequencyOptions.map(freq => ({
+  value: freq.value,
+  label: freq.label
+}));
 
 const CategoryForm = ({
   category = null,
   onSave,
   onCancel,
   darkMode = false,
-  payFrequency = 'bi-weekly'
+  payFrequency = 'bi-weekly',
+  accounts = [],
+  currentPay = 0
 }) => {
   // Determine initial category type
   const initialCategoryType = category?.type || 'single';
-
-  // Add state for category type and related fields
   const [categoryType, setCategoryType] = useState(initialCategoryType);
 
-  // Single category specific fields - Changed: amount now stores numeric value
-  const [amount, setAmount] = useState(category?.amount || 0);
-  const [frequency, setFrequency] = useState(category?.frequency || 'monthly');
-  const [dueDate, setDueDate] = useState(category?.dueDate || '');
+  // Single category item data (enhanced with all UnifiedItemForm fields)
+  const [itemType, setItemType] = useState(category?.settings?.itemType || 'expense');
+  const [usePercentage, setUsePercentage] = useState(category?.settings?.usePercentage || false);
+  const [amount, setAmount] = useState(category?.settings?.amount || 0);
+  const [percentageAmount, setPercentageAmount] = useState(category?.settings?.percentageAmount || 0);
+  const [frequency, setFrequency] = useState(category?.settings?.frequency || 'monthly');
+  const [dueDate, setDueDate] = useState(category?.settings?.dueDate || '');
+  const [isRecurring, setIsRecurring] = useState(category?.settings?.isRecurring || false);
+  const [accountId, setAccountId] = useState(category?.settings?.accountId || (accounts[0]?.id || ''));
+  const [priorityState, setPriorityState] = useState(category?.settings?.priorityState || 'active');
+  const [priority, setPriority] = useState(category?.settings?.priority || 'medium');
 
-  // Auto-funding settings - Changed: maxAutoFunding now stores numeric value
+  // Goal-specific fields
+  const [targetAmount, setTargetAmount] = useState(category?.settings?.targetAmount || 0);
+  const [targetDate, setTargetDate] = useState(category?.settings?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)));
+  const [monthlyContribution, setMonthlyContribution] = useState(category?.settings?.monthlyContribution || 0);
+  const [monthlyPercentage, setMonthlyPercentage] = useState(category?.settings?.monthlyPercentage || 0);
+  const [alreadySaved, setAlreadySaved] = useState(category?.settings?.alreadySaved || 0);
+
+  // Auto-funding settings
   const [autoFundingEnabled, setAutoFundingEnabled] = useState(
     category?.autoFunding?.enabled || false
   );
@@ -50,7 +73,7 @@ const CategoryForm = ({
   const form = useForm({
     initialValues,
     onSubmit: (values) => {
-      // Combine form values with category type and related fields
+      // Combine form values with category type and item data
       const formData = {
         ...values,
         type: categoryType,
@@ -59,11 +82,36 @@ const CategoryForm = ({
           maxAmount: parseFloat(maxAutoFunding) || 500,
           priority: 'medium'
         },
-        // Include single category specific data
+        // Include single category specific data with full item details
         ...(categoryType === 'single' && {
-          amount: parseFloat(amount) || 0,  // Ensure numeric
-          frequency,
-          dueDate: dueDate || null
+          settings: {
+            // Item type and basic info
+            itemType,
+            usePercentage,
+            accountId,
+            priorityState,
+            priority,
+
+            // Expense-specific fields
+            ...(itemType === 'expense' && {
+              amount: usePercentage
+                ? percentageToDollar(parseFloat(percentageAmount), currentPay)
+                : parseFloat(amount) || 0,
+              percentageAmount: parseFloat(percentageAmount) || 0,
+              frequency: isRecurring ? frequency : 'monthly',
+              dueDate: dueDate || null,
+              isRecurring
+            }),
+
+            // Goal-specific fields  
+            ...(itemType === 'goal' && {
+              targetAmount: parseFloat(targetAmount) || 0,
+              targetDate,
+              monthlyContribution: parseFloat(monthlyContribution) || 0,
+              monthlyPercentage: parseFloat(monthlyPercentage) || 0,
+              alreadySaved: parseFloat(alreadySaved) || 0
+            })
+          }
         }),
         // Only include ID if we're editing an existing category
         ...(category ? { id: category.id } : {})
@@ -82,27 +130,105 @@ const CategoryForm = ({
         errors.color = 'Color is required';
       }
 
-      if (categoryType === 'single' && (!amount || parseFloat(amount) <= 0)) {
-        errors.amount = 'Amount must be greater than 0';
+      // Single category validation
+      if (categoryType === 'single') {
+        if (itemType === 'expense') {
+          if (usePercentage) {
+            if (!percentageAmount || parseFloat(percentageAmount) <= 0) {
+              errors.percentageAmount = 'Percentage must be greater than 0';
+            }
+          } else {
+            if (!amount || parseFloat(amount) <= 0) {
+              errors.amount = 'Amount must be greater than 0';
+            }
+          }
+          // Frequency required if recurring
+          if (isRecurring && !frequency) {
+            errors.frequency = 'Frequency is required when expense is recurring';
+          }
+        } else if (itemType === 'goal') {
+          if (!targetAmount || parseFloat(targetAmount) <= 0) {
+            errors.targetAmount = 'Target amount must be greater than 0';
+          }
+        }
+
+        if (!accountId) {
+          errors.accountId = 'Funding account is required';
+        }
       }
 
       return errors;
     }
   });
 
-  // Calculate per-paycheck amount for single categories
-  const getPerPaycheckPreview = () => {
-    if (categoryType !== 'single' || !amount) return null;
-
-    const monthlyAmount = parseFloat(amount) * (frequencyOptions.find(f => f.value === frequency)?.weeksPerYear / 12 || 1);
-    const paychecksPerMonth = payFrequency === 'bi-weekly' ? 2.17 : payFrequency === 'weekly' ? 4.33 : 1;
-    const perPaycheck = monthlyAmount / paychecksPerMonth;
-
-    return perPaycheck;
+  // Handle amount/percentage toggle for expenses
+  const handleAmountModeToggle = (usePerc) => {
+    if (usePerc && !usePercentage && amount && currentPay > 0) {
+      // Convert dollar to percentage
+      const convertedPercentage = dollarToPercentage(parseFloat(amount), currentPay);
+      setPercentageAmount(convertedPercentage);
+    } else if (!usePerc && usePercentage && percentageAmount && currentPay > 0) {
+      // Convert percentage to dollar
+      const convertedAmount = percentageToDollar(parseFloat(percentageAmount), currentPay);
+      setAmount(convertedAmount);
+    }
+    setUsePercentage(usePerc);
   };
 
-  const perPaycheckPreview = getPerPaycheckPreview();
-  // Add this function before the return statement
+  // Handle goal field changes
+  const handleGoalFieldChange = (fieldName, value) => {
+    switch (fieldName) {
+      case 'targetAmount':
+        setTargetAmount(value);
+        break;
+      case 'targetDate':
+        setTargetDate(value);
+        break;
+      case 'monthlyContribution':
+        setMonthlyContribution(value);
+        // Also update percentage if currentPay available
+        if (currentPay > 0) {
+          const percentage = dollarToPercentage(parseFloat(value) || 0, currentPay);
+          setMonthlyPercentage(percentage);
+        }
+        break;
+      case 'monthlyPercentage':
+        setMonthlyPercentage(value);
+        // Also update dollar amount if currentPay available
+        if (currentPay > 0) {
+          const dollarAmount = percentageToDollar(parseFloat(value) || 0, currentPay);
+          setMonthlyContribution(dollarAmount);
+        }
+        break;
+      case 'alreadySaved':
+        setAlreadySaved(value);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Account options
+  const accountOptions = accounts.map(account => ({
+    value: account.id,
+    label: account.name
+  }));
+
+  // Priority state options
+  const priorityStateOptions = [
+    { value: 'active', label: 'Active' },
+    { value: 'paused', label: 'Paused' },
+    { value: 'completed', label: 'Completed' }
+  ];
+
+  // Priority options
+  const priorityOptions = [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'critical', label: 'Critical' }
+  ];
+
   const handleSubmitAnother = () => {
     // Prepare the data manually (same as your form's onSubmit)
     const formData = {
@@ -115,11 +241,32 @@ const CategoryForm = ({
       },
       // Include single category specific data if applicable
       ...(categoryType === 'single' && {
-        amount: parseFloat(amount),
-        frequency,
-        dueDate: dueDate || null
+        settings: {
+          itemType,
+          usePercentage,
+          accountId,
+          priorityState,
+          priority,
+
+          ...(itemType === 'expense' && {
+            amount: usePercentage
+              ? percentageToDollar(parseFloat(percentageAmount), currentPay)
+              : parseFloat(amount) || 0,
+            percentageAmount: parseFloat(percentageAmount) || 0,
+            frequency: isRecurring ? frequency : 'monthly',
+            dueDate: dueDate || null,
+            isRecurring
+          }),
+
+          ...(itemType === 'goal' && {
+            targetAmount: parseFloat(targetAmount) || 0,
+            targetDate,
+            monthlyContribution: parseFloat(monthlyContribution) || 0,
+            monthlyPercentage: parseFloat(monthlyPercentage) || 0,
+            alreadySaved: parseFloat(alreadySaved) || 0
+          })
+        }
       }),
-      // Include ID if editing
       ...(category ? { id: category.id } : {})
     };
 
@@ -130,14 +277,20 @@ const CategoryForm = ({
     setTimeout(() => {
       form.setFieldValue('name', '');
       form.setFieldValue('description', '');
-      setAmount('');
+      setAmount(0);
+      setPercentageAmount(0);
       setDueDate('');
+      setIsRecurring(false);
+      setTargetAmount(0);
+      setMonthlyContribution(0);
+      setAlreadySaved(0);
 
       // Focus name field
       const nameInput = document.querySelector('input[name="name"]');
       if (nameInput) nameInput.focus();
     }, 100);
   };
+
   return (
     <BaseForm
       onSubmit={form.handleSubmit}
@@ -170,61 +323,58 @@ const CategoryForm = ({
 
         {/* Category Type */}
         <div>
-          <label className="block text-sm font-medium text-theme-primary mb-3">
+          <label className="block text-sm font-medium mb-3">
             Category Type *
           </label>
           <div className="space-y-3">
-            {/* Single Expense Option */}
-            <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${categoryType === 'single' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'
+            {/* Single Item Option */}
+            <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${categoryType === 'single'
+              ? 'selection-primary-active'
+              : 'border-theme-secondary bg-theme-secondary hover:bg-theme-hover'
               }`}>
               <input
                 type="radio"
+                name="categoryType"
                 value="single"
                 checked={categoryType === 'single'}
                 onChange={(e) => setCategoryType(e.target.value)}
                 className="mt-1"
               />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Target className="w-4 h-4 text-blue-600" />
-                  <span className="font-medium text-blue-700">Single Expense</span>
+              <div>
+                <div className="font-medium flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  Single Item Category
                 </div>
-                <p className="text-sm text-theme-tertiary">
-                  Perfect for individual bills like rent, car payments, or insurance.
-                  Simple envelope-style with one specific amount and frequency.
+                <p className="text-sm mt-1">
+                  One specific expense or goal with detailed configuration options.
                 </p>
-                {categoryType === 'single' && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
-                    <div className="text-xs text-blue-700 font-medium mb-2">
-                      ✨ You'll enter the expense details below
-                    </div>
-                  </div>
-                )}
               </div>
             </label>
 
-            {/* Multiple Expenses Option */}
-            <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${categoryType === 'multiple' ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:bg-gray-50'
+            {/* Multiple Items Option */}
+            <label className={`flex items-start gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${categoryType === 'multiple'
+              ? 'selection-primary-active'
+              : 'border-theme-secondary bg-theme-secondary hover:bg-theme-hover'
               }`}>
               <input
                 type="radio"
+                name="categoryType"
                 value="multiple"
                 checked={categoryType === 'multiple'}
                 onChange={(e) => setCategoryType(e.target.value)}
                 className="mt-1"
               />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Package className="w-4 h-4 text-blue-700" />
-                  <span className="font-medium text-purple-700">Multiple Expenses</span>
+              <div>
+                <div className="font-medium flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Multiple Items Category
                 </div>
-                <p className="text-sm text-theme-tertiary">
-                  Group related expenses like subscriptions, shopping categories, or transportation costs.
+                <p className="text-sm mt-1">
                   Detailed planning with individual item tracking and active/planning states.
                 </p>
                 {categoryType === 'multiple' && (
-                  <div className="mt-3 p-3 bg-purple-50 rounded border border-purple-200">
-                    <div className="text-xs text-purple-700 font-medium mb-2">
+                  <div className="mt-3 p-3 callout-info rounded border">
+                    <div className="text-xs font-medium ">
                       ✨ Add individual items after creating the category
                     </div>
                   </div>
@@ -234,70 +384,181 @@ const CategoryForm = ({
           </div>
         </div>
 
-        {/* Single Category Details */}
+        {/* Single Category Enhanced Details */}
         {categoryType === 'single' && (
-          <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h4 className="font-medium text-blue-900 flex items-center gap-2">
-              <DollarSign className="w-4 h-4" />
-              Expense Details
-            </h4>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Amount - FIXED: Now uses CurrencyField */}
-              <CurrencyField
-                name="amount"
-                label="Amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                required
-                darkMode={darkMode}
-                error={form.errors.amount}
-              />
-
-              {/* Frequency */}
-              <div>
-                <label className="block text-sm font-medium text-theme-primary mb-1">
-                  Frequency
-                </label>
-                <select
-                  value={frequency}
-                  onChange={(e) => setFrequency(e.target.value)}
-                  className="w-full px-3 py-2 border border-theme-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div className="space-y-4 p-4 slection-primary-active">
+            {/* Item Type Selection */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-theme-primary">What are you planning for?</label>
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setItemType('expense')}
+                  className={`flex-1 py-2 px-4 rounded flex items-center justify-center space-x-2 transition-colors ${itemType === 'expense'
+                    ? 'btn-primary'
+                    : 'btn-secondary'
+                    }`}
                 >
-                  {frequencyOptions.map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  <span>💸</span>
+                  <span>Expense</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItemType('goal')}
+                  className={`flex-1 py-2 px-4 rounded flex items-center justify-center space-x-2 transition-colors ${itemType === 'goal'
+                    ? 'btn-success'
+                    : 'btn-secondary'
+                    }`}
+                >
+                  <span>🎯</span>
+                  <span>Goal</span>
+                </button>
               </div>
             </div>
 
-            {/* Due Date */}
-            <div>
-              <label className="block text-sm font-medium text-theme-primary mb-1">
-                Due Date (Optional)
-              </label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 border border-theme-secondary rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Per-paycheck Preview */}
-            {perPaycheckPreview && (
-              <div className="p-3 bg-blue-100 rounded border border-blue-300">
-                <div className="text-sm text-blue-800">
-                  <strong>Per-paycheck amount:</strong> ${perPaycheckPreview.toFixed(2)}
-                  <div className="text-xs mt-1">
-                    Based on your {payFrequency.replace('-', ' ')} pay schedule
+            {itemType === 'expense' ? (
+              // Expense Fields
+              <>
+                {/* Amount Input Mode Selection */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-theme-primary">
+                    How do you want to set the amount?
+                  </label>
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAmountModeToggle(false)}
+                      className={`flex-1 py-2 px-3 rounded text-sm transition-colors ${!usePercentage
+                        ? 'btn-primary'
+                        : 'bg-theme-secondary text-theme-primary hover:bg-theme-hover'
+                        }`}
+                    >
+                      <span className="mr-1">💰</span>
+                      Dollar Amount
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAmountModeToggle(true)}
+                      className={`flex-1 py-2 px-3 rounded text-sm transition-colors ${usePercentage
+                        ? 'btn-success'
+                        : 'bg-theme-secondary text-theme-primary hover:bg-theme-hover'
+                        }`}
+                    >
+                      <span className="mr-1">📊</span>
+                      % of Paycheck
+                    </button>
                   </div>
                 </div>
-              </div>
+
+                {/* Amount Field */}
+                {usePercentage ? (
+                  <PercentageField
+                    name="percentageAmount"
+                    label="Percentage of Income"
+                    value={percentageAmount}
+                    onChange={(e) => setPercentageAmount(e.target.value)}
+                    placeholder="0.0"
+                    required
+                    darkMode={darkMode}
+                    hint={currentPay > 0 ? `Approx. $${percentageToDollar(percentageAmount || 0, currentPay).toFixed(2)}` : ''}
+                  />
+                ) : (
+                  <CurrencyField
+                    name="amount"
+                    label="Amount"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="0.00"
+                    required
+                    darkMode={darkMode}
+                    hint={currentPay > 0 ? `Approx. ${dollarToPercentage(amount || 0, currentPay).toFixed(1)}% of income` : ''}
+                  />
+                )}
+
+                {/* Due Date */}
+                <DateField
+                  name="dueDate"
+                  label="Due Date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  required={false}
+                  darkMode={darkMode}
+                  hint="Optional - leave blank if no specific due date"
+                />
+
+                {/* Recurring Checkbox - Only if due date provided */}
+                {dueDate && (
+                  <CheckboxField
+                    name="isRecurring"
+                    label="This is a recurring expense"
+                    checked={isRecurring}
+                    onChange={(e) => setIsRecurring(e.target.checked)}
+                    darkMode={darkMode}
+                  />
+                )}
+
+                {/* Frequency - Only if due date provided AND recurring */}
+                {dueDate && isRecurring && (
+                  <SelectField
+                    name="frequency"
+                    label="Frequency"
+                    value={frequency}
+                    onChange={(e) => setFrequency(e.target.value)}
+                    options={formFrequencyOptions}
+                    required={true}
+                    darkMode={darkMode}
+                    hint="How often does this expense repeat?"
+                  />
+                )}
+              </>
+            ) : (
+              // Goal Fields
+              <GoalFieldGroup
+                formValues={{
+                  targetAmount,
+                  targetDate,
+                  monthlyContribution,
+                  monthlyPercentage,
+                  alreadySaved
+                }}
+                onChange={(e) => handleGoalFieldChange(e.target.name, e.target.value)}
+                errors={form.errors}
+                currentPay={currentPay}
+              />
             )}
+
+            {/* Account Selection */}
+            <SelectField
+              name="accountId"
+              label="Funding Account"
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              options={accountOptions}
+              required
+              darkMode={darkMode}
+            />
+
+            {/* Priority State */}
+            <SelectField
+              name="priorityState"
+              label="Status"
+              value={priorityState}
+              onChange={(e) => setPriorityState(e.target.value)}
+              options={priorityStateOptions}
+              required
+              darkMode={darkMode}
+            />
+
+            {/* Priority */}
+            <SelectField
+              name="priority"
+              label="Priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value)}
+              options={priorityOptions}
+              required
+              darkMode={darkMode}
+            />
           </div>
         )}
 
@@ -305,54 +566,42 @@ const CategoryForm = ({
         <ColorPickerField
           {...form.getFieldProps('color')}
           label="Category Color"
-          required
           darkMode={darkMode}
         />
 
         {/* Auto-funding Settings */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="autoFunding"
-              checked={autoFundingEnabled}
-              onChange={(e) => setAutoFundingEnabled(e.target.checked)}
-              className="rounded"
-            />
-            <label htmlFor="autoFunding" className="text-sm font-medium text-theme-primary">
-              Enable auto-funding (optional)
-            </label>
-          </div>
+        <div className="space-y-4 p-4 bg-theme-secondary rounded-lg border border-theme-secondary">
+          <h4 className="font-medium text-theme-primary flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Auto-funding Settings
+          </h4>
+
+          <CheckboxField
+            name="autoFundingEnabled"
+            label="Enable auto-funding for this category"
+            checked={autoFundingEnabled}
+            onChange={(e) => setAutoFundingEnabled(e.target.checked)}
+            darkMode={darkMode}
+          />
 
           {autoFundingEnabled && (
-            <div className="pl-6 space-y-3">
-              {/* Maximum auto-funding amount - FIXED: Now uses CurrencyField */}
-              <CurrencyField
-                name="maxAutoFunding"
-                label="Maximum auto-funding amount"
-                value={maxAutoFunding}
-                onChange={(e) => setMaxAutoFunding(e.target.value)}
-                placeholder="500.00"
-                darkMode={darkMode}
-              />
-              <div className="flex items-start gap-2 p-3 bg-yellow-50 rounded border border-yellow-200">
-                <Info className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-yellow-800">
-                  Auto-funding will automatically allocate money to this category during the payday workflow,
-                  up to the maximum amount specified.
-                </p>
-              </div>
-            </div>
+            <CurrencyField
+              name="maxAutoFunding"
+              label="Maximum Auto-funding Amount"
+              value={maxAutoFunding}
+              onChange={(e) => setMaxAutoFunding(e.target.value)}
+              placeholder="500.00"
+              darkMode={darkMode}
+              hint="Maximum amount to auto-allocate to this category"
+            />
           )}
         </div>
 
-        {/* Description Field */}
+        {/* Description */}
         <TextField
           {...form.getFieldProps('description')}
-          label="Description"
-          placeholder="Optional description"
-          multiline
-          rows={3}
+          label="Description (Optional)"
+          placeholder="Add notes about this category"
           darkMode={darkMode}
         />
       </div>

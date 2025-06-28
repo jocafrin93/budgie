@@ -2,7 +2,6 @@
  * TextField component
  * A standardized text input field for forms
  */
-import React from 'react';
 import FormField from './FormField';
 
 const TextField = ({
@@ -26,8 +25,7 @@ const TextField = ({
     }
   };
 
-  const baseClassName = `w-full p-2 border rounded ${
-    darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
+  const baseClassName = `w-full p-2 border rounded bg-theme-secondary border-theme-primary' 
   } text-theme-primary ${error ? 'border-red-500' : ''} ${className}`;
 
   return (
