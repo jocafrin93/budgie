@@ -911,6 +911,7 @@ const App = () => {
                                 payFrequencyOptions={payFrequencyOptions}
 
                                 // Optional
+                                getAllUpcomingPaycheckDates={getAllUpcomingPaycheckDates}
                                 recentPaycheck={getAllUpcomingPaycheckDates(1)[0] || null}
                                 onShowPaydayWorkflow={handleShowPaydayWorkflow}
                             />

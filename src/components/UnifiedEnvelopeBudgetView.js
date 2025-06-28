@@ -55,7 +55,8 @@ const UnifiedEnvelopeBudgetView = ({
 
     // Paycheck configuration
     payFrequency,
-    payFrequencyOptions
+    payFrequencyOptions,
+    getAllUpcomingPaycheckDates
 }) => {
     // Track expanded categories
     const [expandedCategories, setExpandedCategories] = useState({});
@@ -141,7 +142,9 @@ const UnifiedEnvelopeBudgetView = ({
     const getPayPeriodUrgency = (dateString) => {
         if (!dateString) return null;
 
-        const dueDate = new Date(dateString);
+        // Parse date as local date to avoid timezone issues
+        const [year, month, day] = dateString.split('-').map(Number);
+        const dueDate = new Date(year, month - 1, day);
         const today = new Date();
         const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
@@ -158,6 +161,7 @@ const UnifiedEnvelopeBudgetView = ({
         }
     };
 
+
     const getPayPeriodColor = (urgency) => {
         switch (urgency) {
             case 'current-period': return 'text-theme-red bg-theme-secondary';
@@ -169,10 +173,14 @@ const UnifiedEnvelopeBudgetView = ({
 
     const formatDueDate = (dateString) => {
         if (!dateString) return null;
-        const date = new Date(dateString);
-        const month = date.toLocaleDateString('en-US', { month: 'short' });
-        const day = date.getDate();
-        return `${month} ${day}`;
+
+        // Parse date as local date to avoid timezone issues
+        const [year, month, day] = dateString.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+
+        const monthStr = date.toLocaleDateString('en-US', { month: 'short' });
+        const dayStr = date.getDate();
+        return `${monthStr} ${dayStr}`;
     };
 
     // Conservative paycheck info (existing logic)
@@ -221,16 +229,58 @@ const UnifiedEnvelopeBudgetView = ({
         }
 
         let paychecksUntilDue = null;
-        if (dueDate) {
-            const dueTime = new Date(dueDate.getTime() + dueDate.getTimezoneOffset() * 60000);
-            const todayTime = new Date(today.getTime() + today.getTimezoneOffset() * 60000);
-            const daysUntilDue = Math.ceil((dueTime - todayTime) / (24 * 60 * 60 * 1000));
+        if (dueDate && getAllUpcomingPaycheckDates) {
+            // FIXED: Use actual paycheck dates instead of estimating
+            try {
+                const upcomingPaychecks = getAllUpcomingPaycheckDates(6); // Get 6 months of paychecks
 
+                // Parse due date as local date to avoid timezone issues
+                const dueDateStr = item.dueDate;
+                const [year, month, day] = dueDateStr.split('-').map(Number);
+                const localDueDate = new Date(year, month - 1, day);
+
+                // Count actual paychecks before the due date
+                const paychecksBeforeDue = upcomingPaychecks.filter(p => p.date < localDueDate);
+                paychecksUntilDue = paychecksBeforeDue.length;
+
+                // If there are paychecks remaining, calculate per-paycheck amount needed
+                if (paychecksUntilDue > 0) {
+                    const allocated = item.allocated || 0;
+                    const targetAmount = isGoal ?
+                        (item.targetAmount || monthlyAmount) : monthlyAmount;
+                    const remaining = Math.max(0, targetAmount - allocated);
+                    perPaycheckAmount = remaining / paychecksUntilDue;
+                }
+            } catch (error) {
+                console.warn('Error calculating paychecks until due, falling back to estimation:', error);
+                // Fallback to original logic if getAllUpcomingPaycheckDates fails
+                const dueDateStr = item.dueDate;
+                const [year, month, day] = dueDateStr.split('-').map(Number);
+                const localDueDate = new Date(year, month - 1, day);
+                const daysPerPaycheck = Math.ceil(30 / paycheckInfo.average);
+                const daysUntilDue = Math.ceil((localDueDate - today) / (24 * 60 * 60 * 1000));
+                paychecksUntilDue = Math.max(0, Math.ceil(daysUntilDue / daysPerPaycheck));
+
+                if (paychecksUntilDue > 0) {
+                    const allocated = item.allocated || 0;
+                    const targetAmount = isGoal ?
+                        (item.targetAmount || monthlyAmount) : monthlyAmount;
+                    const remaining = Math.max(0, targetAmount - allocated);
+                    perPaycheckAmount = remaining / paychecksUntilDue;
+                }
+            }
+        } else if (dueDate) {
+            // Fallback when getAllUpcomingPaycheckDates is not available
+            const dueDateStr = item.dueDate;
+            const [year, month, day] = dueDateStr.split('-').map(Number);
+            const localDueDate = new Date(year, month - 1, day);
+            const daysUntilDue = Math.ceil((localDueDate - today) / (24 * 60 * 60 * 1000));
             paychecksUntilDue = Math.max(0, Math.ceil(daysUntilDue / daysPerPaycheck));
 
             if (paychecksUntilDue > 0) {
                 const allocated = item.allocated || 0;
-                const targetAmount = isGoal ? (item.targetAmount || monthlyAmount) : monthlyAmount;
+                const targetAmount = isGoal ?
+                    (item.targetAmount || monthlyAmount) : monthlyAmount;
                 const remaining = Math.max(0, targetAmount - allocated);
                 perPaycheckAmount = remaining / paychecksUntilDue;
             }
@@ -291,6 +341,7 @@ const UnifiedEnvelopeBudgetView = ({
                 dueDateInfo
             };
         } else {
+            // Similar fix for multiple item categories
             const activeItems = categoryItems.filter(item => item.isActive);
 
             const totalPerPaycheckNeed = activeItems.reduce((total, item) => {
