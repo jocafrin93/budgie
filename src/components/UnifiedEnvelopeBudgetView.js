@@ -1,19 +1,18 @@
 // src/components/UnifiedEnvelopeBudgetView.js
 import {
-    AlertTriangle,
     ArrowRight,
+    Box,
     Calendar,
     ChevronDown,
     ChevronRight,
-    DollarSign,
-    Edit,
     GripVertical,
     Plus,
+    Target,
     ToggleLeft,
     ToggleRight,
     Trash2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { frequencyOptions } from '../utils/constants';
 import CurrencyInput from './CurrencyInput';
@@ -25,11 +24,7 @@ const DND_TYPES = {
 };
 
 /**
- * Unified EnvelopeBudgetView component
- * 
- * This component combines planning and budgeting into a single unified interface
- * using Enhanced Category Structure (single vs multiple expense categories).
- * It preserves all existing calculation logic while providing a cleaner UX.
+ * Table-based Unified EnvelopeBudgetView component with resizable columns
  */
 const UnifiedEnvelopeBudgetView = ({
     // Data
@@ -51,13 +46,13 @@ const UnifiedEnvelopeBudgetView = ({
     onToggleItemActive,
     onMoveItem,
     onReorderItems,
-    onReorderCategories, // For category reordering
+    onReorderCategories,
 
     // Optional
     onShowPaydayWorkflow,
     recentPaycheck = null,
 
-    // Paycheck configuration - YOUR EXISTING CONFIG
+    // Paycheck configuration
     payFrequency,
     payFrequencyOptions
 }) => {
@@ -72,6 +67,26 @@ const UnifiedEnvelopeBudgetView = ({
     // State for Ready to Assign money movement
     const [showAssignModal, setShowAssignModal] = useState(false);
 
+    // Sorting state
+    const [sortBy, setSortBy] = useState('name');
+    const [sortDirection, setSortDirection] = useState('asc');
+
+    // Column widths state
+    const [columnWidths, setColumnWidths] = useState({
+        category: 250,
+        needed: 120,
+        perPaycheck: 120,
+        available: 120,
+        dueDate: 130
+    });
+
+    // Refs for column resizing
+    const tableRef = useRef(null);
+    const isResizing = useRef(false);
+    const currentColumn = useRef(null);
+    const startX = useRef(0);
+    const startWidth = useRef(0);
+
     // Toggle category expansion
     const toggleCategoryExpanded = (categoryId) => {
         setExpandedCategories(prev => ({
@@ -80,7 +95,86 @@ const UnifiedEnvelopeBudgetView = ({
         }));
     };
 
-    // YOUR EXISTING calculation logic preserved
+    // Handle sorting
+    const handleSort = (column) => {
+        if (sortBy === column) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortBy(column);
+            setSortDirection('asc');
+        }
+    };
+
+    // Column resizing handlers
+    const handleMouseDown = (e, columnKey) => {
+        isResizing.current = true;
+        currentColumn.current = columnKey;
+        startX.current = e.clientX;
+        startWidth.current = columnWidths[columnKey];
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        e.preventDefault();
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isResizing.current || !currentColumn.current) return;
+
+        const diff = e.clientX - startX.current;
+        const newWidth = Math.max(80, startWidth.current + diff); // Minimum width of 80px
+
+        setColumnWidths(prev => ({
+            ...prev,
+            [currentColumn.current]: newWidth
+        }));
+    };
+
+    const handleMouseUp = () => {
+        isResizing.current = false;
+        currentColumn.current = null;
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    // Pay period urgency calculation
+    const getPayPeriodUrgency = (dateString) => {
+        if (!dateString) return null;
+
+        const dueDate = new Date(dateString);
+        const today = new Date();
+        const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+
+        // Mock pay period logic - would use actual pay schedule from app config
+        const daysUntilNextPaycheck = 5;
+        const daysUntilPaycheckAfter = daysUntilNextPaycheck + 14;
+
+        if (daysUntilDue <= daysUntilNextPaycheck) {
+            return 'current-period';
+        } else if (daysUntilDue <= daysUntilPaycheckAfter) {
+            return 'next-period';
+        } else {
+            return 'future';
+        }
+    };
+
+    const getPayPeriodColor = (urgency) => {
+        switch (urgency) {
+            case 'current-period': return 'text-theme-red bg-theme-secondary';
+            case 'next-period': return 'text-theme-yellow bg-theme-tertiary';
+            case 'future': return 'text-theme-secondary bg-theme-quaternary';
+            default: return 'text-theme-secondary bg-theme-quaternary';
+        }
+    };
+
+    const formatDueDate = (dateString) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        const month = date.toLocaleDateString('en-US', { month: 'short' });
+        const day = date.getDate();
+        return `${month} ${day}`;
+    };
+
+    // Conservative paycheck info (existing logic)
     const getConservativePaycheckInfo = (payFreq) => {
         switch (payFreq) {
             case 'weekly': return { conservative: 4, average: 4.33, bonusPerYear: 4 };
@@ -92,13 +186,12 @@ const UnifiedEnvelopeBudgetView = ({
         }
     };
 
-    // YOUR EXISTING amount display calculation preserved  
+    // Amount display calculation (existing logic)
     const getAmountDisplayInfo = (item, payFrequency, payFrequencyOptions) => {
         const isGoal = item.type === 'savings-goal';
         const dueDate = item.dueDate ? new Date(item.dueDate) : null;
         const today = new Date();
 
-        // Your existing conservative paycheck info logic
         const paycheckInfo = getConservativePaycheckInfo(payFrequency);
         const daysPerPaycheck = Math.ceil(30 / paycheckInfo.average);
 
@@ -108,33 +201,24 @@ const UnifiedEnvelopeBudgetView = ({
         const freqOption = frequencyOptions.find(opt => opt.value === item.frequency);
 
         if (isGoal) {
-            // For savings goals, always use conservative approach
             monthlyAmount = item.monthlyContribution || 0;
             perPaycheckAmount = monthlyAmount / paycheckInfo.conservative;
         } else {
-            // For expenses, use your perfect hybrid approach from constants
             const itemAmount = item.amount || 0;
 
             if (freqOption) {
-                // Convert item amount to monthly equivalent using YOUR weeksPerYear
                 monthlyAmount = itemAmount * (freqOption.weeksPerYear / 12);
-
-                // Use your isRegular flag for hybrid strategy!
                 if (freqOption.isRegular) {
-                    // CONSERVATIVE: Use minimum paycheck count for regular expenses
                     perPaycheckAmount = monthlyAmount / paycheckInfo.conservative;
                 } else {
-                    // TRUE AVERAGE: Use accurate average for irregular expenses  
                     perPaycheckAmount = monthlyAmount / paycheckInfo.average;
                 }
             } else {
-                // Fallback for unknown frequencies
                 monthlyAmount = itemAmount;
                 perPaycheckAmount = itemAmount / paycheckInfo.conservative;
             }
         }
 
-        // YOUR EXISTING due date logic preserved
         let paychecksUntilDue = null;
         if (dueDate) {
             const dueTime = new Date(dueDate.getTime() + dueDate.getTimezoneOffset() * 60000);
@@ -160,54 +244,52 @@ const UnifiedEnvelopeBudgetView = ({
         };
     };
 
-    // Get category items and calculate needs
+    // Get category data (existing logic)
     const getCategoryData = (category) => {
         const categoryItems = planningItems.filter(item => item.categoryId === category.id);
-
-        // Determine category type (add to your existing model later)
         const categoryType = category.type || (categoryItems.length <= 1 ? 'single' : 'multiple');
 
         if (categoryType === 'single') {
-            // Single expense category - use category's own data if available, otherwise use first item
             let singleData;
 
             if (category.settings?.amount) {
-                // Category has its own expense data (from enhanced form)
                 singleData = {
                     amount: category.settings.amount,
                     frequency: category.settings.frequency || 'monthly',
                     dueDate: category.settings.dueDate
                 };
             } else if (categoryItems[0]) {
-                // Fall back to first item's data
                 singleData = categoryItems[0];
             } else {
-                // No data available
                 return {
                     type: 'single',
                     perPaycheckNeed: 0,
                     monthlyNeed: 0,
                     items: [],
                     urgencyInfo: null,
-                    needsConfiguration: true
+                    needsConfiguration: true,
+                    dueDateInfo: null
                 };
             }
 
             const displayInfo = getAmountDisplayInfo(singleData, payFrequency, payFrequencyOptions);
-            const urgencyInfo = getUrgencyInfo(singleData);
+            const dueDateInfo = singleData.dueDate ? {
+                date: singleData.dueDate,
+                urgency: getPayPeriodUrgency(singleData.dueDate),
+                display: formatDueDate(singleData.dueDate)
+            } : null;
 
             return {
                 type: 'single',
                 perPaycheckNeed: displayInfo.perPaycheckAmount,
                 monthlyNeed: displayInfo.monthlyAmount,
                 items: categoryItems,
-                urgencyInfo,
                 paychecksUntilDue: displayInfo.paychecksUntilDue,
                 singleData,
-                needsConfiguration: false
+                needsConfiguration: false,
+                dueDateInfo
             };
         } else {
-            // Multiple expense category - YOUR EXISTING planning logic
             const activeItems = categoryItems.filter(item => item.isActive);
 
             const totalPerPaycheckNeed = activeItems.reduce((total, item) => {
@@ -220,43 +302,73 @@ const UnifiedEnvelopeBudgetView = ({
                 return total + displayInfo.monthlyAmount;
             }, 0);
 
+            // Calculate due date info for multiple categories
+            let dueDateInfo = null;
+            const itemsWithDates = activeItems.filter(item => item.dueDate);
+            if (itemsWithDates.length > 0) {
+                const sortedByDate = itemsWithDates.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+                const earliestItem = sortedByDate[0];
+                dueDateInfo = {
+                    date: earliestItem.dueDate,
+                    urgency: getPayPeriodUrgency(earliestItem.dueDate),
+                    display: formatDueDate(earliestItem.dueDate),
+                    additionalCount: itemsWithDates.length > 1 ? itemsWithDates.length - 1 : 0
+                };
+            }
+
             return {
                 type: 'multiple',
                 perPaycheckNeed: totalPerPaycheckNeed,
                 monthlyNeed: totalMonthlyNeed,
                 items: categoryItems,
                 activeItems,
-                urgencyInfo: getMostUrgentItem(activeItems)
+                dueDateInfo
             };
         }
     };
 
-    // YOUR EXISTING urgency logic preserved
-    const getUrgencyInfo = (item) => {
-        if (!item.dueDate) return null;
+    // Sort categories
+    const sortedCategories = [...categories].sort((a, b) => {
+        const aData = getCategoryData(a);
+        const bData = getCategoryData(b);
 
-        const daysUntilDue = Math.ceil(
-            (new Date(item.dueDate) - new Date()) / (1000 * 60 * 60 * 24)
-        );
+        let comparison = 0;
 
-        if (daysUntilDue <= 7) {
-            return { level: 'urgent', message: `Due in ${daysUntilDue} days`, color: 'text-red-600' };
-        } else if (daysUntilDue <= 14) {
-            return { level: 'warning', message: `Due in ${daysUntilDue} days`, color: 'text-orange-600' };
+        switch (sortBy) {
+            case 'name':
+                comparison = a.name.localeCompare(b.name);
+                break;
+            case 'needed':
+                comparison = aData.monthlyNeed - bData.monthlyNeed;
+                break;
+            case 'perPaycheck':
+                comparison = aData.perPaycheckNeed - bData.perPaycheckNeed;
+                break;
+            case 'available':
+                comparison = a.available - b.available;
+                break;
+            case 'due':
+                if (!aData.dueDateInfo && !bData.dueDateInfo) comparison = 0;
+                else if (!aData.dueDateInfo) comparison = 1;
+                else if (!bData.dueDateInfo) comparison = -1;
+                else {
+                    const urgencyOrder = { 'current-period': 0, 'next-period': 1, 'future': 2 };
+                    const aUrgency = urgencyOrder[aData.dueDateInfo.urgency] || 3;
+                    const bUrgency = urgencyOrder[bData.dueDateInfo.urgency] || 3;
+
+                    if (aUrgency !== bUrgency) {
+                        comparison = aUrgency - bUrgency;
+                    } else {
+                        comparison = new Date(aData.dueDateInfo.date) - new Date(bData.dueDateInfo.date);
+                    }
+                }
+                break;
+            default:
+                comparison = 0;
         }
-        return null;
-    };
 
-    const getMostUrgentItem = (items) => {
-        return items
-            .map(item => ({ item, urgency: getUrgencyInfo(item) }))
-            .filter(({ urgency }) => urgency)
-            .sort((a, b) => {
-                const aLevel = a.urgency.level === 'urgent' ? 1 : 2;
-                const bLevel = b.urgency.level === 'urgent' ? 1 : 2;
-                return aLevel - bLevel;
-            })[0]?.urgency || null;
-    };
+        return sortDirection === 'desc' ? -comparison : comparison;
+    });
 
     // Handle adding new category
     const handleAddCategory = () => {
@@ -275,111 +387,216 @@ const UnifiedEnvelopeBudgetView = ({
         setShowAddCategory(false);
     };
 
-    // Get frequency label for display
-    const getFrequencyLabel = () => {
-        return payFrequency.replace('-', ' ');
-    };
-
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Budget</h2>
-                    <p className="text-gray-600">
-                        Unified planning and allocation interface
-                    </p>
+                    <h2 className="text-2xl font-bold text-theme-primary">Budget</h2>
+                    <p className="text-theme-secondary">Unified planning and allocation interface</p>
                 </div>
 
                 {recentPaycheck && (
                     <button
                         onClick={onShowPaydayWorkflow}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                        className="btn-success px-4 py-2 rounded-lg"
                     >
                         Allocate Recent Paycheck
                     </button>
                 )}
             </div>
 
-            {/* Enhanced Ready to Assign */}
-            <div className="bg-white rounded-lg border-l-4 border-green-500 shadow-sm overflow-hidden">
-                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50">
+            {/* Table Container */}
+            <div className="bg-theme-primary rounded-lg shadow-sm border border-theme-primary overflow-hidden">
+                {/* Ready to Assign Header */}
+                <div className="table-header border-b border-theme-secondary p-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
-                                <DollarSign className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900">Ready to Assign</h3>
-                                <p className="text-sm text-gray-600">Money available for allocation</p>
-                            </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-theme-primary">Budget Categories</h3>
+                            <p className="text-sm text-theme-secondary">YNAB-style envelope budgeting</p>
                         </div>
 
                         <div className="flex items-center gap-4">
                             <div className="text-right">
-                                <div className="text-3xl font-bold text-green-600">
+                                <div className="text-sm text-theme-secondary">Ready to Assign</div>
+                                <div className={`text-lg font-bold ${toBeAllocated > 0 ? 'text-theme-green' :
+                                    toBeAllocated < 0 ? 'text-theme-red' : 'text-theme-secondary'
+                                    }`}>
                                     ${toBeAllocated.toFixed(2)}
                                 </div>
-                                <div className="text-xs text-gray-500">Available to assign</div>
                             </div>
-
-                            {/* Assign Money Button */}
                             <button
                                 onClick={() => setShowAssignModal(true)}
-                                disabled={toBeAllocated <= 0}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                                className="btn-success flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
                             >
                                 <ArrowRight className="w-4 h-4" />
-                                Assign Money
+                                Assign
+                            </button>
+                            <button
+                                onClick={onAddCategory}
+                                className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Category
                             </button>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Categories */}
-            <div className="space-y-4">
-                <div className="flex justify-end">
-                    <button
-                        onClick={() => setShowAddCategory(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add Category
-                    </button>
+                {/* Table */}
+                <div className="overflow-x-auto">
+                    <table ref={tableRef} className="w-full table-fixed">
+                        <thead className="table-header border-b border-theme-secondary">
+                            <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider w-16 flex-shrink-0"></th>
+                                <th
+                                    className="px-4 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                    style={{ width: columnWidths.category }}
+                                    onClick={() => handleSort('name')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Category
+                                        {sortBy === 'name' && (
+                                            <div className={`transform transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}>
+                                                ▲
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div
+                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
+                                        onMouseDown={(e) => handleMouseDown(e, 'category')}
+                                    />
+                                </th>
+                                <th
+                                    className="px-4 py-3 text-right text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                    style={{ width: columnWidths.needed }}
+                                    onClick={() => handleSort('needed')}
+                                >
+                                    <div className="flex items-center justify-end gap-1">
+                                        Needed/Month
+                                        {sortBy === 'needed' && (
+                                            <div className={`transform transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}>
+                                                ▲
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div
+                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
+                                        onMouseDown={(e) => handleMouseDown(e, 'needed')}
+                                    />
+                                </th>
+                                <th
+                                    className="px-4 py-3 text-right text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                    style={{ width: columnWidths.perPaycheck }}
+                                    onClick={() => handleSort('perPaycheck')}
+                                >
+                                    <div className="flex items-center justify-end gap-1">
+                                        Per Paycheck
+                                        {sortBy === 'perPaycheck' && (
+                                            <div className={`transform transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}>
+                                                ▲
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div
+                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
+                                        onMouseDown={(e) => handleMouseDown(e, 'perPaycheck')}
+                                    />
+                                </th>
+                                <th
+                                    className="px-4 py-3 text-right text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                    style={{ width: columnWidths.available }}
+                                    onClick={() => handleSort('available')}
+                                >
+                                    <div className="flex items-center justify-end gap-1">
+                                        Available
+                                        {sortBy === 'available' && (
+                                            <div className={`transform transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}>
+                                                ▲
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div
+                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
+                                        onMouseDown={(e) => handleMouseDown(e, 'available')}
+                                    />
+                                </th>
+                                <th
+                                    className="px-4 py-3 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                    style={{ width: columnWidths.dueDate }}
+                                    onClick={() => handleSort('due')}
+                                >
+                                    <div className="flex items-center justify-center gap-1">
+                                        <Calendar className="w-4 h-4" />
+                                        Due Date
+                                        {sortBy === 'due' && (
+                                            <div className={`transform transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}>
+                                                ▲
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div
+                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
+                                        onMouseDown={(e) => handleMouseDown(e, 'dueDate')}
+                                    />
+                                </th>
+                                <th className="px-4 py-3 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider w-24">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-theme-secondary">
+                            {sortedCategories.map((category, index) => (
+                                <CategoryTableRow
+                                    key={category.id}
+                                    category={category}
+                                    categoryData={getCategoryData(category)}
+                                    index={index}
+                                    isExpanded={expandedCategories[category.id]}
+                                    onToggleExpand={() => toggleCategoryExpanded(category.id)}
+                                    onEditCategory={onEditCategory}
+                                    onDeleteCategory={onDeleteCategory}
+                                    onAddItem={onAddItem}
+                                    onEditItem={onEditItem}
+                                    onDeleteItem={onDeleteItem}
+                                    onToggleItemActive={onToggleItemActive}
+                                    onMoveItem={onMoveItem}
+                                    onReorderCategories={onReorderCategories}
+                                    onReorderItems={onReorderItems}
+                                    fundCategory={fundCategory}
+                                    transferFunds={transferFunds}
+                                    getAmountDisplayInfo={getAmountDisplayInfo}
+                                    getPayPeriodColor={getPayPeriodColor}
+                                    formatDueDate={formatDueDate}
+                                    getPayPeriodUrgency={getPayPeriodUrgency}
+                                    payFrequency={payFrequency}
+                                    categories={categories}
+                                />
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
-                {categories.map((category, index) => {
-                    const categoryData = getCategoryData(category);
-                    const isExpanded = expandedCategories[category.id];
-                    const isOverspent = category.available < 0;
 
-                    return (
-                        <DraggableCategory
-                            key={category.id}
-                            category={category}
-                            categoryData={categoryData}
-                            index={index}
-                            isExpanded={isExpanded}
-                            isOverspent={isOverspent}
-                            onToggleExpand={() => toggleCategoryExpanded(category.id)}
-                            onFund={fundCategory}
-                            onEditCategory={onEditCategory}
-                            onDeleteCategory={onDeleteCategory}
-                            onAddItem={onAddItem}
-                            onEditItem={onEditItem}
-                            onDeleteItem={onDeleteItem}
-                            onToggleItemActive={onToggleItemActive}
-                            onMoveItem={onMoveItem}
-                            onReorderCategories={onReorderCategories}
-                            payFrequency={payFrequency}
-                            getAmountDisplayInfo={getAmountDisplayInfo}
-                            onReorderItems={onReorderItems}
-                            getFrequencyLabel={getFrequencyLabel}
-                            categories={categories}
-                            transferFunds={transferFunds}
-                        />
-                    );
-                })}
+                {/* Summary Footer */}
+                <div className="table-header border-t border-theme-secondary p-4">
+                    <div className="flex items-center justify-between">
+                        <div className="text-sm text-theme-secondary">
+                            {categories.length} categories • {planningItems.filter(item => item.isActive).length} active items
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <div className="text-right">
+                                <div className="text-xs text-theme-tertiary">Total Allocated</div>
+                                <div className="font-medium text-theme-primary">
+                                    ${categories.reduce((total, cat) => total + (cat.allocated || 0), 0).toFixed(2)}
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-xs text-theme-tertiary">Total Available</div>
+                                <div className="font-medium text-theme-primary">
+                                    ${categories.reduce((total, cat) => total + (cat.available || 0), 0).toFixed(2)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Money Assignment Modal */}
@@ -402,7 +619,404 @@ const UnifiedEnvelopeBudgetView = ({
     );
 };
 
-// Simple Money Assignment Modal
+// Category Table Row Component with all drag-and-drop functionality
+const CategoryTableRow = ({
+    category,
+    categoryData,
+    index,
+    isExpanded,
+    onToggleExpand,
+    onEditCategory,
+    onDeleteCategory,
+    onAddItem,
+    onEditItem,
+    onDeleteItem,
+    onToggleItemActive,
+    onMoveItem,
+    onReorderCategories,
+    onReorderItems,
+    fundCategory,
+    transferFunds,
+    getAmountDisplayInfo,
+    getPayPeriodColor,
+    formatDueDate,
+    getPayPeriodUrgency,
+    payFrequency,
+    categories
+}) => {
+    const isOverspent = (category.available || 0) < 0;
+
+    // State for money movement modal
+    const [showMoveModal, setShowMoveModal] = useState(false);
+
+    // Drag functionality for category reordering
+    const [{ isDraggingCategory }, dragCategory] = useDrag({
+        type: DND_TYPES.CATEGORY,
+        item: { id: category.id, index },
+        collect: (monitor) => ({
+            isDraggingCategory: monitor.isDragging(),
+        }),
+    });
+
+    // Drop functionality for category reordering and item moves
+    const [{ isOver, canDrop }, dropCategory] = useDrop({
+        accept: [DND_TYPES.CATEGORY, DND_TYPES.PLANNING_ITEM],
+        canDrop: (draggedItem) => {
+            if (draggedItem.categoryId !== undefined) {
+                // This is a planning item
+                if (draggedItem.categoryId !== category.id && categoryData.type === 'single') {
+                    return false;
+                }
+                return true;
+            } else {
+                // This is a category
+                return draggedItem.index !== index;
+            }
+        },
+        drop: (draggedItem) => {
+            if (draggedItem.categoryId !== undefined) {
+                // Planning item cross-category move
+                if (draggedItem.categoryId !== category.id && onMoveItem) {
+                    onMoveItem(draggedItem.id, category.id);
+                }
+            } else {
+                // Category reordering
+                if (draggedItem.index !== index && onReorderCategories) {
+                    onReorderCategories(draggedItem.index, index);
+                }
+            }
+        },
+        collect: (monitor) => ({
+            isOver: monitor.isOver({ shallow: true }),
+            canDrop: monitor.canDrop(),
+        }),
+    });
+
+    return (
+        <>
+            {/* Main Category Row */}
+            <tr
+                ref={dropCategory}
+                className={`hover:table-row-hover transition-colors ${isOverspent ? 'bg-theme-secondary border-l-4 border-theme-red' : 'table-row-even'
+                    } ${isDraggingCategory ? 'opacity-50' : ''} ${isOver && canDrop ? 'bg-theme-tertiary border-l-4 border-theme-blue' : ''
+                    }`}
+            >
+                {/* Expand/Collapse + Drag Handle */}
+                <td className="px-4 py-2 min-w-0 w-16">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <div
+                            ref={dragCategory}
+                            className="cursor-grab active:cursor-grabbing text-theme-tertiary hover:text-theme-secondary p-1 flex-shrink-0"
+                            title="Drag to reorder categories"
+                        >
+                            <GripVertical className="w-3 h-3" />
+                        </div>
+                        <button
+                            onClick={onToggleExpand}
+                            className="text-theme-tertiary hover:text-theme-secondary p-1 flex-shrink-0"
+                        >
+                            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        </button>
+                    </div>
+                </td>
+
+                {/* Category Name */}
+                <td className="px-4 py-2">
+                    <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${category.color || 'bg-theme-tertiary'} border border-theme-primary shadow-sm`}></div>
+                        {categoryData.type === 'single' ? (
+                            <Target className="w-4 h-4 text-theme-blue" />
+                        ) : (
+                            <Box className="w-4 h-4 text-theme-blue" />
+                        )}
+                        <button
+                            onClick={() => onEditCategory(category)}
+                            className="font-medium text-theme-primary hover:text-theme-blue transition-colors text-left"
+                        >
+                            {category.name}
+                        </button>
+                    </div>
+                </td>
+
+                {/* Needed per Month */}
+                <td className="px-4 py-2 text-right">
+                    <div className="font-medium text-theme-primary">
+                        ${categoryData.monthlyNeed.toFixed(2)}
+                    </div>
+                </td>
+
+                {/* Per Paycheck */}
+                <td className="px-4 py-2 text-right">
+                    <div className="font-medium text-theme-secondary">
+                        ${categoryData.perPaycheckNeed.toFixed(2)}
+                    </div>
+                </td>
+
+                {/* Available */}
+                <td className="px-4 py-2 text-right">
+                    <button
+                        onClick={() => setShowMoveModal(true)}
+                        className={`font-bold hover:opacity-80 transition-opacity text-right ${isOverspent ? 'text-theme-red' : 'text-theme-green'
+                            }`}
+                        title="Click to move money"
+                    >
+                        ${(category.available || 0).toFixed(2)}
+                    </button>
+                </td>
+
+                {/* Due Date */}
+                <td className="px-4 py-2 text-center">
+                    {categoryData.dueDateInfo ? (
+                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPayPeriodColor(categoryData.dueDateInfo.urgency)}`}>
+                            {categoryData.dueDateInfo.display}
+                            {categoryData.dueDateInfo.additionalCount > 0 && (
+                                <span className="text-xs opacity-75">
+                                    +{categoryData.dueDateInfo.additionalCount}
+                                </span>
+                            )}
+                        </div>
+                    ) : (
+                        <span className="text-theme-tertiary text-xs">—</span>
+                    )}
+                </td>
+
+                {/* Actions */}
+                <td className="px-4 py-2">
+                    <div className="flex items-center justify-center gap-1">
+                        {categoryData.type === 'multiple' && (
+                            <button
+                                onClick={() => {
+                                    console.log('Adding item to category:', category.name, 'ID:', category.id);
+                                    onAddItem({ preselectedCategory: category });
+                                }}
+                                className="p-1 text-theme-tertiary hover:text-theme-green transition-colors"
+                                title="Add item"
+                            >
+                                <Plus className="w-4 h-4" />
+                            </button>
+                        )}
+                        <button
+                            onClick={() => onDeleteCategory(category.id)}
+                            className="p-1 text-theme-tertiary hover:text-theme-red transition-colors"
+                            title="Delete category"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+                </td>
+            </tr>
+
+            {/* Expanded Content */}
+            {isExpanded && (
+                <>
+                    {categoryData.type === 'single' ? (
+                        /* Single Category - Show additional info */
+                        <tr className="bg-theme-secondary">
+                            <td className="px-4 py-2 min-w-0 w-16"></td>
+                            <td colSpan="6" className="px-4 py-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-sm text-theme-secondary">
+                                            <span className="font-medium">Paychecks remaining:</span> {categoryData.paychecksUntilDue || '—'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    ) : (
+                        /* Multiple Category - Show items */
+                        <>
+                            {categoryData.items.map((item, itemIndex) => (
+                                <ItemTableRow
+                                    key={item.id}
+                                    item={item}
+                                    itemIndex={itemIndex}
+                                    category={category}
+                                    onEditItem={onEditItem}
+                                    onDeleteItem={onDeleteItem}
+                                    onToggleItemActive={onToggleItemActive}
+                                    onReorderItems={onReorderItems}
+                                    getAmountDisplayInfo={getAmountDisplayInfo}
+                                    getPayPeriodColor={getPayPeriodColor}
+                                    formatDueDate={formatDueDate}
+                                    getPayPeriodUrgency={getPayPeriodUrgency}
+                                    payFrequency={payFrequency}
+                                />
+                            ))}
+
+                            {/* Add Item Row */}
+                            <tr className="bg-theme-tertiary">
+                                <td className="px-4 py-1 min-w-0 w-16"></td>
+                                <td colSpan="6" className="px-4 py-1">
+                                    <button
+                                        onClick={() => {
+                                            console.log('Adding item to category:', category.name, 'ID:', category.id);
+                                            onAddItem({ preselectedCategory: category });
+                                        }}
+                                        className="flex items-center gap-2 text-sm text-theme-blue hover:text-theme-blue ml-8"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add Item to {category.name}
+                                    </button>
+                                </td>
+                            </tr>
+                        </>
+                    )}
+                </>
+            )}
+
+            {/* Money Movement Modal */}
+            {showMoveModal && (
+                <MoneyMovementModal
+                    amount={category.available || 0}
+                    sourceCategory={category}
+                    categories={categories}
+                    onMove={transferFunds}
+                    onClose={() => setShowMoveModal(false)}
+                />
+            )}
+        </>
+    );
+};
+
+// Item Table Row Component with drag-and-drop
+const ItemTableRow = ({
+    item,
+    itemIndex,
+    category,
+    onEditItem,
+    onDeleteItem,
+    onToggleItemActive,
+    onReorderItems,
+    getAmountDisplayInfo,
+    getPayPeriodColor,
+    formatDueDate,
+    getPayPeriodUrgency,
+    payFrequency
+}) => {
+    // Drag functionality for item reordering and moving
+    const [{ isDragging }, drag] = useDrag({
+        type: DND_TYPES.PLANNING_ITEM,
+        item: {
+            id: item.id,
+            categoryId: item.categoryId,
+            index: itemIndex,
+        },
+        collect: (monitor) => ({
+            isDragging: monitor.isDragging(),
+        }),
+    });
+
+    // Drop functionality for item reordering within category
+    const [{ isOver, canDrop }, drop] = useDrop({
+        accept: DND_TYPES.PLANNING_ITEM,
+        canDrop: (draggedItem) => {
+            return draggedItem.categoryId === item.categoryId;
+        },
+        drop: (draggedItem) => {
+            if (draggedItem.id !== item.id && draggedItem.categoryId === item.categoryId) {
+                if (onReorderItems) {
+                    onReorderItems(category.id, draggedItem.index, itemIndex);
+                }
+            }
+        },
+        collect: (monitor) => ({
+            isOver: monitor.isOver(),
+            canDrop: monitor.canDrop(),
+        }),
+    });
+
+    // Combine refs
+    const combinedRef = (node) => {
+        drag(node);
+        drop(node);
+    };
+
+    const displayInfo = getAmountDisplayInfo(item, payFrequency);
+    const urgency = getPayPeriodUrgency(item.dueDate);
+
+    return (
+        <tr
+            ref={combinedRef}
+            className={`${item.isActive ? 'bg-theme-secondary' : 'bg-theme-tertiary'} border-l-4 ${item.isActive ? 'border-theme-green' : 'border-theme-tertiary'
+                } ${isDragging ? 'opacity-50' : ''} ${isOver && canDrop ? 'bg-theme-quaternary border-theme-blue' : ''
+                }`}
+        >
+            <td className="px-4 py-2 min-w-0 w-16">
+                <div className="flex items-center justify-center flex-shrink-0">
+                    <GripVertical className="w-3 h-3 text-theme-tertiary cursor-grab" />
+                </div>
+            </td>
+            <td className="px-4 py-2">
+                <div className="flex items-center gap-3 ml-8">
+                    <div>
+                        <button
+                            onClick={() => onEditItem(item)}
+                            className="font-medium text-theme-primary text-sm hover:text-theme-blue transition-colors text-left"
+                        >
+                            {item.name}
+                        </button>
+                        <div className="text-xs text-theme-secondary">
+                            ${item.amount} {item.frequency}
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td className="px-4 py-2 text-right">
+                <div className="text-sm text-theme-secondary">
+                    ${(displayInfo.monthlyAmount || 0).toFixed(2)}
+                </div>
+            </td>
+            <td className="px-4 py-2 text-right">
+                <div className="text-sm text-theme-secondary">
+                    ${(displayInfo.perPaycheckAmount || 0).toFixed(2)}
+                    {displayInfo.paychecksUntilDue && (
+                        <div className="text-xs text-theme-tertiary mt-1">
+                            {displayInfo.paychecksUntilDue} left
+                        </div>
+                    )}
+                </div>
+            </td>
+            <td className="px-4 py-2 text-right">
+                <div className="text-sm font-medium text-theme-primary">
+                    ${(item.allocated || 0).toFixed(2)}
+                </div>
+            </td>
+            <td className="px-4 py-2 text-center">
+                {item.dueDate ? (
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs ${getPayPeriodColor(urgency)}`}>
+                        {formatDueDate(item.dueDate)}
+                    </span>
+                ) : (
+                    <span className="text-theme-tertiary text-xs">—</span>
+                )}
+            </td>
+            <td className="px-4 py-2">
+                <div className="flex items-center justify-center gap-1">
+                    <button
+                        onClick={() => onToggleItemActive(item.id, !item.isActive)}
+                        className={`p-1 rounded transition-colors ${item.isActive
+                            ? 'text-theme-green hover:text-theme-green'
+                            : 'text-theme-tertiary hover:text-theme-secondary'
+                            }`}
+                        title={item.isActive ? 'Mark as planning only' : 'Mark as active'}
+                    >
+                        {item.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                    </button>
+                    <button
+                        onClick={() => onDeleteItem(item)}
+                        className="p-1 text-theme-tertiary hover:text-theme-red transition-colors"
+                        title="Delete item"
+                    >
+                        <Trash2 className="w-3 h-3" />
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
+};
+
+// Money Assignment Modal using theme classes
 const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) => {
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
     const [assignAmount, setAssignAmount] = useState('');
@@ -416,31 +1030,27 @@ const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) =>
         }
     };
 
-    const setQuickAmount = (amount) => {
-        setAssignAmount(Math.min(amount, availableAmount).toString());
-    };
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
-                <h3 className="text-lg font-semibold mb-4">Assign Money to Category</h3>
+            <div className="bg-theme-primary rounded-lg p-6 w-96 shadow-xl border border-theme-secondary">
+                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Assign Money to Category</h3>
 
                 <div className="space-y-4">
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="text-sm text-green-700">Available to assign:</div>
-                        <div className="text-2xl font-bold text-green-600">
+                    <div className="p-3 bg-theme-secondary border border-theme-secondary rounded-lg">
+                        <div className="text-sm text-theme-secondary">Available to assign:</div>
+                        <div className="text-2xl font-bold text-theme-green">
                             ${availableAmount.toFixed(2)}
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-theme-primary mb-1">
                             To Category
                         </label>
                         <select
                             value={selectedCategoryId}
                             onChange={(e) => setSelectedCategoryId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                            className="w-full px-3 py-2 border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-blue"
                         >
                             <option value="">Select a category...</option>
                             {categories.map(cat => (
@@ -452,55 +1062,29 @@ const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) =>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-theme-primary mb-1">
                             Amount
                         </label>
-                        <div className="relative mb-2">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <input
-                                type="number"
-                                placeholder="0.00"
-                                value={assignAmount}
-                                onChange={(e) => setAssignAmount(e.target.value)}
-                                className="w-full pl-8 pr-16 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                                step="0.01"
-                                max={availableAmount}
-                            />
-                            <button
-                                onClick={() => setAssignAmount(availableAmount.toString())}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
-                            >
-                                All
-                            </button>
-                        </div>
-
-                        {/* Quick amount buttons */}
-                        <div className="grid grid-cols-4 gap-2">
-                            {[25, 50, 100, 200].map(amount => (
-                                <button
-                                    key={amount}
-                                    onClick={() => setQuickAmount(amount)}
-                                    disabled={amount > availableAmount}
-                                    className="py-1 px-2 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    ${amount}
-                                </button>
-                            ))}
-                        </div>
+                        <CurrencyInput
+                            value={assignAmount}
+                            onChange={(e) => setAssignAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="w-full border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-blue"
+                        />
                     </div>
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                        className="btn-secondary px-4 py-2 rounded-lg"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleAssign}
                         disabled={!selectedCategoryId || !assignAmount || parseFloat(assignAmount) <= 0}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="btn-success px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Assign Money
                     </button>
@@ -510,671 +1094,10 @@ const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) =>
     );
 };
 
-// NEW: Draggable Category Wrapper Component
-const DraggableCategory = ({
-    category,
-    categoryData,
-    index,
-    isExpanded,
-    isOverspent,
-    onToggleExpand,
-    onFund,
-    onEditCategory,
-    onDeleteCategory,
-    onAddItem,
-    onEditItem,
-    onDeleteItem,
-    onToggleItemActive,
-    onMoveItem,
-    onReorderCategories,
-    onReorderItems,
-    payFrequency,
-    getAmountDisplayInfo,
-    getFrequencyLabel,
-    categories,
-    transferFunds
-}) => {
-    // Drag functionality for category reordering
-    const [{ isDraggingCategory }, dragCategory] = useDrag({
-        type: DND_TYPES.CATEGORY,
-        item: { id: category.id, index },
-        collect: (monitor) => ({
-            isDraggingCategory: monitor.isDragging(),
-        }),
-    });
-
-    // Drop functionality for category reordering
-    const [{ isOverCategory }, dropCategory] = useDrop({
-        accept: DND_TYPES.CATEGORY,
-        drop: (draggedItem) => {
-            console.log('Category drop triggered:', { draggedIndex: draggedItem.index, targetIndex: index });
-            if (draggedItem.index !== index && onReorderCategories) {
-                onReorderCategories(draggedItem.index, index);
-            }
-        },
-        collect: (monitor) => ({
-            isOverCategory: monitor.isOver(),
-        }),
-    });
-
-    return (
-        <div
-            ref={dropCategory}
-            className={`transition-all duration-200 ease-in-out ${isDraggingCategory ? 'z-50' : 'z-10'}`}
-            style={{
-                ...(isDraggingCategory && {
-                    opacity: 0.7,
-                    transform: 'scale(1.02) rotate(1deg)',
-                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-                    border: '2px dashed #3b82f6',
-                    backgroundColor: '#f0f9ff'
-                }),
-                ...(isOverCategory && !isDraggingCategory && {
-                    transform: 'translateY(-2px) scale(1.01)',
-                    boxShadow: '0 6px 20px rgba(59, 130, 246, 0.3)',
-                    border: '2px solid #3b82f6'
-                })
-            }}
-        >
-            <UnifiedCategoryCard
-                category={category}
-                categoryData={categoryData}
-                isExpanded={isExpanded}
-                isOverspent={isOverspent}
-                onToggleExpand={onToggleExpand}
-                onFund={onFund}
-                onEditCategory={onEditCategory}
-                onDeleteCategory={onDeleteCategory}
-                onAddItem={onAddItem}
-                onEditItem={onEditItem}
-                onDeleteItem={onDeleteItem}
-                onToggleItemActive={onToggleItemActive}
-                onMoveItem={onMoveItem}
-                onReorderItems={(fromIndex, toIndex) => {
-                    console.log('UnifiedCategoryCard: Reordering items', fromIndex, '->', toIndex, 'in category', category.id);
-                    if (onReorderItems) {
-                        onReorderItems(category.id, fromIndex, toIndex);
-                    }
-                }}
-                payFrequency={payFrequency}
-                getAmountDisplayInfo={getAmountDisplayInfo}
-                getFrequencyLabel={getFrequencyLabel}
-                categories={categories}
-                transferFunds={transferFunds}
-                dragCategoryRef={dragCategory}
-                isDraggingCategory={isDraggingCategory}
-            />
-        </div>
-    );
-};
-
-// Individual Category Card Component with Drag and Drop
-const UnifiedCategoryCard = ({
-    categories,
-    transferFunds,
-    category,
-    categoryData,
-    isExpanded,
-    isOverspent,
-    onToggleExpand,
-    onFund,
-    onEditCategory,
-    onDeleteCategory,
-    onAddItem,
-    onEditItem,
-    onDeleteItem,
-    onToggleItemActive,
-    onMoveItem,
-    onReorderItems,
-    payFrequency,
-    getAmountDisplayInfo,
-    getFrequencyLabel,
-    dragCategoryRef,
-    isDraggingCategory
-}) => {
-    const [fundAmount, setFundAmount] = useState('');
-    const [showMoveModal, setShowMoveModal] = useState(false);
-
-
-
-    // Drop functionality for planning items - enhanced with validation
-    const [{ isOver, canDrop }, drop] = useDrop({
-        accept: DND_TYPES.PLANNING_ITEM,
-        canDrop: (draggedItem) => {
-            // Don't handle same-category items at all - let them pass through to items
-            if (draggedItem.categoryId === category.id) {
-                return undefined; // Let child components handle it
-            }
-
-            // Don't allow dropping items into single-item categories
-            if (categoryData.type === 'single') return false;
-
-            return true; // Allow cross-category moves to multi-item categories
-        },
-        drop: (draggedItem, monitor) => {
-            // Only handle cross-category moves that didn't get handled by children
-            if (draggedItem.categoryId !== category.id && !monitor.didDrop() && onMoveItem) {
-                console.log('Moving item', draggedItem.id, 'to category', category.id);
-                onMoveItem(draggedItem.id, category.id);
-            }
-        },
-        collect: (monitor) => ({
-            isOver: monitor.isOver({ shallow: true }),
-            canDrop: monitor.canDrop(),
-        }),
-    });
-    // const handleReorderItems = (categoryId, fromIndex, toIndex) => {
-    //     if (fromIndex === toIndex) return;
-
-    //     console.log(`Reordering items in category ${categoryId}: ${fromIndex} -> ${toIndex}`);
-
-    //     // This needs to call a parent function to update the planning items
-    //     // Since we can't directly modify the planningItems prop
-    //     if (onReorderItems) {
-    //         onReorderItems(categoryId, fromIndex, toIndex);
-    //     }
-    // };
-    const handleFund = () => {
-        const amount = parseFloat(fundAmount);
-        if (amount > 0 && onFund) {
-            onFund(category.id, amount);
-            setFundAmount('');
-        }
-    };
-
-    const getBorderStyle = () => {
-        if (isOverspent) return 'border-red-300';
-        // Only show green border for valid cross-category moves
-        if (isOver && canDrop === true) return 'border-green-500 border-2';
-        // Only show red border for explicitly invalid drops (not undefined)
-        if (isOver && canDrop === false) return 'border-red-500 border-2';
-        return 'border-gray-200';
-    };
-
-    return (
-        <div
-            ref={drop}
-            className={`bg-white rounded-lg border ${getBorderStyle()} overflow-hidden shadow-sm transition-all duration-200`}
-        >
-            {/* Header */}
-            <div
-                className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={onToggleExpand}
-            >
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        {/* Category Drag Handle */}
-                        <div
-                            ref={dragCategoryRef}
-                            className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 p-1"
-                            title="Drag to reorder categories"
-                            onClick={(e) => e.stopPropagation()} // Prevent category expand when grabbing handle
-                        >
-                            <GripVertical className="w-4 h-4" />
-                        </div>
-
-                        {categoryData.type === 'multiple' ? (
-                            isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
-                        ) : null}
-
-                        <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full ${category.color || 'bg-gray-400'} shadow-lg border-2 border-white`} />
-                            <div>
-                                <h3 className="font-semibold text-gray-900">{category.name}</h3>
-
-                                {categoryData.type === 'single' ? (
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
-                                            Single
-                                        </span>
-                                        {!canDrop && isOver && (
-                                            <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full">
-                                                No multi-items
-                                            </span>
-                                        )}
-                                        {categoryData.singleData?.dueDate && (
-                                            <span className="text-xs text-gray-600 flex items-center gap-1">
-                                                • <Calendar className="w-3.5 h-3.5" />
-                                                {new Date(categoryData.singleData.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}
-                                                {categoryData.paychecksUntilDue !== null && (
-                                                    <span className="ml-1">• {categoryData.paychecksUntilDue} paychecks remaining</span>
-                                                )}
-                                            </span>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full">
-                                            Multiple ({categoryData.activeItems?.length || 0} active)
-                                        </span>
-                                        {canDrop && isOver && (
-                                            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
-                                                Drop here
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {categoryData.urgencyInfo && (
-                                <div className={`text-sm ${categoryData.urgencyInfo.color} flex items-center gap-1 mt-1`}>
-                                    <AlertTriangle className="w-3 h-3" />
-                                    {categoryData.urgencyInfo.message}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Category Controls */}
-                        <div className="flex items-center gap-1 ml-auto mr-4">
-                            {/* Add Item (Multiple categories only) */}
-                            {categoryData.type === 'multiple' && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onAddItem) onAddItem({ categoryId: category.id });
-                                    }}
-                                    className="p-1 text-gray-500 hover:text-green-600 transition-colors"
-                                    title="Add item to this category"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                </button>
-                            )}
-
-                            {/* Edit Category */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onEditCategory) onEditCategory(category);
-                                }}
-                                className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
-                                title="Edit category"
-                            >
-                                <Edit className="w-4 h-4" />
-                            </button>
-
-                            {/* Delete Category */}
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onDeleteCategory) onDeleteCategory(category.id);
-                                }}
-                                className="p-1 text-gray-500 hover:text-red-600 transition-colors"
-                                title="Delete category"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="text-right">
-                        <div
-                            className={`text-lg font-semibold ${isOverspent ? 'text-red-600' : 'text-green-600'} cursor-pointer hover:opacity-80`}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowMoveModal(true);
-                            }}
-                        >
-                            ${(category.available || 0).toFixed(2)} available
-                        </div>
-                        {categoryData.monthlyNeed > 0 && (
-                            <div className="text-sm text-gray-600">
-                                ${categoryData.monthlyNeed.toFixed(2)} needed/month
-                            </div>
-                        )}
-                        {categoryData.perPaycheckNeed > 0 && (
-                            <div className="text-xs text-gray-500">
-                                ${categoryData.perPaycheckNeed.toFixed(2)} per {getFrequencyLabel()}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Expanded Content for Multiple Categories AND Item Details */}
-            {isExpanded && (
-                <div className="border-t border-gray-200 p-4">
-                    {categoryData.type === 'single' && categoryData.singleData ? (
-                        /* Single Category - Show the one expense details */
-                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div>
-                                        <div className="font-medium text-gray-900">{category.name} Details</div>
-                                        <div className="text-sm text-gray-600">
-                                            ${categoryData.singleData.amount} {categoryData.singleData.frequency}
-                                            {categoryData.singleData.dueDate && (
-                                                <>
-                                                    <span className="ml-2 inline-flex items-center gap-1">•<Calendar className="w-3.5 h-3.5" /> {new Date(categoryData.singleData.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}</span>
-                                                    {categoryData.paychecksUntilDue !== null && (
-                                                        <span className="ml-2 text-xs text-gray-600">• {categoryData.paychecksUntilDue} paychecks remaining</span>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (onEditCategory) onEditCategory(category);
-                                        }}
-                                        className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
-                                        title="Edit category"
-                                    >
-                                        <Edit className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ) : categoryData.type === 'multiple' ? (
-                        /* Multiple Categories - Show item list with full functionality and drag/drop */
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="font-medium text-gray-900">Items in this category</h4>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onAddItem) onAddItem({ categoryId: category.id });
-                                    }}
-                                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                                >
-                                    <Plus className="w-3 h-3" />
-                                    Add Item
-                                </button>
-                            </div>
-
-                            {categoryData.items.length === 0 ? (
-                                <div className="text-center py-6 text-gray-500">
-                                    <div className="w-8 h-8 mx-auto mb-2 opacity-50">📦</div>
-                                    <p>No items in this category yet</p>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (onAddItem) onAddItem({ categoryId: category.id });
-                                        }}
-                                        className="text-blue-600 hover:text-blue-700 text-sm mt-2"
-                                    >
-                                        Add your first item
-                                    </button>
-                                </div>
-                            ) : (
-                                categoryData.items.map((item, itemIndex) => (
-                                    <DraggableItem
-                                        key={item.id}
-                                        item={item}
-                                        index={itemIndex}
-                                        category={category}
-                                        getAmountDisplayInfo={getAmountDisplayInfo}
-                                        getFrequencyLabel={getFrequencyLabel}
-                                        payFrequency={payFrequency}
-                                        onEditItem={onEditItem}
-                                        onDeleteItem={onDeleteItem}
-                                        onToggleItemActive={onToggleItemActive}
-                                        onReorderItems={onReorderItems}
-
-                                    />
-                                ))
-                            )}
-                        </div>
-                    ) : (
-                        /* Single Category - Needs Configuration */
-                        <div className="text-center py-6 text-orange-600">
-                            <div className="w-8 h-8 mx-auto mb-2 opacity-50">⚙️</div>
-                            <p>This single category needs configuration</p>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (onEditCategory) onEditCategory(category);
-                                }}
-                                className="text-blue-600 hover:text-blue-700 text-sm mt-2"
-                            >
-                                Configure expense details
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Funding Interface */}
-            {categoryData.perPaycheckNeed > 0 && (
-                <div className="border-t border-gray-200 p-4 bg-gray-50">
-                    <div className="flex gap-3">
-                        <CurrencyInput
-                            value={fundAmount}
-                            onChange={(e) => setFundAmount(e.target.value)}
-                            placeholder={categoryData.perPaycheckNeed.toFixed(2)}
-                            className="border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                        />
-                        <button
-                            onClick={() => setFundAmount(categoryData.perPaycheckNeed.toFixed(2))}
-                            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-sm"
-                        >
-                            Need
-                        </button>
-                        <button
-                            onClick={handleFund}
-                            disabled={!fundAmount || parseFloat(fundAmount) <= 0}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                        >
-                            Fund
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Money Movement Modal */}
-            {showMoveModal && (
-                <MoneyMovementModal
-                    amount={category.available || 0}
-                    sourceCategory={category}
-                    categories={categories}
-                    onMove={transferFunds}
-                    onClose={() => setShowMoveModal(false)}
-                />
-            )}
-        </div>
-    );
-};
-
-// NEW: Draggable Item Component
-// Enhanced DraggableItem component - UPDATE your existing one in UnifiedEnvelopeBudgetView.js
-const DraggableItem = ({
-    item,
-    category,
-    index, // Add this prop
-    getAmountDisplayInfo,
-    getFrequencyLabel,
-    payFrequency,
-    onEditItem,
-    onDeleteItem,
-    onToggleItemActive,
-    onReorderItems // Add this prop
-}) => {
-    // Enhanced drag functionality with both moving and reordering
-    const [{ isDragging }, drag, dragPreview] = useDrag({
-        type: DND_TYPES.PLANNING_ITEM,
-        item: {
-            id: item.id,
-            categoryId: item.categoryId,
-            index, // Include index for reordering
-            sourceCategory: category.id
-        },
-        collect: (monitor) => ({
-            isDragging: monitor.isDragging(),
-        }),
-    });
-
-    // Drop functionality for reordering within same category
-    const [{ isOver, canDrop }, drop] = useDrop({ // ADD canDrop to collect
-        accept: DND_TYPES.PLANNING_ITEM,
-        canDrop: (draggedItem) => {
-            // Allow drops from same category (for reordering)
-            return draggedItem.categoryId === item.categoryId;
-        },
-        drop: (draggedItem) => {
-            console.log('DraggableItem drop triggered:', {
-                draggedItemId: draggedItem.id,
-                targetItemId: item.id,
-                draggedIndex: draggedItem.index,
-                targetIndex: index,
-                sameCategory: draggedItem.categoryId === item.categoryId
-            });
-
-            if (draggedItem.id !== item.id && draggedItem.categoryId === item.categoryId) {
-                console.log('Calling onReorderItems:', draggedItem.index, '->', index);
-                if (onReorderItems) {
-                    onReorderItems(draggedItem.index, index);
-                }
-            }
-        },
-        collect: (monitor) => ({
-            isOver: monitor.isOver(),
-            canDrop: monitor.canDrop(), // ADD THIS
-        }),
-    });
-
-    // Combine refs
-    const combinedRef = (node) => {
-        drag(node);
-        drop(node);
-        dragPreview(node);
-    };
-
-    const displayInfo = getAmountDisplayInfo(item, payFrequency);
-    const needed = Math.max(0, displayInfo.perPaycheckAmount - (item.allocated || 0));
-    const isActive = item.isActive;
-
-    // Enhanced drag styles with better visual feedback
-    const getDragStyles = () => {
-        if (isDragging) {
-            return {
-                opacity: 0.8,
-                transform: 'scale(1.05) rotate(-1deg)',
-                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.3)',
-                borderColor: '#10b981',
-                borderWidth: '2px',
-                borderStyle: 'dashed',
-                backgroundColor: isActive ? '#ecfdf5' : '#f9fafb',
-                zIndex: 1000
-            };
-        }
-
-        if (isOver && canDrop) {
-            return {
-                transform: 'translateY(-2px) scale(1.02)',
-                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
-                borderColor: '#10b981',
-                borderWidth: '2px',
-                borderStyle: 'solid'
-            };
-        }
-
-        return {};
-    };
-
-    return (
-        <div
-            ref={combinedRef}
-            style={getDragStyles()}
-            className={`flex items-center justify-between py-3 px-4 rounded-lg transition-all duration-200 ease-in-out ${isActive
-                ? 'bg-green-50 border border-green-200'
-                : 'bg-gray-50 border border-gray-200'
-                } ${isDragging ? 'z-50' : 'z-10'}`}
-        >
-            <div className="flex items-center gap-3">
-                {/* Enhanced Drag Handle */}
-                <div
-                    className={`cursor-grab active:cursor-grabbing transition-all duration-150 p-1 rounded hover:bg-gray-200 ${isDragging ? 'bg-green-100 scale-110' : ''
-                        }`}
-                    title="Drag to reorder or move to another category"
-                >
-                    <GripVertical className={`w-4 h-4 transition-colors ${isDragging ? 'text-green-600' : 'text-gray-400 hover:text-gray-600'
-                        }`} />
-                </div>
-
-                <div>
-                    <div className="font-medium text-gray-900">{item.name}</div>
-                    <div className="text-sm text-gray-600">
-                        ${displayInfo.perPaycheckAmount.toFixed(2)}/{getFrequencyLabel()} • ${displayInfo.monthlyAmount.toFixed(2)} monthly
-                        {item.dueDate && (
-                            <>
-                                <span className="ml-2 inline-flex items-center gap-1">
-                                    •<Calendar className="w-3.5 h-3.5" />
-                                    {new Date(item.dueDate).toLocaleString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                                {displayInfo.paychecksUntilDue !== null && (
-                                    <span className="ml-2 text-xs text-gray-600">
-                                        • {displayInfo.paychecksUntilDue} paychecks remaining
-                                    </span>
-                                )}
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-                <div className="text-right text-sm">
-                    <div className="font-medium">
-                        ${(item.allocated || 0).toFixed(2)} allocated
-                    </div>
-                    <div className="text-gray-600">
-                        ${needed.toFixed(2)} needed per {getFrequencyLabel()}
-                    </div>
-                </div>
-
-                {/* Item Controls */}
-                <div className="flex items-center gap-1 ml-3">
-                    {/* Active/Planning Toggle */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (onToggleItemActive) onToggleItemActive(item.id, !isActive);
-                        }}
-                        className={`p-1 rounded transition-colors ${isActive
-                            ? 'text-green-600 hover:text-green-700'
-                            : 'text-gray-400 hover:text-gray-600'
-                            }`}
-                        title={isActive ? 'Mark as planning only' : 'Mark as active'}
-                    >
-                        {isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                    </button>
-
-                    {/* Edit Item */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (onEditItem) onEditItem(item);
-                        }}
-                        className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
-                        title="Edit item"
-                    >
-                        <Edit className="w-4 h-4" />
-                    </button>
-
-                    {/* Delete Item */}
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (onDeleteItem) onDeleteItem(item);
-                        }}
-                        className="p-1 text-gray-500 hover:text-red-600 transition-colors"
-                        title="Delete item"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// Money Movement Modal Component (unchanged)
+// Money Movement Modal Component
 const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClose }) => {
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
-    const [moveAmount, setMoveAmount] = useState(amount.toFixed(2));
+    const [moveAmount, setMoveAmount] = useState(Math.abs(amount).toFixed(2));
 
     const handleMove = () => {
         if (selectedCategoryId && moveAmount) {
@@ -1195,38 +1118,60 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
         }
     };
 
+    const maxAmount = Math.abs(amount);
+
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
-                <h3 className="text-lg font-semibold mb-4">Move Money</h3>
+            <div className="bg-theme-primary rounded-lg p-6 w-96 shadow-xl border border-theme-secondary">
+                <h3 className="text-lg font-semibold mb-4 text-theme-primary">Move Money</h3>
 
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Amount
-                        </label>
-                        <CurrencyInput
-                            value={moveAmount}
-                            onChange={(e) => setMoveAmount(e.target.value)}
-                            className="border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                    <div className="p-3 bg-theme-secondary border border-theme-secondary rounded-lg">
+                        <div className="text-sm text-theme-secondary">From: {sourceCategory.name}</div>
+                        <div className="text-lg font-bold text-theme-primary">
+                            ${maxAmount.toFixed(2)} available
+                        </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            To Category
+                        <label className="block text-sm font-medium text-theme-primary mb-1">
+                            Amount to Move
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-theme-secondary">$</span>
+                            <input
+                                type="number"
+                                value={moveAmount}
+                                onChange={(e) => setMoveAmount(e.target.value)}
+                                className="w-full pl-8 pr-16 py-2 border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-blue"
+                                step="0.01"
+                                max={maxAmount}
+                                min="0"
+                            />
+                            <button
+                                onClick={() => setMoveAmount(maxAmount.toFixed(2))}
+                                className="absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 bg-theme-tertiary text-theme-secondary rounded text-xs hover:bg-theme-quaternary"
+                            >
+                                All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-theme-primary mb-1">
+                            To
                         </label>
                         <select
                             value={selectedCategoryId}
                             onChange={(e) => setSelectedCategoryId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-blue"
                         >
-                            <option value="">Select a category...</option>
+                            <option value="">Select destination...</option>
                             <option value="ready-to-assign">Ready to Assign</option>
                             {categories.map(cat => (
                                 cat.id !== sourceCategory.id && (
                                     <option key={cat.id} value={cat.id}>
-                                        {cat.name}
+                                        {cat.name} (${(cat.available || 0).toFixed(2)} available)
                                     </option>
                                 )
                             ))}
@@ -1237,16 +1182,16 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                 <div className="flex justify-end gap-3 mt-6">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                        className="btn-secondary px-4 py-2 rounded-lg"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleMove}
-                        disabled={!selectedCategoryId || !moveAmount}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        disabled={!selectedCategoryId || !moveAmount || parseFloat(moveAmount) <= 0}
+                        className="btn-primary px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        OK
+                        Move Money
                     </button>
                 </div>
             </div>

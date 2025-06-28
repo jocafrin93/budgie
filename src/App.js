@@ -1,5 +1,5 @@
 // src/App.js - COMPLETE IMPLEMENTATION
-import { AlertTriangle, Calculator, Calendar, DollarSign, Plus, Settings, Target } from 'lucide-react';
+import { AlertTriangle, Calculator, Calendar, DollarSign, Settings, Target } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -18,11 +18,11 @@ import UnifiedEnvelopeBudgetView from './components/UnifiedEnvelopeBudgetView';
 // Import existing components we're keeping
 import AccountsSection from './components/AccountsSection';
 import AddAccountForm from './components/AddAccountForm';
-import AddCategoryForm from './components/AddCategoryForm'; // Will be enhanced
 import AddTransactionForm from './components/AddTransactionForm';
 import CalendarView from './components/CalendarView';
 import ConfigurationPanel from './components/ConfigurationPanel';
 import ConfirmDialog from './components/ConfirmDialog';
+import { CategoryForm } from './components/form';
 // COMMENTED OUT - Not needed for unified mode only
 // import PlanningMode from './components/PlanningMode';
 import ThemeSelector from './components/ThemeSelector';
@@ -698,12 +698,12 @@ const App = () => {
                         <div>
                             <h1 className="text-3xl font-bold mb-2 text-theme-primary">Budgie 🦜</h1>
                             <p className="text-theme-secondary">
-                                Your unified budget companion with Enhanced Categories
+                                Cheap, cheap!
                             </p>
                         </div>
 
                         <div className="flex space-x-2">
-                            {/* Debug Sync Button */}
+                            {/* Debug Sync Button
                             <button
                                 onClick={() => {
                                     safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
@@ -713,7 +713,7 @@ const App = () => {
                                 title="Manually sync category money"
                             >
                                 🔄 Sync Money
-                            </button>
+                            </button> */}
 
                             <ThemeSelector
                                 currentTheme={theme}
@@ -847,20 +847,20 @@ const App = () => {
                                 <div>
                                     <h2 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
                                         <Target className="w-6 h-6" />
-                                        🎯 Unified Budget
+                                        Budget
                                         <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Enhanced</span>
                                     </h2>
                                     <p className="text-theme-secondary">
                                         Enhanced categories with both single and multiple expense types
                                     </p>
                                 </div>
-                                <button
+                                {/* <button
                                     onClick={openAddCategoryModal}
                                     className="btn-primary px-4 py-2 rounded-lg flex items-center space-x-2"
                                 >
                                     <Plus className="w-4 h-4" />
                                     <span>Add Category</span>
-                                </button>
+                                </button> */}
                             </div>
 
                             {/* SIMPLIFIED: Always show Unified View only */}
@@ -875,7 +875,7 @@ const App = () => {
                                 moveMoney={() => { }}
 
                                 // Actions
-                                onAddCategory={handleAddCategory}
+                                onAddCategory={openAddCategoryModal}
                                 onEditCategory={handleEditCategory}
                                 onDeleteCategory={handleDeleteCategory}
                                 onAddItem={openAddItemModal}
@@ -1037,7 +1037,7 @@ const App = () => {
                         />
                     </ModalSystem>
 
-                    {/* Enhanced Category Modal */}
+                    {/* Category Modal */}
                     <ModalSystem
                         isOpen={showAddCategory || editingCategory !== null}
                         title={editingCategory ? 'Edit Category' : 'Add New Category'}
@@ -1045,27 +1045,24 @@ const App = () => {
                             setShowAddCategory(false);
                             setEditingCategory(null);
                         }}
-                        size="lg"
+                        size="md"
                     >
-                        <AddCategoryForm
+                        <CategoryForm
                             category={editingCategory}
-                            onSubmit={(categoryData) => {
+                            onSave={(categoryData) => {
                                 if (editingCategory) {
                                     handleEditCategory(editingCategory.id, categoryData);
                                 } else {
                                     handleAddCategory(categoryData);
                                 }
-                            }}
-                            onSubmitAnother={(categoryData) => {
-                                handleAddCategory(categoryData);
-                                // Keep modal open for adding another
+                                setShowAddCategory(false);
+                                setEditingCategory(null);
                             }}
                             onCancel={() => {
                                 setShowAddCategory(false);
                                 setEditingCategory(null);
                             }}
-                            categories={categories}
-                            payFrequency={payFrequency}
+                            darkMode={theme.includes('dark')}
                         />
                     </ModalSystem>
 

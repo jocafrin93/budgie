@@ -1,3 +1,4 @@
+// BaseForm.js
 /**
  * BaseForm component
  * A base component for all forms with common structure and behavior
@@ -63,7 +64,7 @@ const BaseForm = ({
           <button
             type="button"
             onClick={onCancel}
-            className="py-2 px-4 rounded border border-theme-primary text-theme-secondary hover:bg-theme-hover"
+            className="btn-secondary py-2 px-4 rounded"
           >
             {cancelLabel}
           </button>

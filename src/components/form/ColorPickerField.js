@@ -43,11 +43,9 @@ const ColorPickerField = ({
       hint={hint}
       required={required}
       className={className}
-      darkMode={darkMode}
     >
       <div
-        className={`grid grid-cols-2 gap-4 p-4 rounded-lg ${darkMode ? 'bg-gray-800' : 'bg-gray-100'
-          }`}
+        className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-theme-secondary border border-theme-primary"
         {...props}
       >
         {colors.map((color, index) => (
@@ -58,20 +56,19 @@ const ColorPickerField = ({
             className={`
               h-16 rounded-lg ${color} 
               ${value === color
-                ? `ring-2 ${darkMode ? 'ring-white' : 'ring-black'} scale-105`
+                ? 'ring-2 ring-theme-blue scale-105'
                 : 'ring-transparent'
               }
               transition-all duration-200 
               hover:scale-105 
               hover:ring-2 
-              ${darkMode ? 'hover:ring-gray-300' : 'hover:ring-gray-500'}
+              hover:ring-theme-blue
               shadow-lg
             `}
             title={`Color option ${index + 1}`}
           >
             {value === color && (
-              <span className={`flex items-center justify-center h-full ${darkMode ? 'text-white' : 'text-black'
-                }`}>
+              <span className="flex items-center justify-center h-full text-theme-inverse">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-6 w-6"

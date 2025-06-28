@@ -44,7 +44,7 @@ const UnifiedItemForm = ({
     percentageAmount: item?.percentageAmount || '',
     frequency: item?.frequency || 'monthly',
     dueDate: item?.dueDate || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // 30 days from now
-    categoryId: item?.categoryId || preselectedCategory?.id || (categories[0]?.id || ''),
+    categoryId: preselectedCategory?.preselectedCategory?.id || '', // Note the nested property
     accountId: item?.accountId || (accounts[0]?.id || ''),
     priorityState: item?.priorityState || 'active',
     isRecurring: item?.isRecurring !== false, // Default to true for new items

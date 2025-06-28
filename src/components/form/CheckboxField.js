@@ -1,69 +1,69 @@
 /**
  * CheckboxField component
- * A standardized checkbox input for forms
+ * A standardized checkbox field for forms
  */
+import FormField from './FormField';
 
 const CheckboxField = ({
-  id,
   name,
   label,
   checked,
   onChange,
   error = '',
   hint = '',
+  disabled = false,
   className = '',
-  darkMode, // Accept but don't pass to DOM
+  darkMode = false,
+  children,
   ...props
 }) => {
-  const fieldId = id || name || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
-
   const handleChange = (e) => {
     if (onChange) {
       onChange(e);
     }
   };
 
+  const checkboxClassName = `
+    h-4 w-4 rounded border-theme-primary text-theme-blue 
+    focus:ring-theme-blue focus:ring-2 focus:ring-offset-0
+    ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+    ${error ? 'border-red-500' : ''}
+    ${className}
+  `;
+
   return (
-    <div className={`flex items-center ${className}`}>
-      <input
-        type="checkbox"
-        id={fieldId}
-        name={name}
-        checked={checked}
-        onChange={handleChange}
-        className={`mr-2 ${error ? 'border-red-500' : ''}`}
-        aria-invalid={error ? 'true' : 'false'}
-        aria-describedby={error ? `${fieldId}-error` : hint ? `${fieldId}-hint` : undefined}
-        {...props}
-      />
-
-      <div className="flex flex-col">
-        <label htmlFor={fieldId} className="text-sm text-theme-primary">
-          {label}
-        </label>
-
-        {/* Error message */}
-        {error && (
-          <div
-            id={`${fieldId}-error`}
-            className="text-xs text-red-500 mt-1"
-            role="alert"
+    <FormField
+      id={name}
+      label=""
+      error={error}
+      hint={hint}
+      required={false}
+    >
+      <div className="flex items-center space-x-3">
+        <input
+          type="checkbox"
+          name={name}
+          checked={checked}
+          onChange={handleChange}
+          className={checkboxClassName}
+          disabled={disabled}
+          {...props}
+        />
+        {label && (
+          <label
+            htmlFor={name}
+            className={`text-sm text-theme-primary ${disabled ? 'opacity-50' : 'cursor-pointer'}`}
           >
-            {error}
-          </div>
+            {label}
+          </label>
         )}
-
-        {/* Hint text */}
-        {hint && !error && (
-          <div
-            id={`${fieldId}-hint`}
-            className="text-xs text-theme-tertiary mt-1"
-          >
-            {hint}
+        {children && (
+          <div className="text-sm text-theme-secondary">
+            {children}
           </div>
         )}
       </div>
-    </div>
+    </FormField>
   );
 };
 

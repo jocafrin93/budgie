@@ -1,8 +1,7 @@
-/**
- * SelectField component
- * A standardized select dropdown for forms
- */
-import React from 'react';
+// * SelectField component
+//   * A standardized select dropdown field for forms
+//     */
+
 import FormField from './FormField';
 
 const SelectField = ({
@@ -11,12 +10,13 @@ const SelectField = ({
   value,
   onChange,
   options = [],
+  placeholder = 'Select an option...',
   error = '',
   hint = '',
   required = false,
+  disabled = false,
   className = '',
   darkMode = false,
-  placeholder = '',
   ...props
 }) => {
   const handleChange = (e) => {
@@ -25,9 +25,8 @@ const SelectField = ({
     }
   };
 
-  const baseClassName = `w-full p-2 border rounded ${
-    darkMode ? 'bg-theme-secondary border-theme-primary' : 'bg-theme-primary border-theme-primary'
-  } text-theme-primary ${error ? 'border-red-500' : ''} ${className}`;
+  const baseClassName = `w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary ${error ? 'border-red-500' : ''
+    } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`;
 
   return (
     <FormField
@@ -42,6 +41,7 @@ const SelectField = ({
         value={value}
         onChange={handleChange}
         className={baseClassName}
+        disabled={disabled}
         {...props}
       >
         {placeholder && (
