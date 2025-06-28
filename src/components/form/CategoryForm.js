@@ -9,6 +9,8 @@ import {
   ,
 
 
+
+
   TextField
 } from './';
 
@@ -244,7 +246,7 @@ const CategoryForm = ({
               {/* Amount - FIXED: Now uses CurrencyField */}
               <CurrencyField
                 name="amount"
-                label="Amount *"
+                label="Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"

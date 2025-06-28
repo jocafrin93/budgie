@@ -1,14 +1,14 @@
 import FormField from './FormField';
 
 const DEFAULT_COLORS = [
-  'bg-gradient-to-r from-purple-500 to-pink-500',
-  'bg-gradient-to-r from-pink-500 to-blue-500',
-  'bg-gradient-to-r from-orange-500 to-red-600',
-  'bg-gradient-to-r from-green-500 to-yellow-400',
-  'bg-gradient-to-r from-pink-500 to-red-500',
-  'bg-gradient-to-r from-yellow-400 to-orange-500',
-  'bg-gradient-to-r from-purple-600 to-teal-500',
-  'bg-gradient-to-r from-violet-600 to-purple-800'
+  { value: 'bg-gradient-to-r from-blue-500 to-blue-600', style: 'linear-gradient(to right, #3B82F6, #2563EB)', name: 'Blue' },
+  { value: 'bg-gradient-to-r from-green-500 to-emerald-600', style: 'linear-gradient(to right, #10B981, #059669)', name: 'Green' },
+  { value: 'bg-gradient-to-r from-yellow-400 to-orange-500', style: 'linear-gradient(to right, #FBBF24, #F97316)', name: 'Yellow' },
+  { value: 'bg-gradient-to-r from-red-500 to-pink-600', style: 'linear-gradient(to right, #EF4444, #DC2626)', name: 'Red' },
+  { value: 'bg-gradient-to-r from-purple-500 to-indigo-600', style: 'linear-gradient(to right, #8B5CF6, #4F46E5)', name: 'Purple' },
+  { value: 'bg-gradient-to-r from-orange-500 to-red-500', style: 'linear-gradient(to right, #F97316, #EF4444)', name: 'Orange' },
+  { value: 'bg-gradient-to-r from-cyan-500 to-teal-600', style: 'linear-gradient(to right, #06B6D4, #0D9488)', name: 'Cyan' },
+  { value: 'bg-gradient-to-r from-lime-500 to-green-600', style: 'linear-gradient(to right, #84CC16, #16A34A)', name: 'Lime' }
 ];
 
 const ColorPickerField = ({
@@ -24,12 +24,12 @@ const ColorPickerField = ({
   colors = DEFAULT_COLORS,
   ...props
 }) => {
-  const handleColorSelect = (color) => {
+  const handleColorSelect = (colorValue) => {
     if (onChange) {
       onChange({
         target: {
           name,
-          value: color
+          value: colorValue
         }
       });
     }
@@ -45,41 +45,37 @@ const ColorPickerField = ({
       className={className}
     >
       <div
-        className="grid grid-cols-2 gap-4 p-4 rounded-lg bg-theme-secondary border border-theme-primary"
+        className="flex justify-between gap-3"
         {...props}
       >
         {colors.map((color, index) => (
           <button
-            key={`${color}-${index}`}
+            key={`${color.value}-${index}`}
             type="button"
-            onClick={() => handleColorSelect(color)}
+            onClick={() => handleColorSelect(color.value)}
             className={`
-              h-16 rounded-lg ${color} 
-              ${value === color
-                ? 'ring-2 ring-theme-blue scale-105'
-                : 'ring-transparent'
+              w-10 h-10 rounded-full border-3 transition-all duration-200 hover:scale-110 hover:shadow-lg
+              ${value === color.value
+                ? 'border-gray-800 dark:border-white scale-110 shadow-lg ring-2 ring-offset-2 ring-gray-400'
+                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
               }
-              transition-all duration-200 
-              hover:scale-105 
-              hover:ring-2 
-              hover:ring-theme-blue
-              shadow-lg
             `}
-            title={`Color option ${index + 1}`}
+            style={{ background: color.style }}
+            title={color.name}
           >
-            {value === color && (
-              <span className="flex items-center justify-center h-full text-theme-inverse">
+            {value === color.value && (
+              <span className="flex items-center justify-center h-full text-white drop-shadow-lg">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
+                  className="h-4 w-4"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth={3}
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
