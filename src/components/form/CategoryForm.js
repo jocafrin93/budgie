@@ -7,6 +7,8 @@ import {
   ColorPickerField,
   CurrencyField // Added CurrencyField import
   ,
+
+
   TextField
 } from './';
 
@@ -98,12 +100,49 @@ const CategoryForm = ({
   };
 
   const perPaycheckPreview = getPerPaycheckPreview();
+  // Add this function before the return statement
+  const handleSubmitAnother = () => {
+    // Prepare the data manually (same as your form's onSubmit)
+    const formData = {
+      ...form.values,
+      type: categoryType,
+      autoFunding: {
+        enabled: autoFundingEnabled,
+        maxAmount: parseFloat(maxAutoFunding) || 500,
+        priority: 'medium'
+      },
+      // Include single category specific data if applicable
+      ...(categoryType === 'single' && {
+        amount: parseFloat(amount),
+        frequency,
+        dueDate: dueDate || null
+      }),
+      // Include ID if editing
+      ...(category ? { id: category.id } : {})
+    };
 
+    // Call onSave with addAnother flag
+    onSave(formData, true);
+
+    // Reset form for next category
+    setTimeout(() => {
+      form.setFieldValue('name', '');
+      form.setFieldValue('description', '');
+      setAmount('');
+      setDueDate('');
+
+      // Focus name field
+      const nameInput = document.querySelector('input[name="name"]');
+      if (nameInput) nameInput.focus();
+    }, 100);
+  };
   return (
     <BaseForm
       onSubmit={form.handleSubmit}
       onCancel={onCancel}
+      onSubmitAnother={!category ? handleSubmitAnother : undefined}
       submitLabel={category ? 'Update Category' : 'Add Category'}
+      showSubmitAnother={!category}
       isSubmitDisabled={!form.isValid}
     >
       <div className="space-y-6">

@@ -120,7 +120,7 @@ export const useDataModel = ({
 
     // Validate category exists and ensure categoryId is a number
     const categoryId = parseInt(newItem.categoryId, 10);
-    if (isNaN(categoryId) || !categories.some(cat => cat.id === categoryId)) {
+    if (isNaN(categoryId) || !categories.some(cat => parseInt(cat.id, 10) === categoryId)) {
       console.error('Invalid category ID for new item:', newItem);
       return;
     }
@@ -146,6 +146,7 @@ export const useDataModel = ({
     // Update planning items
     setPlanningItems(prev => {
       const updatedItems = [...prev, itemWithId];
+      console.log('Last added item:', itemWithId);
       console.log('Updated planning items:', updatedItems);
       return updatedItems;
     });

@@ -39,9 +39,9 @@ const UnifiedItemForm = ({
   const initialValues = {
     type: initialType,
     name: item?.name || '',
-    amount: item?.amount || '',
+    amount: item?.amount || 0,
     usePercentage: item?.usePercentage || false,
-    percentageAmount: item?.percentageAmount || '',
+    percentageAmount: item?.percentageAmount || 0,
     frequency: item?.frequency || 'monthly',
     dueDate: item?.dueDate || formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)), // 30 days from now
     categoryId: preselectedCategory?.preselectedCategory?.id || '', // Note the nested property
@@ -51,9 +51,9 @@ const UnifiedItemForm = ({
     priority: item?.priority || 'medium',
 
     // Goal-specific fields
-    targetAmount: item?.targetAmount || '',
+    targetAmount: item?.targetAmount || 0,
     targetDate: item?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)), // 1 year from now
-    monthlyContribution: item?.monthlyContribution || '',
+    monthlyContribution: item?.monthlyContribution || 0,
     alreadySaved: item?.alreadySaved || 0,
   };
 
@@ -62,10 +62,13 @@ const UnifiedItemForm = ({
   const form = useForm({
     initialValues,
     onSubmit: (values) => {
+      const selectedCategory = categories.find(cat => cat.id === values.categoryId);
+      const selectedAccount = accounts.find(acc => acc.id === values.accountId);
       // Prepare the data based on item type
       const commonData = {
-        name: values.name,
+        category: selectedCategory,
         categoryId: values.categoryId,
+        account: selectedAccount,
         accountId: values.accountId,
         priorityState: values.priorityState,
       };
@@ -195,44 +198,164 @@ const UnifiedItemForm = ({
   ];
 
   // Handle form submission
+  // In UnifiedItemForm.js, replace your handleSubmit function with this:
   const handleSubmit = () => {
     console.log('DEBUG - Form submit button clicked');
-    console.log('DEBUG - Form values before submit:', {
-      name: form.values.name,
-      type: form.values.type,
-      targetAmount: form.values.targetAmount,
-      monthlyContribution: form.values.monthlyContribution,
-      targetDate: form.values.targetDate
-    });
+
+    // Find the full objects from the arrays (same as handleSubmitAnother)
+    const selectedCategory = categories.find(cat => cat.id === form.values.categoryId);
+    const selectedAccount = accounts.find(acc => acc.id === form.values.accountId);
+
+    console.log('DEBUG - selectedCategory:', selectedCategory);
+    console.log('DEBUG - selectedAccount:', selectedAccount);
+    console.log('DEBUG - Form values before submit:', form.values);
     console.log('DEBUG - Form errors:', form.errors);
     console.log('DEBUG - Form isValid:', form.isValid);
-    console.log('DEBUG - onSave function type:', typeof onSave);
-    try {
-      form.handleSubmit();
-      console.log('DEBUG - form.handleSubmit() called successfully');
-    } catch (error) {
-      console.error('DEBUG - Error in form.handleSubmit():', error);
+
+    // Don't call form.handleSubmit() - prepare data manually like handleSubmitAnother does
+    if (!form.isValid) {
+      console.log('DEBUG - Form validation failed, not submitting');
+      return;
     }
+
+    // Prepare the data with full objects (same logic as handleSubmitAnother)
+    const commonData = {
+      name: form.values.name,
+      category: selectedCategory,
+      categoryId: form.values.categoryId,
+      account: selectedAccount,
+      accountId: form.values.accountId,
+      priorityState: form.values.priorityState,
+    };
+
+    let itemData;
+    if (form.values.type === 'expense') {
+      itemData = {
+        ...commonData,
+        type: 'expense',
+        amount: form.values.usePercentage
+          ? percentageToDollar(form.values.percentageAmount || 0, currentPay)
+          : form.values.amount || 0,
+        usePercentage: form.values.usePercentage,
+        percentageAmount: form.values.percentageAmount || 0,
+        frequency: form.values.frequency,
+        dueDate: form.values.dueDate,
+        isRecurring: form.values.isRecurring,
+        priority: form.values.priority,
+      };
+    } else {
+      itemData = {
+        ...commonData,
+        type: 'goal',
+        targetAmount: form.values.targetAmount || 0,
+        targetDate: form.values.targetDate,
+        monthlyContribution: form.values.monthlyContribution || 0,
+        alreadySaved: form.values.alreadySaved || 0,
+      };
+    }
+
+    console.log('DEBUG - Prepared itemData:', itemData);
+
+    // Call onSave with the prepared data
+    onSave(itemData, false); // false = not "add another"
   };
 
   // Handle "Save & Add Another" button
+  // Add this function after your existing handleSubmit function
+  // Replace your current handleSubmitAnother function in UnifiedItemForm with this:
+  // Alternative handleSubmitAnother - uses resetForm
+  // Replace your current handleSubmitAnother function in UnifiedItemForm with this:
   const handleSubmitAnother = () => {
-    console.log('DEBUG - Save & Add Another button clicked');
-    try {
-      form.handleSubmit();
-      console.log('DEBUG - form.handleSubmit() called successfully from handleSubmitAnother');
-    } catch (error) {
-      console.error('DEBUG - Error in handleSubmitAnother:', error);
+    const selectedCategory = categories.find(cat => cat.id === form.values.categoryId);
+    const selectedAccount = accounts.find(acc => acc.id === form.values.accountId);
+    const currentCategoryId = form.values.categoryId;
+    const currentAccountId = form.values.accountId;
+    const currentType = form.values.type;
+    const currentPriorityState = form.values.priorityState;
+    const currentFrequency = form.values.frequency;
+    const currentPriority = form.values.priority;
+    const currentIsRecurring = form.values.isRecurring;
+
+    // Prepare data same way as form's onSubmit
+    const commonData = {
+      name: form.values.name,
+      category: selectedCategory, // Pass full category object
+      categoryId: form.values.categoryId, // Keep ID for backward compatibility
+      account: selectedAccount, // Pass full account object
+      accountId: form.values.accountId, // Keep ID for backward compatibility
+      priorityState: form.values.priorityState,
+    };
+
+    let itemData;
+    if (form.values.type === 'expense') {
+      itemData = {
+        ...commonData,
+        type: 'expense',
+        amount: form.values.usePercentage
+          ? percentageToDollar(parseFloat(form.values.percentageAmount) || 0, currentPay)
+          : parseFloat(form.values.amount) || 0,
+        usePercentage: form.values.usePercentage,
+        percentageAmount: parseFloat(form.values.percentageAmount) || 0,
+        frequency: form.values.frequency,
+        dueDate: form.values.dueDate,
+        isRecurring: form.values.isRecurring,
+        priority: form.values.priority,
+      };
+    } else {
+      itemData = {
+        ...commonData,
+        type: 'goal',
+        targetAmount: parseFloat(form.values.targetAmount) || 0,
+        targetDate: form.values.targetDate,
+        monthlyContribution: parseFloat(form.values.monthlyContribution) || 0,
+        alreadySaved: parseFloat(form.values.alreadySaved) || 0,
+      };
     }
-    // The parent component will handle the "add another" logic
+
+    // Call onSave with addAnother flag
+    onSave(itemData, true);
+
+    // Reset form by recreating the initial values
+    setTimeout(() => {
+      // Create new initial values with preserved context
+      const newInitialValues = {
+        type: currentType,
+        name: '',
+        amount: '',
+        usePercentage: false,
+        percentageAmount: '',
+        frequency: currentFrequency,
+        dueDate: formatDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+        categoryId: currentCategoryId,
+        accountId: currentAccountId,
+        priorityState: currentPriorityState,
+        isRecurring: currentIsRecurring,
+        priority: currentPriority,
+        // Goal fields
+        targetAmount: '',
+        targetDate: formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
+        monthlyContribution: '',
+        alreadySaved: 0,
+      };
+
+      // Set all values at once to match initial state
+      Object.keys(newInitialValues).forEach(key => {
+        form.setFieldValue(key, newInitialValues[key]);
+      });
+
+      // Focus name field
+      const nameInput = document.querySelector('input[name="name"]');
+      if (nameInput) nameInput.focus();
+    }, 100);
   };
 
   return (
     <BaseForm
       onSubmit={handleSubmit}
-      onSubmitAnother={handleSubmitAnother}
+      onSubmitAnother={!item ? handleSubmitAnother : undefined}
       onCancel={onCancel}
       submitLabel={item ? 'Update Item' : 'Add Item'}
+      showSubmitAnother={!item}
       submitAnotherLabel="Save & Add Another"
       isSubmitDisabled={false} // Temporarily bypass validation for all item types
     >
@@ -291,8 +414,14 @@ const UnifiedItemForm = ({
 
           {form.values.usePercentage ? (
             <TextField
-              {...form.getFieldProps('percentageAmount')}
+              name="percentageAmount"
               label="Percentage of Income"
+              value={form.values.percentageAmount ? form.values.percentageAmount.toString() : ''}
+              onChange={(e) => {
+                const numericValue = parseFloat(e.target.value) || 0;
+                console.log('DEBUG - PercentageAmount onChange - string:', e.target.value, 'number:', numericValue);
+                form.setFieldValue('percentageAmount', numericValue); // Store as NUMBER
+              }}
               placeholder="0.0"
               type="number"
               step="0.1"
@@ -300,16 +429,24 @@ const UnifiedItemForm = ({
               max="100"
               required
               darkMode={darkMode}
-              hint={currentPay > 0 ? `Approx. $${percentageToDollar(parseFloat(form.values.percentageAmount) || 0, currentPay).toFixed(2)}` : ''}
+              error={form.errors.percentageAmount}
+              hint={currentPay > 0 ? `Approx. $${percentageToDollar(form.values.percentageAmount || 0, currentPay).toFixed(2)}` : ''}
             />
           ) : (
             <CurrencyField
-              {...form.getFieldProps('amount')}
+              name="amount"
               label="Amount"
+              value={form.values.amount ? form.values.amount.toString() : ''}
+              onChange={(e) => {
+                const numericValue = parseFloat(e.target.value) || 0;
+                console.log('DEBUG - CurrencyField onChange - string:', e.target.value, 'number:', numericValue);
+                form.setFieldValue('amount', numericValue); // Store as NUMBER
+              }}
               placeholder="0.00"
               required
               darkMode={darkMode}
-              hint={currentPay > 0 ? `Approx. ${dollarToPercentage(parseFloat(form.values.amount) || 0, currentPay).toFixed(1)}% of income` : ''}
+              error={form.errors.amount}
+              hint={currentPay > 0 ? `Approx. ${dollarToPercentage(form.values.amount || 0, currentPay).toFixed(1)}% of income` : ''}
             />
           )}
 
