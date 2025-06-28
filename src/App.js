@@ -6,13 +6,10 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Import NEW streamlined components
 import ModalSystem from './components/ModalSystem';
-import SimplifiedSummaryCards from './components/SimplifiedSummaryCards';
-import UnifiedItemForm from './components/UnifiedItemForm';
-// Import our new envelope budgeting system components
-// COMMENTED OUT - Not needed for unified mode only
-// import EnvelopeBudgetingSystem from './components/EnvelopeBudgetingSystem';
 import PaydayWorkflow from './components/PaydayWorkflow';
+import SimplifiedSummaryCards from './components/SimplifiedSummaryCards';
 import UnifiedEnvelopeBudgetView from './components/UnifiedEnvelopeBudgetView';
+import UnifiedItemForm from './components/UnifiedItemForm';
 
 
 // Import existing components we're keeping
@@ -23,8 +20,6 @@ import CalendarView from './components/CalendarView';
 import ConfigurationPanel from './components/ConfigurationPanel';
 import ConfirmDialog from './components/ConfirmDialog';
 import { CategoryForm } from './components/form';
-// COMMENTED OUT - Not needed for unified mode only
-// import PlanningMode from './components/PlanningMode';
 import ThemeSelector from './components/ThemeSelector';
 import TransactionsTab from './components/TransactionsTab';
 
@@ -920,27 +915,6 @@ const App = () => {
                                 onShowPaydayWorkflow={handleShowPaydayWorkflow}
                             />
 
-                            {/* COMMENTED OUT: Conditional rendering for other modes */}
-                            {/*
-                            {budgetMode === 'unified' ? (
-                                // NEW: Unified Enhanced Categories Mode
-                                <UnifiedEnvelopeBudgetView
-                                    // ... all props
-                                />
-                            ) : budgetMode === 'envelope' ? (
-                                // Envelope Budgeting Mode
-                                <EnvelopeBudgetingSystem
-                                    // ... all props
-                                />
-                            ) : (
-                                // Item-Based Planning Mode
-                                <div className="space-y-6">
-                                    <PlanningMode
-                                        // ... all props
-                                    />
-                                </div>
-                            )}
-                            */}
                         </div>
                     )}
 

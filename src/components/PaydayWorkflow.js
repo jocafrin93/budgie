@@ -1,6 +1,6 @@
 // src/components/PaydayWorkflow.js
 import { useCallback, useEffect, useState } from 'react';
-import CurrencyInput from './CurrencyInput';
+import { CurrencyField } from './form';
 
 /**
  * PaydayWorkflow component
@@ -375,10 +375,12 @@ const PaydayWorkflow = ({
                         '-'}
                     </td>
                     <td className="text-right p-2">
-                      <CurrencyInput
+                      <CurrencyField
+                        name={`allocation-${category.id}`}
                         value={allocations[category.id] || 0}
-                        onChange={value => handleAllocateToCategory(category.id, value)}
+                        onChange={(e) => handleAllocateToCategory(category.id, e.target.value)}
                         className="w-24 text-right"
+                        hideLabel={true}
                       />
                     </td>
                   </tr>

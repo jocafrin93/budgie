@@ -15,7 +15,8 @@ import {
 import { useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { frequencyOptions } from '../utils/constants';
-import CurrencyInput from './CurrencyInput';
+import { CurrencyField } from './form';
+
 
 // Drag and Drop Constants
 const DND_TYPES = {
@@ -1065,11 +1066,12 @@ const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) =>
                         <label className="block text-sm font-medium text-theme-primary mb-1">
                             Amount
                         </label>
-                        <CurrencyInput
+                        <CurrencyField
+                            name="assignAmount"
                             value={assignAmount}
                             onChange={(e) => setAssignAmount(e.target.value)}
-                            placeholder="0.00"
-                            className="w-full border border-theme-secondary rounded-lg bg-theme-primary text-theme-primary focus:outline-none focus:ring-2 focus:ring-theme-blue"
+                            className="..."
+                            hideLabel={true}
                         />
                     </div>
                 </div>
