@@ -80,82 +80,101 @@
 
 /* Dark theme */
 [data-theme="dark"] {
-    /* Background colors */
-    --bg-primary: #3a364b;
+    /* Background colors - using VSCode sidebar and editor backgrounds */
+    --bg-primary: #504a68;
+    /* editor.background */
     --bg-secondary: #5a5475;
-    --bg-tertiary: #8077a8;
-    --bg-quaternary: #7d7796;
-    --bg-hover: #4b5563;
-    --bg-active: #6b7280;
+    /* similar to editorGroupHeader.tabsBackground */
+    --bg-tertiary: #645e82;
+    /* activityBar.background */
+    --bg-quaternary: #8077a8;
+    /* similar to statusBar.background */
+    --bg-hover: #6f6991;
+    /* editor.selectionBackground */
+    --bg-active: #958db8;
+    /* activityBar.inactiveForeground */
     --page-bg: #272241;
+    /* page background - darker variant */
 
     /* Border colors */
-    --border-primary: #4b5563;
-    --border-secondary: #6b7280;
-    --border-tertiary: #8077a8;
-    --border-accent: #9ca3af;
+    --border-primary: #645e82;
+    /* editorGroup.border */
+    --border-secondary: #8077a8;
+    --border-tertiary: #958db8;
+    --border-accent: #c0bdd1;
+    /* activityBar.foreground */
 
-    /* Text colors */
-    --text-primary: #f9fafb;
+    /* Text colors - using VSCode text colors */
+    --text-primary: #f8f8f2;
+    /* foreground */
     --text-secondary: #c0bdd1;
-    --text-tertiary: #fca5a5;
+    /* activityBar.foreground */
+    --text-tertiary: #958db8;
+    /* activityBar.inactiveForeground */
     --text-quaternary: #8077a8;
     --text-accent: #e5e7eb;
-    --text-inverse: #111827;
-    --page-text: #f9fafb;
+    --text-inverse: #272241;
+    --page-text: #f8f8f2;
 
-    /* Interactive colors */
-    --color-blue: #7dd3fc;
-    --color-blue-hover: #0284c7;
-    --color-green: #c9e7d5;
-    --color-red: #ef4444;
-    --color-yellow: #fef3c7;
+    /* Interactive colors - using VSCode accent colors */
+    --color-blue: #83ACF2;
+    /* variable colors from tokenColors */
+    --color-blue-hover: #6483B9;
+    --color-green: #ADD6C5;
+    /* function colors */
+    --color-red: #E4AAF2;
+    /* entity.name.type */
+    --color-yellow: #E4DD91;
+    /* string.quoted.double */
 
     /* Selection states */
-    --selection-primary-bg: #cac376;
-    --selection-primary-border: #e4dd91;
-    --selection-primary-text: #8077a8;
+    --selection-primary-bg: #6f6991;
+    /* editor.selectionBackground */
+    --selection-primary-border: #c0bdd1;
+    --selection-primary-text: #f8f8f2;
 
-    --selection-secondary-bg: #581c87;
-    --selection-secondary-border: #8b5cf6;
-    --selection-secondary-text: #c084fc;
-
+    --selection-secondary-bg: #8077a8;
+    --selection-secondary-border: #ADD6C5;
+    --selection-secondary-text: #272241;
 
     /* Callout boxes */
-    --callout-info-bg: #e7aac3;
-    --callout-info-border: #fee2e2;
-    --callout-info-text: #a17788;
+    --callout-info-bg: #645e82;
+    --callout-info-border: #83ACF2;
+    --callout-info-text: #f8f8f2;
 
-    --callout-success-bg: #14532d;
-    --callout-success-border: #16a34a;
-    --callout-success-text: #86efac;
+    --callout-success-bg: #5a5475;
+    --callout-success-border: #ADD6C5;
+    --callout-success-text: #f8f8f2;
 
     /* Table specific */
-    --table-header-bg: #374151;
-    --table-row-even: #8077a8;
-    --table-row-odd: #b8a2ce;
-    --table-row-hover: #958db8;
+    --table-header-bg: #5a5475;
+    --table-row-even: #504a68;
+    --table-row-odd: #5a5475;
+    --table-row-hover: #645e82;
 
-    /* Buttons */
-    --btn-primary-bg: #ffb8d1;
-    --btn-primary-hover: #ebb2cf;
-    --btn-primary-text: #1f2937;
+    /* Buttons - using accent colors from VSCode theme */
+    --btn-primary-bg: #ADD6C5;
+    /* teal/green accent */
+    --btn-primary-hover: #c2ffdf;
+    --btn-primary-text: #272241;
 
     --btn-secondary-bg: var(--bg-secondary);
     --btn-secondary-hover: var(--bg-hover);
     --btn-secondary-text: var(--text-primary);
 
-    --btn-success-bg: #c2ffdf;
-    --btn-success-hover: #c9e7d5;
-    --btn-success-text: #1f2937;
+    --btn-success-bg: #ADD6C5;
+    --btn-success-hover: #c2ffdf;
+    --btn-success-text: #272241;
 
-    --btn-danger-bg: #e07365;
-    --btn-danger-hover: #ef4444;
-    --btn-danger-text: #1f2937;
+    --btn-danger-bg: #E4AAF2;
+    /* purple accent */
+    --btn-danger-hover: #C6A0F2;
+    --btn-danger-text: #272241;
 
-    --btn-warning-bg: #fbbf24;
-    --btn-warning-hover: #f59e0b;
-    --btn-warning-text: #1f2937;
+    --btn-warning-bg: #E4DD91;
+    /* yellow accent */
+    --btn-warning-hover: #f7ef9e;
+    --btn-warning-text: #272241;
 }
 
 /* Spring theme */
@@ -463,14 +482,19 @@
 }
 
 [data-theme="dark-spring"] {
-    /* Background colors */
+    /* Background colors - purple gradient inspired by VSCode */
     --bg-primary: #2d1b3d;
+    /* deep purple base */
     --bg-secondary: #3d2954;
+    /* medium purple */
     --bg-tertiary: #4c3566;
+    /* lighter purple */
     --bg-quaternary: #6b4c8a;
+    /* purple-pink blend */
     --bg-hover: #4c3566;
     --bg-active: #6b4c8a;
     --page-bg: #1a0f26;
+    /* very dark purple */
 
     /* Border colors */
     --border-primary: #4c3566;
@@ -478,19 +502,24 @@
     --border-tertiary: #8b5cf6;
     --border-accent: #a855f7;
 
-    /* Text colors */
+    /* Text colors - maintaining VSCode feel with purple tints */
     --text-primary: #f5f0ff;
+    /* light purple tint */
     --text-secondary: #d8b4fe;
+    /* purple accent */
     --text-tertiary: #c084fc;
+    /* medium purple */
     --text-quaternary: #a855f7;
     --text-accent: #e9d5ff;
     --text-inverse: #1a0f26;
     --page-text: #f5f0ff;
 
-    /* Interactive colors */
+    /* Interactive colors - purple/violet theme */
     --color-blue: #c084fc;
+    /* purple instead of blue */
     --color-blue-hover: #a855f7;
     --color-green: #4ade80;
+    /* keep green for contrast */
     --color-red: #fb7185;
     --color-yellow: #fde047;
 
@@ -518,6 +547,7 @@
     --table-row-odd: #3d2954;
     --table-row-hover: #4c3566;
 
+    /* Buttons */
     --btn-primary-bg: #c084fc;
     --btn-primary-hover: #a855f7;
     --btn-primary-text: #1a0f26;
@@ -539,233 +569,274 @@
     --btn-warning-text: #1a0f26;
 }
 
-/* Dark Summer theme */
+/* Dark Summer theme - warm purples with orange accents */
 [data-theme="dark-summer"] {
-    /* Background colors */
-    --bg-primary: #451a03;
-    --bg-secondary: #7c2d12;
-    --bg-tertiary: #9a3412;
-    --bg-quaternary: #c2410c;
-    --bg-hover: #9a3412;
-    --bg-active: #c2410c;
-    --page-bg: #292524;
+    /* Background colors - warm purple-brown blend */
+    --bg-primary: #3d2831;
+    /* warm purple-brown */
+    --bg-secondary: #5a3d47;
+    /* medium warm purple */
+    --bg-tertiary: #6b4752;
+    /* lighter warm purple */
+    --bg-quaternary: #8a5566;
+    /* purple-orange blend */
+    --bg-hover: #6b4752;
+    --bg-active: #8a5566;
+    --page-bg: #2a1d25;
+    /* dark warm purple */
 
     /* Border colors */
-    --border-primary: #9a3412;
-    --border-secondary: #c2410c;
-    --border-tertiary: #ea580c;
-    --border-accent: #f97316;
+    --border-primary: #6b4752;
+    --border-secondary: #8a5566;
+    --border-tertiary: #a8667a;
+    --border-accent: #c77a92;
 
-    /* Text colors */
-    --text-primary: #fef7ed;
-    --text-secondary: #fed7aa;
-    --text-tertiary: #fdba74;
-    --text-quaternary: #fb923c;
-    --text-accent: #ffedd5;
-    --text-inverse: #451a03;
-    --page-text: #fef7ed;
+    /* Text colors - warm tinted */
+    --text-primary: #fef7f0;
+    /* warm white */
+    --text-secondary: #e6c7d3;
+    /* warm pink */
+    --text-tertiary: #d4a5b8;
+    /* medium warm pink */
+    --text-quaternary: #c18a9e;
+    --text-accent: #f0e2e8;
+    --text-inverse: #2a1d25;
+    --page-text: #fef7f0;
 
-    /* Interactive colors */
-    --color-blue: #fb923c;
-    --color-blue-hover: #f97316;
-    --color-green: #22d3ee;
+    /* Interactive colors - warm summer palette */
+    --color-blue: #d4a5b8;
+    /* warm pink instead of blue */
+    --color-blue-hover: #c18a9e;
+    --color-green: #7fc474;
+    /* warm green from VSCode */
     --color-red: #ef4444;
-    --color-yellow: #eab308;
+    --color-yellow: #E4DD91;
+    /* from VSCode theme */
 
     /* Selection states */
-    --selection-primary-bg: #9a2502;
-    --selection-primary-border: #fb923c;
-    --selection-primary-text: #fed7aa;
+    --selection-primary-bg: #5a3d47;
+    --selection-primary-border: #d4a5b8;
+    --selection-primary-text: #fef7f0;
 
-    --selection-secondary-bg: #134e4a;
-    --selection-secondary-border: #22d3ee;
-    --selection-secondary-text: #a7f3d0;
+    --selection-secondary-bg: #2d4a3d;
+    --selection-secondary-border: #7fc474;
+    --selection-secondary-text: #e6f7f0;
 
     /* Callout boxes */
-    --callout-info-bg: #9a2502;
-    --callout-info-border: #c2410c;
-    --callout-info-text: #fed7aa;
+    --callout-info-bg: #5a3d47;
+    --callout-info-border: #8a5566;
+    --callout-info-text: #fef7f0;
 
-    --callout-success-bg: #134e4a;
-    --callout-success-border: #0f766e;
-    --callout-success-text: #a7f3d0;
+    --callout-success-bg: #2d4a3d;
+    --callout-success-border: #4a7a5d;
+    --callout-success-text: #e6f7f0;
 
     /* Table specific */
-    --table-header-bg: #7c2d12;
-    --table-row-even: #451a03;
-    --table-row-odd: #7c2d12;
-    --table-row-hover: #9a3412;
+    --table-header-bg: #5a3d47;
+    --table-row-even: #3d2831;
+    --table-row-odd: #5a3d47;
+    --table-row-hover: #6b4752;
 
-    --btn-primary-bg: #fb923c;
-    --btn-primary-hover: #f97316;
-    --btn-primary-text: #451a03;
+    /* Buttons */
+    --btn-primary-bg: #d4a5b8;
+    --btn-primary-hover: #e6c7d3;
+    --btn-primary-text: #2a1d25;
 
     --btn-secondary-bg: var(--bg-secondary);
     --btn-secondary-hover: var(--bg-hover);
     --btn-secondary-text: var(--text-primary);
 
-    --btn-success-bg: #22d3ee;
-    --btn-success-hover: #06b6d4;
-    --btn-success-text: #451a03;
+    --btn-success-bg: #7fc474;
+    --btn-success-hover: #9dd491;
+    --btn-success-text: #2a1d25;
 
     --btn-danger-bg: #ef4444;
     --btn-danger-hover: #dc2626;
     --btn-danger-text: #ffffff;
 
-    --btn-warning-bg: #eab308;
-    --btn-warning-hover: #ca8a04;
-    --btn-warning-text: #451a03;
+    --btn-warning-bg: #E4DD91;
+    --btn-warning-hover: #f7ef9e;
+    --btn-warning-text: #2a1d25;
 }
 
-/* Dark Autumn theme */
+/* Dark Autumn theme - deep purples with red accents */
 [data-theme="dark-autumn"] {
-    /* Background colors */
-    --bg-primary: #4c1d1d;
-    --bg-secondary: #7f1d1d;
-    --bg-tertiary: #991b1b;
-    --bg-quaternary: #b91c1c;
-    --bg-hover: #991b1b;
-    --bg-active: #b91c1c;
-    --page-bg: #1c1917;
+    /* Background colors - deep purple-red blend */
+    --bg-primary: #3d1d2e;
+    /* deep purple-red */
+    --bg-secondary: #5a2d42;
+    /* medium purple-red */
+    --bg-tertiary: #6b3851;
+    /* lighter purple-red */
+    --bg-quaternary: #8a4766;
+    /* purple-red blend */
+    --bg-hover: #6b3851;
+    --bg-active: #8a4766;
+    --page-bg: #2a1520;
+    /* very dark purple-red */
 
     /* Border colors */
-    --border-primary: #991b1b;
-    --border-secondary: #b91c1c;
-    --border-tertiary: #dc2626;
-    --border-accent: #ef4444;
+    --border-primary: #6b3851;
+    --border-secondary: #8a4766;
+    --border-tertiary: #a8567a;
+    --border-accent: #c7658e;
 
-    /* Text colors */
-    --text-primary: #fef2f2;
-    --text-secondary: #fecaca;
-    --text-tertiary: #fca5a5;
-    --text-quaternary: #f87171;
-    --text-accent: #fee2e2;
-    --text-inverse: #4c1d1d;
-    --page-text: #fef2f2;
+    /* Text colors - warm purple-red tints */
+    --text-primary: #fef2f7;
+    /* warm light purple */
+    --text-secondary: #f0d4e0;
+    /* light purple-pink */
+    --text-tertiary: #e2b8cc;
+    /* medium purple-pink */
+    --text-quaternary: #d49cb8;
+    --text-accent: #f7e6ed;
+    --text-inverse: #2a1520;
+    --page-text: #fef2f7;
 
-    /* Interactive colors */
-    --color-blue: #f87171;
-    --color-blue-hover: #ef4444;
-    --color-green: #34d399;
-    --color-red: #dc2626;
-    --color-yellow: #f59e0b;
+    /* Interactive colors - autumn purple palette */
+    --color-blue: #e2b8cc;
+    /* purple-pink instead of blue */
+    --color-blue-hover: #d49cb8;
+    --color-green: #ADD6C5;
+    /* cool contrast */
+    --color-red: #E4AAF2;
+    /* purple-red from VSCode */
+    --color-yellow: #f7ef9e;
 
     /* Selection states */
-    --selection-primary-bg: #7f1d1d;
-    --selection-primary-border: #f87171;
-    --selection-primary-text: #fecaca;
+    --selection-primary-bg: #5a2d42;
+    --selection-primary-border: #e2b8cc;
+    --selection-primary-text: #fef2f7;
 
-    --selection-secondary-bg: #064e3b;
-    --selection-secondary-border: #34d399;
-    --selection-secondary-text: #a7f3d0;
+    --selection-secondary-bg: #2d5a47;
+    --selection-secondary-border: #ADD6C5;
+    --selection-secondary-text: #f0f9f5;
 
     /* Callout boxes */
-    --callout-info-bg: #7f1d1d;
-    --callout-info-border: #991b1b;
-    --callout-info-text: #fecaca;
+    --callout-info-bg: #5a2d42;
+    --callout-info-border: #6b3851;
+    --callout-info-text: #fef2f7;
 
-    --callout-success-bg: #064e3b;
-    --callout-success-border: #047857;
-    --callout-success-text: #a7f3d0;
+    --callout-success-bg: #2d5a47;
+    --callout-success-border: #47805d;
+    --callout-success-text: #f0f9f5;
 
     /* Table specific */
-    --table-header-bg: #7f1d1d;
-    --table-row-even: #4c1d1d;
-    --table-row-odd: #7f1d1d;
-    --table-row-hover: #991b1b;
+    --table-header-bg: #5a2d42;
+    --table-row-even: #3d1d2e;
+    --table-row-odd: #5a2d42;
+    --table-row-hover: #6b3851;
 
-    --btn-primary-bg: #f87171;
-    --btn-primary-hover: #ef4444;
-    --btn-primary-text: #4c1d1d;
+    /* Buttons */
+    --btn-primary-bg: #e2b8cc;
+    --btn-primary-hover: #f0d4e0;
+    --btn-primary-text: #2a1520;
 
     --btn-secondary-bg: var(--bg-secondary);
     --btn-secondary-hover: var(--bg-hover);
     --btn-secondary-text: var(--text-primary);
 
-    --btn-success-bg: #34d399;
-    --btn-success-hover: #10b981;
-    --btn-success-text: #4c1d1d;
+    --btn-success-bg: #ADD6C5;
+    --btn-success-hover: #c2ffdf;
+    --btn-success-text: #2a1520;
 
-    --btn-danger-bg: #dc2626;
-    --btn-danger-hover: #b91c1c;
-    --btn-danger-text: #ffffff;
+    --btn-danger-bg: #E4AAF2;
+    --btn-danger-hover: #C6A0F2;
+    --btn-danger-text: #2a1520;
 
-    --btn-warning-bg: #f59e0b;
-    --btn-warning-hover: #d97706;
-    --btn-warning-text: #4c1d1d;
+    --btn-warning-bg: #f7ef9e;
+    --btn-warning-hover: #fef5b8;
+    --btn-warning-text: #2a1520;
 }
 
-/* Dark Winter theme */
+/* Dark Winter theme - cool purples with blue accents */
 [data-theme="dark-winter"] {
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-tertiary: #334155;
-    --bg-quaternary: #475569;
-    --bg-hover: #334155;
-    --bg-active: #475569;
-    --page-bg: #020617;
+    /* Background colors - cool purple-blue blend */
+    --bg-primary: #1d2647;
+    /* cool dark purple-blue */
+    --bg-secondary: #2d3d5a;
+    /* medium purple-blue */
+    --bg-tertiary: #3d4d6b;
+    /* lighter purple-blue */
+    --bg-quaternary: #4d5d7a;
+    /* blue-purple blend */
+    --bg-hover: #3d4d6b;
+    --bg-active: #4d5d7a;
+    --page-bg: #15202e;
+    /* very dark blue-purple */
 
-    --border-primary: #334155;
-    --border-secondary: #475569;
-    --border-tertiary: #64748b;
-    --border-accent: #94a3b8;
+    /* Border colors */
+    --border-primary: #3d4d6b;
+    --border-secondary: #4d5d7a;
+    --border-tertiary: #5d6d89;
+    --border-accent: #6d7d98;
 
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-tertiary: #94a3b8;
-    --text-quaternary: #64748b;
-    --text-accent: #e2e8f0;
-    --text-inverse: #0f172a;
-    --page-text: #f1f5f9;
+    /* Text colors - cool blue-purple tints */
+    --text-primary: #f2f7ff;
+    /* cool white */
+    --text-secondary: #d4e2f0;
+    /* light blue-purple */
+    --text-tertiary: #b8cee2;
+    /* medium blue-purple */
+    --text-quaternary: #9cb8d4;
+    --text-accent: #e6f0f7;
+    --text-inverse: #15202e;
+    --page-text: #f2f7ff;
 
-    --color-blue: #7dd3fc;
-    --color-blue-hover: #0284c7;
-    --color-green: #22d3ee;
-    --color-red: #f43f5e;
+    /* Interactive colors - winter blue-purple palette */
+    --color-blue: #83ACF2;
+    /* blue from VSCode */
+    --color-blue-hover: #6483B9;
+    --color-green: #ADD6C5;
+    /* cool green */
+    --color-red: #f87da5;
+    /* cool pink */
     --color-yellow: #facc15;
 
     /* Selection states */
-    --selection-primary-bg: #1e3a8a;
-    --selection-primary-border: #7dd3fc;
-    --selection-primary-text: #bfdbfe;
+    --selection-primary-bg: #2d3d5a;
+    --selection-primary-border: #83ACF2;
+    --selection-primary-text: #f2f7ff;
 
-    --selection-secondary-bg: #134e4a;
-    --selection-secondary-border: #22d3ee;
-    --selection-secondary-text: #a7f3d0;
+    --selection-secondary-bg: #2d5a47;
+    --selection-secondary-border: #ADD6C5;
+    --selection-secondary-text: #f0f9f5;
 
     /* Callout boxes */
-    --callout-info-bg: #1e3a8a;
-    --callout-info-border: #1d4ed8;
-    --callout-info-text: #bfdbfe;
+    --callout-info-bg: #2d3d5a;
+    --callout-info-border: #3d4d6b;
+    --callout-info-text: #f2f7ff;
 
-    --callout-success-bg: #134e4a;
-    --callout-success-border: #0f766e;
-    --callout-success-text: #a7f3d0;
+    --callout-success-bg: #2d5a47;
+    --callout-success-border: #47805d;
+    --callout-success-text: #f0f9f5;
 
-    --table-header-bg: #1e293b;
-    --table-row-even: #0f172a;
-    --table-row-odd: #1e293b;
-    --table-row-hover: #334155;
+    /* Table specific */
+    --table-header-bg: #2d3d5a;
+    --table-row-even: #1d2647;
+    --table-row-odd: #2d3d5a;
+    --table-row-hover: #3d4d6b;
 
-    --btn-primary-bg: #7dd3fc;
-    --btn-primary-hover: #0284c7;
-    --btn-primary-text: #0f172a;
+    /* Buttons */
+    --btn-primary-bg: #83ACF2;
+    --btn-primary-hover: #6483B9;
+    --btn-primary-text: #15202e;
 
     --btn-secondary-bg: var(--bg-secondary);
     --btn-secondary-hover: var(--bg-hover);
     --btn-secondary-text: var(--text-primary);
 
-    --btn-success-bg: #22d3ee;
-    --btn-success-hover: #06b6d4;
-    --btn-success-text: #0f172a;
+    --btn-success-bg: #ADD6C5;
+    --btn-success-hover: #c2ffdf;
+    --btn-success-text: #15202e;
 
-    --btn-danger-bg: #f43f5e;
-    --btn-danger-hover: #e11d48;
-    --btn-danger-text: #ffffff;
+    --btn-danger-bg: #f87da5;
+    --btn-danger-hover: #f569a0;
+    --btn-danger-text: #15202e;
 
     --btn-warning-bg: #facc15;
     --btn-warning-hover: #eab308;
-    --btn-warning-text: #0f172a;
+    --btn-warning-text: #15202e;
 }
 
 /* Utility classes using CSS custom properties */

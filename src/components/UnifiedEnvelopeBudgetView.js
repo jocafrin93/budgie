@@ -500,63 +500,38 @@ const UnifiedEnvelopeBudgetView = ({
             };
         }
     };
+    const budgetCategories = useMemo(() => {
+        return categories.filter(cat =>
+            cat.type !== 'income' && !cat.hiddenFromBudget
+        );
+    }, [categories]);
 
-    // Sort categories
+    // Then sort the filtered budget categories
     const sortedCategories = useMemo(() => {
         if (sortBy === 'manual') {
-            // Return categories in their stored order (allows manual reordering)
-            return [...categories];
+            // Return budget categories in their stored order (allows manual reordering)
+            return [...budgetCategories];
         }
 
-        return [...categories].sort((a, b) => {
-            const aData = getCategoryData(a);
-            const bData = getCategoryData(b);
-
-            let comparison = 0;
-
+        // Apply other sorting logic to budgetCategories
+        return [...budgetCategories].sort((a, b) => {
             switch (sortBy) {
                 case 'name':
-                    comparison = a.name.localeCompare(b.name);
-                    break;
-                case 'needed':
-                    comparison = (aData.monthlyNeed || 0) - (bData.monthlyNeed || 0);
-                    break;
-                case 'perPaycheck':
-                    comparison = (aData.perPaycheckNeed || 0) - (bData.perPaycheckNeed || 0);
-                    break;
+                    return a.name.localeCompare(b.name);
+                case 'allocated':
+                    return (b.allocated || 0) - (a.allocated || 0);
                 case 'available':
-                    comparison = (a.available || 0) - (b.available || 0);
-                    break;
-                case 'due':
-                    if (!aData.dueDateInfo && !bData.dueDateInfo) {
-                        comparison = 0;
-                    } else if (!aData.dueDateInfo) {
-                        comparison = 1; // No date sorts to end
-                    } else if (!bData.dueDateInfo) {
-                        comparison = -1; // No date sorts to end
-                    } else {
-                        const urgencyOrder = { 'current-period': 0, 'next-period': 1, 'future': 2 };
-                        const aUrgency = urgencyOrder[aData.dueDateInfo.urgency] || 3;
-                        const bUrgency = urgencyOrder[bData.dueDateInfo.urgency] || 3;
-
-                        if (aUrgency !== bUrgency) {
-                            comparison = aUrgency - bUrgency;
-                        } else {
-                            // Same urgency, sort by actual date
-                            const aDate = new Date(aData.dueDateInfo.date);
-                            const bDate = new Date(bData.dueDateInfo.date);
-                            comparison = aDate.getTime() - bDate.getTime();
-                        }
-                    }
-                    break;
+                    return (b.available || 0) - (a.available || 0);
+                case 'need':
+                    // You'd need to calculate the need for each category here
+                    const aNeed = getCategoryData(a).perPaycheckNeed || 0;
+                    const bNeed = getCategoryData(b).perPaycheckNeed || 0;
+                    return bNeed - aNeed;
                 default:
-                    comparison = 0;
+                    return 0;
             }
-
-            // Apply sort direction
-            return sortDirection === 'desc' ? -comparison : comparison;
         });
-    }, [categories, sortBy, sortDirection]);
+    }, [budgetCategories, sortBy]);
 
 
     // Handle adding new category
@@ -811,19 +786,19 @@ const UnifiedEnvelopeBudgetView = ({
                 <div className="table-header border-t border-theme-secondary p-4">
                     <div className="flex items-center justify-between">
                         <div className="text-sm text-theme-secondary">
-                            {categories.length} categories • {planningItems.filter(item => item.isActive).length} active items
+                            {sortedCategories.length} categories • {planningItems.filter(item => item.isActive).length} active items
                         </div>
                         <div className="flex items-center gap-6">
                             <div className="text-right">
                                 <div className="text-xs text-theme-tertiary">Total Allocated</div>
                                 <div className="font-medium text-theme-primary">
-                                    ${categories.reduce((total, cat) => total + (cat.allocated || 0), 0).toFixed(2)}
+                                    ${sortedCategories.reduce((total, cat) => total + (cat.allocated || 0), 0).toFixed(2)}
                                 </div>
                             </div>
                             <div className="text-right">
                                 <div className="text-xs text-theme-tertiary">Total Available</div>
                                 <div className="font-medium text-theme-primary">
-                                    ${categories.reduce((total, cat) => total + (cat.available || 0), 0).toFixed(2)}
+                                    ${sortedCategories.reduce((total, cat) => total + (cat.available || 0), 0).toFixed(2)}
                                 </div>
                             </div>
                         </div>

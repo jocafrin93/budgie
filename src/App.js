@@ -24,14 +24,14 @@ import ThemeSelector from './components/ThemeSelector';
 import TransactionsTab from './components/TransactionsTab';
 
 // Import hooks
-import { useBudgetCalculations } from './hooks/useBudgetCalculations';
-import { useDataModel } from './hooks/useDataModel';
-import { usePaycheckTimeline } from './hooks/usePaycheckTimeline';
-// Import NEW custom hooks
 import { useAccountManagement } from './hooks/useAccountManagement';
+import { useBudgetCalculations } from './hooks/useBudgetCalculations';
 import { useCategoryManagement } from './hooks/useCategoryManagement'; // Enhanced version
 import { useConfigSettings } from './hooks/useConfigSettings';
+import { useDataModel } from './hooks/useDataModel';
+import { useEnvelopeBudgeting } from './hooks/useEnvelopeBudgeting';
 import { usePaycheckManagement } from './hooks/usePaycheckManagement';
+import { usePaycheckTimeline } from './hooks/usePaycheckTimeline';
 import { useTransactionManagement } from './hooks/useTransactionManagement';
 import { useUIState } from './hooks/useUIState';
 
@@ -125,6 +125,14 @@ const App = () => {
         deleteTransaction,
         filterTransactions
     } = useTransactionManagement(accounts, setAccounts, categories, setCategories);
+
+    const envelopeBudgeting = useEnvelopeBudgeting({
+        categories,
+        setCategories,
+        planningItems,
+        transactions,
+        accounts
+    });
 
     const {
         activeTab,
@@ -977,8 +985,8 @@ const App = () => {
                             transactions={transactions}
                             accounts={accounts}
                             categories={categories}
-                            onAddTransaction={openAddTransactionModal}
-                            onEditTransaction={openEditTransactionModal}
+                            onAddTransaction={addTransaction}  // ← Change this
+                            onEditTransaction={updateTransaction}  // ← Change this  
                             onDeleteTransaction={(transaction) => openConfirmDeleteDialog(
                                 'transaction',
                                 transaction.id,
