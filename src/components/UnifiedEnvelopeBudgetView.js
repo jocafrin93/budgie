@@ -1,18 +1,20 @@
 // src/components/UnifiedEnvelopeBudgetView.js
 import {
     ArrowRight,
+    BanknoteArrowDown,
     Box,
     Calendar,
     ChevronDown,
     ChevronRight,
     GripVertical,
+    Lock,
     Plus,
-    Target,
     ToggleLeft,
     ToggleRight,
-    Trash2
+    Trash2,
+    Unlock
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { frequencyOptions } from '../utils/constants';
 import { CurrencyField } from './form';
@@ -45,6 +47,7 @@ const UnifiedEnvelopeBudgetView = ({
     onEditItem,
     onDeleteItem,
     onToggleItemActive,
+    onToggleCategoryActive,
     onMoveItem,
     onReorderItems,
     onReorderCategories,
@@ -75,7 +78,7 @@ const UnifiedEnvelopeBudgetView = ({
 
     // Column widths state
     const [columnWidths, setColumnWidths] = useState({
-        category: 250,
+        category: 280,
         needed: 120,
         perPaycheck: 120,
         available: 120,
@@ -83,6 +86,8 @@ const UnifiedEnvelopeBudgetView = ({
     });
 
     // Refs for column resizing
+    const startNeighborWidth = useRef(0);
+    const neighborColumn = useRef(null);
     const tableRef = useRef(null);
     const isResizing = useRef(false);
     const currentColumn = useRef(null);
@@ -99,44 +104,152 @@ const UnifiedEnvelopeBudgetView = ({
 
     // Handle sorting
     const handleSort = (column) => {
+        console.log('Sorting by:', column); // Debug log
+
+        if (column === 'manual') {
+            // Switch to manual sort mode
+            setSortBy('manual');
+            setSortDirection('asc');
+            return;
+        }
+
         if (sortBy === column) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+            // Toggle direction for same column
+            const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            setSortDirection(newDirection);
+            console.log('Toggled direction to:', newDirection);
         } else {
+            // New column, start with ascending
             setSortBy(column);
             setSortDirection('asc');
+            console.log('New sort column:', column, 'direction: asc');
         }
     };
-
     // Column resizing handlers
     const handleMouseDown = (e, columnKey) => {
+        e.stopPropagation();
+        e.preventDefault();
+
         isResizing.current = true;
         currentColumn.current = columnKey;
         startX.current = e.clientX;
         startWidth.current = columnWidths[columnKey];
 
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-        e.preventDefault();
+        // Set up neighbor tracking
+        const rightNeighbor = {
+            category: 'needed',
+            needed: 'perPaycheck',
+            perPaycheck: 'available',
+            available: 'dueDate',
+            dueDate: null
+        };
+
+        neighborColumn.current = rightNeighbor[columnKey];
+        startNeighborWidth.current = neighborColumn.current ? columnWidths[neighborColumn.current] : 0;
+
+        document.addEventListener('mousemove', handleMouseMoveSimple);
+        document.addEventListener('mouseup', handleMouseUpSimple);
+    };
+
+    const handleMouseMoveSimple = (e) => {
+        if (!isResizing.current || !currentColumn.current) return;
+
+        const diff = e.clientX - startX.current;
+        const minWidth = 80;
+
+        // Always calculate from original positions
+        const newCurrentWidth = Math.max(minWidth, startWidth.current + diff);
+
+        if (neighborColumn.current) {
+            const currentChange = newCurrentWidth - startWidth.current;
+            const newNeighborWidth = Math.max(minWidth, startNeighborWidth.current - currentChange);
+
+            // Recalculate current if neighbor hit minimum
+            const neighborChange = startNeighborWidth.current - newNeighborWidth;
+            const finalCurrentWidth = startWidth.current + neighborChange;
+
+            setColumnWidths(prev => ({
+                ...prev,
+                [currentColumn.current]: finalCurrentWidth,
+                [neighborColumn.current]: newNeighborWidth
+            }));
+        } else {
+            setColumnWidths(prev => ({
+                ...prev,
+                [currentColumn.current]: newCurrentWidth
+            }));
+        }
+    };
+
+    const handleMouseUpSimple = () => {
+        isResizing.current = false;
+        currentColumn.current = null;
+        neighborColumn.current = null;
+        startNeighborWidth.current = 0;
+        document.removeEventListener('mousemove', handleMouseMoveSimple);
+        document.removeEventListener('mouseup', handleMouseUpSimple);
     };
 
     const handleMouseMove = (e) => {
         if (!isResizing.current || !currentColumn.current) return;
 
         const diff = e.clientX - startX.current;
-        const newWidth = Math.max(80, startWidth.current + diff); // Minimum width of 80px
+
+        // Define minimum widths
+        const minWidths = {
+            category: 150,
+            needed: 80,
+            perPaycheck: 80,
+            available: 80,
+            dueDate: 100
+        };
+
+        const currentMinWidth = minWidths[currentColumn.current] || 80;
+        const newWidth = Math.max(currentMinWidth, startWidth.current + diff);
+
+        // EXCEL-STYLE: Find the next resizable column to the right
+        const columnOrder = ['category', 'needed', 'perPaycheck', 'available', 'dueDate'];
+        const currentIndex = columnOrder.indexOf(currentColumn.current);
+
+        if (currentIndex === -1 || currentIndex === columnOrder.length - 1) {
+            // Last column or not found - just resize normally
+            setColumnWidths(prev => ({
+                ...prev,
+                [currentColumn.current]: newWidth
+            }));
+            return;
+        }
+
+        // Find the next column to compensate
+        const nextColumnKey = columnOrder[currentIndex + 1];
+        const nextMinWidth = minWidths[nextColumnKey] || 80;
+
+        // Calculate how much the current column changed
+        const currentChange = newWidth - columnWidths[currentColumn.current];
+
+        // The next column shrinks by the same amount
+        const nextColumnNewWidth = Math.max(
+            nextMinWidth,
+            columnWidths[nextColumnKey] - currentChange
+        );
+
+        // If the next column hit its minimum, adjust the current column accordingly
+        const actualNextChange = columnWidths[nextColumnKey] - nextColumnNewWidth;
+        const adjustedCurrentWidth = columnWidths[currentColumn.current] + actualNextChange;
 
         setColumnWidths(prev => ({
             ...prev,
-            [currentColumn.current]: newWidth
+            [currentColumn.current]: adjustedCurrentWidth,
+            [nextColumnKey]: nextColumnNewWidth
         }));
     };
 
-    const handleMouseUp = () => {
-        isResizing.current = false;
-        currentColumn.current = null;
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-    };
+    // const handleMouseUp = () => {
+    //     isResizing.current = false;
+    //     currentColumn.current = null;
+    //     document.removeEventListener('mousemove', handleMouseMove);
+    //     document.removeEventListener('mouseup', handleMouseUp);
+    // };
 
     // Pay period urgency calculation
     const getPayPeriodUrgency = (dateString) => {
@@ -164,12 +277,16 @@ const UnifiedEnvelopeBudgetView = ({
 
     const getPayPeriodColor = (urgency) => {
         switch (urgency) {
-            case 'current-period': return 'text-theme-red bg-theme-secondary';
-            case 'next-period': return 'text-theme-yellow bg-theme-tertiary';
-            case 'future': return 'text-theme-secondary bg-theme-quaternary';
-            default: return 'text-theme-secondary bg-theme-quaternary';
+            case 'current-period':
+                return 'text-red-700 bg-red-100 border border-red-200 hover:bg-red-200';
+            case 'next-period':
+                return 'text-orange-700 bg-orange-100 border border-orange-200 hover:bg-orange-200';
+            case 'future':
+                return 'text-blue-700 bg-blue-100 border border-blue-200 hover:bg-blue-200';
+            default:
+                return 'text-gray-600 bg-gray-100 border border-gray-200 hover:bg-gray-200';
         }
-    };
+    }
 
     const formatDueDate = (dateString) => {
         if (!dateString) return null;
@@ -319,7 +436,8 @@ const UnifiedEnvelopeBudgetView = ({
                     items: [],
                     urgencyInfo: null,
                     needsConfiguration: true,
-                    dueDateInfo: null
+                    dueDateInfo: null,
+                    isActive: category.isActive ?? true
                 };
             }
 
@@ -329,16 +447,21 @@ const UnifiedEnvelopeBudgetView = ({
                 urgency: getPayPeriodUrgency(singleData.dueDate),
                 display: formatDueDate(singleData.dueDate)
             } : null;
+            const isActive = category.isActive ?? true; // Default to true if not set
 
+            // If category is inactive, set needs to 0
+            const perPaycheckNeed = isActive ? displayInfo.perPaycheckAmount : 0;
+            const monthlyNeed = isActive ? displayInfo.monthlyAmount : 0;
             return {
                 type: 'single',
-                perPaycheckNeed: displayInfo.perPaycheckAmount,
-                monthlyNeed: displayInfo.monthlyAmount,
+                perPaycheckNeed,
+                monthlyNeed,
                 items: categoryItems,
                 paychecksUntilDue: displayInfo.paychecksUntilDue,
                 singleData,
                 needsConfiguration: false,
-                dueDateInfo
+                dueDateInfo: isActive ? dueDateInfo : null,
+                isActive
             };
         } else {
             // Similar fix for multiple item categories
@@ -347,7 +470,7 @@ const UnifiedEnvelopeBudgetView = ({
             const totalPerPaycheckNeed = activeItems.reduce((total, item) => {
                 const displayInfo = getAmountDisplayInfo(item, payFrequency, payFrequencyOptions);
                 return total + Math.max(0, displayInfo.perPaycheckAmount - (item.allocated || 0));
-            }, 0);
+            }, 0);;
 
             const totalMonthlyNeed = activeItems.reduce((total, item) => {
                 const displayInfo = getAmountDisplayInfo(item, payFrequency, payFrequencyOptions);
@@ -368,6 +491,7 @@ const UnifiedEnvelopeBudgetView = ({
                 };
             }
 
+
             return {
                 type: 'multiple',
                 perPaycheckNeed: totalPerPaycheckNeed,
@@ -380,47 +504,62 @@ const UnifiedEnvelopeBudgetView = ({
     };
 
     // Sort categories
-    const sortedCategories = [...categories].sort((a, b) => {
-        const aData = getCategoryData(a);
-        const bData = getCategoryData(b);
-
-        let comparison = 0;
-
-        switch (sortBy) {
-            case 'name':
-                comparison = a.name.localeCompare(b.name);
-                break;
-            case 'needed':
-                comparison = aData.monthlyNeed - bData.monthlyNeed;
-                break;
-            case 'perPaycheck':
-                comparison = aData.perPaycheckNeed - bData.perPaycheckNeed;
-                break;
-            case 'available':
-                comparison = a.available - b.available;
-                break;
-            case 'due':
-                if (!aData.dueDateInfo && !bData.dueDateInfo) comparison = 0;
-                else if (!aData.dueDateInfo) comparison = 1;
-                else if (!bData.dueDateInfo) comparison = -1;
-                else {
-                    const urgencyOrder = { 'current-period': 0, 'next-period': 1, 'future': 2 };
-                    const aUrgency = urgencyOrder[aData.dueDateInfo.urgency] || 3;
-                    const bUrgency = urgencyOrder[bData.dueDateInfo.urgency] || 3;
-
-                    if (aUrgency !== bUrgency) {
-                        comparison = aUrgency - bUrgency;
-                    } else {
-                        comparison = new Date(aData.dueDateInfo.date) - new Date(bData.dueDateInfo.date);
-                    }
-                }
-                break;
-            default:
-                comparison = 0;
+    const sortedCategories = useMemo(() => {
+        if (sortBy === 'manual') {
+            // Return categories in their stored order (allows manual reordering)
+            return [...categories];
         }
 
-        return sortDirection === 'desc' ? -comparison : comparison;
-    });
+        return [...categories].sort((a, b) => {
+            const aData = getCategoryData(a);
+            const bData = getCategoryData(b);
+
+            let comparison = 0;
+
+            switch (sortBy) {
+                case 'name':
+                    comparison = a.name.localeCompare(b.name);
+                    break;
+                case 'needed':
+                    comparison = (aData.monthlyNeed || 0) - (bData.monthlyNeed || 0);
+                    break;
+                case 'perPaycheck':
+                    comparison = (aData.perPaycheckNeed || 0) - (bData.perPaycheckNeed || 0);
+                    break;
+                case 'available':
+                    comparison = (a.available || 0) - (b.available || 0);
+                    break;
+                case 'due':
+                    if (!aData.dueDateInfo && !bData.dueDateInfo) {
+                        comparison = 0;
+                    } else if (!aData.dueDateInfo) {
+                        comparison = 1; // No date sorts to end
+                    } else if (!bData.dueDateInfo) {
+                        comparison = -1; // No date sorts to end
+                    } else {
+                        const urgencyOrder = { 'current-period': 0, 'next-period': 1, 'future': 2 };
+                        const aUrgency = urgencyOrder[aData.dueDateInfo.urgency] || 3;
+                        const bUrgency = urgencyOrder[bData.dueDateInfo.urgency] || 3;
+
+                        if (aUrgency !== bUrgency) {
+                            comparison = aUrgency - bUrgency;
+                        } else {
+                            // Same urgency, sort by actual date
+                            const aDate = new Date(aData.dueDateInfo.date);
+                            const bDate = new Date(bData.dueDateInfo.date);
+                            comparison = aDate.getTime() - bDate.getTime();
+                        }
+                    }
+                    break;
+                default:
+                    comparison = 0;
+            }
+
+            // Apply sort direction
+            return sortDirection === 'desc' ? -comparison : comparison;
+        });
+    }, [categories, sortBy, sortDirection]);
+
 
     // Handle adding new category
     const handleAddCategory = () => {
@@ -444,80 +583,110 @@ const UnifiedEnvelopeBudgetView = ({
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-theme-primary">Budget</h2>
-                    <p className="text-theme-secondary">Unified planning and allocation interface</p>
+                    <h2 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
+                        <BanknoteArrowDown className="w-7 h-7" />
+                        Budget
+                    </h2>
+                    <p className="text-theme-secondary">
+                        Enhanced categories with both single and multiple expense types
+                    </p>
                 </div>
 
-                {recentPaycheck && (
-                    <button
-                        onClick={onShowPaydayWorkflow}
-                        className="btn-success px-4 py-2 rounded-lg"
-                    >
-                        Allocate Recent Paycheck
-                    </button>
-                )}
+
             </div>
 
             {/* Table Container */}
             <div className="bg-theme-primary rounded-lg shadow-sm border border-theme-primary overflow-hidden">
                 {/* Ready to Assign Header */}
                 <div className="table-header border-b border-theme-secondary p-4">
-                    <div className="flex items-center justify-between">
+                    <div className="justify-between">
+                        {/* Left side: Title
                         <div>
                             <h3 className="text-lg font-semibold text-theme-primary">Budget Categories</h3>
                             <p className="text-sm text-theme-secondary">YNAB-style envelope budgeting</p>
-                        </div>
+                        </div> */}
 
-                        <div className="flex items-center gap-4">
-                            <div className="text-right">
-                                <div className="text-sm text-theme-secondary">Ready to Assign</div>
+                        {/* Right side: Ready to Assign section */}
+                        <div className="flex flex-col items-center gap-3">
+                            {/* Ready to Assign label and amount - centered */}
+                            <div className="text-center">
+                                <div className="text-lg text-theme-secondary">Ready to Assign</div>
                                 <div className={`text-lg font-bold ${toBeAllocated > 0 ? 'text-theme-green' :
                                     toBeAllocated < 0 ? 'text-theme-red' : 'text-theme-secondary'
                                     }`}>
                                     ${toBeAllocated.toFixed(2)}
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setShowAssignModal(true)}
-                                className="btn-success flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-                            >
-                                <ArrowRight className="w-4 h-4" />
-                                Assign
-                            </button>
-                            <button
-                                onClick={onAddCategory}
-                                className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Add Category
-                            </button>
+
+                            {/* Buttons side-by-side beneath the amount */}
+                            <div className="flex items-center gap-2">
+                                {recentPaycheck && (
+                                    <button
+                                        onClick={onShowPaydayWorkflow}
+                                        className="btn-success px-4 py-2 rounded-lg text-sm"
+                                    >
+                                        Allocate Paycheck
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => setShowAssignModal(true)}
+                                    className="btn-success flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                                >
+                                    <ArrowRight className="w-4 h-4" />
+                                    Assign
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-
                 {/* Table */}
-                <div className="overflow-x-auto">
-                    <table ref={tableRef} className="w-full table-fixed">
+                <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
+                    <table ref={tableRef} className="w-full table-fixed" style={{ minWidth: '800px', maxWidth: '100%' }}>
                         <thead className="table-header border-b border-theme-secondary">
                             <tr>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider w-16 flex-shrink-0"></th>
+                                <th className="px-2 py-3 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider w-10 flex-shrink-0">
+                                    <button
+                                        onClick={() => handleSort('manual')}
+                                        className={`p-1.5 rounded-full transition-all duration-200 ${sortBy === 'manual'
+                                            ? 'bg-green-500 text-white hover:bg-green-600 shadow-sm'
+                                            : 'bg-red-100 text-red-600 hover:bg-red-200 border border-red-300'
+                                            }`}
+                                        title={sortBy === 'manual' ? 'Manual reordering ENABLED' : 'Manual reordering DISABLED - click to enable'}
+                                    >
+                                        {sortBy === 'manual' ? (
+                                            <Unlock className="w-3.5 h-3.5" />
+                                        ) : (
+                                            <Lock className="w-3.5 h-3.5" />
+                                        )}
+                                    </button>
+                                </th>
                                 <th
                                     className="px-4 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
                                     style={{ width: columnWidths.category }}
                                     onClick={() => handleSort('name')}
                                 >
-                                    <div className="flex items-center gap-1">
-                                        Category
-                                        {sortBy === 'name' && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="flex items-center gap-2">Category
+                                            <button
+                                                onClick={onAddCategory}
+                                            >
+                                                <Plus className="w-5 h-5 text-theme-tertiary" />
+                                            </button>
+                                        </span>                                         {sortBy === 'name' && (
                                             <div className={`transform transition-transform ${sortDirection === 'desc' ? 'rotate-180' : ''}`}>
                                                 ▲
                                             </div>
                                         )}
+
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
-                                        onMouseDown={(e) => handleMouseDown(e, 'category')}
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation(); // This is the key fix!
+                                            handleMouseDown(e, 'category');
+                                        }}
                                     />
+
                                 </th>
                                 <th
                                     className="px-4 py-3 text-right text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
@@ -533,8 +702,11 @@ const UnifiedEnvelopeBudgetView = ({
                                         )}
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
-                                        onMouseDown={(e) => handleMouseDown(e, 'needed')}
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation(); // This is the key fix!
+                                            handleMouseDown(e, 'needed');
+                                        }}
                                     />
                                 </th>
                                 <th
@@ -551,8 +723,11 @@ const UnifiedEnvelopeBudgetView = ({
                                         )}
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
-                                        onMouseDown={(e) => handleMouseDown(e, 'perPaycheck')}
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation(); // This is the key fix!
+                                            handleMouseDown(e, 'perPaycheck');
+                                        }}
                                     />
                                 </th>
                                 <th
@@ -569,8 +744,11 @@ const UnifiedEnvelopeBudgetView = ({
                                         )}
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
-                                        onMouseDown={(e) => handleMouseDown(e, 'available')}
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation(); // This is the key fix!
+                                            handleMouseDown(e, 'available');
+                                        }}
                                     />
                                 </th>
                                 <th
@@ -588,11 +766,13 @@ const UnifiedEnvelopeBudgetView = ({
                                         )}
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-theme-blue"
-                                        onMouseDown={(e) => handleMouseDown(e, 'dueDate')}
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation(); // This is the key fix!
+                                            handleMouseDown(e, 'dueDate');
+                                        }}
                                     />
                                 </th>
-                                <th className="px-4 py-3 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider w-24">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-theme-secondary">
@@ -602,6 +782,7 @@ const UnifiedEnvelopeBudgetView = ({
                                     category={category}
                                     categoryData={getCategoryData(category)}
                                     index={index}
+                                    sortBy={sortBy}
                                     isExpanded={expandedCategories[category.id]}
                                     onToggleExpand={() => toggleCategoryExpanded(category.id)}
                                     onEditCategory={onEditCategory}
@@ -609,6 +790,7 @@ const UnifiedEnvelopeBudgetView = ({
                                     onAddItem={onAddItem}
                                     onEditItem={onEditItem}
                                     onDeleteItem={onDeleteItem}
+                                    onToggleCategoryActive={onToggleCategoryActive}
                                     onToggleItemActive={onToggleItemActive}
                                     onMoveItem={onMoveItem}
                                     onReorderCategories={onReorderCategories}
@@ -676,6 +858,7 @@ const CategoryTableRow = ({
     category,
     categoryData,
     index,
+    sortBy,
     isExpanded,
     onToggleExpand,
     onEditCategory,
@@ -684,56 +867,66 @@ const CategoryTableRow = ({
     onEditItem,
     onDeleteItem,
     onToggleItemActive,
+    onToggleCategoryActive,
     onMoveItem,
     onReorderCategories,
     onReorderItems,
-    fundCategory,
+    // fundCategory,
     transferFunds,
     getAmountDisplayInfo,
     getPayPeriodColor,
     formatDueDate,
     getPayPeriodUrgency,
     payFrequency,
-    categories
+    categories,
+
 }) => {
     const isOverspent = (category.available || 0) < 0;
-
-    // State for money movement modal
+    const isManualSortMode = sortBy === 'manual';
     const [showMoveModal, setShowMoveModal] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
 
     // Drag functionality for category reordering
     const [{ isDraggingCategory }, dragCategory] = useDrag({
         type: DND_TYPES.CATEGORY,
-        item: { id: category.id, index },
+        item: {
+            id: category.id,
+            index,
+            type: 'category'
+        },
+        canDrag: isManualSortMode, // Only allow drag in manual mode
         collect: (monitor) => ({
             isDraggingCategory: monitor.isDragging(),
         }),
     });
 
-    // Drop functionality for category reordering and item moves
     const [{ isOver, canDrop }, dropCategory] = useDrop({
         accept: [DND_TYPES.CATEGORY, DND_TYPES.PLANNING_ITEM],
         canDrop: (draggedItem) => {
-            if (draggedItem.categoryId !== undefined) {
-                // This is a planning item
+            if (!isManualSortMode && draggedItem.type === 'category') {
+                return false; // Disable category drops when not in manual mode
+            }
+
+            if (draggedItem.categoryId !== undefined && draggedItem.type !== 'category') {
+                // Planning items can always be moved between categories
                 if (draggedItem.categoryId !== category.id && categoryData.type === 'single') {
                     return false;
                 }
                 return true;
             } else {
-                // This is a category
-                return draggedItem.index !== index;
+                // Category reordering only in manual mode
+                return isManualSortMode && draggedItem.id !== category.id;
             }
         },
         drop: (draggedItem) => {
-            if (draggedItem.categoryId !== undefined) {
-                // Planning item cross-category move
+            if (draggedItem.categoryId !== undefined && draggedItem.type !== 'category') {
+                // Planning item moves
                 if (draggedItem.categoryId !== category.id && onMoveItem) {
                     onMoveItem(draggedItem.id, category.id);
                 }
-            } else {
-                // Category reordering
-                if (draggedItem.index !== index && onReorderCategories) {
+            } else if (isManualSortMode) {
+                // Category reordering only in manual mode
+                if (draggedItem.id !== category.id && onReorderCategories) {
                     onReorderCategories(draggedItem.index, index);
                 }
             }
@@ -749,113 +942,157 @@ const CategoryTableRow = ({
             {/* Main Category Row */}
             <tr
                 ref={dropCategory}
-                className={`hover:table-row-hover transition-colors ${isOverspent ? 'bg-theme-secondary border-l-4 border-theme-red' : 'table-row-even'
-                    } ${isDraggingCategory ? 'opacity-50' : ''} ${isOver && canDrop ? 'bg-theme-tertiary border-l-4 border-theme-blue' : ''
-                    }`}
+                className={`hover:table-row-hover transition-colors ${isOverspent ? 'bg-theme-secondary border-l-4 border-theme-red' :
+                    (categoryData.type === 'single' && !categoryData.isActive) ? 'bg-theme-tertiary border-l-4 border-theme-tertiary opacity-60' :
+                        'table-row-even'
+                    } ${isDraggingCategory ? 'opacity-50' : ''} ${isOver && canDrop ? 'bg-theme-tertiary border-l-4 border-theme-blue' : ''}`}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
             >
                 {/* Expand/Collapse + Drag Handle */}
-                <td className="px-4 py-2 min-w-0 w-16">
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                <td className="px-1 py-2 min-w-0 w-18">
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                        {/* Drag Handle */}
                         <div
                             ref={dragCategory}
-                            className="cursor-grab active:cursor-grabbing text-theme-secondary hover:text-theme-secondary p-1 flex-shrink-0"
-                            title="Drag to reorder categories"
+                            className={`p-0.5 flex-shrink-0 transition-colors ${isManualSortMode
+                                ? 'cursor-grab active:cursor-grabbing text-theme-tertiary hover:text-theme-secondary hover:bg-theme-tertiary rounded'
+                                : 'cursor-not-allowed text-theme-disabled opacity-50'
+                                }`}
+                            title={
+                                isManualSortMode
+                                    ? "Drag to reorder categories"
+                                    : "Click the unlock button in header to enable reordering"  // Updated tooltip
+                            }
                         >
                             <GripVertical className="w-3 h-3" />
                         </div>
+
+                        {/* Expand/Collapse Button */}
                         <button
                             onClick={onToggleExpand}
-                            className="text-theme-secondary hover:text-theme-secondary p-1 flex-shrink-0"
+                            className="text-theme-tertiary hover:text-theme-secondary p-0.5 flex-shrink-0 hover:bg-theme-tertiary rounded transition-colors"
+                            title="Expand/collapse category"
                         >
                             {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                         </button>
                     </div>
                 </td>
 
+
                 {/* Category Name */}
-                <td className="px-4 py-2">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${category.color || 'bg-theme-tertiary'} border border-theme-primary shadow-sm`}></div>
-                        {categoryData.type === 'single' ? (
-                            <Target className="w-4 h-4 text-theme-blue" />
-                        ) : (
-                            <Box className="w-4 h-4 text-theme-blue" />
-                        )}
-                        <button
-                            onClick={() => onEditCategory(category)}
-                            className="font-medium text-theme-primary hover:text-theme-blue transition-colors text-left"
-                        >
-                            {category.name}
-                        </button>
+                <td className="px-4 py-2" style={{ minWidth: '280px' }}>
+                    <div className="flex items-center justify-between"> {/* CHANGED: Added justify-between */}
+                        {/* Left side: Color dot + name + icon */}
+                        <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${category.color || 'bg-theme-tertiary'} border border-theme-primary shadow-sm`}></div>
+
+                            <button
+                                onClick={() => onEditCategory(category)}
+                                className={`font-medium hover:text-theme-blue transition-colors text-left ${categoryData.type === 'single' && !categoryData.isActive
+                                    ? 'text-theme-tertiary'
+                                    : 'text-theme-primary'
+                                    }`}
+                            >
+                                {category.name}
+                            </button>
+                            {categoryData.type === 'multiple' && (
+                                <Box className="w-3 h-3 text-theme-tertiary ml-1" />
+                            )}
+                        </div>
+
+                        {/* INLINE ACTIONS - appear on hover */}
+                        <div className={`flex items-center gap-1 transition-all duration-200 ${isHovered
+                            ? 'opacity-100 scale-100'
+                            : 'opacity-0 scale-95 pointer-events-none'
+                            }`}>
+                            {categoryData.type === 'single' && (
+                                <button
+                                    onClick={() => onToggleCategoryActive(category.id, !(category.isActive ?? true))}
+                                    className={`p-1 rounded transition-colors ${(category.isActive ?? true)
+                                        ? 'text-theme-green hover:text-theme-green hover:bg-theme-secondary'
+                                        : 'text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary'
+                                        }`}
+                                    title={(category.isActive ?? true) ? 'Mark as planning only' : 'Mark as active'}
+                                >
+                                    {(category.isActive ?? true) ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+                                </button>
+                            )}
+                            {categoryData.type === 'multiple' && (
+                                <button
+                                    onClick={() => {
+                                        console.log('Adding item to category:', category.name, 'ID:', category.id);
+                                        onAddItem({ preselectedCategory: category });
+                                    }}
+                                    className="p-1 text-theme-secondary hover:text-theme-green hover:bg-theme-secondary rounded transition-colors"
+                                    title="Add item"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                            <button
+                                onClick={() => onDeleteCategory(category.id)}
+                                className="p-1 text-theme-secondary hover:text-theme-red hover:bg-theme-secondary rounded transition-colors"
+                                title="Delete category"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                     </div>
                 </td>
 
                 {/* Needed per Month */}
                 <td className="px-4 py-2 text-right">
-                    <div className="font-medium text-theme-primary">
+                    <div className={`font-medium ${categoryData.type === 'single' && !categoryData.isActive
+                        ? 'text-theme-tertiary'
+                        : 'text-theme-primary'
+                        }`}>
                         ${categoryData.monthlyNeed.toFixed(2)}
                     </div>
                 </td>
 
                 {/* Per Paycheck */}
                 <td className="px-4 py-2 text-right">
-                    <div className="font-medium text-theme-secondary">
+                    <div className={`font-medium ${categoryData.type === 'single' && !categoryData.isActive
+                        ? 'text-theme-tertiary'
+                        : 'text-theme-secondary'
+                        }`}>
                         ${categoryData.perPaycheckNeed.toFixed(2)}
                     </div>
                 </td>
 
                 {/* Available */}
                 <td className="px-4 py-2 text-right">
-                    <button
+                    <span
                         onClick={() => setShowMoveModal(true)}
-                        className={`font-bold hover:opacity-80 transition-opacity text-right ${isOverspent ? 'text-theme-red' : 'text-theme-green'
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium cursor-pointer transition-all hover:opacity-80 ${isOverspent
+                            ? 'text-theme-red bg-theme-secondary border border-theme-red'
+                            : 'text-theme-green bg-theme-secondary border border-theme-green'
                             }`}
                         title="Click to move money"
                     >
                         ${(category.available || 0).toFixed(2)}
-                    </button>
+                    </span>
                 </td>
 
                 {/* Due Date */}
                 <td className="px-4 py-2 text-center">
                     {categoryData.dueDateInfo ? (
-                        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getPayPeriodColor(categoryData.dueDateInfo.urgency)}`}>
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium cursor-default transition-all ${getPayPeriodColor(categoryData.dueDateInfo.urgency)}`}>
                             {categoryData.dueDateInfo.display}
                             {categoryData.dueDateInfo.additionalCount > 0 && (
                                 <span className="text-xs opacity-75">
                                     +{categoryData.dueDateInfo.additionalCount}
                                 </span>
                             )}
-                        </div>
+                        </span>
                     ) : (
                         <span className="text-theme-tertiary text-xs">—</span>
                     )}
                 </td>
 
-                {/* Actions */}
-                <td className="px-4 py-2">
-                    <div className="flex items-center justify-center gap-1">
-                        {categoryData.type === 'multiple' && (
-                            <button
-                                onClick={() => {
-                                    console.log('Adding item to category:', category.name, 'ID:', category.id);
-                                    onAddItem({ preselectedCategory: category });
-                                }}
-                                className="p-1 text-theme-tertiary hover:text-theme-green transition-colors"
-                                title="Add item"
-                            >
-                                <Plus className="w-4 h-4" />
-                            </button>
-                        )}
-                        <button
-                            onClick={() => onDeleteCategory(category.id)}
-                            className="p-1 text-theme-tertiary hover:text-theme-red transition-colors"
-                            title="Delete category"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </div>
-                </td>
+
+
             </tr>
 
             {/* Expanded Content */}
@@ -865,7 +1102,7 @@ const CategoryTableRow = ({
                         /* Single Category - Show additional info */
                         <tr className="bg-theme-secondary">
                             <td className="px-4 py-2 min-w-0 w-16"></td>
-                            <td colSpan="6" className="px-4 py-2">
+                            <td colSpan="5" className="px-4 py-2"> {/* CHANGED: was colSpan="6" */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
                                         <div className="text-sm text-theme-secondary">
@@ -899,7 +1136,7 @@ const CategoryTableRow = ({
                             {/* Add Item Row */}
                             <tr className="bg-theme-tertiary">
                                 <td className="px-4 py-1 min-w-0 w-16"></td>
-                                <td colSpan="6" className="px-4 py-1">
+                                <td colSpan="5" className="px-4 py-1"> {/* CHANGED: was colSpan="6" */}
                                     <button
                                         onClick={() => {
                                             console.log('Adding item to category:', category.name, 'ID:', category.id);
@@ -984,24 +1221,29 @@ const ItemTableRow = ({
         drop(node);
     };
 
+    const [isHovered, setIsHovered] = useState(false);
     const displayInfo = getAmountDisplayInfo(item, payFrequency);
     const urgency = getPayPeriodUrgency(item.dueDate);
 
     return (
         <tr
             ref={combinedRef}
-            className={`${item.isActive ? 'bg-theme-secondary' : 'bg-theme-tertiary'} border-l-4 ${item.isActive ? 'border-theme-green' : 'border-theme-tertiary'
+            className={`${item.isActive ? 'bg-theme-secondary' : 'bg-theme-active'} border-l-4 ${item.isActive ? 'border-theme-green' : 'border-theme-tertiary'
                 } ${isDragging ? 'opacity-50' : ''} ${isOver && canDrop ? 'bg-theme-quaternary border-theme-blue' : ''
                 }`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             <td className="px-4 py-2 min-w-0 w-16">
                 <div className="flex items-center justify-center flex-shrink-0">
                     <GripVertical className="w-3 h-3 text-theme-tertiary cursor-grab" />
                 </div>
             </td>
-            <td className="px-4 py-2">
-                <div className="flex items-center gap-3 ml-8">
-                    <div>
+
+            <td className="px-4 py-2" style={{ minWidth: '280px' }}>
+                <div className="flex items-center justify-between ml-8"> {/* CHANGED: Added justify-between, kept ml-8 for indentation */}
+                    {/* Left side: Item info */}
+                    <div className="flex-1 min-w-0"> {/* CHANGED: Added flex-1 min-w-0 for proper text truncation */}
                         <button
                             onClick={() => onEditItem(item)}
                             className="font-medium text-theme-primary text-sm hover:text-theme-blue transition-colors text-left"
@@ -1012,13 +1254,39 @@ const ItemTableRow = ({
                             ${item.amount} {item.frequency}
                         </div>
                     </div>
+
+                    {/* Right side: Actions aligned to right edge */}
+                    <div className={`flex items-center gap-1 transition-all duration-200 ${isHovered
+                        ? 'opacity-100 scale-100'
+                        : 'opacity-0 scale-95 pointer-events-none'
+                        }`}>
+                        <button
+                            onClick={() => onToggleItemActive(item.id, !item.isActive)}
+                            className={`p-1 rounded transition-colors ${item.isActive
+                                ? 'text-theme-green hover:text-theme-green hover:bg-theme-primary'
+                                : 'text-theme-secondary hover:text-theme-primary hover:bg-theme-primary'
+                                }`}
+                            title={item.isActive ? 'Mark as planning only' : 'Mark as active'}
+                        >
+                            {item.isActive ? <ToggleRight className="w-3.5 h-3.5" /> : <ToggleLeft className="w-3.5 h-3.5" />}
+                        </button>
+                        <button
+                            onClick={() => onDeleteItem(item)}
+                            className="p-1 text-theme-secondary hover:text-theme-red hover:bg-theme-primary rounded transition-colors"
+                            title="Delete item"
+                        >
+                            <Trash2 className="w-3 h-3" />
+                        </button>
+                    </div>
                 </div>
             </td>
+
             <td className="px-4 py-2 text-right">
                 <div className="text-sm text-theme-secondary">
                     ${(displayInfo.monthlyAmount || 0).toFixed(2)}
                 </div>
             </td>
+
             <td className="px-4 py-2 text-right">
                 <div className="text-sm text-theme-secondary">
                     ${(displayInfo.perPaycheckAmount || 0).toFixed(2)}
@@ -1029,11 +1297,13 @@ const ItemTableRow = ({
                     )}
                 </div>
             </td>
+
             <td className="px-4 py-2 text-right">
                 <div className="text-sm font-medium text-theme-primary">
                     ${(item.allocated || 0).toFixed(2)}
                 </div>
             </td>
+
             <td className="px-4 py-2 text-center">
                 {item.dueDate ? (
                     <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs ${getPayPeriodColor(urgency)}`}>
@@ -1043,27 +1313,8 @@ const ItemTableRow = ({
                     <span className="text-theme-tertiary text-xs">—</span>
                 )}
             </td>
-            <td className="px-4 py-2">
-                <div className="flex items-center justify-center gap-1">
-                    <button
-                        onClick={() => onToggleItemActive(item.id, !item.isActive)}
-                        className={`p-1 rounded transition-colors ${item.isActive
-                            ? 'text-theme-green hover:text-theme-green'
-                            : 'text-theme-tertiary hover:text-theme-secondary'
-                            }`}
-                        title={item.isActive ? 'Mark as planning only' : 'Mark as active'}
-                    >
-                        {item.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
-                    </button>
-                    <button
-                        onClick={() => onDeleteItem(item)}
-                        className="p-1 text-theme-tertiary hover:text-theme-red transition-colors"
-                        title="Delete item"
-                    >
-                        <Trash2 className="w-3 h-3" />
-                    </button>
-                </div>
-            </td>
+
+            {/* REMOVED: The duplicate Actions column */}
         </tr>
     );
 };

@@ -1,5 +1,5 @@
 // src/App.js - COMPLETE IMPLEMENTATION
-import { AlertTriangle, Calculator, Calendar, DollarSign, Settings, Target } from 'lucide-react';
+import { AlertTriangle, Calculator, Calendar, DollarSign, Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -479,6 +479,37 @@ const App = () => {
             console.log('Category allocations synced after toggle active');
         }, 200);
     };
+
+    const handleToggleCategoryActiveWithSync = (categoryId, isActive) => {
+        console.log('Toggling category active with manual sync:', categoryId, isActive);
+
+        try {
+            // Find the existing category
+            const existingCategory = categories.find(cat => cat.id === categoryId);
+
+            if (!existingCategory) {
+                throw new Error(`Category with id ${categoryId} not found`);
+            }
+
+            // Update the category with new isActive status
+            updateCategory(categoryId, {
+                ...existingCategory,
+                isActive
+            });
+
+            console.log(`✅ Category ${categoryId} active status set to: ${isActive}`);
+
+            // Manually trigger sync after state update (same pattern as items)
+            setTimeout(() => {
+                safeCalculateCorrectCategoryAllocations(planningItems, activeBudgetAllocations);
+                console.log('Category allocations synced after category toggle active');
+            }, 200);
+
+        } catch (error) {
+            console.error('❌ Error toggling category active status:', error);
+            alert(`Error toggling category: ${error.message}`);
+        }
+    };
     // Enhanced item handlers with proper sync
     const handleSaveItem = (itemData, addAnother = false) => {
         console.log('DEBUG - App.js handleSaveItem called with data:', itemData);
@@ -547,6 +578,11 @@ const App = () => {
     const handleToggleItemActive = (itemId, isActive) => {
         // Use wrapper function for proper sync
         handleToggleItemActiveWithSync(itemId, isActive);
+    };
+
+    const handleToggleCategoryActive = (categoryId, isActive) => {
+        // Use wrapper function for proper sync (same pattern as items)
+        handleToggleCategoryActiveWithSync(categoryId, isActive);
     };
 
     const handleMoveItem = (itemId, newCategoryId) => {
@@ -839,24 +875,8 @@ const App = () => {
                     {activeTab === 'budget' && (
                         <div>
                             {/* Mode Header - SIMPLIFIED for unified only */}
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-theme-primary flex items-center gap-2">
-                                        <Target className="w-6 h-6" />
-                                        Budget
-                                        <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded-full">Enhanced</span>
-                                    </h2>
-                                    <p className="text-theme-secondary">
-                                        Enhanced categories with both single and multiple expense types
-                                    </p>
-                                </div>
-                                {/* <button
-                                    onClick={openAddCategoryModal}
-                                    className="btn-primary px-4 py-2 rounded-lg flex items-center space-x-2"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    <span>Add Category</span>
-                                </button> */}
+                            <div className="flex justify-between items-center mb-3">
+
                             </div>
 
                             {/* SIMPLIFIED: Always show Unified View only */}
@@ -883,6 +903,7 @@ const App = () => {
                                     `Delete "${item.name}"?`
                                 )}
                                 onToggleItemActive={handleToggleItemActive}
+                                onToggleCategoryActive={handleToggleCategoryActive}
                                 onMoveItem={handleMoveItem}
                                 onReorderCategories={handleReorderCategories}
                                 onReorderItems={(categoryId, fromIndex, toIndex) => {
