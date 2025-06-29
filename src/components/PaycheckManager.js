@@ -5,10 +5,11 @@ import { usePaycheckManagement } from '../hooks/usePaycheckManagement';
 
 /**
  * Component for managing multiple paychecks
+ * Updated to use the new PaydayWorkflow approach
  */
 const PaycheckManager = ({
   accounts = [],
-  onPaycheckReceived // Callback when a paycheck is received to trigger allocation workflow
+  onStartPaydayWorkflow // Callback to start the payday workflow
 }) => {
   const {
     paychecks,
@@ -16,7 +17,6 @@ const PaycheckManager = ({
     updatePaycheck,
     deletePaycheck,
     togglePaycheckActive,
-    recordPaycheckReceived,
     getFrequencyOptions,
     generatePaycheckDates
   } = usePaycheckManagement(accounts);
@@ -41,12 +41,6 @@ const PaycheckManager = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showDates, setShowDates] = useState(null);
   const [nextDates, setNextDates] = useState([]);
-  const [showReceiveForm, setShowReceiveForm] = useState(null);
-  const [receiveFormValues, setReceiveFormValues] = useState({
-    date: format(new Date(), 'yyyy-MM-dd'),
-    amount: 0,
-    notes: ''
-  });
 
   // Frequency options
   const frequencyOptions = getFrequencyOptions();
@@ -103,59 +97,58 @@ const PaycheckManager = ({
     });
   };
 
-  // Handle form changes
-  const handleFormChange = (field, value) => {
-    setFormValues(prev => {
-      const updated = { ...prev, [field]: value };
-
-      // Update account distribution amounts when baseAmount changes
-      if (field === 'baseAmount') {
-        const numValue = parseFloat(value) || 0;
-
-        // For single account distribution, set to full amount
-        if (updated.accountDistribution.length === 1) {
-          updated.accountDistribution = [{
-            ...updated.accountDistribution[0],
-            amount: numValue,
-            distributionValue: numValue
-          }];
-        }
-        // For multiple accounts, distribute proportionally
-        else if (updated.accountDistribution.length > 1) {
-          const totalAmount = prev.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0) || 1;
-          updated.accountDistribution = prev.accountDistribution.map(dist => {
-            const proportion = totalAmount > 0 ? (dist.amount || 0) / totalAmount : 1 / prev.accountDistribution.length;
-            return {
-              ...dist,
-              amount: Math.round((numValue * proportion) * 100) / 100,
-              distributionValue: Math.round((numValue * proportion) * 100) / 100
-            };
-          });
-        }
-      }
-
-      return updated;
-    });
-  };
-
   // Handle distribution changes
   const handleDistributionChange = (index, field, value) => {
     setFormValues(prev => {
-      const updatedDistribution = [...prev.accountDistribution];
-      updatedDistribution[index] = { ...updatedDistribution[index], [field]: value };
-
-      // If amount is updated, update the distribution value too
-      if (field === 'amount') {
-        updatedDistribution[index].distributionValue = value;
+      const newDistribution = [...prev.accountDistribution];
+      if (field === 'accountId') {
+        newDistribution[index] = { ...newDistribution[index], accountId: parseInt(value) };
+      } else if (field === 'amount') {
+        const validatedAmount = validateAmount(parseFloat(value) || 0);
+        newDistribution[index] = {
+          ...newDistribution[index],
+          amount: validatedAmount,
+          distributionValue: validatedAmount
+        };
       }
+      return { ...prev, accountDistribution: newDistribution };
+    });
+  };
 
-      // Recalculate baseAmount based on all distributions
-      const newBaseAmount = updatedDistribution.reduce((sum, dist) => sum + (parseFloat(dist.amount) || 0), 0);
+  // Recalculate distribution amounts when base amount changes
+  const handleBaseAmountChange = (newAmount) => {
+    const validatedAmount = validateAmount(newAmount);
+
+    setFormValues(prev => {
+      // Update distribution amounts proportionally
+      const totalCurrentDistribution = prev.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0);
+
+      let updatedDistribution;
+      if (totalCurrentDistribution > 0) {
+        // Proportional update
+        updatedDistribution = prev.accountDistribution.map(dist => {
+          const proportion = dist.amount / totalCurrentDistribution;
+          const newAmount = proportion * validatedAmount;
+          return {
+            ...dist,
+            amount: newAmount,
+            distributionValue: newAmount
+          };
+        });
+      } else {
+        // Equal distribution if no current distribution
+        const amountPerAccount = validatedAmount / Math.max(1, prev.accountDistribution.length);
+        updatedDistribution = prev.accountDistribution.map(dist => ({
+          ...dist,
+          amount: amountPerAccount,
+          distributionValue: amountPerAccount
+        }));
+      }
 
       return {
         ...prev,
-        accountDistribution: updatedDistribution,
-        baseAmount: newBaseAmount
+        baseAmount: validatedAmount,
+        accountDistribution: updatedDistribution
       };
     });
   };
@@ -296,10 +289,22 @@ const PaycheckManager = ({
   return (
     <div className="paycheck-manager">
       <div className="mb-4">
-        <h3 className="text-lg font-bold mb-2">Paychecks</h3>
-        <p className="text-sm text-theme-secondary mb-4">
-          Configure your paychecks to plan your budget. Add multiple paychecks if you have more than one income source.
-        </p>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h3 className="text-lg font-bold mb-2 text-theme-text">Paychecks</h3>
+            <p className="text-sm text-theme-secondary">
+              Configure your paychecks to plan your budget. Add multiple paychecks if you have more than one income source.
+            </p>
+          </div>
+
+          {/* Start Payday Workflow Button */}
+          <button
+            onClick={() => onStartPaydayWorkflow && onStartPaydayWorkflow()}
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center gap-2"
+          >
+            💰 Start Payday Workflow
+          </button>
+        </div>
 
         {/* Paycheck List */}
         {paychecks.length === 0 ? (
@@ -311,11 +316,12 @@ const PaycheckManager = ({
             {paychecks.map(paycheck => (
               <div
                 key={paycheck.id}
-                className={`p-4 border rounded-lg ${paycheck.isActive ? 'bg-theme-primary bg-opacity-5 border-theme-primary' : 'bg-gray-100 border-gray-300'}`}
+                className={`p-4 border rounded-lg ${paycheck.isActive ?
+                  'bg-theme-primary bg-opacity-5 border-theme-primary' : 'bg-gray-100 border-gray-300'}`}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="font-bold">{paycheck.name}</h4>
+                    <h4 className="font-bold text-theme-text">{paycheck.name}</h4>
                     <div className="text-sm mt-1">
                       <span className="text-theme-secondary">
                         {frequencyOptions.find(f => f.value === paycheck.frequency)?.label || 'Custom'} •
@@ -327,8 +333,8 @@ const PaycheckManager = ({
                     <div className="mt-2 space-y-1">
                       {paycheck.accountDistribution?.map((dist, idx) => (
                         <div key={idx} className="text-xs flex justify-between">
-                          <span>{getAccountName(dist.accountId)}</span>
-                          <span className="font-medium">{formatCurrency(dist.amount)}</span>
+                          <span className="text-theme-secondary">{getAccountName(dist.accountId)}</span>
+                          <span className="font-medium text-theme-text">{formatCurrency(dist.amount)}</span>
                         </div>
                       ))}
                     </div>
@@ -336,10 +342,10 @@ const PaycheckManager = ({
                     {/* Next Paycheck Dates */}
                     {showDates === paycheck.id && (
                       <div className="mt-3 p-2 bg-theme-primary bg-opacity-5 rounded text-xs">
-                        <div className="font-medium mb-1">Next Paycheck Dates:</div>
+                        <div className="font-medium mb-1 text-theme-text">Next Paycheck Dates:</div>
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                           {nextDates.map((date, idx) => (
-                            <div key={idx}>
+                            <div key={idx} className="text-theme-secondary">
                               {format(date, 'MMM d, yyyy')}
                             </div>
                           ))}
@@ -349,20 +355,6 @@ const PaycheckManager = ({
                   </div>
 
                   <div className="flex space-x-2">
-                    <button
-                      onClick={() => {
-                        setShowReceiveForm(paycheck.id);
-                        setReceiveFormValues({
-                          date: format(new Date(), 'yyyy-MM-dd'),
-                          amount: paycheck.baseAmount,
-                          notes: ''
-                        });
-                      }}
-                      className="p-1 text-xs rounded hover:bg-green-500 hover:bg-opacity-10"
-                      title="Record received paycheck"
-                    >
-                      💰
-                    </button>
                     <button
                       onClick={() => handleShowDates(paycheck.id)}
                       className="p-1 text-xs rounded hover:bg-theme-primary hover:bg-opacity-10"
@@ -394,120 +386,22 @@ const PaycheckManager = ({
                   </div>
                 </div>
 
-                {/* Record Received Paycheck Form */}
-                {showReceiveForm === paycheck.id && (
-                  <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-                    <h5 className="font-medium mb-2">Record Received Paycheck</h5>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-sm mb-1">Date Received</label>
-                        <input
-                          type="date"
-                          value={receiveFormValues.date}
-                          onChange={(e) => setReceiveFormValues(prev => ({
-                            ...prev,
-                            date: e.target.value
-                          }))}
-                          className="w-full p-2 border rounded"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm mb-1">Amount</label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-2">$</span>
-                          <input
-                            type="number"
-                            value={receiveFormValues.amount}
-                            onChange={(e) => setReceiveFormValues(prev => ({
-                              ...prev,
-                              amount: parseFloat(e.target.value) || 0
-                            }))}
-                            className="w-full p-2 pl-8 border rounded"
-                            step="0.01"
-                            min="0"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-sm mb-1">Notes (optional)</label>
-                        <textarea
-                          value={receiveFormValues.notes}
-                          onChange={(e) => setReceiveFormValues(prev => ({
-                            ...prev,
-                            notes: e.target.value
-                          }))}
-                          className="w-full p-2 border rounded"
-                          rows="2"
-                        />
-                      </div>
-                      <div className="flex justify-end space-x-2 mt-3">
-                        <button
-                          onClick={() => setShowReceiveForm(null)}
-                          className="px-3 py-1 text-sm bg-gray-200 rounded hover:bg-gray-300"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => {
-                            const validatedAmount = validateAmount(receiveFormValues.amount);
-                            if (validatedAmount <= 0) {
-                              alert('Please enter a valid amount');
-                              return;
-                            }
-
-                            // Calculate account distribution based on the validated amount
-                            const updatedDistribution = paycheck.accountDistribution?.map(dist => {
-                              const proportion = dist.amount / paycheck.baseAmount;
-                              return {
-                                ...dist,
-                                amount: validateAmount(proportion * validatedAmount)
-                              };
-                            });
-
-                            // Record the received paycheck
-                            recordPaycheckReceived(
-                              paycheck.id,
-                              receiveFormValues.date,
-                              validatedAmount,
-                              receiveFormValues.notes
-                            );
-                            setShowReceiveForm(null);
-
-                            // Trigger PaydayWorkflow with validated data
-                            if (onPaycheckReceived) {
-                              onPaycheckReceived({
-                                ...paycheck,
-                                amount: validatedAmount,
-                                dateReceived: receiveFormValues.date,
-                                accountDistribution: updatedDistribution
-                              });
-                            }
-                          }}
-                          className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                        >
-                          Record & Start Allocation
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Delete Confirmation */}
                 {showDeleteConfirm === paycheck.id && (
                   <div className="mt-3 p-2 bg-red-50 border border-red-200 rounded">
                     <p className="text-sm text-red-600 mb-2">
                       Are you sure you want to delete this paycheck? This action cannot be undone.
                     </p>
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex justify-end gap-2">
                       <button
                         onClick={() => setShowDeleteConfirm(null)}
-                        className="px-2 py-1 text-xs bg-gray-200 rounded hover:bg-gray-300"
+                        className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={() => handleDeleteConfirm(paycheck.id)}
-                        className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                        className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
                       >
                         Delete
                       </button>
@@ -519,187 +413,185 @@ const PaycheckManager = ({
           </div>
         )}
 
-        {/* Add Button */}
-        {!showAddForm && !editingPaycheck && (
+        {/* Add New Paycheck Button */}
+        <div className="mt-4">
           <button
             onClick={handleAddNewPaycheck}
-            className="mt-4 flex items-center text-theme-primary hover:bg-theme-primary hover:bg-opacity-10 px-3 py-1 rounded"
+            className="px-4 py-2 bg-theme-primary text-white rounded hover:bg-theme-primary-dark transition-colors"
           >
-            <span className="mr-1">+</span> Add Paycheck
+            + Add New Paycheck
           </button>
-        )}
-      </div>
+        </div>
 
-      {/* Add/Edit Form */}
-      {(showAddForm || editingPaycheck) && (
-        <div className="mt-4 p-4 border rounded-lg">
-          <h4 className="font-bold mb-3">
-            {editingPaycheck ? 'Edit Paycheck' : 'Add New Paycheck'}
-          </h4>
+        {/* Add/Edit Form */}
+        {(showAddForm || editingPaycheck) && (
+          <div className="mt-6 p-6 bg-theme-secondary bg-opacity-10 rounded-lg border border-theme-border">
+            <h4 className="text-lg font-semibold mb-4 text-theme-text">
+              {editingPaycheck ? 'Edit Paycheck' : 'Add New Paycheck'}
+            </h4>
 
-          <div className="space-y-4">
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Paycheck Name</label>
-              <input
-                type="text"
-                value={formValues.name}
-                onChange={(e) => handleFormChange('name', e.target.value)}
-                className="w-full p-2 border rounded"
-                placeholder="e.g., Main Job, Side Gig, etc."
-              />
-            </div>
+            <div className="space-y-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-theme-text">Name</label>
+                  <input
+                    type="text"
+                    value={formValues.name}
+                    onChange={(e) => setFormValues(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="e.g., Main Job, Side Gig"
+                    className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                  />
+                </div>
 
-            {/* Frequency */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Frequency</label>
-              <select
-                value={formValues.frequency}
-                onChange={(e) => handleFormChange('frequency', e.target.value)}
-                className="w-full p-2 border rounded bg-white"
-              >
-                {frequencyOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Start Date */}
-            <div>
-              <label className="block text-sm font-medium mb-1">First Paycheck Date</label>
-              <input
-                type="date"
-                value={formValues.startDate}
-                onChange={(e) => handleFormChange('startDate', e.target.value)}
-                className="w-full p-2 border rounded"
-              />
-              <div className="text-xs text-theme-secondary mt-1">
-                This helps calculate future paycheck dates
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-theme-text">Frequency</label>
+                  <select
+                    value={formValues.frequency}
+                    onChange={(e) => setFormValues(prev => ({ ...prev, frequency: e.target.value }))}
+                    className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                  >
+                    {frequencyOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            {/* Variable Amount Toggle */}
-            <div>
-              <label className="flex items-center">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-theme-text">Start Date</label>
+                  <input
+                    type="date"
+                    value={formValues.startDate}
+                    onChange={(e) => setFormValues(prev => ({ ...prev, startDate: e.target.value }))}
+                    className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-theme-text">Base Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-theme-secondary">$</span>
+                    <input
+                      type="number"
+                      value={formValues.baseAmount}
+                      onChange={(e) => handleBaseAmountChange(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      step="0.01"
+                      min="0"
+                      className="w-full pl-8 pr-3 py-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Variable Amount Option */}
+              <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
+                  id="variableAmount"
                   checked={formValues.variableAmount}
-                  onChange={(e) => handleFormChange('variableAmount', e.target.checked)}
-                  className="mr-2"
+                  onChange={(e) => setFormValues(prev => ({ ...prev, variableAmount: e.target.checked }))}
+                  className="rounded border-theme-border"
                 />
-                <span className="text-sm">Variable amount (changes each pay period)</span>
-              </label>
-            </div>
-
-            {/* Base Amount */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                {formValues.variableAmount ? 'Average Amount' : 'Amount'}
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-2">$</span>
-                <input
-                  type="number"
-                  value={formValues.baseAmount}
-                  onChange={(e) => handleFormChange('baseAmount', e.target.value)}
-                  className="w-full p-2 pl-8 border rounded"
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                />
-              </div>
-              {formValues.variableAmount && (
-                <div className="text-xs text-theme-secondary mt-1">
-                  Use your average paycheck amount for planning purposes
-                </div>
-              )}
-            </div>
-
-            {/* Account Distribution */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium">Account Distribution</label>
-                {accounts.length > formValues.accountDistribution.length && (
-                  <button
-                    onClick={handleAddAccount}
-                    className="text-xs text-theme-primary hover:underline"
-                  >
-                    + Add Account
-                  </button>
-                )}
+                <label htmlFor="variableAmount" className="text-sm text-theme-text">
+                  This paycheck has a variable amount (will track history for averaging)
+                </label>
               </div>
 
-              {formValues.accountDistribution.length === 0 ? (
-                <div className="text-sm text-theme-secondary italic">
-                  No accounts available for distribution
+              {/* Account Distribution */}
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="block text-sm font-medium text-theme-text">Account Distribution</label>
+                  {formValues.accountDistribution.length < accounts.length && (
+                    <button
+                      onClick={handleAddAccount}
+                      className="text-sm text-theme-primary hover:text-theme-primary-dark"
+                    >
+                      + Add Account
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-3">
+
+                <div className="space-y-2">
                   {formValues.accountDistribution.map((dist, index) => (
-                    <div key={index} className="flex space-x-2 items-center">
-                      <select
-                        value={dist.accountId}
-                        onChange={(e) => handleDistributionChange(index, 'accountId', parseInt(e.target.value))}
-                        className="flex-grow p-2 border rounded bg-white"
-                      >
-                        {accounts.map(account => (
-                          <option key={account.id} value={account.id}>
-                            {account.name}
-                          </option>
-                        ))}
-                      </select>
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <select
+                          value={dist.accountId}
+                          onChange={(e) => handleDistributionChange(index, 'accountId', e.target.value)}
+                          className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                        >
+                          {accounts.map(account => (
+                            <option key={account.id} value={account.id}>
+                              {account.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                      <div className="relative w-32">
-                        <span className="absolute left-3 top-2">$</span>
-                        <input
-                          type="number"
-                          value={dist.amount}
-                          onChange={(e) => handleDistributionChange(index, 'amount', parseFloat(e.target.value) || 0)}
-                          className="w-full p-2 pl-8 border rounded"
-                          placeholder="0.00"
-                          step="0.01"
-                          min="0"
-                        />
+                      <div className="flex-1">
+                        <div className="relative">
+                          <span className="absolute left-3 top-2 text-theme-secondary text-sm">$</span>
+                          <input
+                            type="number"
+                            value={dist.amount}
+                            onChange={(e) => handleDistributionChange(index, 'amount', e.target.value)}
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0"
+                            className="w-full pl-8 pr-3 py-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                          />
+                        </div>
                       </div>
 
                       {formValues.accountDistribution.length > 1 && (
                         <button
                           onClick={() => handleRemoveAccount(index)}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-red-500 hover:text-red-700 p-1"
                           title="Remove account"
                         >
-                          ×
+                          ✕
                         </button>
                       )}
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Form Actions */}
-            <div className="flex justify-end space-x-3 mt-4">
-              <button
-                onClick={() => {
-                  setShowAddForm(false);
-                  setEditingPaycheck(null);
-                }}
-                className="px-4 py-2 border rounded hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSavePaycheck}
-                className="px-4 py-2 bg-theme-primary text-white rounded hover:bg-opacity-90"
-              >
-                {editingPaycheck ? 'Update Paycheck' : 'Add Paycheck'}
-              </button>
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  onClick={() => {
+                    setEditingPaycheck(null);
+                    setShowAddForm(false);
+                    setFormValues({
+                      name: '',
+                      frequency: 'biweekly',
+                      startDate: format(new Date(), 'yyyy-MM-dd'),
+                      baseAmount: 0,
+                      variableAmount: false,
+                      accountDistribution: []
+                    });
+                  }}
+                  className="px-4 py-2 border border-theme-border text-theme-text rounded hover:bg-theme-secondary hover:bg-opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSavePaycheck}
+                  className="px-6 py-2 bg-theme-primary text-white rounded hover:bg-theme-primary-dark transition-colors"
+                >
+                  {editingPaycheck ? 'Update Paycheck' : 'Add Paycheck'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

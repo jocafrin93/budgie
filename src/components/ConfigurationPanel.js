@@ -1,3 +1,4 @@
+// src/components/ConfigurationPanel.js
 import { Calculator, Calendar, ChevronDown, ChevronRight, Download } from 'lucide-react';
 import { useState } from 'react';
 import PaycheckManager from './PaycheckManager';
@@ -28,7 +29,9 @@ const ConfigurationPanel = ({
     updatePaycheck,
     deletePaycheck,
     togglePaycheckActive,
-    recordPaycheckReceived
+    recordPaycheckReceived,
+    // NEW: Payday workflow handler
+    onStartPaydayWorkflow
 }) => {
     // State to manage active section
     const [activeSection, setActiveSection] = useState('paychecks');
@@ -50,23 +53,17 @@ const ConfigurationPanel = ({
                         <Calendar className="w-5 h-5 mr-2" />
                         Paychecks
                     </h3>
-                    {activeSection === 'paychecks' ? (
-                        <ChevronDown className="w-5 h-5 text-theme-primary" />
-                    ) : (
+                    {activeSection === 'paychecks' ?
+                        <ChevronDown className="w-5 h-5 text-theme-primary" /> :
                         <ChevronRight className="w-5 h-5 text-theme-primary" />
-                    )}
+                    }
                 </div>
 
                 {activeSection === 'paychecks' && (
                     <div className="p-4">
                         <PaycheckManager
                             accounts={accounts}
-                            paychecks={paychecks}
-                            addPaycheck={addPaycheck}
-                            updatePaycheck={updatePaycheck}
-                            deletePaycheck={deletePaycheck}
-                            togglePaycheckActive={togglePaycheckActive}
-                            recordPaycheckReceived={recordPaycheckReceived}
+                            onStartPaydayWorkflow={onStartPaydayWorkflow}
                         />
                     </div>
                 )}
@@ -76,132 +73,104 @@ const ConfigurationPanel = ({
             <div className="border border-theme-primary rounded-lg overflow-hidden">
                 <div
                     className="bg-theme-primary bg-opacity-5 p-4 flex justify-between items-center cursor-pointer"
-                    onClick={() => toggleSection('budgetSettings')}
+                    onClick={() => toggleSection('budget')}
                 >
                     <h3 className="text-lg font-semibold text-theme-primary flex items-center">
                         <Calculator className="w-5 h-5 mr-2" />
                         Budget Settings
                     </h3>
-                    {activeSection === 'budgetSettings' ? (
-                        <ChevronDown className="w-5 h-5 text-theme-primary" />
-                    ) : (
+                    {activeSection === 'budget' ?
+                        <ChevronDown className="w-5 h-5 text-theme-primary" /> :
                         <ChevronRight className="w-5 h-5 text-theme-primary" />
-                    )}
+                    }
                 </div>
 
-                {activeSection === 'budgetSettings' && (
-                    <div className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-1 text-theme-primary">Rounding</label>
-                                <select
-                                    value={roundingOption}
-                                    onChange={(e) => setRoundingOption(parseInt(e.target.value))}
-                                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                                >
-                                    <option value={0}>No rounding</option>
-                                    <option value={5}>Round to $5</option>
-                                    <option value={10}>Round to $10</option>
-                                </select>
-                                <div className="text-xs text-theme-tertiary mt-1">
-                                    Automatically round budget amounts
-                                </div>
-                            </div>
+                {activeSection === 'budget' && (
+                    <div className="p-4 space-y-4">
+                        {/* Rounding Option */}
+                        <div>
+                            <label className="block text-sm font-medium mb-2 text-theme-text">
+                                Rounding Option
+                            </label>
+                            <select
+                                value={roundingOption}
+                                onChange={(e) => setRoundingOption(e.target.value)}
+                                className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                            >
+                                <option value="none">No Rounding</option>
+                                <option value="up">Round Up to Nearest Dollar</option>
+                                <option value="down">Round Down to Nearest Dollar</option>
+                                <option value="nearest">Round to Nearest Dollar</option>
+                            </select>
+                        </div>
 
-                            <div>
-                                <label className="block text-sm font-medium mb-1 text-theme-primary">Buffer (%)</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    max="20"
-                                    value={bufferPercentage}
-                                    onChange={(e) => setBufferPercentage(parseFloat(e.target.value) || 0)}
-                                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                                />
-                                <div className="text-xs text-theme-tertiary mt-1">
-                                    Extra padding for your budget allocations
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium mb-1 text-theme-primary">Pay Frequency</label>
-                                <select
-                                    value={payFrequency}
-                                    onChange={(e) => setPayFrequency(e.target.value)}
-                                    className="w-full p-2 border rounded bg-theme-primary border-theme-primary text-theme-primary"
-                                >
-                                    {payFrequencyOptions.map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="text-xs text-theme-tertiary mt-1">
-                                    Default for new paychecks
-                                </div>
+                        {/* Buffer Percentage */}
+                        <div>
+                            <label className="block text-sm font-medium mb-2 text-theme-text">
+                                Buffer Percentage ({bufferPercentage}%)
+                            </label>
+                            <input
+                                type="range"
+                                min="0"
+                                max="20"
+                                step="0.5"
+                                value={bufferPercentage}
+                                onChange={(e) => setBufferPercentage(parseFloat(e.target.value))}
+                                className="w-full h-2 bg-theme-secondary rounded-lg appearance-none cursor-pointer"
+                            />
+                            <div className="flex justify-between text-xs text-theme-secondary mt-1">
+                                <span>0%</span>
+                                <span>20%</span>
                             </div>
                         </div>
 
-                        <div className="mt-6 bg-theme-secondary bg-opacity-10 p-4 rounded">
-                            <h4 className="font-medium text-theme-primary mb-2">Calculation Preview</h4>
-                            <div className="text-sm space-y-1">
-                                <div className="flex justify-between">
-                                    <span className="text-theme-secondary">Pay frequency:</span>
-                                    <span className="text-theme-primary">
-                                        {payFrequencyOptions.find(opt => opt.value === payFrequency)?.label}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-theme-secondary">Paychecks/month:</span>
-                                    <span className="text-theme-primary">
-                                        {payFrequencyOptions.find(opt => opt.value === payFrequency)?.paychecksPerMonth}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between border-t border-theme-primary border-opacity-20 pt-1 mt-1">
-                                    <span className="text-theme-secondary">$100/month becomes:</span>
-                                    <span className="text-theme-primary font-medium">
-                                        ${(100 / (payFrequencyOptions.find(opt => opt.value === payFrequency)?.paychecksPerMonth || 2.17)).toFixed(2)}/paycheck
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+
                     </div>
                 )}
             </div>
 
-            {/* Export/Import Section */}
+            {/* Export Section */}
             <div className="border border-theme-primary rounded-lg overflow-hidden">
                 <div
                     className="bg-theme-primary bg-opacity-5 p-4 flex justify-between items-center cursor-pointer"
-                    onClick={() => toggleSection('exportImport')}
+                    onClick={() => toggleSection('export')}
                 >
                     <h3 className="text-lg font-semibold text-theme-primary flex items-center">
                         <Download className="w-5 h-5 mr-2" />
                         Export & Import
                     </h3>
-                    {activeSection === 'exportImport' ? (
-                        <ChevronDown className="w-5 h-5 text-theme-primary" />
-                    ) : (
+                    {activeSection === 'export' ?
+                        <ChevronDown className="w-5 h-5 text-theme-primary" /> :
                         <ChevronRight className="w-5 h-5 text-theme-primary" />
-                    )}
+                    }
                 </div>
 
-                {activeSection === 'exportImport' && (
-                    <div className="p-4">
-                        <div className="flex flex-col space-y-4">
+                {activeSection === 'export' && (
+                    <div className="p-4 space-y-4">
+                        <div>
+                            <h4 className="font-medium text-theme-text mb-2">Export to YNAB</h4>
+                            <p className="text-sm text-theme-secondary mb-3">
+                                Export your budget categories to You Need A Budget (YNAB) format.
+                            </p>
                             <button
                                 onClick={onExport}
-                                className="bg-theme-primary text-white px-4 py-2 rounded hover:bg-opacity-90 flex items-center"
+                                className="px-4 py-2 bg-theme-primary text-white rounded hover:bg-theme-primary-dark transition-colors"
                             >
-                                <Download className="w-4 h-4 mr-2" />
-                                Export Budget Data
+                                Export to YNAB
                             </button>
+                        </div>
 
-                            <div className="text-sm text-theme-secondary">
-                                Export your budget data as a JSON file for backup or transfer to another device.
-                            </div>
-
-                            {/* Add import functionality in the future */}
+                        <div className="pt-4 border-t border-theme-border">
+                            <h4 className="font-medium text-theme-text mb-2">Import Data</h4>
+                            <p className="text-sm text-theme-secondary mb-3">
+                                Import budget data from CSV or other formats.
+                            </p>
+                            <button
+                                disabled
+                                className="px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+                            >
+                                Import Data (Coming Soon)
+                            </button>
                         </div>
                     </div>
                 )}

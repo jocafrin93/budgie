@@ -39,6 +39,8 @@ import { useUIState } from './hooks/useUIState';
 import { getExpensesFromPlanningItems, getSavingsGoalsFromPlanningItems } from './utils/dataModelUtils';
 import { exportToYNAB } from './utils/exportUtils';
 
+
+
 // Import migration utilities
 
 const App = () => {
@@ -799,7 +801,7 @@ const App = () => {
                         activeBudgetAllocations={activeBudgetAllocations}
                     />
                     {/* Payday Workflow */}
-                    {showPaydayWorkflow && activePaycheckForWorkflow && (
+                    {/* {showPaydayWorkflow && activePaycheckForWorkflow && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                             <div className="bg-theme-primary rounded-lg shadow-xl max-w-4xl max-h-[90vh] overflow-y-auto m-4 border border-theme-secondary">
                                 <div className="p-4 border-b border-theme-secondary">
@@ -817,25 +819,27 @@ const App = () => {
                                             </svg>
                                         </button>
                                     </div>
-                                </div>
-                                <PaydayWorkflow
-                                    paycheck={activePaycheckForWorkflow}
-                                    accounts={accounts}
-                                    payFrequency={payFrequency}
-                                    payFrequencyOptions={payFrequencyOptions}
-                                    categories={categories}
-                                    toBeAllocated={allocationData.toBeAllocated}
-                                    planningItems={planningItems}
-                                    onEditItem={handleUpdateItemWithSync}
-                                    fundCategory={fundCategory}
-                                    autoFundfCategories={handleAutoFundCategories}
-                                    getFundingSuggestions={handleGetFundingSuggestions}
-                                    onComplete={handlePaydayWorkflowComplete}
-                                />
-                            </div>
-                        </div>
+                                </div> */}
+                    {showPaydayWorkflow && (
+                        <ModalSystem
+                            isOpen={showPaydayWorkflow}
+                            title="Record Paycheck & Allocate Funds"
+                            onClose={() => setShowPaydayWorkflow(false)}
+                            size="lg"
+                        >
+                            <PaydayWorkflow
+                                paycheck={activePaycheckForWorkflow}
+                                accounts={accounts}
+                                categories={categories}
+                                planningItems={planningItems}         // ← ADD THIS LINE
+                                addTransaction={addTransaction}       // ← ADD THIS LINE
+                                fundCategory={fundCategory}
+                                frequencyOptions={frequencyOptions}  // ← ADD THIS LINE (import from constants if needed)
+                                darkMode={theme === 'dark'}          // ← ADD THIS LINE
+                                onComplete={handlePaydayWorkflowComplete}
+                            />
+                        </ModalSystem>
                     )}
-
                     {/* Accounts Section */}
                     <AccountsSection
                         accounts={accounts}
@@ -1002,6 +1006,7 @@ const App = () => {
                                 deletePaycheck={deletePaycheck}
                                 togglePaycheckActive={togglePaycheckActive}
                                 recordPaycheckReceived={recordPaycheckReceived}
+                                onStartPaydayWorkflow={handleShowPaydayWorkflow}
                             />
                         </div>
                     )}
