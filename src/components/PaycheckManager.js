@@ -2,6 +2,7 @@
 import { format } from 'date-fns';
 import { useState } from 'react';
 import { usePaycheckManagement } from '../hooks/usePaycheckManagement';
+import { CurrencyField } from './form';
 
 /**
  * Component for managing multiple paychecks
@@ -21,10 +22,12 @@ const PaycheckManager = ({
     generatePaycheckDates
   } = usePaycheckManagement(accounts);
 
-  // Helper function to validate amount
+  // Helper function to validate amount - handles both strings and numbers
   const validateAmount = (amount) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return 0;
-    return Math.min(Math.max(amount, 0), 100000);
+    // Convert string to number if needed
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (typeof numAmount !== 'number' || isNaN(numAmount)) return 0;
+    return Math.min(Math.max(numAmount, 0), 100000);
   };
 
   // State for editing/adding
@@ -97,14 +100,16 @@ const PaycheckManager = ({
     });
   };
 
-  // Handle distribution changes
+  // Handle distribution changes - properly convert strings to numbers
   const handleDistributionChange = (index, field, value) => {
     setFormValues(prev => {
       const newDistribution = [...prev.accountDistribution];
       if (field === 'accountId') {
         newDistribution[index] = { ...newDistribution[index], accountId: parseInt(value) };
       } else if (field === 'amount') {
-        const validatedAmount = validateAmount(parseFloat(value) || 0);
+        // Convert string value to number and validate
+        const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+        const validatedAmount = validateAmount(numericValue);
         newDistribution[index] = {
           ...newDistribution[index],
           amount: validatedAmount,
@@ -115,9 +120,11 @@ const PaycheckManager = ({
     });
   };
 
-  // Recalculate distribution amounts when base amount changes
+  // Recalculate distribution amounts when base amount changes - handle string input
   const handleBaseAmountChange = (newAmount) => {
-    const validatedAmount = validateAmount(newAmount);
+    // Convert string to number if needed
+    const numericAmount = typeof newAmount === 'string' ? parseFloat(newAmount) || 0 : newAmount;
+    const validatedAmount = validateAmount(numericAmount);
 
     setFormValues(prev => {
       // Update distribution amounts proportionally
@@ -212,31 +219,46 @@ const PaycheckManager = ({
     });
   };
 
-  // Save paycheck (add or edit)
+  // Save paycheck (add or edit) - ensure proper number conversion
   const handleSavePaycheck = () => {
+    // Convert and validate form values
+    const baseAmount = validateAmount(formValues.baseAmount);
+
     // Validate form
-    if (!formValues.name || formValues.baseAmount <= 0) {
+    if (!formValues.name || baseAmount <= 0) {
       alert('Please provide a name and valid amount for the paycheck.');
       return;
     }
 
-    // Ensure each account has an amount
-    const invalidDistribution = formValues.accountDistribution.some(dist =>
-      !dist.accountId || (parseFloat(dist.amount) || 0) <= 0
-    );
+    // Ensure each account has a valid amount
+    const invalidDistribution = formValues.accountDistribution.some(dist => {
+      const amount = validateAmount(dist.amount);
+      return !dist.accountId || amount <= 0;
+    });
 
     if (invalidDistribution) {
       alert('Please ensure all accounts have valid distribution amounts.');
       return;
     }
 
+    // Prepare the data with proper number conversion
+    const paycheckData = {
+      ...formValues,
+      baseAmount: baseAmount,
+      accountDistribution: formValues.accountDistribution.map(dist => ({
+        ...dist,
+        amount: validateAmount(dist.amount),
+        distributionValue: validateAmount(dist.distributionValue || dist.amount)
+      }))
+    };
+
     if (editingPaycheck) {
       // Update existing paycheck
-      updatePaycheck(editingPaycheck, formValues);
+      updatePaycheck(editingPaycheck, paycheckData);
       setEditingPaycheck(null);
     } else if (showAddForm) {
       // Add new paycheck
-      addPaycheck(formValues);
+      addPaycheck(paycheckData);
       setShowAddForm(false);
     }
 
@@ -440,7 +462,7 @@ const PaycheckManager = ({
                     value={formValues.name}
                     onChange={(e) => setFormValues(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., Main Job, Side Gig"
-                    className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                    className="w-full p-2 border border-theme-border rounded bg-theme-primary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
                   />
                 </div>
 
@@ -449,7 +471,7 @@ const PaycheckManager = ({
                   <select
                     value={formValues.frequency}
                     onChange={(e) => setFormValues(prev => ({ ...prev, frequency: e.target.value }))}
-                    className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                    className="w-full p-2 border border-theme-border rounded bg-theme-primary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
                   >
                     {frequencyOptions.map(option => (
                       <option key={option.value} value={option.value}>
@@ -467,24 +489,17 @@ const PaycheckManager = ({
                     type="date"
                     value={formValues.startDate}
                     onChange={(e) => setFormValues(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                    className="w-full p-2 border border-theme-border rounded bg-theme-primary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1 text-theme-text">Base Amount</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-theme-secondary">$</span>
-                    <input
-                      type="number"
-                      value={formValues.baseAmount}
-                      onChange={(e) => handleBaseAmountChange(parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                      step="0.01"
-                      min="0"
-                      className="w-full pl-8 pr-3 py-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
-                    />
-                  </div>
+                  <CurrencyField
+                    value={formValues.baseAmount}
+                    onChange={handleBaseAmountChange}
+                    placeholder="0.00"
+                  />
                 </div>
               </div>
 
@@ -523,7 +538,7 @@ const PaycheckManager = ({
                         <select
                           value={dist.accountId}
                           onChange={(e) => handleDistributionChange(index, 'accountId', e.target.value)}
-                          className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                          className="w-full p-2 border border-theme-border rounded bg-theme-primary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
                         >
                           {accounts.map(account => (
                             <option key={account.id} value={account.id}>
@@ -534,18 +549,11 @@ const PaycheckManager = ({
                       </div>
 
                       <div className="flex-1">
-                        <div className="relative">
-                          <span className="absolute left-3 top-2 text-theme-secondary text-sm">$</span>
-                          <input
-                            type="number"
-                            value={dist.amount}
-                            onChange={(e) => handleDistributionChange(index, 'amount', e.target.value)}
-                            placeholder="0.00"
-                            step="0.01"
-                            min="0"
-                            className="w-full pl-8 pr-3 py-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
-                          />
-                        </div>
+                        <CurrencyField
+                          value={dist.amount}
+                          onChange={(value) => handleDistributionChange(index, 'amount', value)}
+                          placeholder="0.00"
+                        />
                       </div>
 
                       {formValues.accountDistribution.length > 1 && (
@@ -577,7 +585,7 @@ const PaycheckManager = ({
                       accountDistribution: []
                     });
                   }}
-                  className="px-4 py-2 border border-theme-border text-theme-text rounded hover:bg-theme-secondary hover:bg-opacity-50 transition-colors"
+                  className="px-4 py-2 border border-theme-border text-theme-text rounded hover:bg-theme-active hover:bg-opacity-50 transition-colors"
                 >
                   Cancel
                 </button>

@@ -95,7 +95,7 @@ const ConfigurationPanel = ({
                             <select
                                 value={roundingOption}
                                 onChange={(e) => setRoundingOption(e.target.value)}
-                                className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
+                                className="w-full p-2 border border-theme-border rounded bg-theme-primary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
                             >
                                 <option value="none">No Rounding</option>
                                 <option value="up">Round Up to Nearest Dollar</option>

@@ -26,9 +26,7 @@ const DND_TYPES = {
     CATEGORY: 'category'
 };
 
-/**
- * Table-based Unified EnvelopeBudgetView component with resizable columns
- */
+// 
 const UnifiedEnvelopeBudgetView = ({
     // Data
     categories = [],
@@ -1010,8 +1008,8 @@ const CategoryTableRow = ({
                                 <button
                                     onClick={() => onToggleCategoryActive(category.id, !(category.isActive ?? true))}
                                     className={`p-1 rounded transition-colors ${(category.isActive ?? true)
-                                        ? 'text-theme-green hover:text-theme-green hover:bg-theme-secondary'
-                                        : 'text-theme-secondary hover:text-theme-primary hover:bg-theme-secondary'
+                                        ? 'text-theme-green hover:text-theme-green hover:bg-theme-active'
+                                        : 'text-theme-secondary hover:text-theme-primary hover:bg-theme-active'
                                         }`}
                                     title={(category.isActive ?? true) ? 'Mark as planning only' : 'Mark as active'}
                                 >
@@ -1024,7 +1022,7 @@ const CategoryTableRow = ({
                                         console.log('Adding item to category:', category.name, 'ID:', category.id);
                                         onAddItem({ preselectedCategory: category });
                                     }}
-                                    className="p-1 text-theme-secondary hover:text-theme-green hover:bg-theme-secondary rounded transition-colors"
+                                    className="p-1 text-theme-secondary hover:text-theme-green hover:bg-theme-active rounded transition-colors"
                                     title="Add item"
                                 >
                                     <Plus className="w-3.5 h-3.5" />
@@ -1032,7 +1030,7 @@ const CategoryTableRow = ({
                             )}
                             <button
                                 onClick={() => onDeleteCategory(category.id)}
-                                className="p-1 text-theme-secondary hover:text-theme-red hover:bg-theme-secondary rounded transition-colors"
+                                className="p-1 text-theme-secondary hover:text-theme-red hover:bg-theme-active rounded transition-colors"
                                 title="Delete category"
                             >
                                 <Trash2 className="w-3.5 h-3.5" />

@@ -40,7 +40,6 @@ import { getExpensesFromPlanningItems, getSavingsGoalsFromPlanningItems } from '
 import { exportToYNAB } from './utils/exportUtils';
 
 
-
 // Import migration utilities
 
 const App = () => {
@@ -61,6 +60,33 @@ const App = () => {
         cleanupInvalidItems
     } = useDataModel();
 
+    // Creates a HIDDEN income category:
+    const ensureIncomeCategory = () => {
+        let incomeCategory = categories.find(cat =>
+            (cat.name === 'Income' || cat.name === 'Paycheck') &&
+            cat.type === 'income'
+        );
+
+        if (!incomeCategory) {
+            // Create Income category that's HIDDEN from budget views
+            const newCategory = {
+                id: generateNextCategoryId(),
+                name: 'Income',
+                color: 'bg-gradient-to-r from-green-500 to-blue-500',
+                description: 'Income and paycheck deposits',
+                allocated: 0,
+                available: 0,
+                type: 'income',        // ← Special type
+                hiddenFromBudget: true, // ← Hide from budget views
+                isSystem: true         // ← Mark as system category
+            };
+
+            setCategories(prev => [...prev, newCategory]);
+            return newCategory.id;
+        }
+
+        return incomeCategory.id;
+    };
     // Enhanced category management with types
     const {
         categories,

@@ -40,9 +40,28 @@ const PaydayWorkflow = ({
   // Track the workflow step
   const [step, setStep] = useState('record-paycheck'); // record-paycheck, allocate, complete
 
+  // Helper function to get today's date in local timezone (most reliable method)
+  const getTodaysDate = () => {
+    // Get today's date and ensure it's in local timezone
+    const now = new Date();
+    // Offset timezone difference to get true local date
+    const timezoneOffset = now.getTimezoneOffset() * 60000; // Convert to milliseconds
+    const localDate = new Date(now.getTime() - timezoneOffset);
+    const result = localDate.toISOString().split('T')[0];
+
+    console.log('PaydayWorkflow - getTodaysDate():', {
+      now: now,
+      timezoneOffset: timezoneOffset,
+      localDate: localDate,
+      result: result,
+      expectedToday: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    });
+    return result;
+  };
+
   // Paycheck transaction data
   const [paycheckData, setPaycheckData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: getTodaysDate(), // Today's date in local timezone
     amount: paycheck?.baseAmount || 0,
     payee: paycheck?.name || 'Paycheck',
     notes: '',
@@ -97,22 +116,52 @@ const PaydayWorkflow = ({
   }, [getFundingSuggestions, categories, planningItems]);
 
   // Handle paycheck amount change and update distribution
-  const handlePaycheckAmountChange = (newAmount) => {
-    const validatedAmount = validateAmount(newAmount);
+  const handlePaycheckAmountChange = (eventOrValue) => {
+    console.log('PaydayWorkflow - handlePaycheckAmountChange called with:', eventOrValue, typeof eventOrValue);
+
+    // Handle both event objects and direct values
+    let newAmount;
+    if (eventOrValue && eventOrValue.target) {
+      // It's an event object - extract the value
+      newAmount = eventOrValue.target.value;
+      console.log('PaydayWorkflow - Extracted value from event:', newAmount);
+    } else {
+      // It's a direct value
+      newAmount = eventOrValue;
+    }
+
+    // Convert string to number if needed
+    const numericAmount = typeof newAmount === 'string' ? parseFloat(newAmount) || 0 : newAmount;
+    const validatedAmount = validateAmount(numericAmount);
+
+    console.log('PaydayWorkflow - Amount processing:', {
+      original: eventOrValue,
+      extracted: newAmount,
+      numericAmount,
+      validatedAmount,
+      type: typeof newAmount
+    });
 
     setPaycheckData(prev => {
       // Update distribution amounts proportionally
-      const totalCurrentDistribution = prev.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0);
+      const totalCurrentDistribution = prev.accountDistribution.reduce((sum, dist) => {
+        const distAmount = typeof dist.amount === 'string' ? parseFloat(dist.amount) || 0 : dist.amount;
+        return sum + distAmount;
+      }, 0);
 
       let updatedDistribution;
-      if (totalCurrentDistribution > 0) {
+      if (totalCurrentDistribution > 0 && validatedAmount > 0) {
         // Proportional update
-        updatedDistribution = prev.accountDistribution.map(dist => ({
-          ...dist,
-          amount: (dist.amount / totalCurrentDistribution) * validatedAmount
-        }));
+        updatedDistribution = prev.accountDistribution.map(dist => {
+          const currentAmount = typeof dist.amount === 'string' ? parseFloat(dist.amount) || 0 : dist.amount;
+          const proportion = currentAmount / totalCurrentDistribution;
+          return {
+            ...dist,
+            amount: proportion * validatedAmount
+          };
+        });
       } else {
-        // Equal distribution if no current distribution
+        // Equal distribution if no current distribution or first time setting amount
         const amountPerAccount = validatedAmount / Math.max(1, prev.accountDistribution.length);
         updatedDistribution = prev.accountDistribution.map(dist => ({
           ...dist,
@@ -120,23 +169,31 @@ const PaydayWorkflow = ({
         }));
       }
 
-      return {
+      const newData = {
         ...prev,
-        amount: validatedAmount,
+        amount: validatedAmount, // Store as number
         accountDistribution: updatedDistribution
       };
+
+      console.log('PaydayWorkflow - Updated paycheckData:', newData);
+      return newData;
     });
   };
 
   // Handle account distribution changes
   const handleDistributionChange = (index, field, value) => {
+    console.log('PaydayWorkflow - Distribution changed:', { index, field, value, type: typeof value });
+
     setPaycheckData(prev => {
       const updatedDistribution = [...prev.accountDistribution];
 
       if (field === 'accountId') {
         updatedDistribution[index] = { ...updatedDistribution[index], accountId: value };
       } else if (field === 'amount') {
-        updatedDistribution[index] = { ...updatedDistribution[index], amount: validateAmount(value) };
+        // Convert string to number for CurrencyField compatibility
+        const numericValue = typeof value === 'string' ? parseFloat(value) || 0 : value;
+        const validatedAmount = validateAmount(numericValue);
+        updatedDistribution[index] = { ...updatedDistribution[index], amount: validatedAmount };
       }
 
       return { ...prev, accountDistribution: updatedDistribution };
@@ -171,23 +228,57 @@ const PaydayWorkflow = ({
 
   // Record the paycheck transaction and move to allocation step
   const handleRecordPaycheck = () => {
+    // Debug logging
+    console.log('PaydayWorkflow - handleRecordPaycheck called');
+    console.log('PaydayWorkflow - paycheckData:', paycheckData);
+
     // Validate the data
-    if (!paycheckData.date || paycheckData.amount <= 0) {
-      alert('Please enter a valid date and amount.');
+    if (!paycheckData.date) {
+      console.log('PaydayWorkflow - Date validation failed:', paycheckData.date);
+      alert('Please enter a valid date.');
+      return;
+    }
+
+    // Convert amount to number and validate
+    const numericAmount = typeof paycheckData.amount === 'string' ?
+      parseFloat(paycheckData.amount) || 0 : paycheckData.amount;
+
+    console.log('PaydayWorkflow - Amount validation:', {
+      original: paycheckData.amount,
+      converted: numericAmount,
+      type: typeof paycheckData.amount
+    });
+
+    if (numericAmount <= 0) {
+      console.log('PaydayWorkflow - Amount validation failed:', numericAmount);
+      alert('Please enter a valid amount greater than zero.');
       return;
     }
 
     if (paycheckData.accountDistribution.length === 0) {
+      console.log('PaydayWorkflow - No account distribution');
       alert('Please select at least one account.');
       return;
     }
 
-    // Check that distribution amounts add up to total
-    const totalDistribution = paycheckData.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0);
-    if (Math.abs(totalDistribution - paycheckData.amount) > 0.01) {
+    // Check that distribution amounts add up to total (convert strings to numbers)
+    const totalDistribution = paycheckData.accountDistribution.reduce((sum, dist) => {
+      const distAmount = typeof dist.amount === 'string' ? parseFloat(dist.amount) || 0 : dist.amount;
+      return sum + distAmount;
+    }, 0);
+
+    console.log('PaydayWorkflow - Distribution validation:', {
+      totalDistribution,
+      paycheckAmount: numericAmount,
+      difference: Math.abs(totalDistribution - numericAmount)
+    });
+
+    if (Math.abs(totalDistribution - numericAmount) > 0.01) {
       alert('Account distribution amounts must add up to the total paycheck amount.');
       return;
     }
+
+    console.log('PaydayWorkflow - All validations passed, creating transactions...');
 
     try {
       // Find or create "Income" category for transaction categorization (hidden from budget)
@@ -215,11 +306,20 @@ const PaydayWorkflow = ({
 
       // Create transactions for each account in the distribution
       paycheckData.accountDistribution.forEach(dist => {
-        if (dist.amount > 0) {
+        const distAmount = typeof dist.amount === 'string' ? parseFloat(dist.amount) || 0 : dist.amount;
+        if (distAmount > 0) {
+          console.log('PaydayWorkflow - Creating transaction:', {
+            date: paycheckData.date,
+            payee: paycheckData.payee,
+            amount: distAmount,
+            accountId: dist.accountId,
+            categoryId: incomeCategoryId
+          });
+
           addTransaction({
             date: paycheckData.date,
             payee: paycheckData.payee,
-            amount: dist.amount, // Positive amount for income
+            amount: distAmount, // Positive amount for income
             accountId: dist.accountId,
             categoryId: incomeCategoryId || null, // Use Income category if available
             notes: paycheckData.notes || 'Paycheck deposit',
@@ -228,6 +328,7 @@ const PaydayWorkflow = ({
         }
       });
 
+      console.log('PaydayWorkflow - Transactions created successfully, moving to allocation step');
       // Move to allocation step
       setStep('allocate');
     } catch (error) {
@@ -362,150 +463,196 @@ const PaydayWorkflow = ({
   // Render different steps
   if (step === 'record-paycheck') {
     return (
-      <div className="payday-workflow p-6 bg-theme-surface rounded-lg border border-theme-border">
+      <div className="payday-workflow p-6 bg-theme-primary rounded-lg border border-theme-border">
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2 text-theme-text">Record Paycheck</h2>
           <p className="text-theme-secondary">Enter the details of your received paycheck to add it to your accounts.</p>
         </div>
 
-        <div className="space-y-6">
-          {/* Basic Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4">
+          {/* Basic Information - Condensed Row */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-2 text-theme-text">Date Received</label>
+              <label className="block text-xs font-medium mb-1 text-theme-text">Date Received</label>
               <input
                 type="date"
                 value={paycheckData.date}
                 onChange={(e) => setPaycheckData(prev => ({ ...prev, date: e.target.value }))}
-                className="w-full p-3 border border-theme-border rounded-lg bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent"
+                className="w-full p-2 border border-theme-border rounded bg-theme-secondary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent text-sm"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-theme-text">Payee/Description</label>
+              <label className="block text-xs font-medium mb-1 text-theme-text">Payee/Description</label>
               <input
                 type="text"
                 value={paycheckData.payee}
                 onChange={(e) => setPaycheckData(prev => ({ ...prev, payee: e.target.value }))}
                 placeholder="e.g., Main Job, Side Gig"
-                className="w-full p-3 border border-theme-border rounded-lg bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent"
+                className="w-full p-2 border border-theme-border rounded bg-theme-secondary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1 text-theme-text">Total Amount</label>
+              <CurrencyField
+                value={paycheckData.amount}
+                onChange={handlePaycheckAmountChange}
+                placeholder="0.00"
+                className="w-full"
+                darkMode={darkMode}
               />
             </div>
           </div>
 
-          {/* Total Amount */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-theme-text">Total Paycheck Amount</label>
-            <CurrencyField
-              value={paycheckData.amount}
-              onChange={handlePaycheckAmountChange}
-              placeholder="0.00"
-              className="w-full"
-              darkMode={darkMode}
+          {/* Split Account Option */}
+          <div className="flex items-center gap-3 p-3 bg-theme-secondary bg-opacity-30 rounded">
+            <input
+              type="checkbox"
+              id="splitAccount"
+              checked={paycheckData.accountDistribution.length > 1}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  // Enable splitting - add a second account if available
+                  handleAddAccountDistribution();
+                } else {
+                  // Disable splitting - keep only first account with full amount
+                  setPaycheckData(prev => ({
+                    ...prev,
+                    accountDistribution: [{
+                      ...prev.accountDistribution[0],
+                      amount: prev.amount
+                    }]
+                  }));
+                }
+              }}
+              className="rounded border-theme-border"
             />
+            <label htmlFor="splitAccount" className="text-sm text-theme-text">
+              Split paycheck across multiple accounts
+            </label>
           </div>
 
-          {/* Account Distribution */}
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <label className="block text-sm font-medium text-theme-text">Account Distribution</label>
-              {paycheckData.accountDistribution.length < accounts.length && (
-                <button
-                  onClick={handleAddAccountDistribution}
-                  className="text-sm text-theme-primary hover:text-theme-primary-dark"
-                >
-                  + Add Account
-                </button>
-              )}
+          {/* Account Distribution - Conditional */}
+          {paycheckData.accountDistribution.length === 1 ? (
+            /* Single Account - Simple */
+            <div>
+              <label className="block text-xs font-medium mb-1 text-theme-text">Deposit to Account</label>
+              <select
+                value={paycheckData.accountDistribution[0]?.accountId || ''}
+                onChange={(e) => handleDistributionChange(0, 'accountId', parseInt(e.target.value))}
+                className="w-full p-2 border border-theme-border rounded bg-theme-secondary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary text-sm"
+              >
+                {accounts.map(account => (
+                  <option key={account.id} value={account.id}>
+                    {account.name}
+                  </option>
+                ))}
+              </select>
             </div>
-
-            <div className="space-y-3">
-              {paycheckData.accountDistribution.map((dist, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-theme-secondary bg-opacity-50 rounded-lg">
-                  <div className="flex-1">
-                    <select
-                      value={dist.accountId}
-                      onChange={(e) => handleDistributionChange(index, 'accountId', parseInt(e.target.value))}
-                      className="w-full p-2 border border-theme-border rounded bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary"
-                    >
-                      {accounts.map(account => (
-                        <option key={account.id} value={account.id}>
-                          {account.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="flex-1">
-                    <CurrencyField
-                      value={dist.amount}
-                      onChange={(value) => handleDistributionChange(index, 'amount', value)}
-                      placeholder="0.00"
-                      darkMode={darkMode}
-                    />
-                  </div>
-
-                  {paycheckData.accountDistribution.length > 1 && (
-                    <button
-                      onClick={() => handleRemoveAccountDistribution(index)}
-                      className="text-red-500 hover:text-red-700 p-1"
-                      title="Remove account"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Distribution Summary */}
-            <div className="mt-3 p-3 bg-theme-secondary bg-opacity-30 rounded text-sm">
-              <div className="flex justify-between">
-                <span className="text-theme-secondary">Total Distribution:</span>
-                <span className="font-medium text-theme-text">
-                  ${paycheckData.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0).toFixed(2)}
-                </span>
+          ) : (
+            /* Multiple Accounts - Advanced */
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs font-medium text-theme-text">Account Distribution</label>
+                {paycheckData.accountDistribution.length < accounts.length && (
+                  <button
+                    onClick={handleAddAccountDistribution}
+                    className="text-xs text-theme-primary hover:text-theme-primary-dark"
+                  >
+                    + Add Account
+                  </button>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-theme-secondary">Paycheck Amount:</span>
-                <span className="font-medium text-theme-text">${paycheckData.amount.toFixed(2)}</span>
+
+              <div className="space-y-2">
+                {paycheckData.accountDistribution.map((dist, index) => (
+                  <div key={index} className="flex items-center gap-2 p-2 bg-theme-secondary bg-opacity-30 rounded text-sm">
+                    <div className="flex-1">
+                      <select
+                        value={dist.accountId}
+                        onChange={(e) => handleDistributionChange(index, 'accountId', parseInt(e.target.value))}
+                        className="w-full p-1.5 border border-theme-border rounded bg-theme-primary text-theme-text focus:outline-none focus:ring-1 focus:ring-theme-primary text-sm"
+                      >
+                        {accounts.map(account => (
+                          <option key={account.id} value={account.id}>
+                            {account.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex-1">
+                      <CurrencyField
+                        value={dist.amount}
+                        onChange={(value) => handleDistributionChange(index, 'amount', value)}
+                        placeholder="0.00"
+                        darkMode={darkMode}
+                      />
+                    </div>
+
+                    {paycheckData.accountDistribution.length > 1 && (
+                      <button
+                        onClick={() => handleRemoveAccountDistribution(index)}
+                        className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-100 transition-colors"
+                        title="Remove account"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-              {Math.abs(paycheckData.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0) - paycheckData.amount) > 0.01 && (
-                <div className="flex justify-between text-red-500">
-                  <span>Difference:</span>
-                  <span>
-                    ${Math.abs(paycheckData.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0) - paycheckData.amount).toFixed(2)}
+
+              {/* Distribution Summary - Compact */}
+              <div className="mt-2 p-2 bg-theme-secondary bg-opacity-20 rounded text-xs">
+                <div className="flex justify-between">
+                  <span className="text-theme-secondary">Total Distribution:</span>
+                  <span className="font-medium text-theme-text">
+                    ${paycheckData.accountDistribution.reduce((sum, dist) => sum + (typeof dist.amount === 'string' ? parseFloat(dist.amount) || 0 : dist.amount || 0), 0).toFixed(2)}
                   </span>
                 </div>
-              )}
+                <div className="flex justify-between">
+                  <span className="text-theme-secondary">Paycheck Amount:</span>
+                  <span className="font-medium text-theme-text">${paycheckData.amount.toFixed(2)}</span>
+                </div>
+                {Math.abs(paycheckData.accountDistribution.reduce((sum, dist) => sum + (typeof dist.amount === 'string' ? parseFloat(dist.amount) || 0 : dist.amount || 0), 0) - paycheckData.amount) > 0.01 && (
+                  <div className="flex justify-between text-red-500">
+                    <span>Difference:</span>
+                    <span>
+                      ${Math.abs(paycheckData.accountDistribution.reduce((sum, dist) => sum + (typeof dist.amount === 'string' ? parseFloat(dist.amount) || 0 : dist.amount || 0), 0) - paycheckData.amount).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Notes */}
+          {/* Notes - Compact */}
           <div>
-            <label className="block text-sm font-medium mb-2 text-theme-text">Notes (Optional)</label>
+            <label className="block text-xs font-medium mb-1 text-theme-text">Notes (Optional)</label>
             <textarea
               value={paycheckData.notes}
               onChange={(e) => setPaycheckData(prev => ({ ...prev, notes: e.target.value }))}
               placeholder="Any additional notes about this paycheck..."
-              rows={3}
-              className="w-full p-3 border border-theme-border rounded-lg bg-theme-surface text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent resize-none"
+              rows={2}
+              className="w-full p-2 border border-theme-border rounded bg-theme-secondary text-theme-text focus:outline-none focus:ring-2 focus:ring-theme-primary focus:border-transparent resize-none text-sm"
             />
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4">
+          {/* Action Buttons - Using correct theme classes */}
+          <div className="flex justify-center gap-3 pt-4 border-t border-theme-border mt-4">
             <button
               onClick={() => onComplete && onComplete({ completed: false })}
-              className="px-6 py-2 border border-theme-border text-theme-text rounded-lg hover:bg-theme-secondary hover:bg-opacity-50 transition-colors"
+              className="px-4 py-2 border border-theme-border text-theme-text rounded bg-theme-primary hover:bg-theme-hover transition-colors text-sm"
             >
               Cancel
             </button>
             <button
               onClick={handleRecordPaycheck}
-              className="px-6 py-2 bg-theme-primary text-white rounded-lg hover:bg-theme-primary-dark transition-colors"
+              className="px-4 py-2 border border-theme-border text-theme-text rounded bg-theme-primary hover:bg-theme-active transition-colors text-sm"
             >
-              Record & Continue to Allocation
+              Record & Continue
             </button>
           </div>
         </div>
@@ -515,7 +662,7 @@ const PaydayWorkflow = ({
 
   if (step === 'allocate') {
     return (
-      <div className="payday-workflow p-6 bg-theme-surface rounded-lg border border-theme-border">
+      <div className="payday-workflow p-6 bg-theme-primary rounded-lg border border-theme-border">
         {/* Header */}
         <div className="mb-6">
           <h2 className="text-xl font-semibold mb-2 text-theme-text">Allocate Paycheck</h2>
@@ -561,14 +708,14 @@ const PaydayWorkflow = ({
                 type="number"
                 value={autoAllocationPercent}
                 onChange={(e) => setAutoAllocationPercent(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
-                className="w-20 p-2 border border-theme-border rounded bg-theme-surface text-theme-text text-center"
+                className="w-20 p-2 border border-theme-border rounded bg-theme-tertiary text-theme-text text-center"
                 min="0"
                 max="100"
               />
               <span className="text-sm text-theme-secondary">% of paycheck</span>
               <button
                 onClick={handleAutoAllocate}
-                className="px-4 py-2 bg-theme-primary text-white rounded hover:bg-theme-primary-dark transition-colors"
+                className="px-4 py-2 btn-success text-white text-sm rounded hover:bg-theme-hover transition-colors"
               >
                 Auto-Allocate
               </button>
@@ -612,29 +759,29 @@ const PaydayWorkflow = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-between">
+        <div className="flex justify-center gap-3 pt-4 border-t border-theme-border mt-4">
           <button
             onClick={() => setStep('record-paycheck')}
-            className="px-6 py-2 border border-theme-border text-theme-text rounded-lg hover:bg-theme-secondary hover:bg-opacity-50 transition-colors"
+            className="px-6 py-2 border border-theme-border text-theme-text rounded-lg hover:bg-theme-active hover:bg-opacity-50 transition-colors"
           >
-            ← Back to Paycheck Details
+            ← Back
           </button>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => onComplete && onComplete({ completed: false })}
-              className="px-6 py-2 border border-theme-border text-theme-text rounded-lg hover:bg-theme-secondary hover:bg-opacity-50 transition-colors"
-            >
-              Skip Allocation
-            </button>
-            <button
-              onClick={handleComplete}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              disabled={categories.length === 0}
-            >
-              Complete Allocation
-            </button>
-          </div>
+
+          <button
+            onClick={() => onComplete && onComplete({ completed: false })}
+            className="px-6 py-2 border border-theme-border text-theme-text rounded-lg hover:bg-theme-active hover:bg-opacity-50 transition-colors"
+          >
+            Skip
+          </button>
+          <button
+            onClick={handleComplete}
+            className="px-6 py-2 btn-success text-white rounded-lg hover:bg-hover-active transition-colors"
+            disabled={categories.length === 0}
+          >
+            Done
+          </button>
+
         </div>
       </div>
     );
@@ -642,7 +789,7 @@ const PaydayWorkflow = ({
 
   if (step === 'complete') {
     return (
-      <div className="payday-workflow p-6 bg-theme-surface rounded-lg border border-theme-border">
+      <div className="payday-workflow p-6 bg-theme-primary rounded-lg border border-theme-border">
         <div className="text-center">
           <h2 className="text-xl font-semibold mb-4 text-green-600">Payday Complete!</h2>
           <div className="mb-6 space-y-2">
@@ -662,7 +809,7 @@ const PaydayWorkflow = ({
           <div className="flex justify-center gap-3">
             <button
               onClick={handleRestart}
-              className="px-6 py-2 border border-theme-border text-theme-text rounded-lg hover:bg-theme-secondary hover:bg-opacity-50 transition-colors"
+              className="px-6 py-2 border border-theme-border text-theme-text rounded-lg hover:bg-theme-active hover:bg-opacity-50 transition-colors"
             >
               Record Another Paycheck
             </button>
