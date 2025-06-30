@@ -30,6 +30,7 @@ import { useCategoryManagement } from './hooks/useCategoryManagement'; // Enhanc
 import { useConfigSettings } from './hooks/useConfigSettings';
 import { useDataModel } from './hooks/useDataModel';
 import { useEnvelopeBudgeting } from './hooks/useEnvelopeBudgeting';
+import { useMonthlyBudgeting } from './hooks/useMonthlyBudgeting';
 import { usePaycheckManagement } from './hooks/usePaycheckManagement';
 import { usePaycheckTimeline } from './hooks/usePaycheckTimeline';
 import { useTransactionManagement } from './hooks/useTransactionManagement';
@@ -38,7 +39,6 @@ import { useUIState } from './hooks/useUIState';
 // Import utilities
 import { getExpensesFromPlanningItems, getSavingsGoalsFromPlanningItems } from './utils/dataModelUtils';
 import { exportToYNAB } from './utils/exportUtils';
-
 
 // Import migration utilities
 
@@ -212,6 +212,14 @@ const App = () => {
         getAllUpcomingPaycheckDates, // This is the actual function name
         getTotalMonthlyIncome
     } = usePaycheckManagement(accounts);
+
+    const monthlyBudgeting = useMonthlyBudgeting({
+        categories,
+        setCategories,
+        planningItems,
+        transactions,
+        accounts
+    });
 
     // Migration state
     const [migrationStatus, setMigrationStatus] = useState({
@@ -922,7 +930,7 @@ const App = () => {
                                 categories={categories}
                                 planningItems={planningItems}
                                 toBeAllocated={allocationData.toBeAllocated}
-
+                                monthlyBudgeting={monthlyBudgeting}
                                 // Functions from enhanced category management
                                 fundCategory={fundCategory}
                                 transferFunds={handleTransferFunds}
@@ -1121,6 +1129,8 @@ const App = () => {
                                 if (editingAccount) {
                                     updateAccount(editingAccount.id, accountData);
                                     setEditingAccount(null);
+                                    setShowAddAccount(false);  // ✅ ADD THIS LINE
+
                                 } else {
                                     addAccount(accountData);
                                     setShowAddAccount(false);

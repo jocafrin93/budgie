@@ -18,6 +18,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { frequencyOptions } from '../utils/constants';
 import { CurrencyField } from './form';
+import { MonthlyBudgetNavigator } from './MonthlyBudgetNavigator';
 
 
 // Drag and Drop Constants
@@ -32,7 +33,6 @@ const UnifiedEnvelopeBudgetView = ({
     categories = [],
     planningItems = [],
     toBeAllocated = 0,
-
     // Functions from useEnvelopeBudgeting
     fundCategory,
     transferFunds,
@@ -49,6 +49,7 @@ const UnifiedEnvelopeBudgetView = ({
     onMoveItem,
     onReorderItems,
     onReorderCategories,
+    monthlyBudgeting = null,
 
     // Optional
     onShowPaydayWorkflow,
@@ -59,6 +60,30 @@ const UnifiedEnvelopeBudgetView = ({
     payFrequencyOptions,
     getAllUpcomingPaycheckDates
 }) => {
+    const monthSummary = monthlyBudgeting?.getMonthSummary || {
+        toBeAllocated: toBeAllocated, // Uses your existing prop
+        allocated: categories.reduce((sum, cat) => sum + (cat.allocated || 0), 0),
+        available: categories.reduce((sum, cat) => sum + (cat.available || 0), 0),
+        spent: 0,
+        remaining: 0,
+        carryover: 0
+    };
+    const getCategoryMonthData = (categoryId) => {
+        if (monthlyBudgeting?.getCategoryMonthData) {
+            return monthlyBudgeting.getCategoryMonthData(categoryId);
+        }
+        // Fallback to existing category data
+        const category = categories.find(c => c.id === categoryId);
+        return {
+            allocated: category?.allocated || 0,
+            available: category?.available || 0,
+            spent: 0,
+            remaining: category?.available || 0,
+            carryover: 0,
+            notes: '',
+            isOverspent: false
+        };
+    };
     // Track expanded categories
     const [expandedCategories, setExpandedCategories] = useState({});
 
@@ -91,6 +116,9 @@ const UnifiedEnvelopeBudgetView = ({
     const currentColumn = useRef(null);
     const startX = useRef(0);
     const startWidth = useRef(0);
+
+
+
 
     // Toggle category expansion
     const toggleCategoryExpanded = (categoryId) => {
@@ -552,7 +580,20 @@ const UnifiedEnvelopeBudgetView = ({
     };
 
     return (
+
         <div className="space-y-6">
+            {monthlyBudgeting && (
+                <MonthlyBudgetNavigator
+                    currentBudgetMonth={monthlyBudgeting.currentBudgetMonth}
+                    getMonthDisplayName={monthlyBudgeting.getMonthDisplayName}
+                    navigateToNextMonth={monthlyBudgeting.navigateToNextMonth}
+                    navigateToPrevMonth={monthlyBudgeting.navigateToPrevMonth}
+                    navigateToMonth={monthlyBudgeting.navigateToMonth}
+                    getAvailableMonths={monthlyBudgeting.getAvailableMonths}
+                    getMonthSummary={monthlyBudgeting.getMonthSummary}
+                    onCarryForward={monthlyBudgeting.carryForwardBalances}
+                />
+            )}
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
@@ -584,10 +625,10 @@ const UnifiedEnvelopeBudgetView = ({
                             {/* Ready to Assign label and amount - centered */}
                             <div className="text-center">
                                 <div className="text-lg text-theme-secondary">Ready to Assign</div>
-                                <div className={`text-lg font-bold ${toBeAllocated > 0 ? 'text-theme-green' :
-                                    toBeAllocated < 0 ? 'text-theme-red' : 'text-theme-secondary'
+                                <div className={`text-lg font-bold ${monthSummary.toBeAllocated > 0 ? 'text-theme-green' :
+                                    monthSummary.toBeAllocated < 0 ? 'text-theme-red' : 'text-theme-secondary'
                                     }`}>
-                                    ${toBeAllocated.toFixed(2)}
+                                    ${monthSummary.toBeAllocated.toFixed(2)}
                                 </div>
                             </div>
 
@@ -776,6 +817,8 @@ const UnifiedEnvelopeBudgetView = ({
                                     getPayPeriodUrgency={getPayPeriodUrgency}
                                     payFrequency={payFrequency}
                                     categories={categories}
+                                    monthlyBudgeting={monthlyBudgeting}
+                                    getCategoryMonthData={getCategoryMonthData}
                                 />
                             ))}
                         </tbody>
@@ -852,6 +895,9 @@ const CategoryTableRow = ({
     getPayPeriodUrgency,
     payFrequency,
     categories,
+    monthlyBudgeting,
+    getCategoryMonthData
+
 
 }) => {
     const isOverspent = (category.available || 0) < 0;
@@ -1012,6 +1058,12 @@ const CategoryTableRow = ({
                             </button>
                         </div>
                     </div>
+                    {monthlyBudgeting && (
+                        <div className="text-xs mt-1">
+                            This Month: ${getCategoryMonthData(category.id).allocated.toFixed(2)} allocated,
+                            ${getCategoryMonthData(category.id).spent.toFixed(2)} spent
+                        </div>
+                    )}
                 </td>
 
                 {/* Needed per Month */}
