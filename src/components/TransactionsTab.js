@@ -1,5 +1,3 @@
-// Enhanced TransactionsTab.js with compact layout and account filtering
-// Replace your existing TransactionsTab component with this enhanced version:
 
 import {
     ArrowRight,
@@ -16,7 +14,25 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurrencyField } from './form';
 
-// Enhanced TransactionEditRow Component - MOVED TO TOP
+// Helper function to get today's date in local timezone (most reliable method)
+const getTodaysDate = () => {
+    // Get today's date and ensure it's in local timezone
+    const now = new Date();
+    // Offset timezone difference to get true local date
+    const timezoneOffset = now.getTimezoneOffset() * 60000; // Convert to milliseconds
+    const localDate = new Date(now.getTime() - timezoneOffset);
+    const result = localDate.toISOString().split('T')[0];
+
+    console.log('TransactionEditRow - getTodaysDate():', {
+        now: now,
+        timezoneOffset: timezoneOffset,
+        localDate: localDate,
+        result: result,
+        expectedToday: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    });
+    return result;
+};
+
 const TransactionEditRow = ({
     transaction,
     setTransaction,
@@ -29,9 +45,76 @@ const TransactionEditRow = ({
     addSplit,
     removeSplit,
     updateSplit,
-    columnWidths, // ← ADD THIS PROP
+    columnWidths,
     viewAccount
 }) => {
+    const handleSplitUpdate = (splitId, field, value) => {
+        console.log(`handleSplitUpdate called:`, { splitId, field, value });
+        console.log('Current transaction splits before update:', JSON.stringify(transaction.splits, null, 2));
+
+        // Handle calls from parent's updateSplit function
+        if (updateSplit) {
+            console.log('Using parent updateSplit function');
+            updateSplit(splitId, field, value);
+        } else {
+            console.log('Using fallback updateSplit');
+            // Fallback: update splits directly in transaction state
+            const currentSplits = transaction.splits || [];
+            const updatedSplits = currentSplits.map(split => {
+                if (split.id === splitId) {
+                    const updatedSplit = { ...split, [field]: value };
+                    console.log(`Updating split ${splitId}:`, split, '→', updatedSplit);
+                    return updatedSplit;
+                } else {
+                    console.log(`Keeping split ${split.id} unchanged:`, split);
+                    return split;
+                }
+            });
+
+            console.log('Updated splits array:', JSON.stringify(updatedSplits, null, 2));
+
+            setTransaction(prev => ({
+                ...prev,
+                splits: updatedSplits
+            }));
+        }
+    };
+
+    const handleAddSplit = () => {
+        if (addSplit) {
+            addSplit();
+        } else {
+            // Fallback: add split directly
+            const newSplit = {
+                id: Date.now(),
+                amount: '',
+                categoryId: '',
+                memo: ''
+            };
+            const currentSplits = transaction.splits || [];
+            setTransaction(prev => ({
+                ...prev,
+                splits: [...currentSplits, newSplit],
+                isSplit: true
+            }));
+        }
+    };
+
+    const handleRemoveSplit = (splitId) => {
+        if (removeSplit) {
+            removeSplit(splitId);
+        } else {
+            // Fallback: remove split directly
+            const currentSplits = transaction.splits || [];
+            const updatedSplits = currentSplits.filter(split => split.id !== splitId);
+            setTransaction(prev => ({
+                ...prev,
+                splits: updatedSplits,
+                isSplit: updatedSplits.length > 0
+            }));
+        }
+    };
+
     const handleInputChange = (field, value) => {
         setTransaction(prev => ({
             ...prev,
@@ -52,104 +135,129 @@ const TransactionEditRow = ({
             // Turning on transfer mode
             const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
             const defaultPayee = fromAccount ? `Transfer from ${fromAccount.name}` : 'Transfer';
-
             setTransaction(prev => ({
                 ...prev,
                 isTransfer: true,
-                categoryId: '',
-                isSplit: false,
-                splits: [],
-                payee: defaultPayee
+                payee: defaultPayee,
+                categoryId: '' // Clear category for transfers
             }));
         }
     };
 
     const toggleSplit = () => {
         if (transaction.isSplit) {
+            // Turning off split mode
             setTransaction(prev => ({
                 ...prev,
                 isSplit: false,
                 splits: [],
                 categoryId: ''
+                // DON'T clear the payee when turning off split mode
             }));
         } else {
+            // Turning on split mode - create first split
+            const newSplit = {
+                id: Date.now(),
+                amount: '',
+                categoryId: '',
+                memo: ''
+            };
             setTransaction(prev => ({
                 ...prev,
                 isSplit: true,
                 isTransfer: false,
                 transferAccountId: '',
                 categoryId: '',
-                splits: [{
-                    id: Date.now(),
-                    amount: '',
-                    categoryId: '',
-                    memo: ''
-                }]
+                splits: [newSplit]
+                // DON'T clear the payee when turning on split mode - PRESERVE IT
             }));
         }
     };
 
-    const handleAccountChange = (newAccountId) => {
-        const newAccount = accounts.find(acc => acc.id === parseInt(newAccountId));
-
-        setTransaction(prev => {
-            let updatedTransaction = {
-                ...prev,
-                accountId: newAccountId
-            };
-
-            if (prev.isTransfer && newAccount) {
-                updatedTransaction.payee = `Transfer from ${newAccount.name}`;
-            }
-
-            return updatedTransaction;
-        });
-    };
-
-    const handleTransferAccountChange = (transferAccountId) => {
-        const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
-        const toAccount = accounts.find(acc => acc.id === parseInt(transferAccountId));
-
-        let newPayee = 'Transfer';
-        if (fromAccount && toAccount) {
-            newPayee = `Transfer: ${fromAccount.name} → ${toAccount.name}`;
-        }
-
-        setTransaction(prev => ({
-            ...prev,
-            transferAccountId,
-            payee: newPayee
-        }));
-    };
-
-    const outflowAmount = typeof transaction.outflow === 'number' ?
-        transaction.outflow : parseFloat(transaction.outflow) || 0;
-    const inflowAmount = typeof transaction.inflow === 'number' ?
-        transaction.inflow : parseFloat(transaction.inflow) || 0;
-    const totalAmount = outflowAmount || inflowAmount;
+    // Calculate split totals for validation
+    const totalAmount = Math.abs(parseFloat(transaction.outflow) || parseFloat(transaction.inflow) || 0);
     const splitTotal = (transaction.splits || []).reduce((sum, split) => {
-        const amount = typeof split.amount === 'number' ? split.amount : parseFloat(split.amount) || 0;
+        const amount = typeof split.amount === 'string' ? parseFloat(split.amount) || 0 : parseFloat(split.amount) || 0;
         return sum + Math.abs(amount);
     }, 0);
     const splitDifference = Math.abs(totalAmount - splitTotal);
 
+    const outflowAmount = parseFloat(transaction.outflow) || 0;
+    const inflowAmount = parseFloat(transaction.inflow) || 0;
+
+    // Helper function to get today's date in local timezone (most reliable method)
+    const getTodaysDate = () => {
+        // Get today's date and ensure it's in local timezone
+        const now = new Date();
+        // Offset timezone difference to get true local date
+        const timezoneOffset = now.getTimezoneOffset() * 60000; // Convert to milliseconds
+        const localDate = new Date(now.getTime() - timezoneOffset);
+        const result = localDate.toISOString().split('T')[0];
+
+        console.log('TransactionEditRow - getTodaysDate():', {
+            now: now,
+            timezoneOffset: timezoneOffset,
+            localDate: localDate,
+            result: result,
+            expectedToday: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+        });
+        return result;
+    };
+
+    // Handle keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            console.log('KeyDown event detected:', e.key, 'Shift:', e.shiftKey, 'Target:', e.target.tagName);
+
+            // Only handle if the focused element is within this component's form fields
+            const isInTransactionForm = e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT';
+
+            if (isInTransactionForm) {
+                console.log('Event is in transaction form field');
+
+                if (e.key === 'Escape') {
+                    console.log('Escape pressed, calling onCancel');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onCancel();
+                } else if (e.key === 'Enter') {
+                    console.log('Enter pressed, shift:', e.shiftKey, 'isNew:', isNew);
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    if (e.shiftKey && isNew && onSaveAndAddAnother) {
+                        console.log('Calling onSaveAndAddAnother');
+                        onSaveAndAddAnother();
+                    } else {
+                        console.log('Calling onSave');
+                        onSave();
+                    }
+                }
+            }
+        };
+
+        // Add event listener to document
+        document.addEventListener('keydown', handleKeyDown, true); // Use capture phase
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown, true);
+        };
+    }, [onSave, onSaveAndAddAnother, onCancel, isNew]);
+
     return (
         <>
-            <tr className="bg-theme-hover" style={{ width: '100%' }}>
+            {/* Main Transaction Row */}
+            <tr className="bg-theme-secondary">
                 {/* Bulk Select */}
                 <td className="px-1 py-2 text-center" style={{ width: columnWidths.select }}>
-                    <input
-                        type="checkbox"
-                        disabled
-                        className="rounded border-theme-secondary opacity-50"
-                    />
+                    {/* Empty for new transactions */}
                 </td>
 
                 {/* Date */}
                 <td className="px-2 py-2" style={{ width: columnWidths.date }}>
                     <input
                         type="date"
-                        value={transaction.date}
+                        value={transaction.date || getTodaysDate()}
                         onChange={(e) => handleInputChange('date', e.target.value)}
                         className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
                     />
@@ -157,94 +265,101 @@ const TransactionEditRow = ({
 
                 {/* Payee */}
                 <td className="px-2 py-2" style={{ width: columnWidths.payee }}>
-                    <input
-                        type="text"
-                        value={transaction.payee}
-                        onChange={(e) => handleInputChange('payee', e.target.value)}
-                        placeholder={transaction.isTransfer ? "Transfer" : "Payee"}
-                        disabled={transaction.isTransfer}
-                        className={`w-full px-2 py-1 border rounded text-sm ${transaction.isTransfer
-                            ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
-                            : 'bg-theme-primary border-theme-secondary text-theme-primary'
-                            }`}
-                        autoFocus={isNew && !transaction.isTransfer}
-                    />
-                </td>
-
-                {/* Category OR Transfer Account - YNAB-style with inline icons */}
-                <td className="px-2 py-2" style={{ width: columnWidths.category }}>
                     {transaction.isTransfer ? (
-                        <div className="flex items-center gap-1">
-                            <ArrowRight className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                            <select
-                                value={transaction.transferAccountId}
-                                onChange={(e) => handleTransferAccountChange(e.target.value)}
-                                className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                            >
-                                <option value="">To account...</option>
-                                {accounts
-                                    .filter(acc => acc.id !== parseInt(transaction.accountId))
-                                    .map(account => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name}
-                                        </option>
-                                    ))}
-                            </select>
-                            <button
-                                type="button"
-                                onClick={toggleTransfer}
-                                className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors flex-shrink-0"
-                                title="Remove transfer"
-                            >
-                                <X className="w-3 h-3" />
-                            </button>
-                        </div>
-                    ) : transaction.isSplit ? (
-                        <div className="flex items-center gap-1">
-                            <Split className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                            <input
-                                type="text"
-                                value="Split Transaction"
-                                disabled
-                                className="flex-1 px-2 py-1 border rounded bg-theme-secondary border-theme-secondary text-theme-tertiary text-sm cursor-not-allowed"
-                            />
+                        <div className="flex items-center gap-2">
+                            <ArrowRight className="w-3 h-3 text-theme-secondary" />
+                            <span className="text-sm text-theme-secondary">Transfer</span>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-1">
-                            <select
-                                value={transaction.categoryId}
-                                onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                                className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                            >
-                                <option value="">Select category...</option>
-                                {categories.map(category => (
-                                    <option key={category.id} value={category.id}>
-                                        {category.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <button
-                                type="button"
-                                onClick={toggleSplit}
-                                className="p-1 text-blue-600 hover:bg-theme-hover rounded transition-colors flex-shrink-0"
-                                title="Split transaction"
-                            >
-                                <Split className="w-3 h-3" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={toggleTransfer}
-                                className="p-1 text-blue-600 hover:bg-theme-hover rounded transition-colors flex-shrink-0"
-                                title="Make transfer"
-                            >
-                                <ArrowRight className="w-3 h-3" />
-                            </button>
-                        </div>
+                        <input
+                            type="text"
+                            value={transaction.payee}
+                            onChange={(e) => handleInputChange('payee', e.target.value)}
+                            placeholder="Payee"
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                        />
                     )}
                 </td>
 
+                {/* Category - NOW WITH SPLIT OPTION IN DROPDOWN */}
+                <td className="px-2 py-2" style={{ width: columnWidths.category, minWidth: '180px' }}>
+                    <div className="w-full h-full relative">
+                        {transaction.isTransfer ? (
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={transaction.transferAccountId}
+                                    onChange={(e) => handleInputChange('transferAccountId', e.target.value)}
+                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                >
+                                    <option value="">Select account</option>
+                                    {accounts
+                                        .filter(acc => acc.id !== parseInt(transaction.accountId))
+                                        .map(account => (
+                                            <option key={account.id} value={account.id}>
+                                                {account.name}
+                                            </option>
+                                        ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={toggleTransfer}
+                                    className="flex items-center gap-1 text-xs text-theme-blue hover:text-theme-blue underline whitespace-nowrap"
+                                    title="Remove transfer"
+                                >
+                                    <X className="w-3 h-3" />
+                                    Remove
+                                </button>
+                            </div>
+                        ) : transaction.isSplit ? (
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 text-sm text-theme-secondary">
+                                    <Split className="w-3 h-3" />
+                                    <span>Split Transaction</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={toggleSplit}
+                                    className="flex items-center gap-1 text-xs text-theme-red hover:text-theme-red underline whitespace-nowrap"
+                                    title="Remove split transaction"
+                                >
+                                    <X className="w-3 h-3" />
+                                    Remove
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={transaction.categoryId}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === 'SPLIT_TRANSACTION') {
+                                            toggleSplit();
+                                        } else if (value === 'TRANSFER') {
+                                            toggleTransfer();
+                                        } else {
+                                            // Ensure we save the category properly
+                                            handleInputChange('categoryId', value || '');
+                                        }
+                                    }}
+                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                >
+                                    <option value="">Select category</option>
+                                    {categories.map(category => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                    <option value="" disabled>──────────</option>
+                                    <option value="SPLIT_TRANSACTION">🔀 Split Transaction</option>
+                                    <option value="TRANSFER">➡️ Transfer</option>
+                                </select>
+                            </div>
+                        )}
+                    </div>
+                </td>
+
                 {/* Memo */}
-                <td className="px-2 py-2" style={{ width: columnWidths.memo }}>
+                <td className="px-2 py-2" style={{ width: columnWidths.memo, minWidth: '150px' }}>
                     <input
                         type="text"
                         value={transaction.memo}
@@ -260,8 +375,10 @@ const TransactionEditRow = ({
                         name="outflow"
                         value={transaction.outflow || 0}
                         onChange={(e) => {
-                            handleInputChange('outflow', e.target.value);
-                            if (e.target.value) handleInputChange('inflow', 0);
+                            // CurrencyField returns a number in e.target.value
+                            const numericValue = e.target.value;
+                            handleInputChange('outflow', numericValue);
+                            if (numericValue > 0) handleInputChange('inflow', 0);
                         }}
                         hideLabel={true}
                         placeholder="0.00"
@@ -281,8 +398,10 @@ const TransactionEditRow = ({
                         name="inflow"
                         value={transaction.inflow || 0}
                         onChange={(e) => {
-                            handleInputChange('inflow', e.target.value);
-                            if (e.target.value) handleInputChange('outflow', 0);
+                            // CurrencyField returns a number in e.target.value
+                            const numericValue = e.target.value;
+                            handleInputChange('inflow', numericValue);
+                            if (numericValue > 0) handleInputChange('outflow', 0);
                         }}
                         hideLabel={true}
                         placeholder="0.00"
@@ -307,44 +426,185 @@ const TransactionEditRow = ({
                 </td>
             </tr>
 
-            {/* Account Selection Row with YNAB-style Cancel/Approve buttons */}
-            <tr className="bg-theme-secondary">
-                <td className="px-1 py-2"></td>
-                {viewAccount === 'all' ? (
-                    <>
-                        <td className="px-2 py-2" colSpan="2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-theme-secondary">Account:</span>
-                                <select
-                                    value={transaction.accountId}
-                                    onChange={(e) => handleAccountChange(e.target.value)}
-                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm font-medium"
+            {/* Split Rows */}
+            {transaction.isSplit && (transaction.splits || []).map((split, index) => (
+                <tr key={split.id} className="bg-theme-tertiary">
+                    <td className="px-1 py-2"></td>
+                    <td className="px-2 py-2"></td>
+                    <td className="px-2 py-2">
+                        <div className="flex items-center gap-2 ml-4">
+                            <span className="text-sm text-theme-secondary">Split {index + 1}</span>
+                            {(transaction.splits || []).length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => removeSplit ? removeSplit(split.id) : handleRemoveSplit(split.id)}
+                                    className="flex items-center gap-1 text-xs text-theme-red hover:text-theme-red underline"
+                                    title="Remove this split"
                                 >
-                                    {accounts.map(account => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name} (${(account.balance || 0).toFixed(2)})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </td>
-                        <td className="px-2 py-2" colSpan="2">
-                            <div className="text-xs text-theme-tertiary">
-                                {transaction.isTransfer ? (
-                                    <>
-                                        <strong>Transfer Direction:</strong><br />
-                                        • <strong>Outflow</strong> = Money leaving {accounts.find(acc => acc.id === parseInt(transaction.accountId))?.name}<br />
-                                        • <strong>Inflow</strong> = Money entering {accounts.find(acc => acc.id === parseInt(transaction.accountId))?.name}
-                                    </>
-                                ) : (
-                                    'This transaction will be recorded in the selected account above'
-                                )}
-                            </div>
-                        </td>
-                    </>
-                ) : (
-                    <td className="px-2 py-2" colSpan="4"></td>
-                )}
+                                    <X className="w-3 h-3" />
+                                    Remove
+                                </button>
+                            )}
+                            {index === (transaction.splits || []).length - 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => addSplit ? addSplit() : handleAddSplit()}
+                                    className="flex items-center gap-1 text-xs text-theme-blue hover:text-theme-blue underline"
+                                    title="Add another split"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                    Add Split
+                                </button>
+                            )}
+                        </div>
+                    </td>
+                    <td className="px-2 py-2">
+                        <select
+                            value={split.categoryId || ''}
+                            onChange={(e) => handleSplitUpdate(split.id, 'categoryId', e.target.value)}
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                        >
+                            <option value="">Select category</option>
+                            {categories.map(category => (
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
+                            ))}
+                        </select>
+                    </td>
+                    <td className="px-2 py-2">
+                        <input
+                            type="text"
+                            value={split.memo || ''}
+                            onChange={(e) => handleSplitUpdate(split.id, 'memo', e.target.value)}
+                            placeholder="Memo"
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                        />
+                    </td>
+                    <td className="px-2 py-2">
+                        <CurrencyField
+                            name={`split-amount-${split.id}`}
+                            value={typeof split.amount === 'string' ? parseFloat(split.amount) || 0 : split.amount || 0}
+                            onChange={(e) => {
+                                // CurrencyField returns a number in e.target.value
+                                const numericValue = e.target.value;
+                                console.log(`Updating split ${split.id} amount to:`, numericValue, 'Split object before update:', split);
+                                handleSplitUpdate(split.id, 'amount', numericValue);
+                            }}
+                            hideLabel={true}
+                            placeholder="0.00"
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                            darkMode={false}
+                        />
+                    </td>
+                    <td className="px-2 py-2"></td>
+                    <td className="px-1 py-2"></td>
+                </tr>
+            ))}
+
+            {/* Account Selection Row - MOVED TO AFTER SPLITS */}
+            {viewAccount === 'all' && (
+                <tr className="bg-theme-secondary">
+                    <td className="px-1 py-2"></td>
+                    <td className="px-2 py-2"></td>
+                    <td className="px-2 py-2">
+                        <div className="flex items-center gap-2 ml-4">
+                            <span className="text-sm text-theme-secondary">Account:</span>
+                        </div>
+                    </td>
+                    <td className="px-2 py-2" colSpan="2">
+                        <select
+                            value={transaction.accountId}
+                            onChange={(e) => handleInputChange('accountId', e.target.value)}
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                        >
+                            <option value="">Select account</option>
+                            {accounts.map(account => (
+                                <option key={account.id} value={account.id}>
+                                    {account.name}
+                                </option>
+                            ))}
+                        </select>
+                    </td>
+                    <td className="px-2 py-2"></td>
+                    <td className="px-2 py-2"></td>
+                    <td className="px-1 py-2"></td>
+                </tr>
+            )}
+
+            {/* Split Difference Helper Row - Shows when splits don't match total */}
+            {transaction.isSplit && (transaction.splits || []).length > 0 && Math.abs(splitDifference) > 0.01 && (
+                <tr className="bg-yellow-50 border border-yellow-200">
+                    <td className="px-1 py-2 text-center">
+                        <div className="text-yellow-600 text-xs">⚠️</div>
+                    </td>
+                    <td className="px-2 py-2"></td>
+                    <td className="px-2 py-2">
+                        <div className="flex items-center gap-2 ml-4">
+                            <span className="text-sm text-yellow-700 font-medium">
+                                Difference: ${splitDifference.toFixed(2)}
+                            </span>
+                        </div>
+                    </td>
+                    <td className="px-2 py-2">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                // YNAB-style: Distribute difference evenly across existing splits
+                                const currentSplits = transaction.splits || [];
+                                const numberOfSplits = currentSplits.length;
+                                const amountPerSplit = splitDifference / numberOfSplits;
+
+                                console.log(`Distributing $${splitDifference.toFixed(2)} evenly across ${numberOfSplits} splits (${amountPerSplit.toFixed(2)} each)`);
+
+                                const updatedSplits = currentSplits.map((split, index) => {
+                                    const currentAmount = parseFloat(split.amount) || 0;
+                                    const newAmount = currentAmount + amountPerSplit;
+                                    console.log(`Split ${index + 1}: $${currentAmount.toFixed(2)} + $${amountPerSplit.toFixed(2)} = $${newAmount.toFixed(2)}`);
+                                    return {
+                                        ...split,
+                                        amount: newAmount
+                                    };
+                                });
+
+                                setTransaction(prev => ({
+                                    ...prev,
+                                    splits: updatedSplits
+                                }));
+                            }}
+                            className="w-full px-3 py-1 text-sm bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 rounded text-yellow-800 font-medium transition-colors"
+                        >
+                            📊 Distribute Evenly
+                        </button>
+                    </td>
+                    <td className="px-2 py-2">
+                        <div className="text-xs text-yellow-700">
+                            +${(splitDifference / (transaction.splits || []).length).toFixed(2)} per split
+                        </div>
+                    </td>
+                    <td className="px-2 py-2 text-right">
+                        <span className="text-sm font-medium text-yellow-700">
+                            ${splitDifference.toFixed(2)}
+                        </span>
+                    </td>
+                    <td className="px-2 py-2"></td>
+                    <td className="px-1 py-2"></td>
+                </tr>
+            )}
+
+            {/* CONSOLIDATED BUTTON ROW - Always shows for any transaction being edited */}
+            <tr className="bg-theme-tertiary">
+                <td className="px-1 py-2 text-center">
+                    {transaction.isSplit && (
+                        <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'} text-xs`}>
+                            {Math.abs(splitDifference) < 0.01 ? '✓' : '!'}
+                        </div>
+                    )}
+                </td>
+                <td className="px-2 py-2"></td>
+                <td className="px-2 py-2"></td>
+                <td className="px-2 py-2"></td>
+                <td className="px-2 py-2"></td>
                 <td className="px-2 py-2 text-right">
                     <button
                         type="button"
@@ -359,163 +619,53 @@ const TransactionEditRow = ({
                     </button>
                 </td>
                 <td className="px-2 py-2 text-right">
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onSave();
-                        }}
-                        className="px-3 py-1 text-xs btn-primary rounded transition-colors"
-                    >
-                        Approve
-                    </button>
-                </td>
-                <td className="px-1 py-2"></td>
-            </tr>
-
-            {/* Split Rows */}
-            {transaction.isSplit && (transaction.splits || []).map((split, index) => (
-                <tr key={split.id} className="bg-theme-tertiary">
-                    <td className="px-1 py-2"></td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2">
-                        <div className="flex items-center gap-2 ml-4">
-                            <span className="text-sm text-theme-secondary">Split {index + 1}</span>
-                            {(transaction.splits || []).length > 1 && (
-                                <button
-                                    type="button"
-                                    onClick={() => removeSplit(split.id)}
-                                    className="text-xs text-theme-red hover:text-theme-red underline"
-                                >
-                                    Remove
-                                </button>
-                            )}
-                            {index === (transaction.splits || []).length - 1 && (
-                                <button
-                                    type="button"
-                                    onClick={addSplit}
-                                    className="text-xs text-theme-blue hover:text-theme-blue underline"
-                                >
-                                    + Add Split
-                                </button>
-                            )}
-                        </div>
-                    </td>
-                    <td className="px-2 py-2">
-                        <select
-                            value={split.categoryId}
-                            onChange={(e) => updateSplit(split.id, 'categoryId', e.target.value)}
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                        >
-                            <option value="">Select category...</option>
-                            {categories.map(category => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
-                    </td>
-                    <td className="px-2 py-2">
-                        <input
-                            type="text"
-                            value={split.memo || ''}
-                            onChange={(e) => updateSplit(split.id, 'memo', e.target.value)}
-                            placeholder="Split memo"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                        />
-                    </td>
-                    <td className="px-2 py-2">
-                        <CurrencyField
-                            name={`split_${split.id}_outflow`}
-                            value={split.amount < 0 ? Math.abs(split.amount) : 0}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                if (value) {
-                                    updateSplit(split.id, 'amount', -Math.abs(parseFloat(value) || 0));
-                                } else {
-                                    updateSplit(split.id, 'amount', '');
-                                }
-                            }}
-                            hideLabel={true}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                            darkMode={false}
-                        />
-                    </td>
-                    <td className="px-2 py-2">
-                        <CurrencyField
-                            name={`split_${split.id}_inflow`}
-                            value={split.amount > 0 ? split.amount : 0}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                if (value) {
-                                    updateSplit(split.id, 'amount', Math.abs(parseFloat(value) || 0));
-                                } else {
-                                    updateSplit(split.id, 'amount', '');
-                                }
-                            }}
-                            hideLabel={true}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                            darkMode={false}
-                        />
-                    </td>
-                    <td className="px-1 py-2"></td>
-                </tr>
-            ))}
-
-            {/* Split Summary Row with Buttons */}
-            {transaction.isSplit && (transaction.splits || []).length > 0 && (
-                <tr className="bg-theme-tertiary">
-                    <td className="px-1 py-2 text-center">
-                        <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'} text-xs`}>
-                            {Math.abs(splitDifference) < 0.01 ? '✓' : '!'}
-                        </div>
-                    </td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2 text-right">
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onCancel();
-                            }}
-                            className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </td>
-                    <td className="px-2 py-2 text-right">
-                        <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-end gap-1">
+                        {transaction.isSplit ? (
+                            // Split transaction summary
                             <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'}`}>
                                 <div className="text-xs font-medium">${splitTotal.toFixed(2)}</div>
                                 <div className="text-xs opacity-70">of ${totalAmount.toFixed(2)}</div>
                                 <div className="text-xs">{Math.abs(splitDifference) < 0.01 ? 'Balanced' : `Diff: $${splitDifference.toFixed(2)}`}</div>
                             </div>
+                        ) : (
+                            // Regular transaction - just show the amount
+                            <div className="text-xs font-medium text-theme-primary">
+                                ${totalAmount.toFixed(2)}
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onSave();
+                            }}
+                            className="px-3 py-1 text-xs btn-primary rounded transition-colors"
+                        >
+                            {isNew ? 'Add' : 'Save'}
+                        </button>
+                        {isNew && onSaveAndAddAnother && (
                             <button
                                 type="button"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    onSave();
+                                    onSaveAndAddAnother();
                                 }}
-                                className="px-3 py-1 text-xs btn-primary rounded transition-colors mt-1"
+                                className="px-2 py-1 text-xs btn-success rounded transition-colors ml-1"
+                                title="Save and add another"
                             >
-                                Approve
+                                +
                             </button>
-                        </div>
-                    </td>
-                    <td className="px-1 py-2"></td>
-                </tr>
-            )}
+                        )}
+                    </div>
+                </td>
+                <td className="px-1 py-2"></td>
+            </tr>
         </>
     );
 };
+
 
 const TransactionsTab = ({
     transactions = [],
@@ -788,7 +938,13 @@ const TransactionsTab = ({
             isTransfer: !!transaction.transferAccountId,
             transferAccountId: transaction.transferAccountId || '',
             isSplit: !!transaction.splits && transaction.splits.length > 0,
-            splits: transaction.splits || []
+            // FIX: Deep clone splits array to prevent reference sharing
+            splits: transaction.splits ? transaction.splits.map(split => ({
+                id: split.id || Date.now() + Math.random(), // Ensure unique IDs
+                amount: split.amount,
+                categoryId: split.categoryId,
+                memo: split.memo
+            })) : []
         });
     };
 
@@ -947,15 +1103,29 @@ const TransactionsTab = ({
     };
 
     const updateSplit = (splitId, field, value) => {
+        console.log(`TransactionsTab updateSplit called:`, { splitId, field, value });
+        console.log('Current newTransaction.splits before update:', JSON.stringify(newTransaction.splits, null, 2));
+
         const currentSplits = newTransaction.splits || [];
-        const updatedSplits = currentSplits.map(split =>
-            split.id === splitId ? { ...split, [field]: value } : split
-        );
+        const updatedSplits = currentSplits.map(split => {
+            if (split.id === splitId) {
+                const updatedSplit = { ...split, [field]: value };
+                console.log(`TransactionsTab updating split ${splitId}:`, split, '→', updatedSplit);
+                return updatedSplit;
+            } else {
+                console.log(`TransactionsTab keeping split ${split.id} unchanged:`, split);
+                return { ...split }; // Clone even unchanged splits to prevent reference issues
+            }
+        });
+
+        console.log('TransactionsTab updated splits array:', JSON.stringify(updatedSplits, null, 2));
+
         setNewTransaction(prev => ({
             ...prev,
             splits: updatedSplits
         }));
     };
+
 
     // Bulk selection handlers
     const handleSelectAll = () => {
