@@ -1040,7 +1040,14 @@ const CategoryTableRow = ({
                             {categoryData.type === 'multiple' && (
                                 <button
                                     onClick={() => {
-                                        console.log('Adding item to category:', category.name, 'ID:', category.id);
+                                        console.log('🟢 WORKING BUTTON - Adding item to category:', {
+                                            name: category.name,
+                                            id: category.id,
+                                            categoryObject: category,
+                                            categoryData: categoryData,
+                                            location: 'hover-actions',
+                                            timestamp: new Date().toISOString()
+                                        });
                                         onAddItem({ preselectedCategory: category });
                                     }}
                                     className="p-1 text-theme-secondary hover:text-theme-green hover:bg-theme-active rounded transition-colors"
@@ -1161,11 +1168,26 @@ const CategoryTableRow = ({
                             {/* Add Item Row */}
                             <tr className="bg-theme-tertiary">
                                 <td className="px-4 py-1 min-w-0 w-16"></td>
-                                <td colSpan="5" className="px-4 py-1"> {/* CHANGED: was colSpan="6" */}
+                                <td colSpan="5" className="px-4 py-1">
                                     <button
                                         onClick={() => {
-                                            console.log('Adding item to category:', category.name, 'ID:', category.id);
-                                            onAddItem({ preselectedCategory: category });
+                                            console.log('🔴 NON-WORKING BUTTON - Before delay:', {
+                                                name: category.name,
+                                                id: category.id,
+                                                categoryObject: category,
+                                                timestamp: new Date().toISOString()
+                                            });
+
+                                            // Add delay to test timing issues
+                                            setTimeout(() => {
+                                                console.log('🔴 NON-WORKING BUTTON - After delay:', {
+                                                    name: category.name,
+                                                    id: category.id,
+                                                    categoryObject: category,
+                                                    timestamp: new Date().toISOString()
+                                                });
+                                                onAddItem({ preselectedCategory: category });
+                                            }, 100); // 100ms delay
                                         }}
                                         className="flex items-center gap-2 text-sm text-theme-blue hover:text-theme-blue ml-8"
                                     >

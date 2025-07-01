@@ -29,13 +29,43 @@ const UnifiedItemForm = ({
   preselectedCategory = null,
   darkMode
 }) => {
+
+  console.log('🔍 UnifiedItemForm - DETAILED DEBUGGING:', {
+    timestamp: new Date().toISOString(),
+    preselectedCategory: preselectedCategory,
+    preselectedCategoryType: typeof preselectedCategory,
+    preselectedCategoryKeys: preselectedCategory ? Object.keys(preselectedCategory) : null,
+    preselectedCategoryStringified: JSON.stringify(preselectedCategory, null, 2),
+    categoriesLength: categories.length,
+    categoriesIds: categories.map(c => ({ id: c.id, name: c.name })),
+    item: item
+  });
+
+  // Check if preselectedCategory has the expected structure
+  if (preselectedCategory) {
+    console.log('🔍 PreselectedCategory analysis:', {
+      hasDirectId: !!preselectedCategory.id,
+      hasNestedId: !!preselectedCategory.preselectedCategory?.id,
+      directIdValue: preselectedCategory.id,
+      nestedIdValue: preselectedCategory.preselectedCategory?.id,
+      recommendedAccess: preselectedCategory.id || preselectedCategory.preselectedCategory?.id || 'NO_ID_FOUND'
+    });
+  }
+
+
+
+
+
+
   // Determine if we're editing an expense or a goal
   const isGoal = item?.targetAmount !== undefined;
   const initialType = isGoal ? 'goal' : 'expense';
 
   console.log('DEBUG - UnifiedItemForm rendering with categories:', categories);
   console.log('DEBUG - UnifiedItemForm rendering with preselectedCategory:', preselectedCategory);
+  const resolvedCategoryId = preselectedCategory?.id || preselectedCategory?.preselectedCategory?.id || '';
 
+  console.log('🎯 Resolved categoryId:', resolvedCategoryId);
   // Initialize form with useForm hook
   const initialValues = {
     type: initialType,
@@ -45,7 +75,7 @@ const UnifiedItemForm = ({
     percentageAmount: item?.percentageAmount || 0,
     frequency: item?.frequency || 'monthly',
     dueDate: item?.dueDate || '',
-    categoryId: preselectedCategory?.preselectedCategory?.id || '', // Note the nested property
+    categoryId: resolvedCategoryId || '',
     accountId: item?.accountId || (accounts[0]?.id || ''),
     priorityState: item?.priorityState || 'active',
     isRecurring: item?.isRecurring || false,
