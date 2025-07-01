@@ -220,6 +220,9 @@ const App = () => {
         report: null
     });
 
+    //Active account in Transactions
+    const [currentAccountView, setCurrentAccountView] = useState('all');
+
     // State for budget mode (enhanced: item-based, envelope, or unified)
     // SIMPLIFIED: Fixed to unified mode only
     const budgetMode = 'unified'; // Fixed to unified mode only
@@ -230,7 +233,7 @@ const App = () => {
     const [showPaydayWorkflow, setShowPaydayWorkflow] = useState(false);
     const [activePaycheckForWorkflow, setActivePaycheckForWorkflow] = useState(null);
 
-    // State for what-if mode (keeping this in App.js for now)
+    // // State for what-if mode (keeping this in App.js for now)
     const [whatIfMode, setWhatIfMode] = useState(false);
     const [whatIfPay, setWhatIfPay] = useState(currentPay);
 
@@ -983,6 +986,8 @@ const App = () => {
                     {activeTab === 'transactions' && (
                         <TransactionsTab
                             transactions={transactions}
+                            onAccountViewChange={setCurrentAccountView}
+                            viewAccount={currentAccountView}
                             accounts={accounts}
                             categories={categories}
                             onAddTransaction={addTransaction}  // ← Change this

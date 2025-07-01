@@ -1,9 +1,6 @@
-// Enhanced TransactionsTab.js with compact layout and account filtering
-// Replace your existing TransactionsTab component with this enhanced version:
-
+// Enhanced TransactionsTab.js with mobile responsiveness and improved split handling
 import {
     ArrowRight,
-    Check,
     ChevronDown,
     ChevronUp,
     Edit2,
@@ -13,11 +10,11 @@ import {
     Trash2,
     X
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CurrencyField } from './form';
 
-// Enhanced TransactionEditRow Component - MOVED TO TOP
-const TransactionEditRow = ({
+// Enhanced TransactionEditRow Component with Mobile Support
+const TransactionEditRow = memo(({
     transaction,
     setTransaction,
     accounts,
@@ -29,157 +26,269 @@ const TransactionEditRow = ({
     addSplit,
     removeSplit,
     updateSplit,
-    columnWidths, // ← ADD THIS PROP
+    columnWidths,
     viewAccount
 }) => {
+    console.log('=== TransactionEditRow instance created ===', new Error().stack.split('\n')[1]);
+    console.log('TransactionEditRow rendered with transaction:', transaction);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     const handleInputChange = (field, value) => {
-        setTransaction(prev => ({
-            ...prev,
+        console.log('handleInputChange called:', field, value);
+        console.log('Current transaction before update:', transaction);
+        setTransaction({
             [field]: value
-        }));
-    };
-
-    const toggleTransfer = () => {
-        if (transaction.isTransfer) {
-            // Turning off transfer mode
-            setTransaction(prev => ({
-                ...prev,
-                isTransfer: false,
-                transferAccountId: '',
-                payee: ''
-            }));
-        } else {
-            // Turning on transfer mode
-            const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
-            const defaultPayee = fromAccount ? `Transfer from ${fromAccount.name}` : 'Transfer';
-
-            setTransaction(prev => ({
-                ...prev,
-                isTransfer: true,
-                categoryId: '',
-                isSplit: false,
-                splits: [],
-                payee: defaultPayee
-            }));
-        }
-    };
-
-    const toggleSplit = () => {
-        if (transaction.isSplit) {
-            setTransaction(prev => ({
-                ...prev,
-                isSplit: false,
-                splits: [],
-                categoryId: ''
-            }));
-        } else {
-            setTransaction(prev => ({
-                ...prev,
-                isSplit: true,
-                isTransfer: false,
-                transferAccountId: '',
-                categoryId: '',
-                splits: [{
-                    id: Date.now(),
-                    amount: '',
-                    categoryId: '',
-                    memo: ''
-                }]
-            }));
-        }
-    };
-
-    const handleAccountChange = (newAccountId) => {
-        const newAccount = accounts.find(acc => acc.id === parseInt(newAccountId));
-
-        setTransaction(prev => {
-            let updatedTransaction = {
-                ...prev,
-                accountId: newAccountId
-            };
-
-            if (prev.isTransfer && newAccount) {
-                updatedTransaction.payee = `Transfer from ${newAccount.name}`;
-            }
-
-            return updatedTransaction;
         });
     };
 
-    const handleTransferAccountChange = (transferAccountId) => {
-        const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
-        const toAccount = accounts.find(acc => acc.id === parseInt(transferAccountId));
-
-        let newPayee = 'Transfer';
-        if (fromAccount && toAccount) {
-            newPayee = `Transfer: ${fromAccount.name} → ${toAccount.name}`;
-        }
-
-        setTransaction(prev => ({
-            ...prev,
-            transferAccountId,
-            payee: newPayee
-        }));
+    const handleAccountChange = (value) => {
+        setTransaction({
+            accountId: value
+        });
     };
 
+    const handleTransferAccountChange = (value) => {
+        setTransaction({
+            transferAccountId: value
+        });
+    };
+    const toggleSplit = () => {
+        if (transaction.isSplit) {
+            // Turning off split mode
+            setTransaction({
+                isSplit: false,
+                splits: [],
+                isTransfer: false,
+                transferAccountId: ''
+            });
+        } else {
+            // Turning on split mode
+            setTransaction({
+                isSplit: true,
+                isTransfer: false,
+                transferAccountId: '',
+                splits: transaction.splits && transaction.splits.length > 0 ? transaction.splits : [
+                    {
+                        id: Date.now(),
+                        amount: '',
+                        categoryId: '',
+                        memo: ''
+                    }
+                ]
+            });
+        }
+    };
+    const toggleTransfer = () => {
+        if (transaction.isTransfer) {
+            setTransaction({
+                isTransfer: false,
+                transferAccountId: '',
+                payee: '',
+                isSplit: false,
+                splits: []
+            });
+        } else {
+            const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
+            const defaultPayee = fromAccount ? `Transfer: ${fromAccount.name}` : 'Transfer';
+
+            setTransaction({
+                isTransfer: true,
+                isSplit: false,
+                splits: [],
+                payee: defaultPayee,
+                categoryId: ''
+            });
+        }
+    };
+
+    // Calculate split balance
     const outflowAmount = typeof transaction.outflow === 'number' ?
         transaction.outflow : parseFloat(transaction.outflow) || 0;
     const inflowAmount = typeof transaction.inflow === 'number' ?
         transaction.inflow : parseFloat(transaction.inflow) || 0;
     const totalAmount = outflowAmount || inflowAmount;
     const splitTotal = (transaction.splits || []).reduce((sum, split) => {
-        const amount = typeof split.amount === 'number' ? split.amount : parseFloat(split.amount) || 0;
+        const amount = typeof split.amount === 'number' ?
+            split.amount : parseFloat(split.amount) || 0;
         return sum + Math.abs(amount);
     }, 0);
     const splitDifference = Math.abs(totalAmount - splitTotal);
 
-    return (
-        <>
-            <tr className="bg-theme-hover" style={{ width: '100%' }}>
-                {/* Bulk Select */}
-                <td className="px-1 py-2 text-center" style={{ width: columnWidths.select }}>
-                    <input
-                        type="checkbox"
-                        disabled
-                        className="rounded border-theme-secondary opacity-50"
-                    />
-                </td>
+    // Auto-balance function for splits
+    const distributeDifference = () => {
+        if (Math.abs(splitDifference) < 0.01 || !transaction.splits?.length) return;
 
-                {/* Date */}
-                <td className="px-2 py-2" style={{ width: columnWidths.date }}>
-                    <input
-                        type="date"
-                        value={transaction.date}
-                        onChange={(e) => handleInputChange('date', e.target.value)}
-                        className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                    />
-                </td>
+        const difference = splitDifference;
+        const splitsCount = transaction.splits.length;
+        const amountPerSplit = difference / splitsCount;
+        const remainder = difference % splitsCount;
 
-                {/* Payee */}
-                <td className="px-2 py-2" style={{ width: columnWidths.payee }}>
-                    <input
-                        type="text"
-                        value={transaction.payee}
-                        onChange={(e) => handleInputChange('payee', e.target.value)}
-                        placeholder={transaction.isTransfer ? "Transfer" : "Payee"}
-                        disabled={transaction.isTransfer}
-                        className={`w-full px-2 py-1 border rounded text-sm ${transaction.isTransfer
-                            ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
-                            : 'bg-theme-primary border-theme-secondary text-theme-primary'
-                            }`}
-                        autoFocus={isNew && !transaction.isTransfer}
-                    />
-                </td>
+        const updatedSplits = transaction.splits.map((split, index) => {
+            const currentAmount = parseFloat(split.amount) || 0;
+            let adjustment = amountPerSplit;
 
-                {/* Category OR Transfer Account - YNAB-style with inline icons */}
-                <td className="px-2 py-2" style={{ width: columnWidths.category }}>
-                    {transaction.isTransfer ? (
-                        <div className="flex items-center gap-1">
-                            <ArrowRight className="w-4 h-4 text-blue-600 flex-shrink-0" />
+            // Add remainder to first split
+            if (index === 0) {
+                adjustment += remainder;
+            }
+
+            return {
+                ...split,
+                amount: currentAmount - adjustment
+            };
+        });
+
+        setTransaction({
+            splits: updatedSplits
+        });
+    };
+
+    // Mobile Card Layout
+    const MobileEditingCard = () => {
+        return (
+            <div className="bg-theme-hover rounded-lg border-2 border-theme-accent mb-3 overflow-hidden">
+                <div className="p-4 space-y-4">
+                    {/* Basic Transaction Info */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-medium text-theme-secondary mb-1">Date</label>
+                            <input
+                                type="date"
+                                value={transaction.date}
+                                onChange={(e) => handleInputChange('date', e.target.value)}
+                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-theme-secondary mb-1">Amount</label>
+                            <div className="flex">
+                                <CurrencyField
+                                    name="mobile_amount"
+                                    value={Math.abs(outflowAmount || inflowAmount) || 0}
+                                    onChange={(e) => {
+                                        const value = parseFloat(e.target.value) || 0;
+                                        if (outflowAmount > 0) {
+                                            handleInputChange('outflow', value);
+                                            handleInputChange('inflow', 0);
+                                        } else {
+                                            handleInputChange('inflow', value);
+                                            handleInputChange('outflow', 0);
+                                        }
+                                    }}
+                                    hideLabel={true}
+                                    placeholder="0.00"
+                                    className="flex-1 px-3 py-2 border rounded-l bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                    darkMode={false}
+                                />
+                                <button
+                                    onClick={() => {
+                                        const amount = Math.abs(outflowAmount || inflowAmount) || 0;
+                                        handleInputChange('outflow', amount);
+                                        handleInputChange('inflow', 0);
+                                    }}
+                                    className={`px-3 py-2 border-t border-b text-xs ${outflowAmount > 0
+                                        ? 'bg-theme-red text-theme-primary border-theme-red'
+                                        : 'bg-theme-secondary text-theme-tertiary border-theme-secondary'
+                                        }`}
+                                >
+                                    Out
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const amount = Math.abs(outflowAmount || inflowAmount) || 0;
+                                        handleInputChange('inflow', amount);
+                                        handleInputChange('outflow', 0);
+                                    }}
+                                    className={`px-3 py-2 border-t border-r border-b rounded-r text-xs ${inflowAmount > 0
+                                        ? 'bg-theme-green text-theme-primary border-theme-green'
+                                        : 'bg-theme-secondary text-theme-tertiary border-theme-secondary'
+                                        }`}
+                                >
+                                    In
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {viewAccount === 'all' && (
+                        <div>
+                            <label className="block text-xs font-medium text-theme-secondary mb-1">Account</label>
+                            <select
+                                value={transaction.accountId}
+                                onChange={(e) => handleAccountChange(e.target.value)}
+                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                            >
+                                {accounts.map(account => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.name} (${(account.balance || 0).toFixed(2)})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div>
+                        <label className="block text-xs font-medium text-theme-secondary mb-1">Payee</label>
+                        <input
+                            type="text"
+                            value={transaction.payee}
+                            onChange={(e) => handleInputChange('payee', e.target.value)}
+                            placeholder={transaction.isTransfer ? "Transfer" : "Payee"}
+                            disabled={transaction.isTransfer}
+                            className={`w-full px-3 py-2 border rounded text-sm ${transaction.isTransfer
+                                ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
+                                : 'bg-theme-primary border-theme-secondary text-theme-primary'
+                                }`}
+                            autoFocus={isNew && !transaction.isTransfer && !transaction.outflow && !transaction.inflow} />
+                    </div>
+
+                    {/* Transaction Type Toggles */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={toggleSplit}
+                            className={`flex-1 py-2 px-3 rounded text-sm font-medium flex items-center justify-center gap-1 ${transaction.isSplit
+                                ? 'bg-theme-blue text-theme-primary border border-theme-blue'
+                                : 'bg-theme-secondary text-theme-tertiary border border-theme-secondary hover:bg-theme-hover'
+                                }`}
+                            disabled={transaction.isTransfer}
+                        >
+                            <Split size={14} />
+                            Split
+                        </button>
+                        <button
+                            onClick={toggleTransfer}
+                            className={`flex-1 py-2 px-3 rounded text-sm font-medium flex items-center justify-center gap-1 ${transaction.isTransfer
+                                ? 'bg-theme-blue text-theme-primary border border-theme-blue'
+                                : 'bg-theme-secondary text-theme-tertiary border border-theme-secondary hover:bg-theme-hover'
+                                }`}
+                            disabled={transaction.isSplit}
+                        >
+                            <ArrowRight size={14} />
+                            Transfer
+                        </button>
+                    </div>
+
+                    {/* Category or Transfer Account */}
+                    <div>
+                        <label className="block text-xs font-medium text-theme-secondary mb-1">
+                            {transaction.isTransfer ? 'To Account' : 'Category'}
+                        </label>
+                        {transaction.isTransfer ? (
                             <select
                                 value={transaction.transferAccountId}
                                 onChange={(e) => handleTransferAccountChange(e.target.value)}
-                                className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
                             >
                                 <option value="">To account...</option>
                                 {accounts
@@ -190,31 +299,402 @@ const TransactionEditRow = ({
                                         </option>
                                     ))}
                             </select>
-                            <button
-                                type="button"
-                                onClick={toggleTransfer}
-                                className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors flex-shrink-0"
-                                title="Remove transfer"
-                            >
-                                <X className="w-3 h-3" />
-                            </button>
-                        </div>
-                    ) : transaction.isSplit ? (
-                        <div className="flex items-center gap-1">
-                            <Split className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                            <input
-                                type="text"
-                                value="Split Transaction"
-                                disabled
-                                className="flex-1 px-2 py-1 border rounded bg-theme-secondary border-theme-secondary text-theme-tertiary text-sm cursor-not-allowed"
-                            />
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-1">
+                        ) : transaction.isSplit ? (
+                            <div className="flex items-center gap-1 text-theme-blue px-3 py-2 bg-theme-secondary rounded text-sm">
+                                <Split size={14} />
+                                Split Transaction
+                            </div>
+                        ) : (
                             <select
                                 value={transaction.categoryId}
                                 onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                                className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                            >
+                                <option value="">Select category...</option>
+                                {categories.map(category => (
+                                    <option key={category.id} value={category.id}>{category.name}</option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-theme-secondary mb-1">Memo</label>
+                        <input
+                            type="text"
+                            value={transaction.memo}
+                            onChange={(e) => handleInputChange('memo', e.target.value)}
+                            placeholder="Memo"
+                            className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                        />
+                    </div>
+
+                    {/* Split Details */}
+                    {transaction.isSplit && (
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-sm font-medium text-theme-primary">Split Details</h4>
+                                <div className="flex items-center gap-2">
+                                    {Math.abs(splitDifference) >= 0.01 && (
+                                        <button
+                                            onClick={distributeDifference}
+                                            className="px-2 py-1 text-xs bg-theme-yellow text-theme-primary rounded hover:bg-theme-hover"
+                                        >
+                                            Auto-balance
+                                        </button>
+                                    )}
+                                    <div className="text-xs">
+                                        <span className={`font-medium ${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'}`}>
+                                            ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
+                                            {Math.abs(splitDifference) >= 0.01 && (
+                                                <span className="text-theme-red ml-1">
+                                                    (${splitDifference.toFixed(2)})
+                                                </span>
+                                            )}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {(transaction.splits || []).map((split, index) => (
+                                <div key={split.id} className="p-3 bg-theme-tertiary rounded border border-theme-secondary">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-sm font-medium text-theme-primary">Split {index + 1}</span>
+                                        {(transaction.splits || []).length > 1 && (
+                                            <button
+                                                onClick={() => removeSplit(split.id)}
+                                                className="text-theme-red hover:text-theme-red"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <select
+                                            value={split.categoryId}
+                                            onChange={(e) => updateSplit(split.id, 'categoryId', e.target.value)}
+                                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                        >
+                                            <option value="">Select category...</option>
+                                            {categories.map(category => (
+                                                <option key={category.id} value={category.id}>{category.name}</option>
+                                            ))}
+                                        </select>
+
+                                        <div className="flex gap-2">
+                                            <CurrencyField
+                                                name={`mobile_split_${split.id}`}
+                                                value={Math.abs(parseFloat(split.amount) || 0)}
+                                                onChange={(e) => {
+                                                    const value = parseFloat(e.target.value) || 0;
+                                                    const currentAmount = parseFloat(split.amount) || 0;
+                                                    updateSplit(split.id, 'amount', currentAmount < 0 ? -value : value);
+                                                }}
+                                                hideLabel={true}
+                                                placeholder="Amount"
+                                                className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                                darkMode={false}
+                                            />
+                                            <button
+                                                onClick={() => updateSplit(split.id, 'amount', -Math.abs(parseFloat(split.amount) || 0))}
+                                                className={`px-2 py-1 text-xs rounded ${(parseFloat(split.amount) || 0) < 0 ? 'bg-theme-red text-theme-primary' : 'bg-theme-secondary text-theme-tertiary'
+                                                    }`}
+                                            >
+                                                Out
+                                            </button>
+                                            <button
+                                                onClick={() => updateSplit(split.id, 'amount', Math.abs(parseFloat(split.amount) || 0))}
+                                                className={`px-2 py-1 text-xs rounded ${(parseFloat(split.amount) || 0) > 0 ? 'bg-theme-green text-theme-primary' : 'bg-theme-secondary text-theme-tertiary'
+                                                    }`}
+                                            >
+                                                In
+                                            </button>
+                                        </div>
+
+                                        <input
+                                            type="text"
+                                            value={split.memo || ''}
+                                            onChange={(e) => updateSplit(split.id, 'memo', e.target.value)}
+                                            placeholder="Split memo"
+                                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button
+                                onClick={addSplit}
+                                className="w-full py-2 border-2 border-dashed border-theme-blue rounded text-theme-blue hover:border-theme-accent text-sm"
+                            >
+                                <Plus size={14} className="inline mr-1" />
+                                Add Split
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-2">
+                        <button
+                            onClick={onCancel}
+                            className="flex-1 py-2 px-3 btn-secondary rounded text-sm font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={onSave}
+                            className="flex-1 py-2 px-3 btn-primary rounded text-sm font-medium"
+                        >
+                            Save
+                        </button>
+                    </div>
+
+                    {isNew && onSaveAndAddAnother && (
+                        <button
+                            onClick={onSaveAndAddAnother}
+                            className="w-full py-2 px-3 btn-success rounded text-sm font-medium"
+                        >
+                            Save & Add Another
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    // Desktop Table Layout (Enhanced with larger toggle buttons)
+    const DesktopEditingRows = () => {
+        return (
+            <>
+                <tr className="bg-theme-hover" style={{ width: '100%' }}>
+                    {/* Bulk Select */}
+                    <td className="px-1 py-2 text-center" style={{ width: columnWidths.select }}>
+                        <input
+                            type="checkbox"
+                            disabled
+                            className="rounded border-theme-secondary opacity-50"
+                        />
+                    </td>
+
+                    {viewAccount === 'all' && (
+                        <td className="px-2 py-2" style={{ width: columnWidths.account }}>
+                            <select
+                                value={transaction.accountId}
+                                onChange={(e) => handleAccountChange(e.target.value)}
+                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                            >
+                                {accounts.map(account => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.name} (${(account.balance || 0).toFixed(2)})
+                                    </option>
+                                ))}
+                            </select>
+                        </td>
+                    )}
+
+                    {/* Date */}
+                    <td className="px-2 py-2" style={{ width: columnWidths.date }}>
+                        <input
+                            type="date"
+                            value={transaction.date}
+                            onChange={(e) => handleInputChange('date', e.target.value)}
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                        />
+                    </td>
+
+                    {/* Payee */}
+                    <td className="px-2 py-2" style={{ width: columnWidths.payee }}>
+                        <input
+                            type="text"
+                            value={transaction.payee}
+                            onChange={(e) => handleInputChange('payee', e.target.value)}
+                            placeholder={transaction.isTransfer ? "Transfer" : "Payee"}
+                            disabled={transaction.isTransfer}
+                            className={`w-full px-2 py-1 border rounded text-sm ${transaction.isTransfer
+                                ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
+                                : 'bg-theme-primary border-theme-secondary text-theme-primary'
+                                }`}
+                        />
+                    </td>
+
+                    {/* Category OR Transfer Account - Enhanced with larger toggle buttons */}
+                    <td className="px-2 py-2" style={{ width: columnWidths.category }}>
+                        {transaction.isTransfer ? (
+                            <div className="flex items-center gap-1">
+                                <ArrowRight className="w-4 h-4 text-theme-blue flex-shrink-0" />
+                                <select
+                                    value={transaction.transferAccountId}
+                                    onChange={(e) => handleTransferAccountChange(e.target.value)}
+                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                >
+                                    <option value="">To account...</option>
+                                    {accounts
+                                        .filter(acc => acc.id !== parseInt(transaction.accountId))
+                                        .map(account => (
+                                            <option key={account.id} value={account.id}>
+                                                {account.name}
+                                            </option>
+                                        ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={toggleTransfer}
+                                    className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors flex-shrink-0"
+                                    title="Remove transfer"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ) : transaction.isSplit ? (
+                            <div className="flex items-center gap-1">
+                                <Split className="w-4 h-4 text-theme-blue flex-shrink-0" />
+                                <input
+                                    type="text"
+                                    value="Split Transaction"
+                                    disabled
+                                    className="flex-1 px-2 py-1 border rounded bg-theme-secondary border-theme-secondary text-theme-tertiary text-sm cursor-not-allowed"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={toggleSplit}
+                                    className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors flex-shrink-0"
+                                    title="Remove split"
+                                >
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-1">
+                                <select
+                                    value={transaction.categoryId}
+                                    onChange={(e) => handleInputChange('categoryId', e.target.value)}
+                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                >
+                                    <option value="">Select category...</option>
+                                    {categories.map(category => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <button
+                                    type="button"
+                                    onClick={toggleSplit}
+                                    className="p-2 text-theme-blue hover:bg-theme-hover rounded transition-colors flex-shrink-0 border border-theme-secondary"
+                                    title="Split transaction"
+                                >
+                                    <Split className="w-3 h-3" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={toggleTransfer}
+                                    className="p-2 text-theme-blue hover:bg-theme-hover rounded transition-colors flex-shrink-0 border border-theme-secondary"
+                                    title="Make transfer"
+                                >
+                                    <ArrowRight className="w-3 h-3" />
+                                </button>
+                            </div>
+                        )}
+                    </td>
+
+                    {/* Memo */}
+                    <td className="px-2 py-2" style={{ width: columnWidths.memo }}>
+                        <input
+                            type="text"
+                            value={transaction.memo}
+                            onChange={(e) => handleInputChange('memo', e.target.value)}
+                            placeholder="Memo"
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                        />
+                    </td>
+
+                    {/* OutflowTEST */}
+                    <td className="px-2 py-2" style={{ width: columnWidths.outflow }}>
+                        <CurrencyField
+                            name="outflow"
+                            value={transaction.outflow || 0}
+                            onChange={(e) => {
+                                handleInputChange('outflow', e.target.value);
+                                if (e.target.value) handleInputChange('inflow', 0);
+                            }}
+                            hideLabel={true}
+                            placeholder="0.00"
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                            darkMode={false}
+                        />
+                        {transaction.isTransfer && outflowAmount > 0 && (
+                            <div className="text-xs text-theme-tertiary mt-1">
+                                To: {accounts.find(acc => acc.id === parseInt(transaction.transferAccountId))?.name || 'Select account'}
+                            </div>
+                        )}
+                    </td>
+
+                    {/* Inflow */}
+                    <td className="px-2 py-2" style={{ width: columnWidths.inflow }}>
+                        <CurrencyField
+                            name="inflow"
+                            value={transaction.inflow || 0}
+                            onChange={(e) => {
+                                handleInputChange('inflow', e.target.value);
+                                if (e.target.value) handleInputChange('outflow', 0);
+                            }}
+                            hideLabel={true}
+                            placeholder="0.00"
+                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                            darkMode={false}
+                        />
+                        {transaction.isTransfer && inflowAmount > 0 && (
+                            <div className="text-xs text-theme-tertiary mt-1">
+                                From: {accounts.find(acc => acc.id === parseInt(transaction.transferAccountId))?.name || 'Select account'}
+                            </div>
+                        )}
+                    </td>
+
+                    {/* Cleared */}
+                    <td className="px-1 py-2 text-center" style={{ width: columnWidths.cleared }}>
+                        <input
+                            type="checkbox"
+                            checked={transaction.isCleared}
+                            onChange={(e) => handleInputChange('isCleared', e.target.checked)}
+                            className="rounded border-theme-secondary"
+                        />
+                    </td>
+                </tr>
+
+                {/* Split Rows */}
+                {transaction.isSplit && (transaction.splits || []).map((split, index) => (
+                    <tr key={split.id} className="bg-theme-tertiary">
+                        <td className="px-1 py-2"></td>
+                        {viewAccount === 'all' && <td className="px-2 py-2"></td>}
+                        <td className="px-2 py-2"></td>
+                        <td className="px-2 py-2">
+                            <div className="flex items-center gap-2 ml-4">
+                                <span className="text-sm text-theme-secondary">Split {index + 1}</span>
+                                {(transaction.splits || []).length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => removeSplit(split.id)}
+                                        className="text-xs text-theme-red hover:text-theme-red underline"
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                                {index === (transaction.splits || []).length - 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={addSplit}
+                                        className="text-xs text-theme-blue hover:text-theme-blue underline"
+                                    >
+                                        + Add Split
+                                    </button>
+                                )}
+                            </div>
+                        </td>
+                        <td className="px-2 py-2">
+                            <select
+                                value={split.categoryId}
+                                onChange={(e) => updateSplit(split.id, 'categoryId', e.target.value)}
+                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
                             >
                                 <option value="">Select category...</option>
                                 {categories.map(category => (
@@ -223,300 +703,461 @@ const TransactionEditRow = ({
                                     </option>
                                 ))}
                             </select>
-                            <button
-                                type="button"
-                                onClick={toggleSplit}
-                                className="p-1 text-blue-600 hover:bg-theme-hover rounded transition-colors flex-shrink-0"
-                                title="Split transaction"
-                            >
-                                <Split className="w-3 h-3" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={toggleTransfer}
-                                className="p-1 text-blue-600 hover:bg-theme-hover rounded transition-colors flex-shrink-0"
-                                title="Make transfer"
-                            >
-                                <ArrowRight className="w-3 h-3" />
-                            </button>
-                        </div>
-                    )}
-                </td>
+                        </td>
+                        <td className="px-2 py-2">
+                            <input
+                                type="text"
+                                value={split.memo || ''}
+                                onChange={(e) => updateSplit(split.id, 'memo', e.target.value)}
+                                placeholder="Split memo"
+                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                            />
+                        </td>
+                        <td className="px-2 py-2">
+                            <CurrencyField
+                                name={`split_${split.id}_outflow`}
+                                value={split.amount < 0 ? Math.abs(split.amount) : 0}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value) {
+                                        updateSplit(split.id, 'amount', -Math.abs(parseFloat(value) || 0));
+                                    } else {
+                                        updateSplit(split.id, 'amount', '');
+                                    }
+                                }}
+                                hideLabel={true}
+                                placeholder="0.00"
+                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                                darkMode={false}
+                            />
+                        </td>
+                        <td className="px-2 py-2">
+                            <CurrencyField
+                                name={`split_${split.id}_inflow`}
+                                value={split.amount > 0 ? split.amount : 0}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    if (value) {
+                                        updateSplit(split.id, 'amount', Math.abs(parseFloat(value) || 0));
+                                    } else {
+                                        updateSplit(split.id, 'amount', '');
+                                    }
+                                }}
+                                hideLabel={true}
+                                placeholder="0.00"
+                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                                darkMode={false}
+                            />
+                        </td>
+                        <td className="px-1 py-2"></td>
+                    </tr>
+                ))}
 
-                {/* Memo */}
-                <td className="px-2 py-2" style={{ width: columnWidths.memo }}>
-                    <input
-                        type="text"
-                        value={transaction.memo}
-                        onChange={(e) => handleInputChange('memo', e.target.value)}
-                        placeholder="Memo"
-                        className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                    />
-                </td>
-
-                {/* Outflow */}
-                <td className="px-2 py-2" style={{ width: columnWidths.outflow }}>
-                    <CurrencyField
-                        name="outflow"
-                        value={transaction.outflow || 0}
-                        onChange={(e) => {
-                            handleInputChange('outflow', e.target.value);
-                            if (e.target.value) handleInputChange('inflow', 0);
-                        }}
-                        hideLabel={true}
-                        placeholder="0.00"
-                        className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                        darkMode={false}
-                    />
-                    {transaction.isTransfer && outflowAmount > 0 && (
-                        <div className="text-xs text-theme-tertiary mt-1">
-                            To: {accounts.find(acc => acc.id === parseInt(transaction.transferAccountId))?.name || 'Select account'}
-                        </div>
-                    )}
-                </td>
-
-                {/* Inflow */}
-                <td className="px-2 py-2" style={{ width: columnWidths.inflow }}>
-                    <CurrencyField
-                        name="inflow"
-                        value={transaction.inflow || 0}
-                        onChange={(e) => {
-                            handleInputChange('inflow', e.target.value);
-                            if (e.target.value) handleInputChange('outflow', 0);
-                        }}
-                        hideLabel={true}
-                        placeholder="0.00"
-                        className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                        darkMode={false}
-                    />
-                    {transaction.isTransfer && inflowAmount > 0 && (
-                        <div className="text-xs text-theme-tertiary mt-1">
-                            From: {accounts.find(acc => acc.id === parseInt(transaction.transferAccountId))?.name || 'Select account'}
-                        </div>
-                    )}
-                </td>
-
-                {/* Cleared */}
-                <td className="px-1 py-2 text-center" style={{ width: columnWidths.cleared }}>
-                    <input
-                        type="checkbox"
-                        checked={transaction.isCleared}
-                        onChange={(e) => handleInputChange('isCleared', e.target.checked)}
-                        className="rounded border-theme-secondary"
-                    />
-                </td>
-            </tr>
-
-            {/* Account Selection Row with YNAB-style Cancel/Approve buttons */}
-            <tr className="bg-theme-secondary">
-                <td className="px-1 py-2"></td>
-                {viewAccount === 'all' ? (
-                    <>
-                        <td className="px-2 py-2" colSpan="2">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-theme-secondary">Account:</span>
-                                <select
-                                    value={transaction.accountId}
-                                    onChange={(e) => handleAccountChange(e.target.value)}
-                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm font-medium"
-                                >
-                                    {accounts.map(account => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name} (${(account.balance || 0).toFixed(2)})
-                                        </option>
-                                    ))}
-                                </select>
+                {/* Split Summary Row with Auto-balance button */}
+                {transaction.isSplit && (transaction.splits || []).length > 0 && (
+                    <tr className="bg-theme-tertiary">
+                        <td className="px-1 py-2 text-center">
+                            <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'} text-xs`}>
+                                {Math.abs(splitDifference) < 0.01 ? '✓' : '!'}
                             </div>
                         </td>
-                        <td className="px-2 py-2" colSpan="2">
-                            <div className="text-xs text-theme-tertiary">
-                                {transaction.isTransfer ? (
-                                    <>
-                                        <strong>Transfer Direction:</strong><br />
-                                        • <strong>Outflow</strong> = Money leaving {accounts.find(acc => acc.id === parseInt(transaction.accountId))?.name}<br />
-                                        • <strong>Inflow</strong> = Money entering {accounts.find(acc => acc.id === parseInt(transaction.accountId))?.name}
-                                    </>
-                                ) : (
-                                    'This transaction will be recorded in the selected account above'
-                                )}
-                            </div>
-                        </td>
-                    </>
-                ) : (
-                    <td className="px-2 py-2" colSpan="4"></td>
-                )}
-                <td className="px-2 py-2 text-right">
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onCancel();
-                        }}
-                        className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
-                    >
-                        Cancel
-                    </button>
-                </td>
-                <td className="px-2 py-2 text-right">
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onSave();
-                        }}
-                        className="px-3 py-1 text-xs btn-primary rounded transition-colors"
-                    >
-                        Approve
-                    </button>
-                </td>
-                <td className="px-1 py-2"></td>
-            </tr>
-
-            {/* Split Rows */}
-            {transaction.isSplit && (transaction.splits || []).map((split, index) => (
-                <tr key={split.id} className="bg-theme-tertiary">
-                    <td className="px-1 py-2"></td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2">
-                        <div className="flex items-center gap-2 ml-4">
-                            <span className="text-sm text-theme-secondary">Split {index + 1}</span>
-                            {(transaction.splits || []).length > 1 && (
-                                <button
-                                    type="button"
-                                    onClick={() => removeSplit(split.id)}
-                                    className="text-xs text-theme-red hover:text-theme-red underline"
-                                >
-                                    Remove
-                                </button>
-                            )}
-                            {index === (transaction.splits || []).length - 1 && (
-                                <button
-                                    type="button"
-                                    onClick={addSplit}
-                                    className="text-xs text-theme-blue hover:text-theme-blue underline"
-                                >
-                                    + Add Split
-                                </button>
-                            )}
-                        </div>
-                    </td>
-                    <td className="px-2 py-2">
-                        <select
-                            value={split.categoryId}
-                            onChange={(e) => updateSplit(split.id, 'categoryId', e.target.value)}
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                        >
-                            <option value="">Select category...</option>
-                            {categories.map(category => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </select>
-                    </td>
-                    <td className="px-2 py-2">
-                        <input
-                            type="text"
-                            value={split.memo || ''}
-                            onChange={(e) => updateSplit(split.id, 'memo', e.target.value)}
-                            placeholder="Split memo"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                        />
-                    </td>
-                    <td className="px-2 py-2">
-                        <CurrencyField
-                            name={`split_${split.id}_outflow`}
-                            value={split.amount < 0 ? Math.abs(split.amount) : 0}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                if (value) {
-                                    updateSplit(split.id, 'amount', -Math.abs(parseFloat(value) || 0));
-                                } else {
-                                    updateSplit(split.id, 'amount', '');
-                                }
-                            }}
-                            hideLabel={true}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                            darkMode={false}
-                        />
-                    </td>
-                    <td className="px-2 py-2">
-                        <CurrencyField
-                            name={`split_${split.id}_inflow`}
-                            value={split.amount > 0 ? split.amount : 0}
-                            onChange={(e) => {
-                                const value = e.target.value;
-                                if (value) {
-                                    updateSplit(split.id, 'amount', Math.abs(parseFloat(value) || 0));
-                                } else {
-                                    updateSplit(split.id, 'amount', '');
-                                }
-                            }}
-                            hideLabel={true}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                            darkMode={false}
-                        />
-                    </td>
-                    <td className="px-1 py-2"></td>
-                </tr>
-            ))}
-
-            {/* Split Summary Row with Buttons */}
-            {transaction.isSplit && (transaction.splits || []).length > 0 && (
-                <tr className="bg-theme-tertiary">
-                    <td className="px-1 py-2 text-center">
-                        <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'} text-xs`}>
-                            {Math.abs(splitDifference) < 0.01 ? '✓' : '!'}
-                        </div>
-                    </td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2"></td>
-                    <td className="px-2 py-2 text-right">
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onCancel();
-                            }}
-                            className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </td>
-                    <td className="px-2 py-2 text-right">
-                        <div className="flex flex-col items-end gap-1">
-                            <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'}`}>
-                                <div className="text-xs font-medium">${splitTotal.toFixed(2)}</div>
-                                <div className="text-xs opacity-70">of ${totalAmount.toFixed(2)}</div>
-                                <div className="text-xs">{Math.abs(splitDifference) < 0.01 ? 'Balanced' : `Diff: $${splitDifference.toFixed(2)}`}</div>
-                            </div>
+                        {viewAccount === 'all' && <td className="px-2 py-2"></td>}
+                        <td className="px-2 py-2"></td>
+                        <td className="px-2 py-2"></td>
+                        <td className="px-2 py-2"></td>
+                        <td className="px-2 py-2 text-right">
                             <button
                                 type="button"
                                 onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    onSave();
+                                    onCancel();
                                 }}
-                                className="px-3 py-1 text-xs btn-primary rounded transition-colors mt-1"
+                                className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
                             >
-                                Approve
+                                Cancel
+                            </button>
+                        </td>
+                        <td className="px-2 py-2 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                                {Math.abs(splitDifference) >= 0.01 && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            distributeDifference();
+                                        }}
+                                        className="px-2 py-1 text-xs bg-theme-yellow text-theme-primary rounded hover:bg-theme-hover"
+                                        title="Distribute the difference evenly across all splits"
+                                    >
+                                        Auto-balance
+                                    </button>
+                                )}
+
+                                <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'}`}>
+                                    <div className="text-xs font-medium">
+                                        ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
+                                        {Math.abs(splitDifference) >= 0.01 && (
+                                            <span className="text-theme-red ml-1">
+                                                (${splitDifference.toFixed(2)})
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onSave();
+                                    }}
+                                    className="px-3 py-1 text-xs btn-primary rounded transition-colors"
+                                >
+                                    Approve
+                                </button>
+                            </div>
+                        </td>
+                        <td className="px-1 py-2"></td>
+                    </tr>
+                )}
+            </>
+        );
+    };
+
+    // Return appropriate layout based on screen size
+    return isMobile ? <MobileEditingCard /> : <DesktopEditingRows />;
+}, (prevProps, nextProps) => {
+    // Only compare the transaction prop, ignore function props
+    const same = JSON.stringify(prevProps.transaction) === JSON.stringify(nextProps.transaction);
+    console.log('TransactionEditRow memo comparison:', same ? 'SAME (skip render)' : 'DIFFERENT (re-render)');
+    return same;
+});
+
+// Regular Transaction Row Component (for viewing)
+const TransactionRow = ({
+    transaction,
+    index,
+    isSelected,
+    onSelect,
+    onEdit,
+    onDelete,
+    getAccountName,
+    getCategoryName,
+    formatTransferPayee,
+    renderClearedStatus,
+    expandedTransactions,
+    setExpandedTransactions,
+    columnWidths,
+    viewAccount
+}) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const isSplitTransaction = transaction.isSplit && transaction.splits && transaction.splits.length > 0;
+    const isExpanded = expandedTransactions.has(transaction.id);
+
+    const toggleExpanded = () => {
+        if (isSplitTransaction) {
+            const newExpanded = new Set(expandedTransactions);
+            if (isExpanded) {
+                newExpanded.delete(transaction.id);
+            } else {
+                newExpanded.add(transaction.id);
+            }
+            setExpandedTransactions(newExpanded);
+        }
+    };
+
+    // Mobile Card Layout for viewing
+    const MobileTransactionCard = () => {
+        return (
+            <div className="bg-theme-primary rounded-lg shadow-sm border border-theme-secondary mb-3 overflow-hidden">
+                <div className="p-4">
+                    <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                                <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => onSelect(transaction.id)}
+                                    className="rounded border-theme-secondary"
+                                />
+                                {isSplitTransaction && (
+                                    <button
+                                        onClick={toggleExpanded}
+                                        className="text-theme-secondary hover:text-theme-primary"
+                                    >
+                                        {isExpanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                                    </button>
+                                )}
+                                <span className="text-sm text-theme-secondary">
+                                    {new Date(transaction.date).toLocaleDateString()}
+                                </span>
+                            </div>
+
+                            <div className="font-medium text-theme-primary mb-1">
+                                {transaction.transferAccountId ? (
+                                    <div className="flex items-center gap-1 text-theme-blue">
+                                        <ArrowRight size={14} />
+                                        {formatTransferPayee(transaction)}
+                                    </div>
+                                ) : transaction.payee}
+                            </div>
+
+                            <div className="text-sm text-theme-secondary">
+                                {isSplitTransaction ? (
+                                    <span className="italic text-theme-tertiary">Multiple</span>
+                                ) : transaction.transferAccountId ? (
+                                    <span className="text-theme-blue">
+                                        → {getAccountName(transaction.transferAccountId)}
+                                    </span>
+                                ) : (
+                                    getCategoryName(transaction.categoryId) || 'Uncategorized'
+                                )}
+                            </div>
+
+                            {viewAccount === 'all' && (
+                                <div className="text-xs text-theme-tertiary mt-1">
+                                    {getAccountName(transaction.accountId)}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="text-right">
+                            <div className={`text-lg font-semibold ${transaction.amount < 0 ? 'text-theme-red' : 'text-theme-green'
+                                }`}>
+                                {transaction.amount < 0 ? '-' : '+'}${Math.abs(transaction.amount).toFixed(2)}
+                            </div>
+                            <button
+                                onClick={() => onEdit(transaction)}
+                                className="text-theme-blue hover:text-theme-accent text-sm mt-1"
+                            >
+                                Edit
                             </button>
                         </div>
+                    </div>
+
+                    {transaction.memo && (
+                        <div className="text-sm text-theme-secondary mt-2">
+                            {transaction.memo}
+                        </div>
+                    )}
+                </div>
+
+                {/* Split Details */}
+                {isSplitTransaction && isExpanded && (
+                    <div className="border-t border-theme-secondary bg-theme-secondary">
+                        {transaction.splits.map((split, splitIndex) => (
+                            <div key={split.id} className="px-4 py-2 border-b border-theme-tertiary last:border-b-0">
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <div className="text-sm font-medium text-theme-primary">
+                                            {getCategoryName(split.categoryId)}
+                                        </div>
+                                        {split.memo && (
+                                            <div className="text-xs text-theme-secondary">{split.memo}</div>
+                                        )}
+                                    </div>
+                                    <div className={`text-sm font-medium ${split.amount < 0 ? 'text-theme-red' : 'text-theme-green'
+                                        }`}>
+                                        {split.amount < 0 ? '-' : '+'}${Math.abs(split.amount).toFixed(2)}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    // Desktop Table Row
+    const DesktopTableRow = () => {
+        return (
+            <>
+                <tr
+                    className={`transition-colors hover:table-row-hover group ${index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
+                        } ${isSelected ? 'bg-theme-active' : ''} ${isSplitTransaction ? 'cursor-pointer' : ''}`}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    onClick={isSplitTransaction ? toggleExpanded : undefined}
+                >
+                    {/* Bulk Select */}
+                    <td className="px-1 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => onSelect(transaction.id)}
+                            className="rounded border-theme-secondary"
+                        />
                     </td>
-                    <td className="px-1 py-2"></td>
+
+                    {/* Account - Conditional */}
+                    {viewAccount === 'all' && (
+                        <td className="px-2 py-2 text-theme-primary">
+                            <span className="text-sm">{getAccountName(transaction.accountId)}</span>
+                        </td>
+                    )}
+
+                    {/* Date */}
+                    <td className="px-2 py-2 text-theme-primary">
+                        <div className="flex items-center">
+                            {isSplitTransaction && (
+                                <button
+                                    className="mr-1 text-theme-secondary hover:text-theme-primary transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleExpanded();
+                                    }}
+                                >
+                                    {isExpanded ? (
+                                        <ChevronDown className="w-3 h-3" />
+                                    ) : (
+                                        <ChevronUp className="w-3 h-3" />
+                                    )}
+                                </button>
+                            )}
+                            <span className="text-sm">{new Date(transaction.date).toLocaleDateString()}</span>
+                        </div>
+                    </td>
+
+                    {/* Payee */}
+                    <td className="px-2 py-2 relative">
+                        <div className="flex items-center justify-between">
+                            <div className="min-w-0 flex-1">
+                                <div className="text-sm font-medium text-theme-primary truncate">
+                                    {transaction.transferAccountId
+                                        ? formatTransferPayee(transaction)
+                                        : transaction.payee}
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEdit(transaction);
+                                    }}
+                                    className="p-1 text-theme-blue hover:bg-theme-hover rounded transition-colors"
+                                    title="Edit transaction"
+                                >
+                                    <Edit2 className="w-3 h-3" />
+                                </button>
+                                <button
+                                    onClick={() => onDelete({
+                                        id: transaction.id,
+                                        payee: transaction.payee || 'Unnamed Transaction'
+                                    })}
+                                    className="p-1 rounded hover:bg-theme-hover text-theme-red transition-colors"
+                                    title="Delete transaction"
+                                >
+                                    <Trash2 className="w-3 h-3" />
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                    {/* Category */}
+                    <td className="px-2 py-2">
+                        <span className="text-sm text-theme-secondary">
+                            {transaction.transferAccountId ? (
+                                'Transfer'
+                            ) : isSplitTransaction ? (
+                                <span className="italic text-theme-tertiary">Multiple</span>
+                            ) : (
+                                getCategoryName(transaction.categoryId) || 'Uncategorized'
+                            )}
+                        </span>
+                    </td>
+
+                    {/* Memo */}
+                    <td className="px-2 py-2 text-theme-secondary text-xs">
+                        {transaction.memo && (
+                            <div className="truncate" title={transaction.memo}>
+                                {transaction.memo}
+                            </div>
+                        )}
+                    </td>
+
+                    {/* Outflow */}
+                    <td className="px-2 py-2 text-right">
+                        {transaction.amount < 0 && (
+                            <span className="font-semibold text-theme-red text-sm">
+                                ${Math.abs(transaction.amount).toFixed(2)}
+                            </span>
+                        )}
+                    </td>
+
+                    {/* Inflow */}
+                    <td className="px-2 py-2 text-right">
+                        {transaction.amount > 0 && (
+                            <span className="font-semibold text-theme-green text-sm">
+                                ${transaction.amount.toFixed(2)}
+                            </span>
+                        )}
+                    </td>
+
+                    {/* Cleared */}
+                    <td className="px-1 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                        {renderClearedStatus(transaction)}
+                    </td>
                 </tr>
-            )}
-        </>
-    );
+
+                {/* Split Detail Rows */}
+                {isSplitTransaction && isExpanded && (
+                    <>
+                        {transaction.splits.map((split, splitIndex) => (
+                            <tr key={split.id} className="bg-theme-secondary">
+                                <td className="px-1 py-1"></td>
+                                {viewAccount === 'all' && <td className="px-2 py-1"></td>}
+                                <td className="px-2 py-1 text-xs text-theme-tertiary">
+                                    Split {splitIndex + 1}
+                                </td>
+                                <td className="px-2 py-1 text-xs"></td>
+                                <td className="px-2 py-1 text-xs">
+                                    {getCategoryName(split.categoryId)}
+                                </td>
+                                <td className="px-2 py-1 text-xs text-theme-secondary">
+                                    {split.memo}
+                                </td>
+                                <td className="px-2 py-1 text-xs text-right">
+                                    {split.amount < 0 && (
+                                        <span className="text-theme-red">
+                                            ${Math.abs(split.amount).toFixed(2)}
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-2 py-1 text-xs text-right">
+                                    {split.amount > 0 && (
+                                        <span className="text-theme-green">
+                                            ${split.amount.toFixed(2)}
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-1 py-1"></td>
+                            </tr>
+                        ))}
+                    </>
+                )}
+            </>
+        );
+    };
+
+    return isMobile ? <MobileTransactionCard /> : <DesktopTableRow />;
 };
 
+// Main TransactionsTab Component
 const TransactionsTab = ({
     transactions = [],
     accounts = [],
@@ -524,13 +1165,18 @@ const TransactionsTab = ({
     onAddTransaction,
     onEditTransaction,
     onDeleteTransaction,
-    onReorderTransactions
+    onReorderTransactions,
+    viewAccount = 'all',
+    onAccountViewChange
 }) => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    console.log('TransactionsTab rendered, isMobile:', isMobile, 'window.innerWidth:', window.innerWidth);
+
     // State for search and filters
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [accountFilter, setAccountFilter] = useState('all');
-    const [viewAccount, setViewAccount] = useState('all'); // NEW: Account-specific view
     const [sortBy, setSortBy] = useState('date');
     const [sortDirection, setSortDirection] = useState('desc');
 
@@ -541,10 +1187,50 @@ const TransactionsTab = ({
     // State for inline editing
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+    const [editingData, setEditingData] = useState(new Map());
 
-    // Enhanced column widths - better space distribution
+    // Helper functions:
+    const getEditingTransaction = useCallback((id) => {
+        const result = editingData.get(id === 'new' ? 'new' : id) || {};
+        console.log('getEditingTransaction for', id, ':', result);
+        return result;
+    }, [editingData]);
+
+    const updateEditingTransaction = useCallback((id, updates) => {
+        console.log('updateEditingTransaction called:', id, updates);
+
+        setEditingData(prev => {
+            const currentData = prev.get(id) || {};
+            console.log('Current data for', id, ':', currentData);
+
+            // Check if the update would actually change anything
+            const newData = { ...currentData, ...updates };
+            console.log('New data for', id, ':', newData);
+
+            // Only update if something actually changed
+            if (JSON.stringify(currentData) === JSON.stringify(newData)) {
+                console.log('No change detected, skipping update');
+                return prev; // Return the same reference to prevent re-render
+            }
+
+            const newMap = new Map(prev);
+            newMap.set(id, newData);
+            return newMap;
+        });
+    }, []);
+    const getMemoizedTransaction = useCallback((id) => {
+        return editingData.get(id === 'new' ? 'new' : id) || {};
+    }, [editingData]);
+
+    const newTransactionData = useMemo(() => getMemoizedTransaction('new'), [getMemoizedTransaction]);
+    const editingTransactionData = useMemo(() =>
+        editingTransaction ? getMemoizedTransaction(editingTransaction) : null,
+        [getMemoizedTransaction, editingTransaction]
+    );
+    // Column widths with account column
     const [columnWidths, setColumnWidths] = useState({
         select: 35,
+        account: 120,
         date: 130,
         payee: 150,
         category: 180,
@@ -557,121 +1243,290 @@ const TransactionsTab = ({
     // State for expanded split transactions
     const [expandedTransactions, setExpandedTransactions] = useState(new Set());
 
-    // Refs for column resizing
-    const tableRef = useRef(null);
+    // Column resizing refs
     const isResizing = useRef(false);
     const currentColumn = useRef(null);
     const startX = useRef(0);
     const startWidth = useRef(0);
 
-    // Helper function to get today's date
-    const getTodaysDate = () => {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
 
-    // New transaction form state
-    const [newTransaction, setNewTransaction] = useState({
-        date: getTodaysDate(),
-        payee: '',
-        categoryId: '',
-        memo: '',
-        outflow: '',
-        inflow: '',
-        isCleared: false,
-        accountId: accounts[0]?.id || '',
-        isTransfer: false,
-        transferAccountId: '',
-        isSplit: false,
-        splits: []
-    });
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Helper function to get today's date in YYYY-MM-DD format
+    const getTodaysDate = () => {
+        return new Date().toISOString().split('T')[0];
+    };
 
     // Helper functions
     const getAccountName = (accountId) => {
-        const account = accounts.find(acc => acc.id === accountId);
-        return account ? account.name : 'Unknown';
+        const account = accounts.find(acc => acc.id === parseInt(accountId));
+        return account ? account.name : 'Unknown Account';
     };
 
     const getCategoryName = (categoryId) => {
-        if (!categoryId) return '';
-        const category = categories.find(cat => cat.id === categoryId);
-        return category ? category.name : '';
+        const category = categories.find(cat => cat.id === parseInt(categoryId));
+        return category ? category.name : 'Uncategorized';
     };
 
-    // NEW: Transform transaction for account-specific view
-    const transformTransactionForAccount = (transaction, viewingAccountId) => {
-        if (!transaction.transferAccountId || viewingAccountId === 'all') {
-            return transaction;
-        }
+    const formatTransferPayee = (transaction) => {
+        if (!transaction.transferAccountId) return transaction.payee;
+        const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
+        const toAccount = accounts.find(acc => acc.id === parseInt(transaction.transferAccountId));
+        return `Transfer: ${fromAccount?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'}`;
+    };
 
-        // If viewing the transfer destination account
-        if (transaction.transferAccountId === parseInt(viewingAccountId)) {
-            const sourceAccount = getAccountName(transaction.accountId);
-            return {
-                ...transaction,
-                // Flip the amount and payee for destination account perspective
-                amount: -transaction.amount,
-                payee: `Transfer from ${sourceAccount}`,
-                accountId: parseInt(viewingAccountId),
-                transferAccountId: transaction.accountId,
-                _isTransformed: true // Mark as transformed for display logic
+    const renderClearedStatus = (transaction) => {
+        return (
+            <input
+                type="checkbox"
+                checked={transaction.isCleared || false}
+                onChange={(e) => {
+                    e.stopPropagation();
+                    onEditTransaction({
+                        ...transaction,
+                        isCleared: e.target.checked
+                    });
+                }}
+                className="rounded border-theme-secondary"
+            />
+        );
+    };
+
+    // Transaction management functions
+    const startAddingTransaction = () => {
+        if (editingTransaction) {
+            // Cancel any existing edit
+            setEditingData(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(editingTransaction);
+                return newMap;
+            });
+            setEditingTransaction(null);
+        }
+        setIsAddingTransaction(true);
+        updateEditingTransaction('new', {
+            date: getTodaysDate(),
+            payee: '',
+            categoryId: '',
+            memo: '',
+            outflow: '',
+            inflow: '',
+            isCleared: false,
+            accountId: viewAccount !== 'all' ? parseInt(viewAccount) : accounts[0]?.id || '',
+            isTransfer: false,
+            transferAccountId: '',
+            isSplit: false,
+            splits: []
+        });
+    };
+
+    const startEditingTransaction = (transaction) => {
+        setEditingTransaction(transaction.id);
+        setIsAddingTransaction(false);
+        updateEditingTransaction(transaction.id, {
+            date: transaction.date,
+            payee: transaction.transferAccountId ? formatTransferPayee(transaction) : transaction.payee,
+            categoryId: transaction.categoryId || '',
+            memo: transaction.memo || '',
+            outflow: transaction.amount < 0 ? Math.abs(transaction.amount).toString() : '',
+            inflow: transaction.amount > 0 ? transaction.amount.toString() : '',
+            isCleared: transaction.isCleared || false,
+            accountId: transaction.accountId,
+            isTransfer: !!transaction.transferAccountId,
+            transferAccountId: transaction.transferAccountId || '',
+            isSplit: !!transaction.isSplit,
+            splits: transaction.splits || []
+        });
+    };
+
+    const cancelEdit = () => {
+        setIsAddingTransaction(false);
+        if (editingTransaction) {
+            setEditingData(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(editingTransaction);
+                return newMap;
+            });
+        } else {
+            setEditingData(prev => {
+                const newMap = new Map(prev);
+                newMap.delete('new');
+                return newMap;
+            });
+        }
+        setEditingTransaction(null);
+    };
+
+    const saveTransaction = () => {
+        const currentTransaction = editingTransaction ?
+            getEditingTransaction(editingTransaction) :
+            getEditingTransaction('new');
+        const outflowAmount = parseFloat(currentTransaction.outflow) || 0;
+        const inflowAmount = parseFloat(currentTransaction.inflow) || 0;
+        const amount = outflowAmount > 0 ? -outflowAmount : inflowAmount;
+
+        let transactionData = {
+            date: currentTransaction.date,
+            payee: currentTransaction.isTransfer ? '' : currentTransaction.payee,
+            memo: currentTransaction.memo,
+            amount: amount,
+            isCleared: currentTransaction.isCleared,
+            accountId: parseInt(currentTransaction.accountId),
+            transferAccountId: currentTransaction.isTransfer ? parseInt(currentTransaction.transferAccountId) : null,
+            isSplit: currentTransaction.isSplit,
+        };
+
+        // Handle split transactions
+        if (currentTransaction.isSplit && currentTransaction.splits && currentTransaction.splits.length > 0) {
+            transactionData = {
+                ...transactionData,
+                splits: currentTransaction.splits.map(split => {
+                    const splitAmount = typeof split.amount === 'number' ?
+                        split.amount : parseFloat(split.amount) || 0;
+                    return {
+                        amount: splitAmount,
+                        categoryId: parseInt(split.categoryId) || null,
+                        memo: split.memo || ''
+                    };
+                })
+            };
+        }
+        // Handle regular transactions
+        else {
+            transactionData = {
+                ...transactionData,
+                categoryId: currentTransaction.categoryId ? parseInt(currentTransaction.categoryId) : null
             };
         }
 
-        return transaction;
-    };
-
-    // NEW: Get account-filtered transactions
-    const getAccountFilteredTransactions = (transactions, accountId) => {
-        if (accountId === 'all') return transactions;
-
-        return transactions.filter(txn => {
-            // Show transaction if it belongs to this account
-            if (txn.accountId === parseInt(accountId)) return true;
-
-            // For transfers, also show if this account is the destination
-            if (txn.transferAccountId === parseInt(accountId)) return true;
-
-            return false;
-        }).map(txn => transformTransactionForAccount(txn, accountId));
-    };
-
-    // Enhanced transfer payee formatting
-    const formatTransferPayee = (transaction) => {
-        if (viewAccount === 'all') {
-            const fromAccount = getAccountName(transaction.accountId);
-            const toAccount = getAccountName(transaction.transferAccountId);
-            return `Transfer: ${fromAccount} → ${toAccount}`;
+        if (editingTransaction) {
+            onEditTransaction({ ...transactionData, id: editingTransaction });
+        } else {
+            onAddTransaction(transactionData);
         }
 
-        // Account-specific view
-        if (transaction._isTransformed) {
-            return transaction.payee; // Already formatted correctly
-        }
-
-        const toAccount = getAccountName(transaction.transferAccountId);
-        return `Transfer to ${toAccount}`;
+        cancelEdit();
     };
 
-    // Filter and sort transactions with account filtering
+    const saveAndAddAnother = () => {
+        saveTransaction();
+        setTimeout(() => startAddingTransaction(), 100);
+    };
+
+    // Split transaction management
+    const addSplit = () => {
+        const currentTransaction = editingTransaction ?
+            getEditingTransaction(editingTransaction) :
+            getEditingTransaction('new');
+
+        const newSplit = {
+            id: Date.now(),
+            amount: '',
+            categoryId: '',
+            memo: ''
+        };
+        const currentSplits = currentTransaction.splits || [];
+
+        const transactionId = editingTransaction || 'new';
+        updateEditingTransaction(transactionId, {
+            splits: [...currentSplits, newSplit],
+            isSplit: true
+        });
+    };
+
+    const removeSplit = (splitId) => {
+        const currentTransaction = editingTransaction ?
+            getEditingTransaction(editingTransaction) :
+            getEditingTransaction('new');
+
+        const currentSplits = currentTransaction.splits || [];
+        const updatedSplits = currentSplits.filter(split => split.id !== splitId);
+
+        const transactionId = editingTransaction || 'new';
+        updateEditingTransaction(transactionId, {
+            splits: updatedSplits,
+            isSplit: updatedSplits.length > 0
+        });
+    };
+
+    const updateSplit = (splitId, field, value) => {
+        const currentTransaction = editingTransaction ?
+            getEditingTransaction(editingTransaction) :
+            getEditingTransaction('new');
+
+        const currentSplits = currentTransaction.splits || [];
+        const updatedSplits = currentSplits.map(split =>
+            split.id === splitId ? { ...split, [field]: value } : split
+        );
+
+        const transactionId = editingTransaction || 'new';
+        updateEditingTransaction(transactionId, {
+            splits: updatedSplits
+        });
+    };
+    // Bulk selection handlers
+    const handleSelectAll = () => {
+        if (selectAll) {
+            setSelectedTransactions(new Set());
+        } else {
+            setSelectedTransactions(new Set(filteredAndSortedTransactions.map(t => t.id)));
+        }
+        setSelectAll(!selectAll);
+    };
+
+    const handleSelectTransaction = (transactionId) => {
+        const newSelected = new Set(selectedTransactions);
+        if (newSelected.has(transactionId)) {
+            newSelected.delete(transactionId);
+        } else {
+            newSelected.add(transactionId);
+        }
+        setSelectedTransactions(newSelected);
+        setSelectAll(newSelected.size === filteredAndSortedTransactions.length);
+    };
+
+    // Filtering and sorting
     const filteredAndSortedTransactions = useMemo(() => {
-        // First apply account filtering
-        let accountFiltered = getAccountFilteredTransactions(transactions, viewAccount);
-
-        // Then apply other filters
-        return accountFiltered
+        return transactions
             .filter(transaction => {
-                const matchesSearch = transaction.payee?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    transaction.memo?.toLowerCase().includes(searchTerm.toLowerCase());
-                const matchesType = typeFilter === 'all' ||
-                    (typeFilter === 'income' && transaction.amount > 0) ||
-                    (typeFilter === 'expense' && transaction.amount < 0) ||
-                    (typeFilter === 'transfer' && transaction.transferAccountId);
-                const matchesAccount = accountFilter === 'all' || transaction.accountId === parseInt(accountFilter);
-                return matchesSearch && matchesType && matchesAccount;
+                // Search filter
+                if (searchTerm) {
+                    const searchLower = searchTerm.toLowerCase();
+                    const matchesPayee = transaction.payee?.toLowerCase().includes(searchLower);
+                    const matchesMemo = transaction.memo?.toLowerCase().includes(searchLower);
+                    const matchesCategory = getCategoryName(transaction.categoryId)?.toLowerCase().includes(searchLower);
+                    const matchesAmount = Math.abs(transaction.amount).toString().includes(searchTerm);
+
+                    if (!matchesPayee && !matchesMemo && !matchesCategory && !matchesAmount) {
+                        return false;
+                    }
+                }
+
+                // Type filter
+                if (typeFilter !== 'all') {
+                    if (typeFilter === 'income' && transaction.amount <= 0) return false;
+                    if (typeFilter === 'expense' && transaction.amount >= 0) return false;
+                    if (typeFilter === 'transfer' && !transaction.transferAccountId) return false;
+                }
+
+                // Account filter
+                if (accountFilter !== 'all' && transaction.accountId !== parseInt(accountFilter)) {
+                    return false;
+                }
+
+                // View account filter
+                if (viewAccount !== 'all' && transaction.accountId !== parseInt(viewAccount)) {
+                    return false;
+                }
+
+                return true;
             })
             .sort((a, b) => {
                 let aValue, bValue;
@@ -694,7 +1549,8 @@ const TransactionsTab = ({
                         bValue = Math.abs(b.amount);
                         break;
                     default:
-                        return 0;
+                        aValue = a[sortBy] || '';
+                        bValue = b[sortBy] || '';
                 }
 
                 if (sortDirection === 'desc') {
@@ -744,7 +1600,7 @@ const TransactionsTab = ({
 
         setColumnWidths(newColumnWidths);
 
-        // Save to localStorage whenever columns are resized
+        // Save to localStorage
         localStorage.setItem('transactionTableColumnWidths', JSON.stringify(newColumnWidths));
     };
 
@@ -755,903 +1611,461 @@ const TransactionsTab = ({
         document.removeEventListener('mouseup', handleMouseUp);
     };
 
-    // Transaction editing functions
-    const startAddingTransaction = () => {
-        setIsAddingTransaction(true);
-        setNewTransaction({
-            date: getTodaysDate(),
-            payee: '',
-            categoryId: '',
-            memo: '',
-            outflow: '',
-            inflow: '',
-            isCleared: false,
-            accountId: viewAccount !== 'all' ? parseInt(viewAccount) : accounts[0]?.id || '',
-            isTransfer: false,
-            transferAccountId: '',
-            isSplit: false,
-            splits: []
-        });
-    };
-
-    const startEditingTransaction = (transaction) => {
-        setEditingTransaction(transaction.id);
-        setNewTransaction({
-            date: transaction.date,
-            payee: transaction.transferAccountId ? formatTransferPayee(transaction) : transaction.payee,
-            categoryId: transaction.categoryId || '',
-            memo: transaction.memo || '',
-            outflow: transaction.amount < 0 ? Math.abs(transaction.amount).toString() : '',
-            inflow: transaction.amount > 0 ? transaction.amount.toString() : '',
-            isCleared: transaction.isCleared || false,
-            accountId: transaction.accountId,
-            isTransfer: !!transaction.transferAccountId,
-            transferAccountId: transaction.transferAccountId || '',
-            isSplit: !!transaction.splits && transaction.splits.length > 0,
-            splits: transaction.splits || []
-        });
-    };
-
-    const cancelEdit = () => {
-        setIsAddingTransaction(false);
-        setEditingTransaction(null);
-        setNewTransaction({
-            date: getTodaysDate(),
-            payee: '',
-            categoryId: '',
-            memo: '',
-            outflow: '',
-            inflow: '',
-            isCleared: false,
-            accountId: viewAccount !== 'all' ? parseInt(viewAccount) : accounts[0]?.id || '',
-            isTransfer: false,
-            transferAccountId: '',
-            isSplit: false,
-            splits: []
-        });
-    };
-
-    const saveTransaction = () => {
-        // Handle string-to-number conversion from CurrencyField
-        const outflow = typeof newTransaction.outflow === 'number' ?
-            newTransaction.outflow : parseFloat(newTransaction.outflow) || 0;
-        const inflow = typeof newTransaction.inflow === 'number' ?
-            newTransaction.inflow : parseFloat(newTransaction.inflow) || 0;
-
-        // Validation for regular transactions
-        if (!newTransaction.isSplit) {
-            if (outflow > 0 && inflow > 0) {
-                alert('Transaction cannot have both inflow and outflow amounts');
-                return;
-            }
-
-            if (outflow === 0 && inflow === 0) {
-                alert('Transaction must have either an inflow or outflow amount');
-                return;
+    // Load column widths from localStorage on mount
+    useEffect(() => {
+        const savedWidths = localStorage.getItem('transactionTableColumnWidths');
+        if (savedWidths) {
+            try {
+                const parsedWidths = JSON.parse(savedWidths);
+                setColumnWidths(prev => ({ ...prev, ...parsedWidths }));
+            } catch (error) {
+                console.error('Error parsing saved column widths:', error);
             }
         }
+    }, []);
 
-        // Validation for split transactions
-        if (newTransaction.isSplit) {
-            const splits = newTransaction.splits || [];
-            if (splits.length === 0) {
-                alert('Split transactions must have at least one split');
-                return;
-            }
-
-            for (let split of splits) {
-                if (!split.categoryId) {
-                    alert('All splits must have a category selected');
-                    return;
-                }
-                const splitAmount = typeof split.amount === 'number' ? split.amount : parseFloat(split.amount) || 0;
-                if (splitAmount === 0) {
-                    alert('All splits must have a non-zero amount');
-                    return;
-                }
-            }
-
-            const totalAmount = outflow || inflow;
-            const splitTotal = splits.reduce((sum, split) => {
-                const amount = typeof split.amount === 'number' ? split.amount : parseFloat(split.amount) || 0;
-                return sum + Math.abs(amount);
-            }, 0);
-
-            if (Math.abs(totalAmount - splitTotal) > 0.01) {
-                alert(`Split amounts ($${splitTotal.toFixed(2)}) must equal transaction total ($${totalAmount.toFixed(2)})`);
-                return;
-            }
-        }
-
-        const amount = inflow > 0 ? inflow : -outflow;
-
-        let transactionData = {
-            date: newTransaction.date,
-            payee: newTransaction.payee,
-            memo: newTransaction.memo,
-            amount: amount,
-            accountId: parseInt(newTransaction.accountId),
-            isCleared: newTransaction.isCleared
-        };
-
-        // Handle transfers
-        if (newTransaction.isTransfer) {
-            transactionData = {
-                ...transactionData,
-                transferAccountId: parseInt(newTransaction.transferAccountId),
-                categoryId: null
-            };
-        }
-        // Handle splits
-        else if (newTransaction.isSplit) {
-            transactionData = {
-                ...transactionData,
-                categoryId: null,
-                isSplit: true,
-                splits: newTransaction.splits.map(split => {
-                    const splitAmount = typeof split.amount === 'number' ? split.amount : parseFloat(split.amount) || 0;
-                    return {
-                        amount: splitAmount,
-                        categoryId: parseInt(split.categoryId) || null,
-                        memo: split.memo || ''
-                    };
-                })
-            };
-        }
-        // Handle regular transactions
-        else {
-            transactionData = {
-                ...transactionData,
-                categoryId: newTransaction.categoryId ? parseInt(newTransaction.categoryId) : null
-            };
-        }
-
-        if (editingTransaction) {
-            onEditTransaction({ ...transactionData, id: editingTransaction });
-        } else {
-            onAddTransaction(transactionData);
-        }
-
-        cancelEdit();
-    };
-
-    const saveAndAddAnother = () => {
-        saveTransaction();
-        setTimeout(() => startAddingTransaction(), 100);
-    };
-
-    // Split transaction management
-    const addSplit = () => {
-        const newSplit = {
-            id: Date.now(),
-            amount: '',
-            categoryId: '',
-            memo: ''
-        };
-        const currentSplits = newTransaction.splits || [];
-        setNewTransaction(prev => ({
-            ...prev,
-            splits: [...currentSplits, newSplit],
-            isSplit: true
-        }));
-    };
-
-    const removeSplit = (splitId) => {
-        const currentSplits = newTransaction.splits || [];
-        const updatedSplits = currentSplits.filter(split => split.id !== splitId);
-        setNewTransaction(prev => ({
-            ...prev,
-            splits: updatedSplits,
-            isSplit: updatedSplits.length > 0
-        }));
-    };
-
-    const updateSplit = (splitId, field, value) => {
-        const currentSplits = newTransaction.splits || [];
-        const updatedSplits = currentSplits.map(split =>
-            split.id === splitId ? { ...split, [field]: value } : split
-        );
-        setNewTransaction(prev => ({
-            ...prev,
-            splits: updatedSplits
-        }));
-    };
-
-    // Bulk selection handlers
-    const handleSelectAll = () => {
-        if (selectAll) {
-            setSelectedTransactions(new Set());
-        } else {
-            setSelectedTransactions(new Set(filteredAndSortedTransactions.map(t => t.id)));
-        }
-        setSelectAll(!selectAll);
-    };
-
-    const handleSelectTransaction = (transactionId) => {
-        const newSelected = new Set(selectedTransactions);
-        if (newSelected.has(transactionId)) {
-            newSelected.delete(transactionId);
-        } else {
-            newSelected.add(transactionId);
-        }
-        setSelectedTransactions(newSelected);
-        setSelectAll(newSelected.size === filteredAndSortedTransactions.length);
-    };
-
-    // Cleared status toggle
-    const toggleCleared = (transaction) => {
-        onEditTransaction({
-            ...transaction,
-            isCleared: !transaction.isCleared
-        });
-    };
-
-    // Render cleared status indicator
-    const renderClearedStatus = (transaction) => {
-        const status = transaction.isCleared ? 'cleared' : 'uncleared';
-
-        return (
-            <button
-                onClick={() => toggleCleared(transaction)}
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all text-xs ${status === 'cleared'
-                    ? 'bg-theme-green border-theme-green text-white'
-                    : 'border-theme-tertiary hover:border-theme-secondary'
-                    }`}
-                title={status === 'cleared' ? 'Cleared' : 'Click to mark as cleared'}
-            >
-                {status === 'cleared' && <Check className="w-2 h-2" />}
-            </button>
-        );
-    };
-
+    // Sort icon component
     const SortIcon = ({ column }) => {
         if (sortBy !== column) return null;
-        return sortDirection === 'desc' ?
-            <ChevronDown className="w-4 h-4 inline ml-1" /> :
-            <ChevronUp className="w-4 h-4 inline ml-1" />;
+        return sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
     };
 
-    // Enhanced keyboard shortcuts
-    const handleKeyDown = (e) => {
-        if (!isAddingTransaction && !editingTransaction) return;
-
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            e.stopPropagation();
-            cancelEdit();
-        } else if (e.key === 'Enter' && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (e.shiftKey) {
-                saveAndAddAnother();
-            } else {
-                saveTransaction();
-            }
-        }
-    };
-
-    useEffect(() => {
-        if (isAddingTransaction || editingTransaction) {
-            document.addEventListener('keydown', handleKeyDown);
-            return () => {
-                document.removeEventListener('keydown', handleKeyDown);
-            };
-        }
-    }, [isAddingTransaction, editingTransaction]);
-
-    return (
-        <div className="space-y-6">
-            {/* Header and Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-theme-primary">Transactions</h2>
-                    <p className="text-sm text-theme-secondary">
-                        {filteredAndSortedTransactions.length} transaction{filteredAndSortedTransactions.length !== 1 ? 's' : ''}
-                        {selectedTransactions.size > 0 && ` • ${selectedTransactions.size} selected`}
-                        {viewAccount !== 'all' && ` • ${getAccountName(parseInt(viewAccount))}`}
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    {selectedTransactions.size > 0 && (
-                        <button
-                            onClick={() => {
-                                selectedTransactions.forEach(id => onDeleteTransaction({ id }));
-                                setSelectedTransactions(new Set());
-                                setSelectAll(false);
-                            }}
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2 transition-colors"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            <span>Delete Selected ({selectedTransactions.size})</span>
-                        </button>
-                    )}
+    // Mobile Layout
+    if (isMobile) {
+        return (
+            <div className="space-y-4">
+                {/* Mobile Header */}
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-theme-primary">
+                        {viewAccount === 'all'
+                            ? 'All Transactions'
+                            : `${getAccountName(viewAccount)} Transactions`
+                        }
+                    </h2>
                     <button
                         onClick={startAddingTransaction}
-                        className="btn-success text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 transition-colors"
+                        className="btn-primary px-4 py-2 rounded flex items-center gap-2"
                     >
-                        <Plus className="w-4 h-4" />
-                        <span>Add Transaction</span>
+                        <Plus size={16} />
+                        Add
+                    </button>
+                </div>
+
+                {/* Mobile Search */}
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-theme-tertiary w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="Search transactions..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary"
+                    />
+                </div>
+
+                {/* Mobile Filters */}
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                    <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="px-3 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                    >
+                        <option value="all">All Types</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                        <option value="transfer">Transfer</option>
+                    </select>
+
+                    <select
+                        value={accountFilter}
+                        onChange={(e) => setAccountFilter(e.target.value)}
+                        className="px-3 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                    >
+                        <option value="all">All Accounts</option>
+                        {accounts.map(account => (
+                            <option key={account.id} value={account.id}>{account.name}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Mobile Transaction Cards */}
+                <div>
+                    {/* New Transaction Card */}
+                    {isAddingTransaction && (
+                        <TransactionEditRow
+                            transaction={newTransactionData}
+                            setTransaction={(updates) => updateEditingTransaction('new', updates)}
+                            accounts={accounts}
+                            categories={categories}
+                            onSave={saveTransaction}
+                            onSaveAndAddAnother={saveAndAddAnother}
+                            onCancel={cancelEdit}
+                            isNew={true}
+                            addSplit={addSplit}
+                            removeSplit={removeSplit}
+                            updateSplit={updateSplit}
+                            columnWidths={columnWidths}
+                            viewAccount={viewAccount}
+                        />
+                    )}
+
+                    {/* Existing Transaction Cards */}
+                    {filteredAndSortedTransactions
+                        .filter(t => t.id !== editingTransaction)
+                        .map((transaction, index) => (
+                            editingTransaction === transaction.id ? (
+                                <TransactionEditRow
+                                    key={transaction.id}
+                                    transaction={editingTransactionData}
+                                    setTransaction={(updates) => updateEditingTransaction(transaction.id, updates)}
+                                    accounts={accounts}
+                                    categories={categories}
+                                    onSave={saveTransaction}
+                                    onCancel={cancelEdit}
+                                    isNew={false}
+                                    addSplit={addSplit}
+                                    removeSplit={removeSplit}
+                                    updateSplit={updateSplit}
+                                    columnWidths={columnWidths}
+                                    viewAccount={viewAccount}
+                                />
+                            ) : (
+                                <TransactionRow
+                                    key={transaction.id}
+                                    transaction={transaction}
+                                    index={index}
+                                    isSelected={selectedTransactions.has(transaction.id)}
+                                    onSelect={handleSelectTransaction}
+                                    onEdit={startEditingTransaction}
+                                    onDelete={onDeleteTransaction}
+                                    getAccountName={getAccountName}
+                                    getCategoryName={getCategoryName}
+                                    formatTransferPayee={formatTransferPayee}
+                                    renderClearedStatus={renderClearedStatus}
+                                    expandedTransactions={expandedTransactions}
+                                    setExpandedTransactions={setExpandedTransactions}
+                                    columnWidths={columnWidths}
+                                    viewAccount={viewAccount}
+                                />
+                            )
+                        ))}
+
+                    {/* Empty State */}
+                    {filteredAndSortedTransactions.length === 0 && !isAddingTransaction && (
+                        <div className="text-center py-12 text-theme-secondary">
+                            {transactions.length === 0
+                                ? 'No transactions yet. Add your first transaction!'
+                                : 'No transactions match your filters.'
+                            }
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Desktop Layout
+    return (
+        <div className="space-y-4">
+            {/* Desktop Header and Controls */}
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-4">
+                    <h2 className="text-xl font-bold text-theme-primary">
+                        {viewAccount === 'all'
+                            ? 'All Transactions'
+                            : `${getAccountName(viewAccount)} Transactions`
+                        }
+                    </h2>
+
+                    {/* Bulk Actions */}
+                    {selectedTransactions.size > 0 && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-theme-secondary">
+                                {selectedTransactions.size} selected
+                            </span>
+                            <button
+                                onClick={() => {
+                                    selectedTransactions.forEach(id => onDeleteTransaction(id));
+                                    setSelectedTransactions(new Set());
+                                }}
+                                className="btn-danger px-3 py-1 rounded text-sm"
+                            >
+                                Delete Selected
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* Search */}
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-theme-tertiary w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Search..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-4 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary w-64"
+                        />
+                    </div>
+
+                    {/* Filters */}
+                    <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value)}
+                        className="px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary"
+                    >
+                        <option value="all">All Types</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                        <option value="transfer">Transfer</option>
+                    </select>
+
+                    <select
+                        value={accountFilter}
+                        onChange={(e) => {
+                            setAccountFilter(e.target.value);
+                            onAccountViewChange?.(e.target.value); // ← Use the prop here
+                        }}
+                        className="px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary"
+                    >
+                        <option value="all">All Accounts</option>
+                        {accounts.map(account => (
+                            <option key={account.id} value={account.id}>{account.name}</option>
+                        ))}
+                    </select>
+
+
+                    <button
+                        onClick={startAddingTransaction}
+                        className="btn-primary px-4 py-2 rounded flex items-center gap-2"
+                    >
+                        <Plus size={16} />
+                        Add Transaction
                     </button>
                 </div>
             </div>
 
-            {/* Enhanced Search and Filters */}
-            <div className="p-4 rounded-lg bg-theme-secondary">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    {/* Account View Selector - NEW */}
-                    <div>
-                        <label className="block text-xs font-medium mb-1 text-theme-text">View Account</label>
-                        <select
-                            value={viewAccount}
-                            onChange={(e) => setViewAccount(e.target.value)}
-                            className="w-full p-2 rounded border bg-theme-primary border-theme-primary text-theme-primary"
-                        >
-                            <option value="all">All Accounts</option>
-                            {accounts.map(account => (
-                                <option key={account.id} value={account.id}>
-                                    {account.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+            {/* Desktop Table */}
+            <div className="bg-theme-primary rounded-lg shadow overflow-hidden">
+                <table className="w-full">
+                    <thead className="table-header">
+                        <tr>
+                            {/* Bulk Select Header */}
+                            <th className="px-1 py-3 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider relative" style={{ width: columnWidths.select }}>
+                                <input
+                                    type="checkbox"
+                                    checked={selectAll}
+                                    onChange={handleSelectAll}
+                                    className="rounded border-theme-secondary"
+                                />
+                                <div
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    onMouseDown={(e) => handleMouseDown(e, 'select')}
+                                />
+                            </th>
 
-                    {/* Search */}
-                    <div className="relative">
-                        <label className="block text-xs font-medium mb-1 text-theme-text">Search</label>
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-theme-tertiary mt-2" />
-                        <input
-                            type="text"
-                            placeholder="Search transactions..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 rounded border bg-theme-primary border-theme-primary text-theme-primary placeholder-theme-tertiary"
-                        />
-                    </div>
-
-                    {/* Type Filter */}
-                    <div>
-                        <label className="block text-xs font-medium mb-1 text-theme-text">Type</label>
-                        <select
-                            value={typeFilter}
-                            onChange={(e) => setTypeFilter(e.target.value)}
-                            className="w-full p-2 rounded border bg-theme-primary border-theme-primary text-theme-primary"
-                        >
-                            <option value="all">All Types</option>
-                            <option value="income">Income</option>
-                            <option value="expense">Expenses</option>
-                            <option value="transfer">Transfers</option>
-                        </select>
-                    </div>
-
-                    {/* Account Filter */}
-                    <div>
-                        <label className="block text-xs font-medium mb-1 text-theme-text">Filter Account</label>
-                        <select
-                            value={accountFilter}
-                            onChange={(e) => setAccountFilter(e.target.value)}
-                            className="w-full p-2 rounded border bg-theme-primary border-theme-primary text-theme-primary"
-                        >
-                            <option value="all">All Accounts</option>
-                            {accounts.map(account => (
-                                <option key={account.id} value={account.id}>
-                                    {account.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Clear Filters */}
-                    <div className="flex items-end">
-                        <button
-                            onClick={() => {
-                                setSearchTerm('');
-                                setTypeFilter('all');
-                                setAccountFilter('all');
-                            }}
-                            className="w-full px-4 py-2 rounded border bg-theme-primary border-theme-primary hover:bg-theme-hover text-theme-primary"
-                        >
-                            Clear Filters
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Enhanced Compact Table */}
-            <div className="bg-theme-primary rounded-lg shadow-sm border border-theme-primary overflow-hidden">
-                <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
-                    <table ref={tableRef} className="w-full table-fixed" style={{ minWidth: '900px' }}>
-                        <thead className="table-header border-b border-theme-secondary">
-                            <tr>
-                                {/* Bulk Select - Compact */}
+                            {/* Account Header - Conditional */}
+                            {viewAccount === 'all' && (
                                 <th
-                                    className="px-1 py-2 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider"
-                                    style={{ width: columnWidths.select }}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={selectAll}
-                                        onChange={handleSelectAll}
-                                        className="rounded border-theme-secondary"
-                                    />
-                                </th>
-
-                                {/* Date - WIDER */}
-                                <th
-                                    className="px-2 py-2 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
-                                    style={{ width: columnWidths.date }}
-                                    onClick={() => handleSort('date')}
+                                    className="px-2 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                    style={{ width: columnWidths.account }}
+                                    onClick={() => handleSort('account')}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <span>Date</span>
-                                        <SortIcon column="date" />
+                                        <span>Account</span>
+                                        <SortIcon column="account" />
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
-                                        onMouseDown={(e) => handleMouseDown(e, 'date')}
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                        onMouseDown={(e) => handleMouseDown(e, 'account')}
                                     />
                                 </th>
+                            )}
 
-                                {/* Payee - Compact */}
-                                <th
-                                    className="px-2 py-2 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
-                                    style={{ width: columnWidths.payee }}
-                                    onClick={() => handleSort('payee')}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span>Payee</span>
-                                        <SortIcon column="payee" />
-                                    </div>
-                                    <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
-                                        onMouseDown={(e) => handleMouseDown(e, 'payee')}
-                                    />
-                                </th>
+                            {/* Date Header */}
+                            <th
+                                className="px-2 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                style={{ width: columnWidths.date }}
+                                onClick={() => handleSort('date')}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span>Date</span>
+                                    <SortIcon column="date" />
+                                </div>
+                                <div
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    onMouseDown={(e) => handleMouseDown(e, 'date')}
+                                />
+                            </th>
 
-                                {/* Category - Compact */}
-                                <th
-                                    className="px-2 py-2 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
-                                    style={{ width: columnWidths.category }}
-                                    onClick={() => handleSort('category')}
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span>Category</span>
-                                        <SortIcon column="category" />
-                                    </div>
-                                    <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
-                                        onMouseDown={(e) => handleMouseDown(e, 'category')}
-                                    />
-                                </th>
+                            {/* Payee Header */}
+                            <th
+                                className="px-2 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                style={{ width: columnWidths.payee }}
+                                onClick={() => handleSort('payee')}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span>Payee</span>
+                                    <SortIcon column="payee" />
+                                </div>
+                                <div
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    onMouseDown={(e) => handleMouseDown(e, 'payee')}
+                                />
+                            </th>
 
-                                {/* Memo - Compact */}
-                                <th
-                                    className="px-2 py-2 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider relative"
-                                    style={{ width: columnWidths.memo }}
-                                >
-                                    <span>Memo</span>
-                                    <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
-                                        onMouseDown={(e) => handleMouseDown(e, 'memo')}
-                                    />
-                                </th>
+                            {/* Category Header */}
+                            <th
+                                className="px-2 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                style={{ width: columnWidths.category }}
+                                onClick={() => handleSort('category')}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span>Category</span>
+                                    <SortIcon column="category" />
+                                </div>
+                                <div
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    onMouseDown={(e) => handleMouseDown(e, 'category')}
+                                />
+                            </th>
 
-                                {/* Outflow - Compact */}
-                                <th
-                                    className="px-2 py-2 text-right text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
-                                    style={{ width: columnWidths.outflow }}
-                                    onClick={() => handleSort('amount')}
-                                >
-                                    <div className="flex items-center justify-end">
-                                        <span>Out</span>
-                                        <SortIcon column="amount" />
-                                    </div>
-                                    <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
-                                        onMouseDown={(e) => handleMouseDown(e, 'outflow')}
-                                    />
-                                </th>
+                            {/* Memo Header */}
+                            <th
+                                className="px-2 py-3 text-left text-xs font-medium text-theme-secondary uppercase tracking-wider relative"
+                                style={{ width: columnWidths.memo }}
+                            >
+                                <span>Memo</span>
+                                <div
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    onMouseDown={(e) => handleMouseDown(e, 'memo')}
+                                />
+                            </th>
 
-                                {/* Inflow - Compact */}
-                                <th
-                                    className="px-2 py-2 text-right text-xs font-medium text-theme-secondary uppercase tracking-wider relative"
-                                    style={{ width: columnWidths.inflow }}
-                                >
-                                    <span>In</span>
-                                    <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
-                                        onMouseDown={(e) => handleMouseDown(e, 'inflow')}
-                                    />
-                                </th>
+                            {/* Outflow Header */}
+                            <th
+                                className="px-2 py-3 text-right text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                style={{ width: columnWidths.outflow }}
+                                onClick={() => handleSort('amount')}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span>Outflow</span>
+                                    <SortIcon column="amount" />
+                                </div>
+                                <div
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    onMouseDown={(e) => handleMouseDown(e, 'outflow')}
+                                />
+                            </th>
 
-                                {/* Cleared - Compact */}
-                                <th
-                                    className="px-1 py-2 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider relative"
-                                    style={{ width: columnWidths.cleared }}
-                                >
-                                    <span>✓</span>
-                                    <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
-                                        onMouseDown={(e) => handleMouseDown(e, 'cleared')}
-                                    />
-                                </th>
+                            {/* Inflow Header */}
+                            <th
+                                className="px-2 py-3 text-right text-xs font-medium text-theme-secondary uppercase tracking-wider cursor-pointer hover:bg-theme-hover relative"
+                                style={{ width: columnWidths.inflow }}
+                                onClick={() => handleSort('amount')}
+                            >
+                                <div className="flex items-center justify-between">
+                                    <span>Inflow</span>
+                                    <SortIcon column="amount" />
+                                </div>
+                                <div
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    onMouseDown={(e) => handleMouseDown(e, 'inflow')}
+                                />
+                            </th>
 
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-theme-secondary">
-                            {/* New Transaction Row */}
-                            {isAddingTransaction && (
+                            {/* Cleared Header */}
+                            <th
+                                className="px-1 py-3 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider relative"
+                                style={{ width: columnWidths.cleared }}
+                            >
+                                <span>✓</span>
+                                <div
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    onMouseDown={(e) => handleMouseDown(e, 'cleared')}
+                                />
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-theme-secondary">
+                        {/* New Transaction Row */}
+                        {isAddingTransaction && (
+                            <TransactionEditRow
+
+                                transaction={newTransactionData}
+                                setTransaction={(updates) => updateEditingTransaction('new', updates)}
+                                accounts={accounts}
+                                categories={categories}
+                                onSave={saveTransaction}
+                                onSaveAndAddAnother={saveAndAddAnother}
+                                onCancel={cancelEdit}
+                                isNew={true}
+                                addSplit={addSplit}
+                                removeSplit={removeSplit}
+                                updateSplit={updateSplit}
+                                columnWidths={columnWidths}
+                                viewAccount={viewAccount}
+                            />
+                        )}
+
+                        {/* Existing Transactions */}
+                        {filteredAndSortedTransactions.map((transaction, index) => (
+                            editingTransaction === transaction.id ? (
                                 <TransactionEditRow
-                                    transaction={newTransaction}
-                                    setTransaction={setNewTransaction}
+                                    key={`editing-${transaction.id}`}
+                                    transaction={editingTransactionData}
+                                    setTransaction={(updates) => updateEditingTransaction(transaction.id, updates)}
                                     accounts={accounts}
                                     categories={categories}
                                     onSave={saveTransaction}
-                                    onSaveAndAddAnother={saveAndAddAnother}
                                     onCancel={cancelEdit}
-                                    isNew={true}
+                                    isNew={false}
                                     addSplit={addSplit}
                                     removeSplit={removeSplit}
                                     updateSplit={updateSplit}
-                                    columnWidths={columnWidths} // ← PASS COLUMN WIDTHS
-                                    viewAccount={viewAccount} />
-                            )}
+                                    columnWidths={columnWidths}
+                                    viewAccount={viewAccount}
+                                />
+                            ) : (
+                                <TransactionRow
+                                    key={transaction.id}
+                                    transaction={transaction}
+                                    index={index}
+                                    isSelected={selectedTransactions.has(transaction.id)}
+                                    onSelect={handleSelectTransaction}
+                                    onEdit={startEditingTransaction}
+                                    onDelete={onDeleteTransaction}
+                                    getAccountName={getAccountName}
+                                    getCategoryName={getCategoryName}
+                                    formatTransferPayee={formatTransferPayee}
+                                    renderClearedStatus={renderClearedStatus}
+                                    expandedTransactions={expandedTransactions}
+                                    setExpandedTransactions={setExpandedTransactions}
+                                    columnWidths={columnWidths}
+                                    viewAccount={viewAccount}
+                                />
+                            )
+                        ))}
 
-                            {/* Existing Transactions */}
-                            {filteredAndSortedTransactions.map((transaction, index) => (
-                                editingTransaction === transaction.id ? (
-                                    <TransactionEditRow
-                                        key={transaction.id}
-                                        transaction={newTransaction}
-                                        setTransaction={setNewTransaction}
-                                        accounts={accounts}
-                                        categories={categories}
-                                        onSave={saveTransaction}
-                                        onCancel={cancelEdit}
-                                        isNew={false}
-                                        addSplit={addSplit}
-                                        removeSplit={removeSplit}
-                                        updateSplit={updateSplit}
-                                        columnWidths={columnWidths} // ← PASS COLUMN WIDTHS
-                                        viewAccount={viewAccount}
-                                    />
-                                ) : (
-                                    <TransactionRow
-                                        key={transaction.id}
-                                        transaction={transaction}
-                                        index={index}
-                                        isSelected={selectedTransactions.has(transaction.id)}
-                                        onSelect={handleSelectTransaction}
-                                        onEdit={startEditingTransaction}
-                                        onDelete={onDeleteTransaction}
-                                        getAccountName={getAccountName}
-                                        getCategoryName={getCategoryName}
-                                        formatTransferPayee={formatTransferPayee}
-                                        renderClearedStatus={renderClearedStatus}
-                                        expandedTransactions={expandedTransactions}
-                                        setExpandedTransactions={setExpandedTransactions}
-                                        columnWidths={columnWidths}
-                                    />
-                                )
-                            ))}
-
-                            {/* Empty State */}
-                            {filteredAndSortedTransactions.length === 0 && !isAddingTransaction && (
-                                <tr>
-                                    <td colSpan="8" className="text-center py-12 text-theme-secondary">                                        {transactions.length === 0 ? (
-                                        <>
-                                            <p className="text-lg font-medium mb-2">No transactions yet</p>
-                                            <p>Add your first transaction to get started!</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="text-lg font-medium mb-2">No transactions match your filters</p>
-                                            <p>Try adjusting your search or filter criteria</p>
-                                        </>
-                                    )}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Enhanced Summary Footer */}
-                {filteredAndSortedTransactions.length > 0 && (
-                    <div className="table-header border-t border-theme-secondary p-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm">
-                            <div>
-                                <p className="text-theme-secondary font-medium">Total Income</p>
-                                <p className="text-lg font-semibold text-theme-green">
-                                    ${filteredAndSortedTransactions
-                                        .filter(t => t.amount > 0 && !t.transferAccountId)
-                                        .reduce((sum, t) => sum + t.amount, 0)
-                                        .toFixed(2)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-theme-secondary font-medium">Total Expenses</p>
-                                <p className="text-lg font-semibold text-theme-red">
-                                    ${filteredAndSortedTransactions
-                                        .filter(t => t.amount < 0 && !t.transferAccountId)
-                                        .reduce((sum, t) => sum + Math.abs(t.amount), 0)
-                                        .toFixed(2)}
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-theme-secondary font-medium">Transfers</p>
-                                <p className="text-lg font-semibold text-theme-blue">
-                                    {filteredAndSortedTransactions.filter(t => t.transferAccountId).length} transactions
-                                </p>
-                            </div>
-                            <div>
-                                <p className="text-theme-secondary font-medium">Net Amount</p>
-                                <p className={`text-lg font-semibold ${filteredAndSortedTransactions.reduce((sum, t) => sum + (t.transferAccountId ? 0 : t.amount), 0) >= 0
-                                    ? 'text-theme-green' : 'text-theme-red'
-                                    }`}>
-                                    ${filteredAndSortedTransactions
-                                        .reduce((sum, t) => sum + (t.transferAccountId ? 0 : t.amount), 0)
-                                        .toFixed(2)}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                        {/* Empty State */}
+                        {filteredAndSortedTransactions.length === 0 && !isAddingTransaction && (
+                            <tr>
+                                <td colSpan={viewAccount === 'all' ? "9" : "8"} className="text-center py-12 text-theme-secondary">
+                                    {transactions.length === 0
+                                        ? 'No transactions yet. Add your first transaction!'
+                                        : 'No transactions match your filters.'
+                                    }
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
 };
 
-// Enhanced TransactionRow Component with Hover Actions and Compact Layout
-const TransactionRow = ({
-    transaction,
-    index,
-    isSelected,
-    onSelect,
-    onEdit,
-    onDelete,
-    getAccountName,
-    getCategoryName,
-    formatTransferPayee,
-    renderClearedStatus,
-    expandedTransactions,
-    setExpandedTransactions,
-    columnWidths
-}) => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    // Check if this is a split transaction
-    const isSplitTransaction = transaction.isSplit && transaction.splits && transaction.splits.length > 0;
-    const isExpanded = expandedTransactions.has(transaction.id);
-
-    // Calculate split totals and difference (needed for the summary row)
-    const totalAmount = Math.abs(transaction.amount || 0);
-    const splitTotal = (transaction.splits || []).reduce((sum, split) => {
-        const amount = typeof split.amount === 'number' ? split.amount : parseFloat(split.amount) || 0;
-        return sum + Math.abs(amount);
-    }, 0);
-    const splitDifference = Math.abs(totalAmount - splitTotal);
-
-    const toggleExpanded = () => {
-        if (isSplitTransaction) {
-            const newExpanded = new Set(expandedTransactions);
-            if (isExpanded) {
-                newExpanded.delete(transaction.id);
-            } else {
-                newExpanded.add(transaction.id);
-            }
-            setExpandedTransactions(newExpanded);
-        }
-    };
-
-    return (
-        <>
-            <tr
-                className={`transition-colors hover:table-row-hover ${index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
-                    } ${isSelected ? 'bg-theme-active' : ''} ${isSplitTransaction ? 'cursor-pointer' : ''}`}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-                onClick={isSplitTransaction ? toggleExpanded : undefined}
-            >
-                {/* Bulk Select - Compact */}
-                <td className="px-1 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-                    <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => onSelect(transaction.id)}
-                        className="rounded border-theme-secondary"
-                    />
-                </td>
-
-                {/* Date - More space for calendar picker */}
-                <td className="px-2 py-2 text-theme-primary">
-                    <div className="flex items-center">
-                        {isSplitTransaction && (
-                            <button
-                                className="mr-1 text-theme-secondary hover:text-theme-primary transition-colors"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleExpanded();
-                                }}
-                            >
-                                {isExpanded ? (
-                                    <ChevronDown className="w-3 h-3" />
-                                ) : (
-                                    <ChevronUp className="w-3 h-3" />
-                                )}
-                            </button>
-                        )}
-                        <span className="text-sm">{new Date(transaction.date).toLocaleDateString()}</span>
-                    </div>
-                </td>
-
-                {/* Payee - With Hover Actions */}
-                <td className="px-2 py-2 relative group">
-                    <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                            <div className="text-sm font-medium text-theme-primary truncate">
-                                {transaction.transferAccountId
-                                    ? formatTransferPayee(transaction)
-                                    : transaction.payee || 'Unknown Payee'}
-                                {isSplitTransaction && (
-                                    <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded">
-                                        Split ({transaction.splits.length})
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Hover Actions */}
-                        <div className={`flex items-center gap-1 transition-all duration-200 ml-2 ${isHovered ? 'opacity-100' : 'opacity-0'
-                            }`} onClick={(e) => e.stopPropagation()}>
-                            <button
-                                onClick={() => onEdit(transaction)}
-                                className="p-1 rounded hover:bg-theme-hover transition-colors text-theme-secondary"
-                                title="Edit transaction"
-                            >
-                                <Edit2 className="w-3 h-3" />
-                            </button>
-                            <button
-                                onClick={() => onDelete({
-                                    id: transaction.id,
-                                    payee: transaction.payee || 'Unnamed Transaction'
-                                })}
-                                className="p-1 rounded hover:bg-theme-hover text-theme-red transition-colors"
-                                title="Delete transaction"
-                            >
-                                <Trash2 className="w-3 h-3" />
-                            </button>
-                        </div>
-                    </div>
-                </td>
-
-                {/* Category - Compact */}
-                <td className="px-2 py-2 text-theme-secondary">
-                    <span className="text-sm truncate">
-                        {transaction.transferAccountId ? (
-                            'Transfer'
-                        ) : isSplitTransaction ? (
-                            <span className="italic text-theme-tertiary">Multiple</span>
-                        ) : (
-                            getCategoryName(transaction.categoryId) || 'Uncategorized'
-                        )}
-                    </span>
-                </td>
-
-                {/* Memo - Compact */}
-                <td className="px-2 py-2 text-theme-secondary text-xs">
-                    {transaction.memo && (
-                        <div className="truncate" title={transaction.memo}>
-                            {transaction.memo}
-                        </div>
-                    )}
-                </td>
-
-                {/* Outflow - Compact */}
-                <td className="px-2 py-2 text-right">
-                    {transaction.amount < 0 && (
-                        <span className="font-semibold text-theme-red text-sm">
-                            ${Math.abs(transaction.amount).toFixed(2)}
-                        </span>
-                    )}
-                </td>
-
-                {/* Inflow - Compact */}
-                <td className="px-2 py-2 text-right">
-                    {transaction.amount > 0 && (
-                        <span className="font-semibold text-theme-green text-sm">
-                            ${transaction.amount.toFixed(2)}
-                        </span>
-                    )}
-                </td>
-
-                {/* Cleared - Compact */}
-                <td className="px-1 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-                    {renderClearedStatus(transaction)}
-                </td>
-
-            </tr>
-
-            {/* Split Detail Rows */}
-            {isSplitTransaction && isExpanded && (
-                <>
-                    {transaction.splits.map((split, splitIndex) => (
-                        <tr key={split.id} className="bg-theme-tertiary border-t border-theme-secondary/20">
-                            {/* Checkbox column */}
-                            <td className="px-1 py-2 text-center" style={{ width: columnWidths.select }}></td>
-
-                            {/* Date column with indentation */}
-                            <td className="px-2 py-2" style={{ width: columnWidths.date }}>
-                                <div className="flex items-center">
-                                    <div className="w-6"></div> {/* Consistent indentation space */}
-                                    <span className="text-xs text-theme-tertiary">
-                                        Split {splitIndex + 1}
-                                    </span>
-                                </div>
-                            </td>
-
-                            {/* Payee/Split name */}
-                            <td className="px-2 py-2" style={{ width: columnWidths.payee }}>
-                                <div className="text-sm text-theme-primary">
-                                    {split.memo || `Split ${splitIndex + 1}`}
-                                </div>
-                            </td>
-
-                            {/* Category */}
-                            <td className="px-2 py-2" style={{ width: columnWidths.category }}>
-                                <span className="text-sm text-theme-secondary">
-                                    {getCategoryName(split.categoryId) || 'Uncategorized'}
-                                </span>
-                            </td>
-
-                            {/* Memo */}
-                            <td className="px-2 py-2" style={{ width: columnWidths.memo }}></td>
-
-                            {/* Outflow */}
-                            <td className="px-2 py-2 text-right" style={{ width: columnWidths.outflow }}>
-                                {split.amount < 0 && (
-                                    <span className="font-medium text-theme-red text-sm">
-                                        ${Math.abs(split.amount).toFixed(2)}
-                                    </span>
-                                )}
-                            </td>
-
-                            {/* Inflow */}
-                            <td className="px-2 py-2 text-right" style={{ width: columnWidths.inflow }}>
-                                {split.amount > 0 && (
-                                    <span className="font-medium text-theme-green text-sm">
-                                        ${split.amount.toFixed(2)}
-                                    </span>
-                                )}
-                            </td>
-
-                            {/* Cleared status */}
-                            <td className="px-1 py-2" style={{ width: columnWidths.cleared }}></td>
-                        </tr>
-                    ))}
-
-                    {/* Split Summary Row - Only show when isExpanded */}
-                    {/* Split Summary Row - Only show when isExpanded */}
-                    {isExpanded && (
-                        <tr className="bg-theme-tertiary border-t border-theme-secondary/20">
-                            <td className="px-1 py-2"></td>
-                            <td className="px-2 py-2"></td>
-                            <td className="px-2 py-2"></td>
-                            <td className="px-2 py-2"></td>
-                            <td className="px-2 py-2"></td>
-                            <td className="px-2 py-2"></td>
-                            <td className="px-2 py-2 text-right">
-                                <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'}`}>
-                                    <div className="text-xs font-medium">${splitTotal.toFixed(2)}</div>
-                                    <div className="text-xs opacity-70">of ${totalAmount.toFixed(2)}</div>
-                                    <div className="text-xs">{Math.abs(splitDifference) < 0.01 ? 'Balanced' : `Diff: ${splitDifference.toFixed(2)}`}</div>
-                                </div>
-                            </td>
-                            <td className="px-1 py-2"></td>
-                        </tr>
-                    )}
-                </>
-            )}
-        </>
-    );
-};
 export default TransactionsTab;
+

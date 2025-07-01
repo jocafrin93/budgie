@@ -653,7 +653,7 @@ const UnifiedEnvelopeBudgetView = ({
 
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
                                         onMouseDown={(e) => {
                                             e.stopPropagation(); // This is the key fix!
                                             handleMouseDown(e, 'category');
@@ -675,7 +675,7 @@ const UnifiedEnvelopeBudgetView = ({
                                         )}
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
                                         onMouseDown={(e) => {
                                             e.stopPropagation(); // This is the key fix!
                                             handleMouseDown(e, 'needed');
@@ -696,7 +696,7 @@ const UnifiedEnvelopeBudgetView = ({
                                         )}
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
                                         onMouseDown={(e) => {
                                             e.stopPropagation(); // This is the key fix!
                                             handleMouseDown(e, 'perPaycheck');
@@ -717,7 +717,7 @@ const UnifiedEnvelopeBudgetView = ({
                                         )}
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
                                         onMouseDown={(e) => {
                                             e.stopPropagation(); // This is the key fix!
                                             handleMouseDown(e, 'available');
@@ -739,7 +739,7 @@ const UnifiedEnvelopeBudgetView = ({
                                         )}
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
                                         onMouseDown={(e) => {
                                             e.stopPropagation(); // This is the key fix!
                                             handleMouseDown(e, 'dueDate');
