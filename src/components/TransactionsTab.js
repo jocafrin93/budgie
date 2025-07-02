@@ -42,21 +42,21 @@ const TransactionEditRow = ({
     }, []);
 
     const handleInputChange = (field, value) => {
-        setTransaction(prev => ({
+        setTransaction((prev) => ({
             ...prev,
             [field]: value
         }));
     };
 
     const handleAccountChange = (value) => {
-        setTransaction(prev => ({
+        setTransaction((prev) => ({
             ...prev,
             accountId: value
         }));
     };
 
     const handleTransferAccountChange = (value) => {
-        setTransaction(prev => ({
+        setTransaction((prev) => ({
             ...prev,
             transferAccountId: value
         }));
@@ -65,7 +65,7 @@ const TransactionEditRow = ({
     const toggleTransfer = () => {
         if (transaction.isTransfer) {
             // Turning off transfer mode
-            setTransaction(prev => ({
+            setTransaction((prev) => ({
                 ...prev,
                 isTransfer: false,
                 transferAccountId: '',
@@ -75,10 +75,14 @@ const TransactionEditRow = ({
             }));
         } else {
             // Turning on transfer mode
-            const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
-            const defaultPayee = fromAccount ? `Transfer: ${fromAccount.name}` : 'Transfer';
+            const fromAccount = accounts.find(
+                (acc) => acc.id === parseInt(transaction.accountId)
+            );
+            const defaultPayee = fromAccount
+                ? `Transfer: ${fromAccount.name}`
+                : 'Transfer';
 
-            setTransaction(prev => ({
+            setTransaction((prev) => ({
                 ...prev,
                 isTransfer: true,
                 isSplit: false,
@@ -92,7 +96,7 @@ const TransactionEditRow = ({
     const toggleSplit = () => {
         if (transaction.isSplit) {
             // Turning off split mode
-            setTransaction(prev => ({
+            setTransaction((prev) => ({
                 ...prev,
                 isSplit: false,
                 splits: [],
@@ -101,32 +105,41 @@ const TransactionEditRow = ({
             }));
         } else {
             // Turning on split mode
-            setTransaction(prev => ({
+            setTransaction((prev) => ({
                 ...prev,
                 isSplit: true,
                 isTransfer: false,
                 transferAccountId: '',
-                splits: prev.splits && prev.splits.length > 0 ? prev.splits : [
-                    {
-                        id: Date.now(),
-                        amount: '',
-                        categoryId: '',
-                        memo: ''
-                    }
-                ]
+                splits:
+                    prev.splits && prev.splits.length > 0
+                        ? prev.splits
+                        : [
+                            {
+                                id: Date.now(),
+                                amount: '',
+                                categoryId: '',
+                                memo: ''
+                            }
+                        ]
             }));
         }
     };
 
     // Calculate split balance
-    const outflowAmount = typeof transaction.outflow === 'number' ?
-        transaction.outflow : parseFloat(transaction.outflow) || 0;
-    const inflowAmount = typeof transaction.inflow === 'number' ?
-        transaction.inflow : parseFloat(transaction.inflow) || 0;
+    const outflowAmount =
+        typeof transaction.outflow === 'number'
+            ? transaction.outflow
+            : parseFloat(transaction.outflow) || 0;
+    const inflowAmount =
+        typeof transaction.inflow === 'number'
+            ? transaction.inflow
+            : parseFloat(transaction.inflow) || 0;
     const totalAmount = outflowAmount || inflowAmount;
     const splitTotal = (transaction.splits || []).reduce((sum, split) => {
-        const amount = typeof split.amount === 'number' ?
-            split.amount : parseFloat(split.amount) || 0;
+        const amount =
+            typeof split.amount === 'number'
+                ? split.amount
+                : parseFloat(split.amount) || 0;
         return sum + Math.abs(amount);
     }, 0);
     const splitDifference = Math.abs(totalAmount - splitTotal);
@@ -155,663 +168,597 @@ const TransactionEditRow = ({
             };
         });
 
-        setTransaction(prev => ({
+        setTransaction((prev) => ({
             ...prev,
             splits: updatedSplits
         }));
     };
 
-    // Mobile Card Layout
-    const MobileEditingCard = () => {
-        return (
-            <div className="bg-theme-hover rounded-lg border-2 border-theme-accent mb-3 overflow-hidden">
-                <div className="p-4 space-y-4">
-                    {/* Basic Transaction Info */}
-                    <div className="grid grid-cols-2 gap-3">
+    return (
+        <>
+            {isMobile ? (
+                <div className="bg-theme-hover rounded-lg border-2 border-theme-accent mb-3 overflow-hidden">
+                    <div className="p-4 space-y-4">
+                        {/* Basic Transaction Info */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="block text-xs font-medium text-theme-secondary mb-1">
+                                    Date
+                                </label>
+                                <input
+                                    type="date"
+                                    value={transaction.date}
+                                    onChange={(e) => handleInputChange('date', e.target.value)}
+                                    className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-medium text-theme-secondary mb-1">
+                                    Amount
+                                </label>
+                                <div className="flex">
+                                    <CurrencyField
+                                        name="mobile_amount"
+                                        value={Math.abs(outflowAmount || inflowAmount) || 0}
+                                        onChange={(e) => {
+                                            const value = parseFloat(e.target.value) || 0;
+                                            if (outflowAmount > 0) {
+                                                handleInputChange('outflow', value);
+                                                handleInputChange('inflow', 0);
+                                            } else {
+                                                handleInputChange('inflow', value);
+                                                handleInputChange('outflow', 0);
+                                            }
+                                        }}
+                                        hideLabel={true}
+                                        placeholder="0.00"
+                                        className="flex-1 px-3 py-2 border rounded-l bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                        darkMode={false}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const amount =
+                                                Math.abs(outflowAmount || inflowAmount) || 0;
+                                            handleInputChange('outflow', amount);
+                                            handleInputChange('inflow', 0);
+                                        }}
+                                        className={`px-3 py-2 border-t border-b text-xs ${outflowAmount > 0
+                                            ? 'bg-theme-red text-theme-primary border-theme-red'
+                                            : 'bg-theme-secondary text-theme-tertiary border-theme-secondary'
+                                            }`}
+                                    >
+                                        Out
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            const amount =
+                                                Math.abs(outflowAmount || inflowAmount) || 0;
+                                            handleInputChange('inflow', amount);
+                                            handleInputChange('outflow', 0);
+                                        }}
+                                        className={`px-3 py-2 border-t border-r border-b rounded-r text-xs ${inflowAmount > 0
+                                            ? 'bg-theme-green text-theme-primary border-theme-green'
+                                            : 'bg-theme-secondary text-theme-tertiary border-theme-secondary'
+                                            }`}
+                                    >
+                                        In
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {viewAccount === 'all' && (
+                            <div>
+                                <label className="block text-xs font-medium text-theme-secondary mb-1">
+                                    Account
+                                </label>
+                                <select
+                                    value={transaction.accountId}
+                                    onChange={(e) => handleAccountChange(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                >
+                                    {accounts.map((account) => (
+                                        <option key={account.id} value={account.id}>
+                                            {account.name} (${(account.balance || 0).toFixed(2)})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         <div>
-                            <label className="block text-xs font-medium text-theme-secondary mb-1">Date</label>
+                            <label className="block text-xs font-medium text-theme-secondary mb-1">
+                                Payee
+                            </label>
                             <input
-                                type="date"
-                                value={transaction.date}
-                                onChange={(e) => handleInputChange('date', e.target.value)}
-                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                type="text"
+                                value={transaction.payee}
+                                onChange={(e) => handleInputChange('payee', e.target.value)}
+                                placeholder={transaction.isTransfer ? 'Transfer' : 'Payee'}
+                                disabled={transaction.isTransfer}
+                                className={`w-full px-3 py-2 border rounded text-sm ${transaction.isTransfer
+                                    ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
+                                    : 'bg-theme-primary border-theme-secondary text-theme-primary'
+                                    }`}
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-medium text-theme-secondary mb-1">Amount</label>
-                            <div className="flex">
-                                <CurrencyField
-                                    name="mobile_amount"
-                                    value={Math.abs(outflowAmount || inflowAmount) || 0}
-                                    onChange={(e) => {
-                                        const value = parseFloat(e.target.value) || 0;
-                                        if (outflowAmount > 0) {
-                                            handleInputChange('outflow', value);
-                                            handleInputChange('inflow', 0);
-                                        } else {
-                                            handleInputChange('inflow', value);
-                                            handleInputChange('outflow', 0);
-                                        }
-                                    }}
-                                    hideLabel={true}
-                                    placeholder="0.00"
-                                    className="flex-1 px-3 py-2 border rounded-l bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                                    darkMode={false}
-                                />
-                                <button
-                                    onClick={() => {
-                                        const amount = Math.abs(outflowAmount || inflowAmount) || 0;
-                                        handleInputChange('outflow', amount);
-                                        handleInputChange('inflow', 0);
-                                    }}
-                                    className={`px-3 py-2 border-t border-b text-xs ${outflowAmount > 0
-                                        ? 'bg-theme-red text-theme-primary border-theme-red'
-                                        : 'bg-theme-secondary text-theme-tertiary border-theme-secondary'
-                                        }`}
-                                >
-                                    Out
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        const amount = Math.abs(outflowAmount || inflowAmount) || 0;
-                                        handleInputChange('inflow', amount);
-                                        handleInputChange('outflow', 0);
-                                    }}
-                                    className={`px-3 py-2 border-t border-r border-b rounded-r text-xs ${inflowAmount > 0
-                                        ? 'bg-theme-green text-theme-primary border-theme-green'
-                                        : 'bg-theme-secondary text-theme-tertiary border-theme-secondary'
-                                        }`}
-                                >
-                                    In
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {viewAccount === 'all' && (
-                        <div>
-                            <label className="block text-xs font-medium text-theme-secondary mb-1">Account</label>
-                            <select
-                                value={transaction.accountId}
-                                onChange={(e) => handleAccountChange(e.target.value)}
-                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                            >
-                                {accounts.map(account => (
-                                    <option key={account.id} value={account.id}>
-                                        {account.name} (${(account.balance || 0).toFixed(2)})
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    <div>
-                        <label className="block text-xs font-medium text-theme-secondary mb-1">Payee</label>
-                        <input
-                            type="text"
-                            value={transaction.payee}
-                            onChange={(e) => handleInputChange('payee', e.target.value)}
-                            placeholder={transaction.isTransfer ? "Transfer" : "Payee"}
-                            disabled={transaction.isTransfer}
-                            className={`w-full px-3 py-2 border rounded text-sm ${transaction.isTransfer
-                                ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
-                                : 'bg-theme-primary border-theme-secondary text-theme-primary'
-                                }`}
-                            autoFocus={isNew && !transaction.isTransfer}
-                        />
-                    </div>
-
-                    {/* Transaction Type Toggles */}
-                    <div className="flex gap-2">
-                        <button
-                            onClick={toggleSplit}
-                            className={`flex-1 py-2 px-3 rounded text-sm font-medium flex items-center justify-center gap-1 ${transaction.isSplit
-                                ? 'bg-theme-blue text-theme-primary border border-theme-blue'
-                                : 'bg-theme-secondary text-theme-tertiary border border-theme-secondary hover:bg-theme-hover'
-                                }`}
-                            disabled={transaction.isTransfer}
-                        >
-                            <Split size={14} />
-                            Split
-                        </button>
-                        <button
-                            onClick={toggleTransfer}
-                            className={`flex-1 py-2 px-3 rounded text-sm font-medium flex items-center justify-center gap-1 ${transaction.isTransfer
-                                ? 'bg-theme-blue text-theme-primary border border-theme-blue'
-                                : 'bg-theme-secondary text-theme-tertiary border border-theme-secondary hover:bg-theme-hover'
-                                }`}
-                            disabled={transaction.isSplit}
-                        >
-                            <ArrowRight size={14} />
-                            Transfer
-                        </button>
-                    </div>
-
-                    {/* Category or Transfer Account */}
-                    <div>
-                        <label className="block text-xs font-medium text-theme-secondary mb-1">
-                            {transaction.isTransfer ? 'To Account' : 'Category'}
-                        </label>
-                        {transaction.isTransfer ? (
-                            <select
-                                value={transaction.transferAccountId}
-                                onChange={(e) => handleTransferAccountChange(e.target.value)}
-                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                            >
-                                <option value="">To account...</option>
-                                {accounts
-                                    .filter(acc => acc.id !== parseInt(transaction.accountId))
-                                    .map(account => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name}
-                                        </option>
-                                    ))}
-                            </select>
-                        ) : transaction.isSplit ? (
-                            <div className="flex items-center gap-1 text-theme-blue px-3 py-2 bg-theme-secondary rounded text-sm">
-                                <Split size={14} />
-                                Split Transaction
-                            </div>
-                        ) : (
-                            <select
-                                value={transaction.categoryId}
-                                onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                            >
-                                <option value="">Select category...</option>
-                                {categories.map(category => (
-                                    <option key={category.id} value={category.id}>{category.name}</option>
-                                ))}
-                            </select>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-medium text-theme-secondary mb-1">Memo</label>
-                        <input
-                            type="text"
-                            value={transaction.memo}
-                            onChange={(e) => handleInputChange('memo', e.target.value)}
-                            placeholder="Memo"
-                            className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                        />
-                    </div>
-
-                    {/* Split Details */}
-                    {transaction.isSplit && (
-                        <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                                <h4 className="text-sm font-medium text-theme-primary">Split Details</h4>
-                                <div className="flex items-center gap-2">
-                                    {Math.abs(splitDifference) >= 0.01 && (
-                                        <button
-                                            onClick={distributeDifference}
-                                            className="px-2 py-1 text-xs bg-theme-yellow text-theme-primary rounded hover:bg-theme-hover"
-                                        >
-                                            Auto-balance
-                                        </button>
-                                    )}
-                                    <div className="text-xs">
-                                        <span className={`font-medium ${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'}`}>
-                                            ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
-                                            {Math.abs(splitDifference) >= 0.01 && (
-                                                <span className="text-theme-red ml-1">
-                                                    (${splitDifference.toFixed(2)})
-                                                </span>
-                                            )}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {(transaction.splits || []).map((split, index) => (
-                                <div key={split.id} className="p-3 bg-theme-tertiary rounded border border-theme-secondary">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-sm font-medium text-theme-primary">Split {index + 1}</span>
-                                        {(transaction.splits || []).length > 1 && (
-                                            <button
-                                                onClick={() => removeSplit(split.id)}
-                                                className="text-theme-red hover:text-theme-red"
-                                            >
-                                                <X size={16} />
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <select
-                                            value={split.categoryId}
-                                            onChange={(e) => updateSplit(split.id, 'categoryId', e.target.value)}
-                                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                                        >
-                                            <option value="">Select category...</option>
-                                            {categories.map(category => (
-                                                <option key={category.id} value={category.id}>{category.name}</option>
-                                            ))}
-                                        </select>
-
-                                        <div className="flex gap-2">
-                                            <CurrencyField
-                                                name={`mobile_split_${split.id}`}
-                                                value={Math.abs(parseFloat(split.amount) || 0)}
-                                                onChange={(e) => {
-                                                    const value = parseFloat(e.target.value) || 0;
-                                                    const currentAmount = parseFloat(split.amount) || 0;
-                                                    updateSplit(split.id, 'amount', currentAmount < 0 ? -value : value);
-                                                }}
-                                                hideLabel={true}
-                                                placeholder="Amount"
-                                                className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                                                darkMode={false}
-                                            />
-                                            <button
-                                                onClick={() => updateSplit(split.id, 'amount', -Math.abs(parseFloat(split.amount) || 0))}
-                                                className={`px-2 py-1 text-xs rounded ${(parseFloat(split.amount) || 0) < 0 ? 'bg-theme-red text-theme-primary' : 'bg-theme-secondary text-theme-tertiary'
-                                                    }`}
-                                            >
-                                                Out
-                                            </button>
-                                            <button
-                                                onClick={() => updateSplit(split.id, 'amount', Math.abs(parseFloat(split.amount) || 0))}
-                                                className={`px-2 py-1 text-xs rounded ${(parseFloat(split.amount) || 0) > 0 ? 'bg-theme-green text-theme-primary' : 'bg-theme-secondary text-theme-tertiary'
-                                                    }`}
-                                            >
-                                                In
-                                            </button>
-                                        </div>
-
-                                        <input
-                                            type="text"
-                                            value={split.memo || ''}
-                                            onChange={(e) => updateSplit(split.id, 'memo', e.target.value)}
-                                            placeholder="Split memo"
-                                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-
+                        {/* Transaction Type Toggles */}
+                        <div className="flex gap-2">
                             <button
-                                onClick={addSplit}
-                                className="w-full py-2 border-2 border-dashed border-theme-blue rounded text-theme-blue hover:border-theme-accent text-sm"
+                                onClick={toggleSplit}
+                                className={`flex-1 py-2 px-3 rounded text-sm font-medium flex items-center justify-center gap-1 ${transaction.isSplit
+                                    ? 'bg-theme-blue text-theme-primary border border-theme-blue'
+                                    : 'bg-theme-secondary text-theme-tertiary border border-theme-secondary hover:bg-theme-hover'
+                                    }`}
+                                disabled={transaction.isTransfer}
                             >
-                                <Plus size={14} className="inline mr-1" />
-                                Add Split
+                                <Split size={14} />
+                                Split
+                            </button>
+                            <button
+                                onClick={toggleTransfer}
+                                className={`flex-1 py-2 px-3 rounded text-sm font-medium flex items-center justify-center gap-1 ${transaction.isTransfer
+                                    ? 'bg-theme-blue text-theme-primary border border-theme-blue'
+                                    : 'bg-theme-secondary text-theme-tertiary border border-theme-secondary hover:bg-theme-hover'
+                                    }`}
+                                disabled={transaction.isSplit}
+                            >
+                                <ArrowRight size={14} />
+                                Transfer
                             </button>
                         </div>
-                    )}
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 pt-2">
-                        <button
-                            onClick={onCancel}
-                            className="flex-1 py-2 px-3 btn-secondary rounded text-sm font-medium"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={onSave}
-                            className="flex-1 py-2 px-3 btn-primary rounded text-sm font-medium"
-                        >
-                            Save
-                        </button>
-                    </div>
-
-                    {isNew && onSaveAndAddAnother && (
-                        <button
-                            onClick={onSaveAndAddAnother}
-                            className="w-full py-2 px-3 btn-success rounded text-sm font-medium"
-                        >
-                            Save & Add Another
-                        </button>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    // Desktop Table Layout (Enhanced with larger toggle buttons)
-    const DesktopEditingRows = () => {
-        return (
-            <>
-                <tr className="bg-theme-hover" style={{ width: '100%' }}>
-                    {/* Bulk Select */}
-                    <td className="px-1 py-2 text-center" style={{ width: columnWidths.select }}>
-                        <input
-                            type="checkbox"
-                            disabled
-                            className="rounded border-theme-secondary opacity-50"
-                        />
-                    </td>
-
-                    {viewAccount === 'all' && (
-                        <td className="px-2 py-2" style={{ width: columnWidths.account }}>
-                            <select
-                                value={transaction.accountId}
-                                onChange={(e) => handleAccountChange(e.target.value)}
-                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                            >
-                                {accounts.map(account => (
-                                    <option key={account.id} value={account.id}>
-                                        {account.name} (${(account.balance || 0).toFixed(2)})
-                                    </option>
-                                ))}
-                            </select>
-                        </td>
-                    )}
-
-                    {/* Date */}
-                    <td className="px-2 py-2" style={{ width: columnWidths.date }}>
-                        <input
-                            type="date"
-                            value={transaction.date}
-                            onChange={(e) => handleInputChange('date', e.target.value)}
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                        />
-                    </td>
-
-                    {/* Payee */}
-                    <td className="px-2 py-2" style={{ width: columnWidths.payee }}>
-                        <input
-                            type="text"
-                            value={transaction.payee}
-                            onChange={(e) => handleInputChange('payee', e.target.value)}
-                            placeholder={transaction.isTransfer ? "Transfer" : "Payee"}
-                            disabled={transaction.isTransfer}
-                            className={`w-full px-2 py-1 border rounded text-sm ${transaction.isTransfer
-                                ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
-                                : 'bg-theme-primary border-theme-secondary text-theme-primary'
-                                }`}
-                            autoFocus={isNew && !transaction.isTransfer}
-                        />
-                    </td>
-
-                    {/* Category OR Transfer Account - Enhanced with larger toggle buttons */}
-                    <td className="px-2 py-2" style={{ width: columnWidths.category }}>
-                        {transaction.isTransfer ? (
-                            <div className="flex items-center gap-1">
-                                <ArrowRight className="w-4 h-4 text-theme-blue flex-shrink-0" />
+                        {/* Category or Transfer Account */}
+                        <div>
+                            <label className="block text-xs font-medium text-theme-secondary mb-1">
+                                {transaction.isTransfer ? 'To Account' : 'Category'}
+                            </label>
+                            {transaction.isTransfer ? (
                                 <select
                                     value={transaction.transferAccountId}
                                     onChange={(e) => handleTransferAccountChange(e.target.value)}
-                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                    className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
                                 >
                                     <option value="">To account...</option>
                                     {accounts
-                                        .filter(acc => acc.id !== parseInt(transaction.accountId))
-                                        .map(account => (
+                                        .filter((acc) => acc.id !== parseInt(transaction.accountId))
+                                        .map((account) => (
                                             <option key={account.id} value={account.id}>
                                                 {account.name}
                                             </option>
                                         ))}
                                 </select>
-                                <button
-                                    type="button"
-                                    onClick={toggleTransfer}
-                                    className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors flex-shrink-0"
-                                    title="Remove transfer"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </div>
-                        ) : transaction.isSplit ? (
-                            <div className="flex items-center gap-1">
-                                <Split className="w-4 h-4 text-theme-blue flex-shrink-0" />
-                                <input
-                                    type="text"
-                                    value="Split Transaction"
-                                    disabled
-                                    className="flex-1 px-2 py-1 border rounded bg-theme-secondary border-theme-secondary text-theme-tertiary text-sm cursor-not-allowed"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={toggleSplit}
-                                    className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors flex-shrink-0"
-                                    title="Remove split"
-                                >
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-1">
+                            ) : transaction.isSplit ? (
+                                <div className="flex items-center gap-1 text-theme-blue px-3 py-2 bg-theme-secondary rounded text-sm">
+                                    <Split size={14} />
+                                    Split Transaction
+                                </div>
+                            ) : (
                                 <select
                                     value={transaction.categoryId}
-                                    onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                    onChange={(e) =>
+                                        handleInputChange('categoryId', e.target.value)
+                                    }
+                                    className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
                                 >
                                     <option value="">Select category...</option>
-                                    {categories.map(category => (
+                                    {categories.map((category) => (
                                         <option key={category.id} value={category.id}>
                                             {category.name}
                                         </option>
                                     ))}
                                 </select>
-                                <button
-                                    type="button"
-                                    onClick={toggleSplit}
-                                    className="p-2 text-theme-blue hover:bg-theme-hover rounded transition-colors flex-shrink-0 border border-theme-secondary"
-                                    title="Split transaction"
-                                >
-                                    <Split className="w-3 h-3" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={toggleTransfer}
-                                    className="p-2 text-theme-blue hover:bg-theme-hover rounded transition-colors flex-shrink-0 border border-theme-secondary"
-                                    title="Make transfer"
-                                >
-                                    <ArrowRight className="w-3 h-3" />
-                                </button>
-                            </div>
-                        )}
-                    </td>
+                            )}
+                        </div>
 
-                    {/* Memo */}
-                    <td className="px-2 py-2" style={{ width: columnWidths.memo }}>
-                        <input
-                            type="text"
-                            value={transaction.memo}
-                            onChange={(e) => handleInputChange('memo', e.target.value)}
-                            placeholder="Memo"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                        />
-                    </td>
-
-                    {/* Outflow */}
-                    <td className="px-2 py-2" style={{ width: columnWidths.outflow }}>
-                        <CurrencyField
-                            name="outflow"
-                            value={transaction.outflow || 0}
-                            onChange={(e) => {
-                                handleInputChange('outflow', e.target.value);
-                                if (e.target.value) handleInputChange('inflow', 0);
-                            }}
-                            hideLabel={true}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                            darkMode={false}
-                        />
-                        {transaction.isTransfer && outflowAmount > 0 && (
-                            <div className="text-xs text-theme-tertiary mt-1">
-                                To: {accounts.find(acc => acc.id === parseInt(transaction.transferAccountId))?.name || 'Select account'}
-                            </div>
-                        )}
-                    </td>
-
-                    {/* Inflow */}
-                    <td className="px-2 py-2" style={{ width: columnWidths.inflow }}>
-                        <CurrencyField
-                            name="inflow"
-                            value={transaction.inflow || 0}
-                            onChange={(e) => {
-                                handleInputChange('inflow', e.target.value);
-                                if (e.target.value) handleInputChange('outflow', 0);
-                            }}
-                            hideLabel={true}
-                            placeholder="0.00"
-                            className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                            darkMode={false}
-                        />
-                        {transaction.isTransfer && inflowAmount > 0 && (
-                            <div className="text-xs text-theme-tertiary mt-1">
-                                From: {accounts.find(acc => acc.id === parseInt(transaction.transferAccountId))?.name || 'Select account'}
-                            </div>
-                        )}
-                    </td>
-
-                    {/* Cleared */}
-                    <td className="px-1 py-2 text-center" style={{ width: columnWidths.cleared }}>
-                        <input
-                            type="checkbox"
-                            checked={transaction.isCleared}
-                            onChange={(e) => handleInputChange('isCleared', e.target.checked)}
-                            className="rounded border-theme-secondary"
-                        />
-                    </td>
-                </tr>
-
-                {/* Simple action row with just Cancel/Approve */}
-                <tr className="bg-theme-secondary">
-                    <td className="px-1 py-2"></td>
-                    {viewAccount === 'all' && <td className="px-2 py-2"></td>}
-                    <td className="px-2 py-2" colSpan={viewAccount === 'all' ? "4" : "3"}></td>
-                    <td className="px-2 py-2 text-right">
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onCancel();
-                            }}
-                            className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </td>
-                    <td className="px-2 py-2 text-right">
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onSave();
-                            }}
-                            className="px-3 py-1 text-xs btn-primary rounded transition-colors"
-                        >
-                            Approve
-                        </button>
-                    </td>
-                    <td className="px-1 py-2"></td>
-                </tr>
-
-                {/* Account Selection Row - Remove entirely */}
-                {/* This row is no longer needed */}
-
-                {/* Split Rows */}
-                {transaction.isSplit && (transaction.splits || []).map((split, index) => (
-                    <tr key={split.id} className="bg-theme-tertiary">
-                        <td className="px-1 py-2"></td>
-                        {viewAccount === 'all' && <td className="px-2 py-2"></td>}
-                        <td className="px-2 py-2"></td>
-                        <td className="px-2 py-2">
-                            <div className="flex items-center gap-2 ml-4">
-                                <span className="text-sm text-theme-secondary">Split {index + 1}</span>
-                                {(transaction.splits || []).length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => removeSplit(split.id)}
-                                        className="text-xs text-theme-red hover:text-theme-red underline"
-                                    >
-                                        Remove
-                                    </button>
-                                )}
-                                {index === (transaction.splits || []).length - 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={addSplit}
-                                        className="text-xs text-theme-blue hover:text-theme-blue underline"
-                                    >
-                                        + Add Split
-                                    </button>
-                                )}
-                            </div>
-                        </td>
-                        <td className="px-2 py-2">
-                            <select
-                                value={split.categoryId}
-                                onChange={(e) => updateSplit(split.id, 'categoryId', e.target.value)}
-                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
-                            >
-                                <option value="">Select category...</option>
-                                {categories.map(category => (
-                                    <option key={category.id} value={category.id}>
-                                        {category.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </td>
-                        <td className="px-2 py-2">
+                        <div>
+                            <label className="block text-xs font-medium text-theme-secondary mb-1">
+                                Memo
+                            </label>
                             <input
                                 type="text"
-                                value={split.memo || ''}
-                                onChange={(e) => updateSplit(split.id, 'memo', e.target.value)}
-                                placeholder="Split memo"
+                                value={transaction.memo}
+                                onChange={(e) => handleInputChange('memo', e.target.value)}
+                                placeholder="Memo"
+                                className="w-full px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                            />
+                        </div>
+
+                        {/* Split Details */}
+                        {transaction.isSplit && (
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="text-sm font-medium text-theme-primary">
+                                        Split Details
+                                    </h4>
+                                    <div className="flex items-center gap-2">
+                                        {Math.abs(splitDifference) >= 0.01 && (
+                                            <button
+                                                onClick={distributeDifference}
+                                                className="px-2 py-1 text-xs bg-theme-yellow text-theme-primary rounded hover:bg-theme-hover"
+                                            >
+                                                Auto-balance
+                                            </button>
+                                        )}
+                                        <div className="text-xs">
+                                            <span
+                                                className={`font-medium ${Math.abs(splitDifference) < 0.01
+                                                    ? 'text-theme-green'
+                                                    : 'text-theme-red'
+                                                    }`}
+                                            >
+                                                ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
+                                                {Math.abs(splitDifference) >= 0.01 && (
+                                                    <span className="text-theme-red ml-1">
+                                                        (${splitDifference.toFixed(2)})
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {(transaction.splits || []).map((split, index) => (
+                                    <div
+                                        key={split.id}
+                                        className="p-3 bg-theme-tertiary rounded border border-theme-secondary"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-sm font-medium text-theme-primary">
+                                                Split {index + 1}
+                                            </span>
+                                            {(transaction.splits || []).length > 1 && (
+                                                <button
+                                                    onClick={() => removeSplit(split.id)}
+                                                    className="text-theme-red hover:text-theme-red"
+                                                >
+                                                    <X size={16} />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <select
+                                                value={split.categoryId}
+                                                onChange={(e) =>
+                                                    updateSplit(split.id, 'categoryId', e.target.value)
+                                                }
+                                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                            >
+                                                <option value="">Select category...</option>
+                                                {categories.map((category) => (
+                                                    <option key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+
+                                            <div className="flex gap-2">
+                                                <CurrencyField
+                                                    name={`mobile_split_${split.id}`}
+                                                    value={Math.abs(parseFloat(split.amount) || 0)}
+                                                    onChange={(e) => {
+                                                        const value = parseFloat(e.target.value) || 0;
+                                                        const currentAmount = parseFloat(split.amount) || 0;
+                                                        updateSplit(
+                                                            split.id,
+                                                            'amount',
+                                                            currentAmount < 0 ? -value : value
+                                                        );
+                                                    }}
+                                                    hideLabel={true}
+                                                    placeholder="Amount"
+                                                    className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                                    darkMode={false}
+                                                />
+                                                <button
+                                                    onClick={() =>
+                                                        updateSplit(
+                                                            split.id,
+                                                            'amount',
+                                                            -Math.abs(parseFloat(split.amount) || 0)
+                                                        )
+                                                    }
+                                                    className={`px-2 py-1 text-xs rounded ${(parseFloat(split.amount) || 0) < 0
+                                                        ? 'bg-theme-red text-theme-primary'
+                                                        : 'bg-theme-secondary text-theme-tertiary'
+                                                        }`}
+                                                >
+                                                    Out
+                                                </button>
+                                                <button
+                                                    onClick={() =>
+                                                        updateSplit(
+                                                            split.id,
+                                                            'amount',
+                                                            Math.abs(parseFloat(split.amount) || 0)
+                                                        )
+                                                    }
+                                                    className={`px-2 py-1 text-xs rounded ${(parseFloat(split.amount) || 0) > 0
+                                                        ? 'bg-theme-green text-theme-primary'
+                                                        : 'bg-theme-secondary text-theme-tertiary'
+                                                        }`}
+                                                >
+                                                    In
+                                                </button>
+                                            </div>
+
+                                            <input
+                                                type="text"
+                                                value={split.memo || ''}
+                                                onChange={(e) =>
+                                                    updateSplit(split.id, 'memo', e.target.value)
+                                                }
+                                                placeholder="Split memo"
+                                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+
+                                <button
+                                    onClick={addSplit}
+                                    className="w-full py-2 border-2 border-dashed border-theme-blue rounded text-theme-blue hover:border-theme-accent text-sm"
+                                >
+                                    <Plus size={14} className="inline mr-1" />
+                                    Add Split
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-2">
+                            <button
+                                onClick={onCancel}
+                                className="flex-1 py-2 px-3 btn-secondary rounded text-sm font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={onSave}
+                                className="flex-1 py-2 px-3 btn-primary rounded text-sm font-medium"
+                            >
+                                Save
+                            </button>
+                        </div>
+
+                        {isNew && onSaveAndAddAnother && (
+                            <button
+                                onClick={onSaveAndAddAnother}
+                                className="w-full py-2 px-3 btn-success rounded text-sm font-medium"
+                            >
+                                Save & Add Another
+                            </button>
+                        )}
+                    </div>
+                </div>
+            ) : (
+                <>
+                    <tr className="bg-theme-hover" style={{ width: '100%' }}>
+                        {/* Bulk Select */}
+                        <td
+                            className="px-1 py-2 text-center"
+                            style={{ width: columnWidths.select }}
+                        >
+                            <input
+                                type="checkbox"
+                                disabled
+                                className="rounded border-theme-secondary opacity-50"
+                            />
+                        </td>
+
+                        {viewAccount === 'all' && (
+                            <td className="px-2 py-2" style={{ width: columnWidths.account }}>
+                                <select
+                                    value={transaction.accountId}
+                                    onChange={(e) => handleAccountChange(e.target.value)}
+                                    className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                >
+                                    {accounts.map((account) => (
+                                        <option key={account.id} value={account.id}>
+                                            {account.name} (${(account.balance || 0).toFixed(2)})
+                                        </option>
+                                    ))}
+                                </select>
+                            </td>
+                        )}
+
+                        {/* Date */}
+                        <td className="px-2 py-2" style={{ width: columnWidths.date }}>
+                            <input
+                                type="date"
+                                value={transaction.date}
+                                onChange={(e) => handleInputChange('date', e.target.value)}
                                 className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
                             />
                         </td>
-                        <td className="px-2 py-2">
-                            <CurrencyField
-                                name={`split_${split.id}_outflow`}
-                                value={split.amount < 0 ? Math.abs(split.amount) : 0}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value) {
-                                        updateSplit(split.id, 'amount', -Math.abs(parseFloat(value) || 0));
-                                    } else {
-                                        updateSplit(split.id, 'amount', '');
-                                    }
-                                }}
-                                hideLabel={true}
-                                placeholder="0.00"
-                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                                darkMode={false}
-                            />
-                        </td>
-                        <td className="px-2 py-2">
-                            <CurrencyField
-                                name={`split_${split.id}_inflow`}
-                                value={split.amount > 0 ? split.amount : 0}
-                                onChange={(e) => {
-                                    const value = e.target.value;
-                                    if (value) {
-                                        updateSplit(split.id, 'amount', Math.abs(parseFloat(value) || 0));
-                                    } else {
-                                        updateSplit(split.id, 'amount', '');
-                                    }
-                                }}
-                                hideLabel={true}
-                                placeholder="0.00"
-                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
-                                darkMode={false}
-                            />
-                        </td>
-                        <td className="px-1 py-2"></td>
-                    </tr>
-                ))}
 
-                {/* Split Summary Row with Auto-balance button */}
-                {transaction.isSplit && (transaction.splits || []).length > 0 && (
-                    <tr className="bg-theme-tertiary">
-                        <td className="px-1 py-2 text-center">
-                            <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'} text-xs`}>
-                                {Math.abs(splitDifference) < 0.01 ? '✓' : '!'}
-                            </div>
+                        {/* Payee */}
+                        <td className="px-2 py-2" style={{ width: columnWidths.payee }}>
+                            <input
+                                type="text"
+                                value={transaction.payee}
+                                onChange={(e) => handleInputChange('payee', e.target.value)}
+                                placeholder={transaction.isTransfer ? 'Transfer' : 'Payee'}
+                                disabled={transaction.isTransfer}
+                                className={`w-full px-2 py-1 border rounded text-sm ${transaction.isTransfer
+                                    ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
+                                    : 'bg-theme-primary border-theme-secondary text-theme-primary'
+                                    }`}
+                            />
                         </td>
+
+                        {/* Category OR Transfer Account - Enhanced with larger toggle buttons */}
+                        <td className="px-2 py-2" style={{ width: columnWidths.category }}>
+                            {transaction.isTransfer ? (
+                                <div className="flex items-center gap-1">
+                                    <ArrowRight className="w-4 h-4 text-theme-blue flex-shrink-0" />
+                                    <select
+                                        value={transaction.transferAccountId}
+                                        onChange={(e) =>
+                                            handleTransferAccountChange(e.target.value)
+                                        }
+                                        className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                    >
+                                        <option value="">To account...</option>
+                                        {accounts
+                                            .filter(
+                                                (acc) => acc.id !== parseInt(transaction.accountId)
+                                            )
+                                            .map((account) => (
+                                                <option key={account.id} value={account.id}>
+                                                    {account.name}
+                                                </option>
+                                            ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={toggleTransfer}
+                                        className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors flex-shrink-0"
+                                        title="Remove transfer"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ) : transaction.isSplit ? (
+                                <div className="flex items-center gap-1">
+                                    <Split className="w-4 h-4 text-theme-blue flex-shrink-0" />
+                                    <input
+                                        type="text"
+                                        value="Split Transaction"
+                                        disabled
+                                        className="flex-1 px-2 py-1 border rounded bg-theme-secondary border-theme-secondary text-theme-tertiary text-sm cursor-not-allowed"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={toggleSplit}
+                                        className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors flex-shrink-0"
+                                        title="Remove split"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1">
+                                    <select
+                                        value={transaction.categoryId}
+                                        onChange={(e) =>
+                                            handleInputChange('categoryId', e.target.value)
+                                        }
+                                        className="flex-1 px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                    >
+                                        <option value="">Select category...</option>
+                                        {categories.map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={toggleSplit}
+                                        className="p-2 text-theme-blue hover:bg-theme-hover rounded transition-colors flex-shrink-0 border border-theme-secondary"
+                                        title="Split transaction"
+                                    >
+                                        <Split className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={toggleTransfer}
+                                        className="p-2 text-theme-blue hover:bg-theme-hover rounded transition-colors flex-shrink-0 border border-theme-secondary"
+                                        title="Make transfer"
+                                    >
+                                        <ArrowRight className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            )}
+                        </td>
+
+                        {/* Memo */}
+                        <td className="px-2 py-2" style={{ width: columnWidths.memo }}>
+                            <input
+                                type="text"
+                                value={transaction.memo}
+                                onChange={(e) => handleInputChange('memo', e.target.value)}
+                                placeholder="Memo"
+                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                            />
+                        </td>
+
+                        {/* Outflow */}
+                        <td className="px-2 py-2" style={{ width: columnWidths.outflow }}>
+                            <CurrencyField
+                                name="outflow"
+                                value={transaction.outflow || 0}
+                                onChange={(e) => {
+                                    handleInputChange('outflow', e.target.value);
+                                    if (e.target.value) handleInputChange('inflow', 0);
+                                }}
+                                hideLabel={true}
+                                placeholder="0.00"
+                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                                darkMode={false}
+                            />
+                            {transaction.isTransfer && outflowAmount > 0 && (
+                                <div className="text-xs text-theme-tertiary mt-1">
+                                    To:{' '}
+                                    {accounts.find(
+                                        (acc) => acc.id === parseInt(transaction.transferAccountId)
+                                    )?.name || 'Select account'}
+                                </div>
+                            )}
+                        </td>
+
+                        {/* Inflow */}
+                        <td className="px-2 py-2" style={{ width: columnWidths.inflow }}>
+                            <CurrencyField
+                                name="inflow"
+                                value={transaction.inflow || 0}
+                                onChange={(e) => {
+                                    handleInputChange('inflow', e.target.value);
+                                    if (e.target.value) handleInputChange('outflow', 0);
+                                }}
+                                hideLabel={true}
+                                placeholder="0.00"
+                                className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                                darkMode={false}
+                            />
+                            {transaction.isTransfer && inflowAmount > 0 && (
+                                <div className="text-xs text-theme-tertiary mt-1">
+                                    From:{' '}
+                                    {accounts.find(
+                                        (acc) => acc.id === parseInt(transaction.transferAccountId)
+                                    )?.name || 'Select account'}
+                                </div>
+                            )}
+                        </td>
+
+                        {/* Cleared */}
+                        <td
+                            className="px-1 py-2 text-center"
+                            style={{ width: columnWidths.cleared }}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={transaction.isCleared}
+                                onChange={(e) =>
+                                    handleInputChange('isCleared', e.target.checked)
+                                }
+                                className="rounded border-theme-secondary"
+                            />
+                        </td>
+                    </tr>
+
+                    {/* Simple action row with just Cancel/Approve */}
+                    <tr className="bg-theme-secondary">
+                        <td className="px-1 py-2"></td>
                         {viewAccount === 'all' && <td className="px-2 py-2"></td>}
-                        <td className="px-2 py-2"></td>
-                        <td className="px-2 py-2"></td>
-                        <td className="px-2 py-2"></td>
+                        <td
+                            className="px-2 py-2"
+                            colSpan={viewAccount === 'all' ? '4' : '3'}
+                        ></td>
                         <td className="px-2 py-2 text-right">
                             <button
                                 type="button"
@@ -826,55 +773,214 @@ const TransactionEditRow = ({
                             </button>
                         </td>
                         <td className="px-2 py-2 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                                {Math.abs(splitDifference) >= 0.01 && (
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            distributeDifference();
-                                        }}
-                                        className="px-2 py-1 text-xs bg-theme-yellow text-theme-primary rounded hover:bg-theme-hover"
-                                        title="Distribute the difference evenly across all splits"
-                                    >
-                                        Auto-balance
-                                    </button>
-                                )}
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onSave();
+                                }}
+                                className="px-3 py-1 text-xs btn-primary rounded transition-colors"
+                            >
+                                Approve
+                            </button>
+                        </td>
+                        <td className="px-1 py-2"></td>
+                    </tr>
 
-                                <div className={`${Math.abs(splitDifference) < 0.01 ? 'text-theme-green' : 'text-theme-red'}`}>
-                                    <div className="text-xs font-medium">
-                                        ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
-                                        {Math.abs(splitDifference) >= 0.01 && (
-                                            <span className="text-theme-red ml-1">
-                                                (${splitDifference.toFixed(2)})
-                                            </span>
+                    {/* Account Selection Row - Remove entirely */}
+                    {/* This row is no longer needed */}
+
+                    {/* Split Rows */}
+                    {transaction.isSplit &&
+                        (transaction.splits || []).map((split, index) => (
+                            <tr key={split.id} className="bg-theme-tertiary">
+                                <td className="px-1 py-2"></td>
+                                {viewAccount === 'all' && <td className="px-2 py-2"></td>}
+                                <td className="px-2 py-2"></td>
+                                <td className="px-2 py-2">
+                                    <div className="flex items-center gap-2 ml-4">
+                                        <span className="text-sm text-theme-secondary">
+                                            Split {index + 1}
+                                        </span>
+                                        {(transaction.splits || []).length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSplit(split.id)}
+                                                className="text-xs text-theme-red hover:text-theme-red underline"
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                        {index === (transaction.splits || []).length - 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={addSplit}
+                                                className="text-xs text-theme-blue hover:text-theme-blue underline"
+                                            >
+                                                + Add Split
+                                            </button>
                                         )}
                                     </div>
-                                </div>
+                                </td>
+                                <td className="px-2 py-2">
+                                    <select
+                                        value={split.categoryId}
+                                        onChange={(e) =>
+                                            updateSplit(split.id, 'categoryId', e.target.value)
+                                        }
+                                        className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                    >
+                                        <option value="">Select category...</option>
+                                        {categories.map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </td>
+                                <td className="px-2 py-2">
+                                    <input
+                                        type="text"
+                                        value={split.memo || ''}
+                                        onChange={(e) =>
+                                            updateSplit(split.id, 'memo', e.target.value)
+                                        }
+                                        placeholder="Split memo"
+                                        className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
+                                    />
+                                </td>
+                                <td className="px-2 py-2">
+                                    <CurrencyField
+                                        name={`split_${split.id}_outflow`}
+                                        value={split.amount < 0 ? Math.abs(split.amount) : 0}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value) {
+                                                updateSplit(
+                                                    split.id,
+                                                    'amount',
+                                                    -Math.abs(parseFloat(value) || 0)
+                                                );
+                                            } else {
+                                                updateSplit(split.id, 'amount', '');
+                                            }
+                                        }}
+                                        hideLabel={true}
+                                        placeholder="0.00"
+                                        className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                                        darkMode={false}
+                                    />
+                                </td>
+                                <td className="px-2 py-2">
+                                    <CurrencyField
+                                        name={`split_${split.id}_inflow`}
+                                        value={split.amount > 0 ? split.amount : 0}
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value) {
+                                                updateSplit(
+                                                    split.id,
+                                                    'amount',
+                                                    Math.abs(parseFloat(value) || 0)
+                                                );
+                                            } else {
+                                                updateSplit(split.id, 'amount', '');
+                                            }
+                                        }}
+                                        hideLabel={true}
+                                        placeholder="0.00"
+                                        className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
+                                        darkMode={false}
+                                    />
+                                </td>
+                                <td className="px-1 py-2"></td>
+                            </tr>
+                        ))}
 
+                    {/* Split Summary Row with Auto-balance button */}
+                    {transaction.isSplit && (transaction.splits || []).length > 0 && (
+                        <tr className="bg-theme-tertiary">
+                            <td className="px-1 py-2 text-center">
+                                <div
+                                    className={`${Math.abs(splitDifference) < 0.01
+                                        ? 'text-theme-green'
+                                        : 'text-theme-red'
+                                        } text-xs`}
+                                >
+                                    {Math.abs(splitDifference) < 0.01 ? '✓' : '!'}
+                                </div>
+                            </td>
+                            {viewAccount === 'all' && <td className="px-2 py-2"></td>}
+                            <td className="px-2 py-2"></td>
+                            <td className="px-2 py-2"></td>
+                            <td className="px-2 py-2"></td>
+                            <td className="px-2 py-2 text-right">
                                 <button
                                     type="button"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
-                                        onSave();
+                                        onCancel();
                                     }}
-                                    className="px-3 py-1 text-xs btn-primary rounded transition-colors"
+                                    className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
                                 >
-                                    Approve
+                                    Cancel
                                 </button>
-                            </div>
-                        </td>
-                        <td className="px-1 py-2"></td>
-                    </tr>
-                )}
-            </>
-        );
-    };
+                            </td>
+                            <td className="px-2 py-2 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                    {Math.abs(splitDifference) >= 0.01 && (
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                distributeDifference();
+                                            }}
+                                            className="px-2 py-1 text-xs bg-theme-yellow text-theme-primary rounded hover:bg-theme-hover"
+                                            title="Distribute the difference evenly across all splits"
+                                        >
+                                            Auto-balance
+                                        </button>
+                                    )}
 
-    // Return appropriate layout based on screen size
-    return isMobile ? <MobileEditingCard /> : <DesktopEditingRows />;
+                                    <div
+                                        className={`${Math.abs(splitDifference) < 0.01
+                                            ? 'text-theme-green'
+                                            : 'text-theme-red'
+                                            }`}
+                                    >
+                                        <div className="text-xs font-medium">
+                                            ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
+                                            {Math.abs(splitDifference) >= 0.01 && (
+                                                <span className="text-theme-red ml-1">
+                                                    (${splitDifference.toFixed(2)})
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            onSave();
+                                        }}
+                                        className="px-3 py-1 text-xs btn-primary rounded transition-colors"
+                                    >
+                                        Approve
+                                    </button>
+                                </div>
+                            </td>
+                            <td className="px-1 py-2"></td>
+                        </tr>
+                    )}
+                </>
+            )}
+        </>
+    );
 };
 
 // Regular Transaction Row Component (for viewing)
@@ -907,7 +1013,8 @@ const TransactionRow = ({
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const isSplitTransaction = transaction.isSplit && transaction.splits && transaction.splits.length > 0;
+    const isSplitTransaction =
+        transaction.isSplit && transaction.splits && transaction.splits.length > 0;
     const isExpanded = expandedTransactions.has(transaction.id);
 
     const toggleExpanded = () => {
@@ -941,7 +1048,11 @@ const TransactionRow = ({
                                         onClick={toggleExpanded}
                                         className="text-theme-secondary hover:text-theme-primary"
                                     >
-                                        {isExpanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                                        {isExpanded ? (
+                                            <ChevronDown size={16} />
+                                        ) : (
+                                            <ChevronUp size={16} />
+                                        )}
                                     </button>
                                 )}
                                 <span className="text-sm text-theme-secondary">
@@ -955,7 +1066,9 @@ const TransactionRow = ({
                                         <ArrowRight size={14} />
                                         {formatTransferPayee(transaction)}
                                     </div>
-                                ) : transaction.payee}
+                                ) : (
+                                    transaction.payee
+                                )}
                             </div>
 
                             <div className="text-sm text-theme-secondary">
@@ -978,9 +1091,12 @@ const TransactionRow = ({
                         </div>
 
                         <div className="text-right">
-                            <div className={`text-lg font-semibold ${transaction.amount < 0 ? 'text-theme-red' : 'text-theme-green'
-                                }`}>
-                                {transaction.amount < 0 ? '-' : '+'}${Math.abs(transaction.amount).toFixed(2)}
+                            <div
+                                className={`text-lg font-semibold ${transaction.amount < 0 ? 'text-theme-red' : 'text-theme-green'
+                                    }`}
+                            >
+                                {transaction.amount < 0 ? '-' : '+'}$
+                                {Math.abs(transaction.amount).toFixed(2)}
                             </div>
                             <button
                                 onClick={() => onEdit(transaction)}
@@ -1002,19 +1118,27 @@ const TransactionRow = ({
                 {isSplitTransaction && isExpanded && (
                     <div className="border-t border-theme-secondary bg-theme-secondary">
                         {transaction.splits.map((split, splitIndex) => (
-                            <div key={split.id} className="px-4 py-2 border-b border-theme-tertiary last:border-b-0">
+                            <div
+                                key={split.id}
+                                className="px-4 py-2 border-b border-theme-tertiary last:border-b-0"
+                            >
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <div className="text-sm font-medium text-theme-primary">
                                             {getCategoryName(split.categoryId)}
                                         </div>
                                         {split.memo && (
-                                            <div className="text-xs text-theme-secondary">{split.memo}</div>
+                                            <div className="text-xs text-theme-secondary">
+                                                {split.memo}
+                                            </div>
                                         )}
                                     </div>
-                                    <div className={`text-sm font-medium ${split.amount < 0 ? 'text-theme-red' : 'text-theme-green'
-                                        }`}>
-                                        {split.amount < 0 ? '-' : '+'}${Math.abs(split.amount).toFixed(2)}
+                                    <div
+                                        className={`text-sm font-medium ${split.amount < 0 ? 'text-theme-red' : 'text-theme-green'
+                                            }`}
+                                    >
+                                        {split.amount < 0 ? '-' : '+'}$
+                                        {Math.abs(split.amount).toFixed(2)}
                                     </div>
                                 </div>
                             </div>
@@ -1031,13 +1155,17 @@ const TransactionRow = ({
             <>
                 <tr
                     className={`transition-colors hover:table-row-hover ${index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
-                        } ${isSelected ? 'bg-theme-active' : ''} ${isSplitTransaction ? 'cursor-pointer' : ''}`}
+                        } ${isSelected ? 'bg-theme-active' : ''} ${isSplitTransaction ? 'cursor-pointer' : ''
+                        }`}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
                     onClick={isSplitTransaction ? toggleExpanded : undefined}
                 >
                     {/* Bulk Select */}
-                    <td className="px-1 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                    <td
+                        className="px-1 py-2 text-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <input
                             type="checkbox"
                             checked={isSelected}
@@ -1049,7 +1177,9 @@ const TransactionRow = ({
                     {/* Account - Conditional */}
                     {viewAccount === 'all' && (
                         <td className="px-2 py-2 text-theme-primary">
-                            <span className="text-sm">{getAccountName(transaction.accountId)}</span>
+                            <span className="text-sm">
+                                {getAccountName(transaction.accountId)}
+                            </span>
                         </td>
                     )}
 
@@ -1071,7 +1201,9 @@ const TransactionRow = ({
                                     )}
                                 </button>
                             )}
-                            <span className="text-sm">{new Date(transaction.date).toLocaleDateString()}</span>
+                            <span className="text-sm">
+                                {new Date(transaction.date).toLocaleDateString()}
+                            </span>
                         </div>
                     </td>
 
@@ -1154,7 +1286,10 @@ const TransactionRow = ({
                     </td>
 
                     {/* Cleared */}
-                    <td className="px-1 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+                    <td
+                        className="px-1 py-2 text-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         {renderClearedStatus(transaction)}
                     </td>
                 </tr>
@@ -1242,7 +1377,7 @@ const TransactionsTab = ({
         memo: 150,
         outflow: 100,
         inflow: 100,
-        cleared: 50,
+        cleared: 50
     });
 
     // State for expanded split transactions
@@ -1271,20 +1406,25 @@ const TransactionsTab = ({
 
     // Helper functions
     const getAccountName = (accountId) => {
-        const account = accounts.find(acc => acc.id === parseInt(accountId));
+        const account = accounts.find((acc) => acc.id === parseInt(accountId));
         return account ? account.name : 'Unknown Account';
     };
 
     const getCategoryName = (categoryId) => {
-        const category = categories.find(cat => cat.id === parseInt(categoryId));
+        const category = categories.find((cat) => cat.id === parseInt(categoryId));
         return category ? category.name : 'Uncategorized';
     };
 
     const formatTransferPayee = (transaction) => {
         if (!transaction.transferAccountId) return transaction.payee;
-        const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
-        const toAccount = accounts.find(acc => acc.id === parseInt(transaction.transferAccountId));
-        return `Transfer: ${fromAccount?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'}`;
+        const fromAccount = accounts.find(
+            (acc) => acc.id === parseInt(transaction.accountId)
+        );
+        const toAccount = accounts.find(
+            (acc) => acc.id === parseInt(transaction.transferAccountId)
+        );
+        return `Transfer: ${fromAccount?.name || 'Unknown'} → ${toAccount?.name || 'Unknown'
+            }`;
     };
 
     const renderClearedStatus = (transaction) => {
@@ -1315,7 +1455,8 @@ const TransactionsTab = ({
             outflow: '',
             inflow: '',
             isCleared: false,
-            accountId: viewAccount !== 'all' ? parseInt(viewAccount) : accounts[0]?.id || '',
+            accountId:
+                viewAccount !== 'all' ? parseInt(viewAccount) : accounts[0]?.id || '',
             isTransfer: false,
             transferAccountId: '',
             isSplit: false,
@@ -1327,10 +1468,13 @@ const TransactionsTab = ({
         setEditingTransaction(transaction.id);
         setNewTransaction({
             date: transaction.date,
-            payee: transaction.transferAccountId ? formatTransferPayee(transaction) : transaction.payee,
+            payee: transaction.transferAccountId
+                ? formatTransferPayee(transaction)
+                : transaction.payee,
             categoryId: transaction.categoryId || '',
             memo: transaction.memo || '',
-            outflow: transaction.amount < 0 ? Math.abs(transaction.amount).toString() : '',
+            outflow:
+                transaction.amount < 0 ? Math.abs(transaction.amount).toString() : '',
             inflow: transaction.amount > 0 ? transaction.amount.toString() : '',
             isCleared: transaction.isCleared || false,
             accountId: transaction.accountId,
@@ -1359,17 +1503,25 @@ const TransactionsTab = ({
             amount: amount,
             isCleared: newTransaction.isCleared,
             accountId: parseInt(newTransaction.accountId),
-            transferAccountId: newTransaction.isTransfer ? parseInt(newTransaction.transferAccountId) : null,
-            isSplit: newTransaction.isSplit,
+            transferAccountId: newTransaction.isTransfer
+                ? parseInt(newTransaction.transferAccountId)
+                : null,
+            isSplit: newTransaction.isSplit
         };
 
         // Handle split transactions
-        if (newTransaction.isSplit && newTransaction.splits && newTransaction.splits.length > 0) {
+        if (
+            newTransaction.isSplit &&
+            newTransaction.splits &&
+            newTransaction.splits.length > 0
+        ) {
             transactionData = {
                 ...transactionData,
-                splits: newTransaction.splits.map(split => {
-                    const splitAmount = typeof split.amount === 'number' ?
-                        split.amount : parseFloat(split.amount) || 0;
+                splits: newTransaction.splits.map((split) => {
+                    const splitAmount =
+                        typeof split.amount === 'number'
+                            ? split.amount
+                            : parseFloat(split.amount) || 0;
                     return {
                         amount: splitAmount,
                         categoryId: parseInt(split.categoryId) || null,
@@ -1382,7 +1534,9 @@ const TransactionsTab = ({
         else {
             transactionData = {
                 ...transactionData,
-                categoryId: newTransaction.categoryId ? parseInt(newTransaction.categoryId) : null
+                categoryId: newTransaction.categoryId
+                    ? parseInt(newTransaction.categoryId)
+                    : null
             };
         }
 
@@ -1409,7 +1563,7 @@ const TransactionsTab = ({
             memo: ''
         };
         const currentSplits = newTransaction.splits || [];
-        setNewTransaction(prev => ({
+        setNewTransaction((prev) => ({
             ...prev,
             splits: [...currentSplits, newSplit],
             isSplit: true
@@ -1418,8 +1572,8 @@ const TransactionsTab = ({
 
     const removeSplit = (splitId) => {
         const currentSplits = newTransaction.splits || [];
-        const updatedSplits = currentSplits.filter(split => split.id !== splitId);
-        setNewTransaction(prev => ({
+        const updatedSplits = currentSplits.filter((split) => split.id !== splitId);
+        setNewTransaction((prev) => ({
             ...prev,
             splits: updatedSplits,
             isSplit: updatedSplits.length > 0
@@ -1428,10 +1582,10 @@ const TransactionsTab = ({
 
     const updateSplit = (splitId, field, value) => {
         const currentSplits = newTransaction.splits || [];
-        const updatedSplits = currentSplits.map(split =>
+        const updatedSplits = currentSplits.map((split) =>
             split.id === splitId ? { ...split, [field]: value } : split
         );
-        setNewTransaction(prev => ({
+        setNewTransaction((prev) => ({
             ...prev,
             splits: updatedSplits
         }));
@@ -1442,7 +1596,9 @@ const TransactionsTab = ({
         if (selectAll) {
             setSelectedTransactions(new Set());
         } else {
-            setSelectedTransactions(new Set(filteredAndSortedTransactions.map(t => t.id)));
+            setSelectedTransactions(
+                new Set(filteredAndSortedTransactions.map((t) => t.id))
+            );
         }
         setSelectAll(!selectAll);
     };
@@ -1461,16 +1617,29 @@ const TransactionsTab = ({
     // Filtering and sorting
     const filteredAndSortedTransactions = useMemo(() => {
         return transactions
-            .filter(transaction => {
+            .filter((transaction) => {
                 // Search filter
                 if (searchTerm) {
                     const searchLower = searchTerm.toLowerCase();
-                    const matchesPayee = transaction.payee?.toLowerCase().includes(searchLower);
-                    const matchesMemo = transaction.memo?.toLowerCase().includes(searchLower);
-                    const matchesCategory = getCategoryName(transaction.categoryId)?.toLowerCase().includes(searchLower);
-                    const matchesAmount = Math.abs(transaction.amount).toString().includes(searchTerm);
+                    const matchesPayee = transaction.payee
+                        ?.toLowerCase()
+                        .includes(searchLower);
+                    const matchesMemo = transaction.memo
+                        ?.toLowerCase()
+                        .includes(searchLower);
+                    const matchesCategory = getCategoryName(transaction.categoryId)
+                        ?.toLowerCase()
+                        .includes(searchLower);
+                    const matchesAmount = Math.abs(transaction.amount)
+                        .toString()
+                        .includes(searchTerm);
 
-                    if (!matchesPayee && !matchesMemo && !matchesCategory && !matchesAmount) {
+                    if (
+                        !matchesPayee &&
+                        !matchesMemo &&
+                        !matchesCategory &&
+                        !matchesAmount
+                    ) {
                         return false;
                     }
                 }
@@ -1479,16 +1648,23 @@ const TransactionsTab = ({
                 if (typeFilter !== 'all') {
                     if (typeFilter === 'income' && transaction.amount <= 0) return false;
                     if (typeFilter === 'expense' && transaction.amount >= 0) return false;
-                    if (typeFilter === 'transfer' && !transaction.transferAccountId) return false;
+                    if (typeFilter === 'transfer' && !transaction.transferAccountId)
+                        return false;
                 }
 
                 // Account filter
-                if (accountFilter !== 'all' && transaction.accountId !== parseInt(accountFilter)) {
+                if (
+                    accountFilter !== 'all' &&
+                    transaction.accountId !== parseInt(accountFilter)
+                ) {
                     return false;
                 }
 
                 // View account filter
-                if (viewAccount !== 'all' && transaction.accountId !== parseInt(viewAccount)) {
+                if (
+                    viewAccount !== 'all' &&
+                    transaction.accountId !== parseInt(viewAccount)
+                ) {
                     return false;
                 }
 
@@ -1525,7 +1701,15 @@ const TransactionsTab = ({
                     return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
                 }
             });
-    }, [transactions, searchTerm, typeFilter, accountFilter, viewAccount, sortBy, sortDirection]);
+    }, [
+        transactions,
+        searchTerm,
+        typeFilter,
+        accountFilter,
+        viewAccount,
+        sortBy,
+        sortDirection
+    ]);
 
     // Handle sorting
     const handleSort = (column) => {
@@ -1567,7 +1751,10 @@ const TransactionsTab = ({
         setColumnWidths(newColumnWidths);
 
         // Save to localStorage
-        localStorage.setItem('transactionTableColumnWidths', JSON.stringify(newColumnWidths));
+        localStorage.setItem(
+            'transactionTableColumnWidths',
+            JSON.stringify(newColumnWidths)
+        );
     };
 
     const handleMouseUp = () => {
@@ -1583,7 +1770,7 @@ const TransactionsTab = ({
         if (savedWidths) {
             try {
                 const parsedWidths = JSON.parse(savedWidths);
-                setColumnWidths(prev => ({ ...prev, ...parsedWidths }));
+                setColumnWidths((prev) => ({ ...prev, ...parsedWidths }));
             } catch (error) {
                 console.error('Error parsing saved column widths:', error);
             }
@@ -1593,7 +1780,11 @@ const TransactionsTab = ({
     // Sort icon component
     const SortIcon = ({ column }) => {
         if (sortBy !== column) return null;
-        return sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
+        return sortDirection === 'asc' ? (
+            <ChevronUp className="w-3 h-3" />
+        ) : (
+            <ChevronDown className="w-3 h-3" />
+        );
     };
 
     // Mobile Layout
@@ -1605,8 +1796,7 @@ const TransactionsTab = ({
                     <h2 className="text-xl font-bold text-theme-primary">
                         {viewAccount === 'all'
                             ? 'All Transactions'
-                            : `${getAccountName(viewAccount)} Transactions`
-                        }
+                            : `${getAccountName(viewAccount)} Transactions`}
                     </h2>
                     <button
                         onClick={startAddingTransaction}
@@ -1648,8 +1838,10 @@ const TransactionsTab = ({
                         className="px-3 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm"
                     >
                         <option value="all">All Accounts</option>
-                        {accounts.map(account => (
-                            <option key={account.id} value={account.id}>{account.name}</option>
+                        {accounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                                {account.name}
+                            </option>
                         ))}
                     </select>
                 </div>
@@ -1677,8 +1869,8 @@ const TransactionsTab = ({
 
                     {/* Existing Transaction Cards */}
                     {filteredAndSortedTransactions
-                        .filter(t => t.id !== editingTransaction)
-                        .map((transaction, index) => (
+                        .filter((t) => t.id !== editingTransaction)
+                        .map((transaction, index) =>
                             editingTransaction === transaction.id ? (
                                 <TransactionEditRow
                                     key={transaction.id}
@@ -1714,17 +1906,17 @@ const TransactionsTab = ({
                                     viewAccount={viewAccount}
                                 />
                             )
-                        ))}
+                        )}
 
                     {/* Empty State */}
-                    {filteredAndSortedTransactions.length === 0 && !isAddingTransaction && (
-                        <div className="text-center py-12 text-theme-secondary">
-                            {transactions.length === 0
-                                ? 'No transactions yet. Add your first transaction!'
-                                : 'No transactions match your filters.'
-                            }
-                        </div>
-                    )}
+                    {filteredAndSortedTransactions.length === 0 &&
+                        !isAddingTransaction && (
+                            <div className="text-center py-12 text-theme-secondary">
+                                {transactions.length === 0
+                                    ? 'No transactions yet. Add your first transaction!'
+                                    : 'No transactions match your filters.'}
+                            </div>
+                        )}
                 </div>
             </div>
         );
@@ -1739,8 +1931,7 @@ const TransactionsTab = ({
                     <h2 className="text-xl font-bold text-theme-primary">
                         {viewAccount === 'all'
                             ? 'All Transactions'
-                            : `${getAccountName(viewAccount)} Transactions`
-                        }
+                            : `${getAccountName(viewAccount)} Transactions`}
                     </h2>
 
                     {/* Bulk Actions */}
@@ -1751,7 +1942,7 @@ const TransactionsTab = ({
                             </span>
                             <button
                                 onClick={() => {
-                                    selectedTransactions.forEach(id => onDeleteTransaction(id));
+                                    selectedTransactions.forEach((id) => onDeleteTransaction(id));
                                     setSelectedTransactions(new Set());
                                 }}
                                 className="btn-danger px-3 py-1 rounded text-sm"
@@ -1796,8 +1987,10 @@ const TransactionsTab = ({
                         className="px-3 py-2 border rounded bg-theme-primary border-theme-secondary text-theme-primary"
                     >
                         <option value="all">All Accounts</option>
-                        {accounts.map(account => (
-                            <option key={account.id} value={account.id}>{account.name}</option>
+                        {accounts.map((account) => (
+                            <option key={account.id} value={account.id}>
+                                {account.name}
+                            </option>
                         ))}
                     </select>
 
@@ -1817,7 +2010,10 @@ const TransactionsTab = ({
                     <thead className="table-header">
                         <tr>
                             {/* Bulk Select Header */}
-                            <th className="px-1 py-3 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider relative" style={{ width: columnWidths.select }}>
+                            <th
+                                className="px-1 py-3 text-center text-xs font-medium text-theme-secondary uppercase tracking-wider relative"
+                                style={{ width: columnWidths.select }}
+                            >
                                 <input
                                     type="checkbox"
                                     checked={selectAll}
@@ -1975,7 +2171,7 @@ const TransactionsTab = ({
                         )}
 
                         {/* Existing Transactions */}
-                        {filteredAndSortedTransactions.map((transaction, index) => (
+                        {filteredAndSortedTransactions.map((transaction, index) =>
                             editingTransaction === transaction.id ? (
                                 <TransactionEditRow
                                     key={transaction.id}
@@ -2011,19 +2207,22 @@ const TransactionsTab = ({
                                     viewAccount={viewAccount}
                                 />
                             )
-                        ))}
+                        )}
 
                         {/* Empty State */}
-                        {filteredAndSortedTransactions.length === 0 && !isAddingTransaction && (
-                            <tr>
-                                <td colSpan={viewAccount === 'all' ? "9" : "8"} className="text-center py-12 text-theme-secondary">
-                                    {transactions.length === 0
-                                        ? 'No transactions yet. Add your first transaction!'
-                                        : 'No transactions match your filters.'
-                                    }
-                                </td>
-                            </tr>
-                        )}
+                        {filteredAndSortedTransactions.length === 0 &&
+                            !isAddingTransaction && (
+                                <tr>
+                                    <td
+                                        colSpan={viewAccount === 'all' ? '9' : '8'}
+                                        className="text-center py-12 text-theme-secondary"
+                                    >
+                                        {transactions.length === 0
+                                            ? 'No transactions yet. Add your first transaction!'
+                                            : 'No transactions match your filters.'}
+                                    </td>
+                                </tr>
+                            )}
                     </tbody>
                 </table>
             </div>
