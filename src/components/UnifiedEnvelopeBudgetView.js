@@ -1103,7 +1103,7 @@ const CategoryTableRow = ({
                             }`}
                         title="Click to move money"
                     >
-                        ${(category.available || 0).toFixed(2)}
+                        ${((category.available || 0) - getCategoryMonthData(category.id).spent).toFixed(2)}
                     </span>
                 </td>
 
