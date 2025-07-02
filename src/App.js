@@ -294,8 +294,13 @@ const App = () => {
 
     // Set Theme
     useEffect(() => {
-        // Apply theme to document
+        // Apply theme to both HTML and body elements
         document.documentElement.setAttribute('data-theme', theme);
+        document.body.setAttribute('data-theme', theme);
+
+        // Also add as a class for broader compatibility
+        document.documentElement.className = `theme-${theme}`;
+        document.body.className = `theme-${theme}`;
 
         // Update meta theme-color for mobile browsers
         const metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -303,6 +308,9 @@ const App = () => {
             metaThemeColor.setAttribute('content',
                 theme.includes('dark') ? '#1f2937' : '#ffffff');
         }
+
+        // Debug log
+        console.log('Theme applied:', theme);
     }, [theme]);
 
     // Sync category allocations on app load
@@ -767,7 +775,7 @@ const App = () => {
 
     return (
         <DndProvider backend={HTML5Backend}>
-            <div className="min-h-screen transition-colors duration-200 bg-page text-page">
+            <div className={`min-h-screen transition-colors duration-200 bg-page text-page theme-${theme}`} data-theme={theme}>
                 <div className="container mx-auto px-4 py-8 max-w-6xl">
                     {/* Migration Status */}
                     {renderMigrationStatus()}

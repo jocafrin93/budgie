@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './styles/themes.css';
+
 
 
 /* Custom gradient backgrounds for categories */
