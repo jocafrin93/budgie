@@ -757,23 +757,22 @@ const TransactionEditRow = ({
                         {viewAccount === 'all' && <td className="px-2 py-2"></td>}
                         <td
                             className="px-2 py-2"
-                            colSpan={viewAccount === 'all' ? '4' : '3'}
+                            colSpan={viewAccount === 'all' ? '4' : '4'}
                         ></td>
-                        <td className="px-2 py-2 text-right">
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    onCancel();
-                                }}
-                                className="px-3 py-1 text-xs btn-secondary rounded"
-                            >
-                                Cancel
-                            </button>
-                        </td>
                         <td className="px-2 py-2 text-right" colSpan="2">
+
                             <div className="flex space-x-2 justify-end items-center">
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onCancel();
+                                    }}
+                                    className="px-3 py-1 text-xs btn-secondary rounded"
+                                >
+                                    Cancel
+                                </button>
                                 <button
                                     type="button"
                                     onClick={(e) => {
@@ -788,6 +787,7 @@ const TransactionEditRow = ({
                                 {isNew && onSaveAndAddAnother && (
                                     <button
                                         type="button"
+
                                         onClick={onSaveAndAddAnother}
                                         className="px-3 py-1 btn-success rounded text-xs whitespace-nowrap"                                        >
                                         Add Another
@@ -798,8 +798,6 @@ const TransactionEditRow = ({
                         <td className="px-1 py-2"></td>
                     </tr>
 
-                    {/* Account Selection Row - Remove entirely */}
-                    {/* This row is no longer needed */}
 
                     {/* Split Rows */}
                     {transaction.isSplit &&
@@ -2069,6 +2067,11 @@ const TransactionsTab = ({
                                 />
                             </th>
 
+
+
+
+
+
                             {/* Account Header - Conditional */}
                             {viewAccount === 'all' && (
                                 <th
@@ -2086,6 +2089,8 @@ const TransactionsTab = ({
                                     />
                                 </th>
                             )}
+
+
 
                             {/* Date Header */}
                             <th
