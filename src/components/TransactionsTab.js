@@ -750,55 +750,6 @@ const TransactionEditRow = ({
                             />
                         </td>
                     </tr>
-
-                    {/* Simple action row with just Cancel/Approve */}
-                    <tr className="bg-theme-secondary">
-                        <td className="px-1 py-2"></td>
-                        {viewAccount === 'all' && <td className="px-2 py-2"></td>}
-                        <td
-                            className="px-2 py-2"
-                            colSpan={viewAccount === 'all' ? '4' : '4'}
-                        ></td>
-                        <td className="px-2 py-2 text-right" colSpan="2">
-
-                            <div className="flex space-x-2 justify-end items-center">
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        onCancel();
-                                    }}
-                                    className="px-3 py-1 text-xs btn-secondary rounded"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        onSave();
-                                    }}
-                                    className="px-3 py-1 btn-success rounded text-xs whitespace-nowrap"
-                                >
-                                    Approve
-                                </button>
-                                {isNew && onSaveAndAddAnother && (
-                                    <button
-                                        type="button"
-
-                                        onClick={onSaveAndAddAnother}
-                                        className="px-3 py-1 btn-success rounded text-xs whitespace-nowrap"                                        >
-                                        Add Another
-                                    </button>
-                                )}
-                            </div>
-                        </td>
-                        <td className="px-1 py-2"></td>
-                    </tr>
-
-
                     {/* Split Rows */}
                     {transaction.isSplit &&
                         (transaction.splits || []).map((split, index) => (
@@ -905,25 +856,16 @@ const TransactionEditRow = ({
                                 <td className="px-1 py-2"></td>
                             </tr>
                         ))}
-
-                    {/* Split Summary Row with Auto-balance button */}
-                    {transaction.isSplit && (transaction.splits || []).length > 0 && (
-                        <tr className="bg-theme-tertiary">
-                            <td className="px-1 py-2 text-center">
-                                <div
-                                    className={`${Math.abs(splitDifference) < 0.01
-                                        ? 'text-theme-green'
-                                        : 'text-theme-red'
-                                        } text-xs`}
-                                >
-                                    {Math.abs(splitDifference) < 0.01 ? '✓' : '!'}
-                                </div>
-                            </td>
-                            {viewAccount === 'all' && <td className="px-2 py-2"></td>}
-                            <td className="px-2 py-2"></td>
-                            <td className="px-2 py-2"></td>
-                            <td className="px-2 py-2"></td>
-                            <td className="px-2 py-2 text-right">
+                    {/* Simple action row with just Cancel/Approve */}
+                    <tr className="bg-theme-secondary">
+                        <td className="px-1 py-2"></td>
+                        {viewAccount === 'all' && <td className="px-2 py-2"></td>}
+                        <td
+                            className="px-2 py-2"
+                            colSpan={viewAccount === 'all' ? '4' : '4'}
+                        ></td>
+                        <td className="px-2 py-2 text-right" colSpan="2">
+                            <div className="flex space-x-2 justify-end items-center">
                                 <button
                                     type="button"
                                     onClick={(e) => {
@@ -931,14 +873,54 @@ const TransactionEditRow = ({
                                         e.stopPropagation();
                                         onCancel();
                                     }}
-                                    className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
+                                    className="px-3 py-1 text-xs btn-secondary rounded"
                                 >
                                     Cancel
                                 </button>
-                            </td>
-                            <td className="px-2 py-2 text-right">
-                                <div className="flex items-center justify-end gap-2">
-                                    {Math.abs(splitDifference) >= 0.01 && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onSave();
+                                    }}
+                                    className="px-3 py-1 btn-success rounded text-xs whitespace-nowrap"
+                                >
+                                    Approve
+                                </button>
+                                {isNew && onSaveAndAddAnother && (
+                                    <button
+                                        type="button"
+
+                                        onClick={onSaveAndAddAnother}
+                                        className="px-3 py-1 btn-success rounded text-xs whitespace-nowrap"                                        >
+                                        Add Another
+                                    </button>
+                                )}
+                            </div>
+                        </td>
+                        <td className="px-1 py-2"></td>
+                    </tr>
+                    {/* Split info row - only show if it's a split transaction */}
+                    {transaction.isSplit && (transaction.splits || []).length > 0 && (
+                        <tr className="bg-theme-secondary" style={{ borderTop: 'none' }}>
+                            <td className="px-1 py-2"></td>
+                            {viewAccount === 'all' && <td className="px-2 py-2"></td>}
+                            <td className="px-2 py-2" colSpan="4"></td>
+                            <td className="px-2  text-right" colSpan="2">
+                                <div className="flex space-x-2 justify-end items-center text-sm">
+                                    <div className={`font-medium ${Math.abs(splitDifference) < 0.01
+                                        ? 'text-theme-green'
+                                        : 'text-theme-red'}`}>
+                                        <span> {Math.abs(splitDifference) < 0.01 ? '✓' : '!'} </span>
+                                        ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
+                                        <span> {Math.abs(splitDifference) >= 0.01 && (
+                                            <span className="text-theme-red ml-1">(${splitDifference.toFixed(2)})</span>
+                                        )}</span>
+                                    </div>
+
+
+                                    {Math.abs(splitDifference) >= 0.01 ? (
                                         <button
                                             type="button"
                                             onClick={(e) => {
@@ -946,41 +928,22 @@ const TransactionEditRow = ({
                                                 e.stopPropagation();
                                                 distributeDifference();
                                             }}
-                                            className="px-2 py-1 text-xs bg-theme-yellow text-theme-primary rounded hover:bg-theme-hover"
+                                            className="py-1 px-3 btn-success rounded text-xs"
                                             title="Distribute the difference evenly across all splits"
                                         >
-                                            Auto-balance
+                                            Balance
                                         </button>
-                                    )}
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            className="py-1 px-3 btn-secondary border:none rounded text-xs opacity-50 cursor-not-allowed"
+                                            disabled
+                                            title="Splits are balanced"
+                                        >
+                                            <span>Balanced ✓</span>
 
-                                    <div
-                                        className={`${Math.abs(splitDifference) < 0.01
-                                            ? 'text-theme-green'
-                                            : 'text-theme-red'
-                                            }`}
-                                    >
-                                        <div className="text-xs font-medium">
-                                            ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
-                                            {Math.abs(splitDifference) >= 0.01 && (
-                                                <span className="text-theme-red ml-1">
-                                                    (${splitDifference.toFixed(2)})
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            onSave();
-                                        }}
-                                        className="px-3 py-1 text-xs btn-success rounded transition-colors"
-                                    >
-                                        Approve
-                                    </button>
-                                </div>
+                                        </button>
+                                    )} </div>
                             </td>
                             <td className="px-1 py-2"></td>
                         </tr>
@@ -2066,11 +2029,6 @@ const TransactionsTab = ({
                                     onMouseDown={(e) => handleMouseDown(e, 'select')}
                                 />
                             </th>
-
-
-
-
-
 
                             {/* Account Header - Conditional */}
                             {viewAccount === 'all' && (
