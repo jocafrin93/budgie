@@ -1170,9 +1170,8 @@ const TransactionRow = ({
         return (
             <>
                 <tr
-                    className={`transition-colors hover:table-row-hover ${index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
-                        } ${isSelected ? 'bg-theme-active' : ''} ${isSplitTransaction ? 'cursor-pointer' : ''
-                        }`}
+                    className={`transition-colors hover:table-row-hover group ${index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
+                        } ${isSelected ? 'bg-theme-active' : ''} ${isSplitTransaction ? 'cursor-pointer' : ''}`}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
                     onClick={isSplitTransaction ? toggleExpanded : undefined}
@@ -1224,7 +1223,7 @@ const TransactionRow = ({
                     </td>
 
                     {/* Payee */}
-                    <td className="px-2 py-2 relative group">
+                    <td className="px-2 py-2 relative">
                         <div className="flex items-center justify-between">
                             <div className="min-w-0 flex-1">
                                 <div className="text-sm font-medium text-theme-primary truncate">
@@ -1234,31 +1233,31 @@ const TransactionRow = ({
                                 </div>
                             </div>
 
-                            {isHovered && (
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onEdit(transaction);
-                                        }}
-                                        className="p-1 text-theme-blue hover:bg-theme-hover rounded transition-colors"
-                                        title="Edit transaction"
-                                    >
-                                        <Edit2 className="w-3 h-3" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            onDeleteTransaction(transaction);
-                                        }}
-                                        className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors"
-                                        title="Delete transaction"
-                                    >
-                                        <Trash2 className="w-3 h-3" />
-                                    </button>
-                                </div>
-                            )}
+                            {/* Show buttons when row is hovered */}
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onEdit(transaction);
+                                    }}
+                                    className="p-1 text-theme-blue hover:bg-theme-hover rounded transition-colors"
+                                    title="Edit transaction"
+                                >
+                                    <Edit2 className="w-3 h-3" />
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onDeleteTransaction(transaction);
+                                    }}
+                                    className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors"
+                                    title="Delete transaction"
+                                >
+                                    <Trash2 className="w-3 h-3" />
+                                </button>
+                            </div>
+
                         </div>
                     </td>
 
