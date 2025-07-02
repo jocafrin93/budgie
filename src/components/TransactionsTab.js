@@ -785,6 +785,14 @@ const TransactionEditRow = ({
                                 Approve
                             </button>
                         </td>
+                        <td>{isNew && onSaveAndAddAnother && (
+                            <button
+                                onClick={onSaveAndAddAnother}
+                                className="w-full py-2 px-3 btn-success rounded text-sm font-medium"
+                            >
+                                Save & Add Another
+                            </button>
+                        )}</td>
                         <td className="px-1 py-2"></td>
                     </tr>
 
