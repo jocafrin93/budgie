@@ -10,11 +10,11 @@ import {
     Trash2,
     X
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CurrencyField } from './form';
 
 // Enhanced TransactionEditRow Component with Mobile Support
-const TransactionEditRow = memo(({
+const TransactionEditRow = ({
     transaction,
     setTransaction,
     accounts,
@@ -29,8 +29,6 @@ const TransactionEditRow = memo(({
     columnWidths,
     viewAccount
 }) => {
-    console.log('=== TransactionEditRow instance created ===', new Error().stack.split('\n')[1]);
-    console.log('TransactionEditRow rendered with transaction:', transaction);
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
@@ -44,40 +42,71 @@ const TransactionEditRow = memo(({
     }, []);
 
     const handleInputChange = (field, value) => {
-        console.log('handleInputChange called:', field, value);
-        console.log('Current transaction before update:', transaction);
-        setTransaction({
+        setTransaction(prev => ({
+            ...prev,
             [field]: value
-        });
+        }));
     };
 
     const handleAccountChange = (value) => {
-        setTransaction({
+        setTransaction(prev => ({
+            ...prev,
             accountId: value
-        });
+        }));
     };
 
     const handleTransferAccountChange = (value) => {
-        setTransaction({
+        setTransaction(prev => ({
+            ...prev,
             transferAccountId: value
-        });
+        }));
     };
+
+    const toggleTransfer = () => {
+        if (transaction.isTransfer) {
+            // Turning off transfer mode
+            setTransaction(prev => ({
+                ...prev,
+                isTransfer: false,
+                transferAccountId: '',
+                payee: '',
+                isSplit: false,
+                splits: []
+            }));
+        } else {
+            // Turning on transfer mode
+            const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
+            const defaultPayee = fromAccount ? `Transfer: ${fromAccount.name}` : 'Transfer';
+
+            setTransaction(prev => ({
+                ...prev,
+                isTransfer: true,
+                isSplit: false,
+                splits: [],
+                payee: defaultPayee,
+                categoryId: ''
+            }));
+        }
+    };
+
     const toggleSplit = () => {
         if (transaction.isSplit) {
             // Turning off split mode
-            setTransaction({
+            setTransaction(prev => ({
+                ...prev,
                 isSplit: false,
                 splits: [],
                 isTransfer: false,
                 transferAccountId: ''
-            });
+            }));
         } else {
             // Turning on split mode
-            setTransaction({
+            setTransaction(prev => ({
+                ...prev,
                 isSplit: true,
                 isTransfer: false,
                 transferAccountId: '',
-                splits: transaction.splits && transaction.splits.length > 0 ? transaction.splits : [
+                splits: prev.splits && prev.splits.length > 0 ? prev.splits : [
                     {
                         id: Date.now(),
                         amount: '',
@@ -85,29 +114,7 @@ const TransactionEditRow = memo(({
                         memo: ''
                     }
                 ]
-            });
-        }
-    };
-    const toggleTransfer = () => {
-        if (transaction.isTransfer) {
-            setTransaction({
-                isTransfer: false,
-                transferAccountId: '',
-                payee: '',
-                isSplit: false,
-                splits: []
-            });
-        } else {
-            const fromAccount = accounts.find(acc => acc.id === parseInt(transaction.accountId));
-            const defaultPayee = fromAccount ? `Transfer: ${fromAccount.name}` : 'Transfer';
-
-            setTransaction({
-                isTransfer: true,
-                isSplit: false,
-                splits: [],
-                payee: defaultPayee,
-                categoryId: ''
-            });
+            }));
         }
     };
 
@@ -148,9 +155,10 @@ const TransactionEditRow = memo(({
             };
         });
 
-        setTransaction({
+        setTransaction(prev => ({
+            ...prev,
             splits: updatedSplits
-        });
+        }));
     };
 
     // Mobile Card Layout
@@ -250,7 +258,8 @@ const TransactionEditRow = memo(({
                                 ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
                                 : 'bg-theme-primary border-theme-secondary text-theme-primary'
                                 }`}
-                            autoFocus={isNew && !transaction.isTransfer && !transaction.outflow && !transaction.inflow} />
+                            autoFocus={isNew && !transaction.isTransfer}
+                        />
                     </div>
 
                     {/* Transaction Type Toggles */}
@@ -514,6 +523,7 @@ const TransactionEditRow = memo(({
                                 ? 'bg-theme-secondary border-theme-secondary text-theme-tertiary cursor-not-allowed'
                                 : 'bg-theme-primary border-theme-secondary text-theme-primary'
                                 }`}
+                            autoFocus={isNew && !transaction.isTransfer}
                         />
                     </td>
 
@@ -608,7 +618,7 @@ const TransactionEditRow = memo(({
                         />
                     </td>
 
-                    {/* OutflowTEST */}
+                    {/* Outflow */}
                     <td className="px-2 py-2" style={{ width: columnWidths.outflow }}>
                         <CurrencyField
                             name="outflow"
@@ -660,6 +670,43 @@ const TransactionEditRow = memo(({
                         />
                     </td>
                 </tr>
+
+                {/* Simple action row with just Cancel/Approve */}
+                <tr className="bg-theme-secondary">
+                    <td className="px-1 py-2"></td>
+                    {viewAccount === 'all' && <td className="px-2 py-2"></td>}
+                    <td className="px-2 py-2" colSpan={viewAccount === 'all' ? "4" : "3"}></td>
+                    <td className="px-2 py-2 text-right">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onCancel();
+                            }}
+                            className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </td>
+                    <td className="px-2 py-2 text-right">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onSave();
+                            }}
+                            className="px-3 py-1 text-xs btn-primary rounded transition-colors"
+                        >
+                            Approve
+                        </button>
+                    </td>
+                    <td className="px-1 py-2"></td>
+                </tr>
+
+                {/* Account Selection Row - Remove entirely */}
+                {/* This row is no longer needed */}
 
                 {/* Split Rows */}
                 {transaction.isSplit && (transaction.splits || []).map((split, index) => (
@@ -828,12 +875,7 @@ const TransactionEditRow = memo(({
 
     // Return appropriate layout based on screen size
     return isMobile ? <MobileEditingCard /> : <DesktopEditingRows />;
-}, (prevProps, nextProps) => {
-    // Only compare the transaction prop, ignore function props
-    const same = JSON.stringify(prevProps.transaction) === JSON.stringify(nextProps.transaction);
-    console.log('TransactionEditRow memo comparison:', same ? 'SAME (skip render)' : 'DIFFERENT (re-render)');
-    return same;
-});
+};
 
 // Regular Transaction Row Component (for viewing)
 const TransactionRow = ({
@@ -988,7 +1030,7 @@ const TransactionRow = ({
         return (
             <>
                 <tr
-                    className={`transition-colors hover:table-row-hover group ${index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
+                    className={`transition-colors hover:table-row-hover ${index % 2 === 0 ? 'table-row-even' : 'table-row-odd'
                         } ${isSelected ? 'bg-theme-active' : ''} ${isSplitTransaction ? 'cursor-pointer' : ''}`}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
@@ -1034,7 +1076,7 @@ const TransactionRow = ({
                     </td>
 
                     {/* Payee */}
-                    <td className="px-2 py-2 relative">
+                    <td className="px-2 py-2 relative group">
                         <div className="flex items-center justify-between">
                             <div className="min-w-0 flex-1">
                                 <div className="text-sm font-medium text-theme-primary truncate">
@@ -1044,30 +1086,33 @@ const TransactionRow = ({
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onEdit(transaction);
-                                    }}
-                                    className="p-1 text-theme-blue hover:bg-theme-hover rounded transition-colors"
-                                    title="Edit transaction"
-                                >
-                                    <Edit2 className="w-3 h-3" />
-                                </button>
-                                <button
-                                    onClick={() => onDelete({
-                                        id: transaction.id,
-                                        payee: transaction.payee || 'Unnamed Transaction'
-                                    })}
-                                    className="p-1 rounded hover:bg-theme-hover text-theme-red transition-colors"
-                                    title="Delete transaction"
-                                >
-                                    <Trash2 className="w-3 h-3" />
-                                </button>
-                            </div>
+                            {isHovered && (
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEdit(transaction);
+                                        }}
+                                        className="p-1 text-theme-blue hover:bg-theme-hover rounded transition-colors"
+                                        title="Edit transaction"
+                                    >
+                                        <Edit2 className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDelete(transaction.id);
+                                        }}
+                                        className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors"
+                                        title="Delete transaction"
+                                    >
+                                        <Trash2 className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </td>
+
                     {/* Category */}
                     <td className="px-2 py-2">
                         <span className="text-sm text-theme-secondary">
@@ -1165,18 +1210,16 @@ const TransactionsTab = ({
     onAddTransaction,
     onEditTransaction,
     onDeleteTransaction,
-    onReorderTransactions,
-    viewAccount = 'all',
-    onAccountViewChange
+    onAccountViewChange,
+    viewAccount = 'all'
 }) => {
     const [isMobile, setIsMobile] = useState(false);
-
-    console.log('TransactionsTab rendered, isMobile:', isMobile, 'window.innerWidth:', window.innerWidth);
 
     // State for search and filters
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('all');
     const [accountFilter, setAccountFilter] = useState('all');
+    // const [viewAccount, setViewAccount] = useState('all');
     const [sortBy, setSortBy] = useState('date');
     const [sortDirection, setSortDirection] = useState('desc');
 
@@ -1187,46 +1230,8 @@ const TransactionsTab = ({
     // State for inline editing
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [isAddingTransaction, setIsAddingTransaction] = useState(false);
-    const [editingData, setEditingData] = useState(new Map());
+    const [newTransaction, setNewTransaction] = useState({});
 
-    // Helper functions:
-    const getEditingTransaction = useCallback((id) => {
-        const result = editingData.get(id === 'new' ? 'new' : id) || {};
-        console.log('getEditingTransaction for', id, ':', result);
-        return result;
-    }, [editingData]);
-
-    const updateEditingTransaction = useCallback((id, updates) => {
-        console.log('updateEditingTransaction called:', id, updates);
-
-        setEditingData(prev => {
-            const currentData = prev.get(id) || {};
-            console.log('Current data for', id, ':', currentData);
-
-            // Check if the update would actually change anything
-            const newData = { ...currentData, ...updates };
-            console.log('New data for', id, ':', newData);
-
-            // Only update if something actually changed
-            if (JSON.stringify(currentData) === JSON.stringify(newData)) {
-                console.log('No change detected, skipping update');
-                return prev; // Return the same reference to prevent re-render
-            }
-
-            const newMap = new Map(prev);
-            newMap.set(id, newData);
-            return newMap;
-        });
-    }, []);
-    const getMemoizedTransaction = useCallback((id) => {
-        return editingData.get(id === 'new' ? 'new' : id) || {};
-    }, [editingData]);
-
-    const newTransactionData = useMemo(() => getMemoizedTransaction('new'), [getMemoizedTransaction]);
-    const editingTransactionData = useMemo(() =>
-        editingTransaction ? getMemoizedTransaction(editingTransaction) : null,
-        [getMemoizedTransaction, editingTransaction]
-    );
     // Column widths with account column
     const [columnWidths, setColumnWidths] = useState({
         select: 35,
@@ -1301,17 +1306,8 @@ const TransactionsTab = ({
 
     // Transaction management functions
     const startAddingTransaction = () => {
-        if (editingTransaction) {
-            // Cancel any existing edit
-            setEditingData(prev => {
-                const newMap = new Map(prev);
-                newMap.delete(editingTransaction);
-                return newMap;
-            });
-            setEditingTransaction(null);
-        }
         setIsAddingTransaction(true);
-        updateEditingTransaction('new', {
+        setNewTransaction({
             date: getTodaysDate(),
             payee: '',
             categoryId: '',
@@ -1329,8 +1325,7 @@ const TransactionsTab = ({
 
     const startEditingTransaction = (transaction) => {
         setEditingTransaction(transaction.id);
-        setIsAddingTransaction(false);
-        updateEditingTransaction(transaction.id, {
+        setNewTransaction({
             date: transaction.date,
             payee: transaction.transferAccountId ? formatTransferPayee(transaction) : transaction.payee,
             categoryId: transaction.categoryId || '',
@@ -1348,46 +1343,31 @@ const TransactionsTab = ({
 
     const cancelEdit = () => {
         setIsAddingTransaction(false);
-        if (editingTransaction) {
-            setEditingData(prev => {
-                const newMap = new Map(prev);
-                newMap.delete(editingTransaction);
-                return newMap;
-            });
-        } else {
-            setEditingData(prev => {
-                const newMap = new Map(prev);
-                newMap.delete('new');
-                return newMap;
-            });
-        }
         setEditingTransaction(null);
+        setNewTransaction({});
     };
 
     const saveTransaction = () => {
-        const currentTransaction = editingTransaction ?
-            getEditingTransaction(editingTransaction) :
-            getEditingTransaction('new');
-        const outflowAmount = parseFloat(currentTransaction.outflow) || 0;
-        const inflowAmount = parseFloat(currentTransaction.inflow) || 0;
+        const outflowAmount = parseFloat(newTransaction.outflow) || 0;
+        const inflowAmount = parseFloat(newTransaction.inflow) || 0;
         const amount = outflowAmount > 0 ? -outflowAmount : inflowAmount;
 
         let transactionData = {
-            date: currentTransaction.date,
-            payee: currentTransaction.isTransfer ? '' : currentTransaction.payee,
-            memo: currentTransaction.memo,
+            date: newTransaction.date,
+            payee: newTransaction.isTransfer ? '' : newTransaction.payee,
+            memo: newTransaction.memo,
             amount: amount,
-            isCleared: currentTransaction.isCleared,
-            accountId: parseInt(currentTransaction.accountId),
-            transferAccountId: currentTransaction.isTransfer ? parseInt(currentTransaction.transferAccountId) : null,
-            isSplit: currentTransaction.isSplit,
+            isCleared: newTransaction.isCleared,
+            accountId: parseInt(newTransaction.accountId),
+            transferAccountId: newTransaction.isTransfer ? parseInt(newTransaction.transferAccountId) : null,
+            isSplit: newTransaction.isSplit,
         };
 
         // Handle split transactions
-        if (currentTransaction.isSplit && currentTransaction.splits && currentTransaction.splits.length > 0) {
+        if (newTransaction.isSplit && newTransaction.splits && newTransaction.splits.length > 0) {
             transactionData = {
                 ...transactionData,
-                splits: currentTransaction.splits.map(split => {
+                splits: newTransaction.splits.map(split => {
                     const splitAmount = typeof split.amount === 'number' ?
                         split.amount : parseFloat(split.amount) || 0;
                     return {
@@ -1402,7 +1382,7 @@ const TransactionsTab = ({
         else {
             transactionData = {
                 ...transactionData,
-                categoryId: currentTransaction.categoryId ? parseInt(currentTransaction.categoryId) : null
+                categoryId: newTransaction.categoryId ? parseInt(newTransaction.categoryId) : null
             };
         }
 
@@ -1422,55 +1402,41 @@ const TransactionsTab = ({
 
     // Split transaction management
     const addSplit = () => {
-        const currentTransaction = editingTransaction ?
-            getEditingTransaction(editingTransaction) :
-            getEditingTransaction('new');
-
         const newSplit = {
             id: Date.now(),
             amount: '',
             categoryId: '',
             memo: ''
         };
-        const currentSplits = currentTransaction.splits || [];
-
-        const transactionId = editingTransaction || 'new';
-        updateEditingTransaction(transactionId, {
+        const currentSplits = newTransaction.splits || [];
+        setNewTransaction(prev => ({
+            ...prev,
             splits: [...currentSplits, newSplit],
             isSplit: true
-        });
+        }));
     };
 
     const removeSplit = (splitId) => {
-        const currentTransaction = editingTransaction ?
-            getEditingTransaction(editingTransaction) :
-            getEditingTransaction('new');
-
-        const currentSplits = currentTransaction.splits || [];
+        const currentSplits = newTransaction.splits || [];
         const updatedSplits = currentSplits.filter(split => split.id !== splitId);
-
-        const transactionId = editingTransaction || 'new';
-        updateEditingTransaction(transactionId, {
+        setNewTransaction(prev => ({
+            ...prev,
             splits: updatedSplits,
             isSplit: updatedSplits.length > 0
-        });
+        }));
     };
 
     const updateSplit = (splitId, field, value) => {
-        const currentTransaction = editingTransaction ?
-            getEditingTransaction(editingTransaction) :
-            getEditingTransaction('new');
-
-        const currentSplits = currentTransaction.splits || [];
+        const currentSplits = newTransaction.splits || [];
         const updatedSplits = currentSplits.map(split =>
             split.id === splitId ? { ...split, [field]: value } : split
         );
-
-        const transactionId = editingTransaction || 'new';
-        updateEditingTransaction(transactionId, {
+        setNewTransaction(prev => ({
+            ...prev,
             splits: updatedSplits
-        });
+        }));
     };
+
     // Bulk selection handlers
     const handleSelectAll = () => {
         if (selectAll) {
@@ -1693,8 +1659,8 @@ const TransactionsTab = ({
                     {/* New Transaction Card */}
                     {isAddingTransaction && (
                         <TransactionEditRow
-                            transaction={newTransactionData}
-                            setTransaction={(updates) => updateEditingTransaction('new', updates)}
+                            transaction={newTransaction}
+                            setTransaction={setNewTransaction}
                             accounts={accounts}
                             categories={categories}
                             onSave={saveTransaction}
@@ -1716,8 +1682,8 @@ const TransactionsTab = ({
                             editingTransaction === transaction.id ? (
                                 <TransactionEditRow
                                     key={transaction.id}
-                                    transaction={editingTransactionData}
-                                    setTransaction={(updates) => updateEditingTransaction(transaction.id, updates)}
+                                    transaction={newTransaction}
+                                    setTransaction={setNewTransaction}
                                     accounts={accounts}
                                     categories={categories}
                                     onSave={saveTransaction}
@@ -1835,7 +1801,6 @@ const TransactionsTab = ({
                         ))}
                     </select>
 
-
                     <button
                         onClick={startAddingTransaction}
                         className="btn-primary px-4 py-2 rounded flex items-center gap-2"
@@ -1860,7 +1825,7 @@ const TransactionsTab = ({
                                     className="rounded border-theme-secondary"
                                 />
                                 <div
-                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                     onMouseDown={(e) => handleMouseDown(e, 'select')}
                                 />
                             </th>
@@ -1877,7 +1842,7 @@ const TransactionsTab = ({
                                         <SortIcon column="account" />
                                     </div>
                                     <div
-                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                        className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                         onMouseDown={(e) => handleMouseDown(e, 'account')}
                                     />
                                 </th>
@@ -1894,7 +1859,7 @@ const TransactionsTab = ({
                                     <SortIcon column="date" />
                                 </div>
                                 <div
-                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                     onMouseDown={(e) => handleMouseDown(e, 'date')}
                                 />
                             </th>
@@ -1910,7 +1875,7 @@ const TransactionsTab = ({
                                     <SortIcon column="payee" />
                                 </div>
                                 <div
-                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                     onMouseDown={(e) => handleMouseDown(e, 'payee')}
                                 />
                             </th>
@@ -1926,7 +1891,7 @@ const TransactionsTab = ({
                                     <SortIcon column="category" />
                                 </div>
                                 <div
-                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                     onMouseDown={(e) => handleMouseDown(e, 'category')}
                                 />
                             </th>
@@ -1938,7 +1903,7 @@ const TransactionsTab = ({
                             >
                                 <span>Memo</span>
                                 <div
-                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                     onMouseDown={(e) => handleMouseDown(e, 'memo')}
                                 />
                             </th>
@@ -1954,7 +1919,7 @@ const TransactionsTab = ({
                                     <SortIcon column="amount" />
                                 </div>
                                 <div
-                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                     onMouseDown={(e) => handleMouseDown(e, 'outflow')}
                                 />
                             </th>
@@ -1970,7 +1935,7 @@ const TransactionsTab = ({
                                     <SortIcon column="amount" />
                                 </div>
                                 <div
-                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                     onMouseDown={(e) => handleMouseDown(e, 'inflow')}
                                 />
                             </th>
@@ -1982,7 +1947,7 @@ const TransactionsTab = ({
                             >
                                 <span>✓</span>
                                 <div
-                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize "
+                                    className="absolute right-0 top-0 w-3 h-full cursor-col-resize hover:bg-blue-300 hover:bg-opacity-50"
                                     onMouseDown={(e) => handleMouseDown(e, 'cleared')}
                                 />
                             </th>
@@ -1993,9 +1958,8 @@ const TransactionsTab = ({
                         {/* New Transaction Row */}
                         {isAddingTransaction && (
                             <TransactionEditRow
-
-                                transaction={newTransactionData}
-                                setTransaction={(updates) => updateEditingTransaction('new', updates)}
+                                transaction={newTransaction}
+                                setTransaction={setNewTransaction}
                                 accounts={accounts}
                                 categories={categories}
                                 onSave={saveTransaction}
@@ -2014,9 +1978,9 @@ const TransactionsTab = ({
                         {filteredAndSortedTransactions.map((transaction, index) => (
                             editingTransaction === transaction.id ? (
                                 <TransactionEditRow
-                                    key={`editing-${transaction.id}`}
-                                    transaction={editingTransactionData}
-                                    setTransaction={(updates) => updateEditingTransaction(transaction.id, updates)}
+                                    key={transaction.id}
+                                    transaction={newTransaction}
+                                    setTransaction={setNewTransaction}
                                     accounts={accounts}
                                     categories={categories}
                                     onSave={saveTransaction}
@@ -2068,4 +2032,3 @@ const TransactionsTab = ({
 };
 
 export default TransactionsTab;
-

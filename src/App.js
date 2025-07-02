@@ -994,18 +994,18 @@ const App = () => {
                     {activeTab === 'transactions' && (
                         <TransactionsTab
                             transactions={transactions}
-                            onAccountViewChange={setCurrentAccountView}
-                            viewAccount={currentAccountView}
+                            viewAccount={currentAccountView}  // ← Make sure this is here
                             accounts={accounts}
                             categories={categories}
-                            onAddTransaction={addTransaction}  // ← Change this
-                            onEditTransaction={updateTransaction}  // ← Change this  
+                            onAddTransaction={addTransaction}
+                            onEditTransaction={updateTransaction}
                             onDeleteTransaction={(transaction) => openConfirmDeleteDialog(
                                 'transaction',
                                 transaction.id,
                                 transaction.payee || 'Unnamed Transaction',
                                 `Delete this transaction?`
                             )}
+                            onAccountViewChange={setCurrentAccountView}
                         />
                     )}
 
