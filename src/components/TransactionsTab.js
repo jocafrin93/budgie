@@ -990,7 +990,7 @@ const TransactionRow = ({
     isSelected,
     onSelect,
     onEdit,
-    onDelete,
+    onDeleteTransaction,
     getAccountName,
     getCategoryName,
     formatTransferPayee,
@@ -1098,12 +1098,28 @@ const TransactionRow = ({
                                 {transaction.amount < 0 ? '-' : '+'}$
                                 {Math.abs(transaction.amount).toFixed(2)}
                             </div>
-                            <button
-                                onClick={() => onEdit(transaction)}
-                                className="text-theme-blue hover:text-theme-accent text-sm mt-1"
-                            >
-                                Edit
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onEdit(transaction);
+                                    }}
+                                    className="text-theme-blue hover:text-theme-accent text-sm"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onDeleteTransaction(transaction);
+                                    }}
+                                    className="text-theme-red hover:text-theme-red text-sm"
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1232,8 +1248,9 @@ const TransactionRow = ({
                                     </button>
                                     <button
                                         onClick={(e) => {
+                                            e.preventDefault();
                                             e.stopPropagation();
-                                            onDelete(transaction.id);
+                                            onDeleteTransaction(transaction);
                                         }}
                                         className="p-1 text-theme-red hover:bg-theme-hover rounded transition-colors"
                                         title="Delete transaction"
@@ -1895,7 +1912,7 @@ const TransactionsTab = ({
                                     isSelected={selectedTransactions.has(transaction.id)}
                                     onSelect={handleSelectTransaction}
                                     onEdit={startEditingTransaction}
-                                    onDelete={onDeleteTransaction}
+                                    onDeleteTransaction={onDeleteTransaction}
                                     getAccountName={getAccountName}
                                     getCategoryName={getCategoryName}
                                     formatTransferPayee={formatTransferPayee}
@@ -1942,7 +1959,24 @@ const TransactionsTab = ({
                             </span>
                             <button
                                 onClick={() => {
-                                    selectedTransactions.forEach((id) => onDeleteTransaction(id));
+                                    // Get all selected transactions
+                                    const transactionsToDelete = Array.from(selectedTransactions)
+                                        .map(id => transactions.find(t => t.id === id))
+                                        .filter(Boolean);
+
+                                    // Create a combined transaction object for bulk delete
+                                    const bulkTransaction = {
+                                        id: 'bulk-delete',
+                                        payee: `${transactionsToDelete.length} transactions`,
+                                        isMultiple: true,
+                                        transactions: transactionsToDelete,
+                                        amount: transactionsToDelete.reduce((sum, t) => sum + t.amount, 0)
+                                    };
+
+                                    // Pass the bulk transaction object to trigger confirmation
+                                    onDeleteTransaction(bulkTransaction);
+
+                                    // Clear selection after deletion is confirmed
                                     setSelectedTransactions(new Set());
                                 }}
                                 className="btn-danger px-3 py-1 rounded text-sm"
@@ -2196,7 +2230,7 @@ const TransactionsTab = ({
                                     isSelected={selectedTransactions.has(transaction.id)}
                                     onSelect={handleSelectTransaction}
                                     onEdit={startEditingTransaction}
-                                    onDelete={onDeleteTransaction}
+                                    onDeleteTransaction={onDeleteTransaction}
                                     getAccountName={getAccountName}
                                     getCategoryName={getCategoryName}
                                     formatTransferPayee={formatTransferPayee}

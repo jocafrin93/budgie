@@ -613,10 +613,21 @@ const App = () => {
         setConfirmDelete(null);
     };
 
-    const handleDeleteTransaction = (transactionId) => {
-        deleteTransaction(transactionId);
+    const handleDeleteTransaction = (transaction) => {
+        // Handle bulk delete case
+        if (transaction.isMultiple && Array.isArray(transaction.transactions)) {
+            // Delete each transaction in the array
+            for (const t of transaction.transactions) {
+                deleteTransaction(t.id);
+            }
+        } else {
+            // Handle single transaction case
+            const transactionId = typeof transaction === 'object' ? transaction.id : transaction;
+            deleteTransaction(transactionId);
+        }
         setConfirmDelete(null);
     };
+
 
     const handleExportToYNAB = () => {
         exportToYNAB({
@@ -1009,7 +1020,7 @@ const App = () => {
                             onEditTransaction={updateTransaction}
                             onDeleteTransaction={(transaction) => openConfirmDeleteDialog(
                                 'transaction',
-                                transaction.id,
+                                transaction,  // Pass the full transaction object
                                 transaction.payee || 'Unnamed Transaction',
                                 `Delete this transaction?`
                             )}
@@ -1206,7 +1217,7 @@ const App = () => {
                                         handleDeleteAccount(confirmDelete.id);
                                         break;
                                     case 'transaction':
-                                        handleDeleteTransaction(confirmDelete.id);
+                                        handleDeleteTransaction(confirmDelete.id); // confirmDelete.id now contains the full transaction object
                                         break;
                                     default:
                                         break;
