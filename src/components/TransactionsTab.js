@@ -767,32 +767,34 @@ const TransactionEditRow = ({
                                     e.stopPropagation();
                                     onCancel();
                                 }}
-                                className="px-3 py-1 text-xs btn-secondary rounded transition-colors"
+                                className="px-3 py-1 text-xs btn-secondary rounded"
                             >
                                 Cancel
                             </button>
                         </td>
-                        <td className="px-2 py-2 text-right">
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    onSave();
-                                }}
-                                className="px-3 py-1 text-xs btn-primary rounded transition-colors"
-                            >
-                                Approve
-                            </button>
+                        <td className="px-2 py-2 text-right" colSpan="2">
+                            <div className="flex space-x-2 justify-end items-center">
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        onSave();
+                                    }}
+                                    className="px-3 py-1 btn-success rounded text-xs whitespace-nowrap"
+                                >
+                                    Approve
+                                </button>
+                                {isNew && onSaveAndAddAnother && (
+                                    <button
+                                        type="button"
+                                        onClick={onSaveAndAddAnother}
+                                        className="px-3 py-1 btn-success rounded text-xs whitespace-nowrap"                                        >
+                                        Add Another
+                                    </button>
+                                )}
+                            </div>
                         </td>
-                        <td>{isNew && onSaveAndAddAnother && (
-                            <button
-                                onClick={onSaveAndAddAnother}
-                                className="w-full py-2 px-3 btn-success rounded text-sm font-medium"
-                            >
-                                Save & Add Another
-                            </button>
-                        )}</td>
                         <td className="px-1 py-2"></td>
                     </tr>
 
@@ -976,7 +978,7 @@ const TransactionEditRow = ({
                                             e.stopPropagation();
                                             onSave();
                                         }}
-                                        className="px-3 py-1 text-xs btn-primary rounded transition-colors"
+                                        className="px-3 py-1 text-xs btn-success rounded transition-colors"
                                     >
                                         Approve
                                     </button>
@@ -1824,7 +1826,7 @@ const TransactionsTab = ({
                     </h2>
                     <button
                         onClick={startAddingTransaction}
-                        className="btn-primary px-4 py-2 rounded flex items-center gap-2"
+                        className="btn-success px-4 py-2 rounded flex items-center gap-2"
                     >
                         <Plus size={16} />
                         Add

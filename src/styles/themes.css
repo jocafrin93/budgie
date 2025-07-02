@@ -985,52 +985,52 @@
 
 /* Button classes */
 .btn-primary {
-    background-color: var(--btn-primary-bg);
+    background-color: var(--btn-primary-bg) !important;
     color: var(--btn-primary-text);
     transition: background-color 0.2s;
 }
 
 .btn-primary:hover {
-    background-color: var(--btn-primary-hover);
+    background-color: var(--btn-primary-hover) !important;
 }
 
 .btn-secondary {
-    background-color: var(--btn-secondary-bg);
+    background-color: var(--btn-secondary-bg) !important;
     color: var(--btn-secondary-text);
     border: 1px solid var(--border-primary);
     transition: background-color 0.2s;
 }
 
 .btn-secondary:hover {
-    background-color: var(--btn-secondary-hover);
+    background-color: var(--btn-secondary-hover) !important;
 }
 
 .btn-success {
-    background-color: var(--btn-success-bg);
+    background-color: var(--btn-success-bg) !important;
     color: var(--btn-success-text);
     transition: background-color 0.2s;
 }
 
 .btn-success:hover {
-    background-color: var(--btn-success-hover);
+    background-color: var(--btn-success-hover) !important;
 }
 
 .btn-danger {
-    background-color: var(--btn-danger-bg);
+    background-color: var(--btn-danger-bg) !important;
     color: var(--btn-danger-text);
     transition: background-color 0.2s;
 }
 
 .btn-danger:hover {
-    background-color: var(--btn-danger-hover);
+    background-color: var(--btn-danger-hover) !important;
 }
 
 .btn-warning {
-    background-color: var(--btn-warning-bg);
+    background-color: var(--btn-warning-bg) !important;
     color: var(--btn-warning-text);
     transition: background-color 0.2s;
 }
 
 .btn-warning:hover {
-    background-color: var(--btn-warning-hover);
+    background-color: var(--btn-warning-hover) !important;
 }
