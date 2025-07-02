@@ -148,23 +148,27 @@ const TransactionEditRow = ({
     const distributeDifference = () => {
         if (Math.abs(splitDifference) < 0.01 || !transaction.splits?.length) return;
 
-        const difference = splitDifference;
+        // Calculate the actual split total using signed values (not absolute values)
+        const actualSplitTotal = (transaction.splits || []).reduce((sum, split) => {
+            const amount = typeof split.amount === 'number'
+                ? split.amount
+                : parseFloat(split.amount) || 0;
+            return sum + amount; // Don't use Math.abs here
+        }, 0);
+
+        // The difference we need to distribute
+        const difference = totalAmount - Math.abs(actualSplitTotal); // 5 - 4 = 1
         const splitsCount = transaction.splits.length;
-        const amountPerSplit = difference / splitsCount;
-        const remainder = difference % splitsCount;
+        const amountPerSplit = difference / splitsCount; // 1 / 2 = 0.5
 
-        const updatedSplits = transaction.splits.map((split, index) => {
-            const currentAmount = parseFloat(split.amount) || 0;
-            let adjustment = amountPerSplit;
-
-            // Add remainder to first split
-            if (index === 0) {
-                adjustment += remainder;
-            }
+        const updatedSplits = transaction.splits.map((split) => {
+            const currentAmount = parseFloat(split.amount) || 0; // -1, -3
+            // For outflows (negative amounts), subtract the adjustment to make them more negative
+            const newAmount = currentAmount - amountPerSplit; // -1 - 0.5 = -1.5, -3 - 0.5 = -3.5
 
             return {
                 ...split,
-                amount: currentAmount - adjustment
+                amount: newAmount
             };
         });
 
@@ -701,14 +705,14 @@ const TransactionEditRow = ({
                                 className="w-full px-2 py-1 border rounded bg-theme-primary border-theme-secondary text-theme-primary text-sm text-right"
                                 darkMode={false}
                             />
-                            {transaction.isTransfer && outflowAmount > 0 && (
+                            {/* {transaction.isTransfer && outflowAmount > 0 && (
                                 <div className="text-xs text-theme-tertiary mt-1">
                                     To:{' '}
                                     {accounts.find(
                                         (acc) => acc.id === parseInt(transaction.transferAccountId)
                                     )?.name || 'Select account'}
                                 </div>
-                            )}
+                            )} */}
                         </td>
 
                         {/* Inflow */}
