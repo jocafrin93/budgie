@@ -906,18 +906,17 @@ const TransactionEditRow = ({
                         <tr className="bg-theme-secondary" style={{ borderTop: 'none' }}>
                             <td className="px-1 py-2"></td>
                             {viewAccount === 'all' && <td className="px-2 py-2"></td>}
-                            <td className="px-2 py-2" colSpan="4"></td>
-                            <td className="px-2  text-right" colSpan="2">
-                                <div className="flex space-x-2 justify-end items-center text-sm">
-                                    <div className={`font-medium ${Math.abs(splitDifference) < 0.01
-                                        ? 'text-theme-green'
-                                        : 'text-theme-red'}`}>
-                                        <span> {Math.abs(splitDifference) < 0.01 ? '✓' : '!'} </span>
-                                        ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
-                                        <span> {Math.abs(splitDifference) >= 0.01 && (
-                                            <span className="text-theme-red ml-1">(${splitDifference.toFixed(2)})</span>
-                                        )}</span>
-                                    </div>
+                            <td className="px-2 py-2" colSpan={isNew ? "4" : "3"}></td>
+                            <td className="px-2  text-right" colSpan={isNew ? "2" : "3"}>
+                                <div className="flex justify-end items-center text-sm flex-row space-x-3">                                    <div className={`font-medium ${Math.abs(splitDifference) < 0.01
+                                    ? 'text-theme-green'
+                                    : 'text-theme-red'}`}>
+                                    <span> {Math.abs(splitDifference) < 0.01 ? '✓' : '!'} </span>
+                                    ${splitTotal.toFixed(2)} / ${totalAmount.toFixed(2)}
+                                    <span> {Math.abs(splitDifference) >= 0.01 && (
+                                        <span className="text-theme-red ml-1">(${splitDifference.toFixed(2)})</span>
+                                    )}</span>
+                                </div>
 
 
                                     {Math.abs(splitDifference) >= 0.01 ? (
