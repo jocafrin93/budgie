@@ -1372,7 +1372,10 @@ const TransactionsTab = ({
 
     // State for expanded split transactions
     const [expandedTransactions, setExpandedTransactions] = useState(new Set());
-
+    useEffect(() => {
+        console.log('Current transactions in TransactionsTab:', transactions.length);
+        console.log('Transactions:', transactions);
+    }, [transactions]);
     // Column resizing refs
     const isResizing = useRef(false);
     const currentColumn = useRef(null);
@@ -1498,6 +1501,39 @@ const TransactionsTab = ({
                 : null,
             isSplit: newTransaction.isSplit
         };
+        // For transfers, create two transactions
+        if (newTransaction.isTransfer && newTransaction.transferAccountId) {
+            const fromAccount = accounts.find(acc => acc.id === parseInt(newTransaction.accountId));
+            const toAccount = accounts.find(acc => acc.id === parseInt(newTransaction.transferAccountId));
+
+            // Transaction 1: Debit from source account
+            const sourceTransaction = {
+                ...transactionData,
+                payee: `Transfer to ${toAccount?.name || 'Unknown'}`,
+                amount: -Math.abs(amount), // Always negative for source
+                accountId: parseInt(newTransaction.accountId),
+                transferAccountId: parseInt(newTransaction.transferAccountId)
+            };
+
+            // Transaction 2: Credit to destination account  
+            const destTransaction = {
+                ...transactionData,
+                payee: `Transfer from ${fromAccount?.name || 'Unknown'}`,
+                amount: Math.abs(amount), // Always positive for destination
+                accountId: parseInt(newTransaction.transferAccountId),
+                transferAccountId: parseInt(newTransaction.accountId)
+            };
+
+            // Add both transactions
+            console.log('Calling onAddTransaction for sourceTransaction...');
+            onAddTransaction(sourceTransaction);
+            console.log('Calling onAddTransaction for destTransaction...');
+            onAddTransaction(destTransaction);
+            console.log('Both onAddTransaction calls completed');
+        } else {
+            // Regular transaction
+            onAddTransaction(transactionData);
+        }
 
         // Handle split transactions
         if (
@@ -1530,12 +1566,58 @@ const TransactionsTab = ({
             };
         }
 
+
         if (editingTransaction) {
             onEditTransaction({ ...transactionData, id: editingTransaction });
         } else {
-            onAddTransaction(transactionData);
-        }
+            // For transfers, create two transactions
+            if (newTransaction.isTransfer && newTransaction.transferAccountId) {
+                console.log('Creating transfer transactions...');
+                console.log('isTransfer:', newTransaction.isTransfer);
+                console.log('transferAccountId:', newTransaction.transferAccountId);
+                console.log('All accounts:', accounts.map(acc => ({ id: acc.id, name: acc.name })));
+                console.log('newTransaction.accountId:', newTransaction.accountId);
+                console.log('newTransaction.transferAccountId:', newTransaction.transferAccountId);
 
+                const fromAccount = accounts.find(acc => acc.id === parseInt(newTransaction.accountId));
+                const toAccount = accounts.find(acc => acc.id === parseInt(newTransaction.transferAccountId));
+
+                console.log('fromAccount:', fromAccount);
+                console.log('toAccount:', toAccount);
+
+                // Transaction 1: Debit from source account
+                const sourceTransaction = {
+                    ...transactionData,
+                    payee: `Transfer to ${toAccount?.name || 'Unknown'}`,
+                    amount: -Math.abs(amount), // Always negative for source
+                    accountId: parseInt(newTransaction.accountId),
+                    transferAccountId: parseInt(newTransaction.transferAccountId)
+                };
+
+                // Transaction 2: Credit to destination account  
+                const destTransaction = {
+                    ...transactionData,
+                    payee: `Transfer from ${fromAccount?.name || 'Unknown'}`,
+                    amount: Math.abs(amount), // Always positive for destination
+                    accountId: parseInt(newTransaction.transferAccountId),
+                    transferAccountId: parseInt(newTransaction.accountId)
+                };
+
+                console.log('sourceTransaction:', sourceTransaction);
+                console.log('destTransaction:', destTransaction);
+
+                // Add both transactions
+                console.log('Calling onAddTransaction for sourceTransaction...');
+                onAddTransaction(sourceTransaction);
+                console.log('Calling onAddTransaction for destTransaction...');
+                onAddTransaction(destTransaction);
+                console.log('Both onAddTransaction calls completed');
+            } else {
+                console.log('Creating regular transaction...');
+                // Regular transaction
+                onAddTransaction(transactionData);
+            }
+        }
         cancelEdit();
     };
 
@@ -1606,7 +1688,7 @@ const TransactionsTab = ({
 
     // Filtering and sorting
     const filteredAndSortedTransactions = useMemo(() => {
-        return transactions
+        const result = transactions
             .filter((transaction) => {
                 // Search filter
                 if (searchTerm) {
@@ -1691,6 +1773,13 @@ const TransactionsTab = ({
                     return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
                 }
             });
+
+        // Add these logs before the return:
+        console.log('Raw transactions:', transactions.length);
+        console.log('Final filtered transactions:', result.length);
+        console.log('View account:', viewAccount);
+
+        return result;
     }, [
         transactions,
         searchTerm,

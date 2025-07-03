@@ -14,31 +14,48 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
    * Add a new transaction with enhanced split support
    */
   const addTransaction = useCallback((transactionData) => {
-    const newTransaction = {
-      ...transactionData,
-      id: Math.max(...transactions.map(t => t.id), 0) + 1,
-      createdAt: new Date().toISOString()
-    };
-    setTransactions(prev => [...prev, newTransaction]);
+    console.log('addTransaction called with:', transactionData);
+
+    let createdTransaction;
+
+    // Update transactions array and generate ID inside state setter
+    setTransactions(prev => {
+      console.log('Previous array length:', prev.length);
+
+      // Generate ID based on current state, not stale closure
+      const newId = Math.max(...prev.map(t => t.id), 0) + 1;
+
+      createdTransaction = {
+        ...transactionData,
+        id: newId,
+        createdAt: new Date().toISOString()
+      };
+
+      console.log('Created newTransaction with ID:', newId);
+
+      const updated = [...prev, createdTransaction];
+      console.log('New array length:', updated.length);
+      return updated;
+    });
 
     // Update account balance for main transaction
     setAccounts(prev => prev.map(account => {
-      if (account.id === newTransaction.accountId) {
-        return { ...account, balance: (account.balance || 0) + newTransaction.amount };
+      if (account.id === createdTransaction.accountId) {
+        return { ...account, balance: (account.balance || 0) + createdTransaction.amount };
       }
       // Handle transfer to another account
-      if (newTransaction.transferAccountId && account.id === newTransaction.transferAccountId) {
-        return { ...account, balance: (account.balance || 0) - newTransaction.amount };
+      if (createdTransaction.transferAccountId && account.id === createdTransaction.transferAccountId) {
+        return { ...account, balance: (account.balance || 0) - createdTransaction.amount };
       }
       return account;
     }));
 
     // Handle category spending for different transaction types
-    if (newTransaction.isSplit && newTransaction.splits) {
+    if (createdTransaction.isSplit && createdTransaction.splits) {
       // SPLIT TRANSACTION: Update category spending for each split
-      console.log('Processing split transaction category updates:', newTransaction.splits);
+      console.log('Processing split transaction category updates:', createdTransaction.splits);
 
-      newTransaction.splits.forEach(split => {
+      createdTransaction.splits.forEach(split => {
         if (split.categoryId && split.amount < 0) {
           // Only track spending for expense splits (negative amounts)
           setCategories(prev => prev.map(category =>
@@ -49,24 +66,24 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
               }
               : category
           ));
-          console.log(`Updated category ${split.categoryId} spending by $${Math.abs(split.amount)}`);
+          console.log(`Updated category ${split.categoryId} spending by ${Math.abs(split.amount)}`);
         }
       });
-    } else if (newTransaction.categoryId && newTransaction.amount < 0 && !newTransaction.transferAccountId) {
+    } else if (createdTransaction.categoryId && createdTransaction.amount < 0 && !createdTransaction.transferAccountId) {
       // REGULAR EXPENSE: Update category spending
       setCategories(prev => prev.map(category =>
-        category.id === newTransaction.categoryId
+        category.id === createdTransaction.categoryId
           ? {
             ...category,
-            spent: (category.spent || 0) + Math.abs(newTransaction.amount)
+            spent: (category.spent || 0) + Math.abs(createdTransaction.amount)
           }
           : category
       ));
-      console.log(`Updated category ${newTransaction.categoryId} spending by $${Math.abs(newTransaction.amount)}`);
+      console.log(`Updated category ${createdTransaction.categoryId} spending by ${Math.abs(createdTransaction.amount)}`);
     }
 
-    return newTransaction;
-  }, [transactions, setTransactions, setAccounts, setCategories]);
+    return createdTransaction;
+  }, [setTransactions, setAccounts, setCategories]);
 
   /**
    * Update an existing transaction with enhanced split support
