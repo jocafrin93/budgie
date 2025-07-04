@@ -1356,6 +1356,8 @@ const TransactionsTab = ({
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [isAddingTransaction, setIsAddingTransaction] = useState(false);
     const [newTransaction, setNewTransaction] = useState({});
+    const [showConversionWarning, setShowConversionWarning] = useState(null);
+
 
     // Column widths with account column
     const [columnWidths, setColumnWidths] = useState({
@@ -1484,70 +1486,34 @@ const TransactionsTab = ({
         setNewTransaction({});
     };
 
+    // Enhanced saveTransaction function that handles ALL conversion types
     const saveTransaction = () => {
         const outflowAmount = parseFloat(newTransaction.outflow) || 0;
         const inflowAmount = parseFloat(newTransaction.inflow) || 0;
         const amount = outflowAmount > 0 ? -outflowAmount : inflowAmount;
 
+        // Build base transaction data with safe defaults
         let transactionData = {
             date: newTransaction.date,
             payee: newTransaction.isTransfer ? '' : newTransaction.payee,
             memo: newTransaction.memo,
             amount: amount,
-            isCleared: newTransaction.isCleared,
+            isCleared: newTransaction.isCleared || false,
             accountId: parseInt(newTransaction.accountId),
             transferAccountId: newTransaction.isTransfer
                 ? parseInt(newTransaction.transferAccountId)
                 : null,
-            isSplit: newTransaction.isSplit
+            isSplit: newTransaction.isSplit || false
         };
-        // For transfers, create two transactions
-        if (newTransaction.isTransfer && newTransaction.transferAccountId) {
-            const fromAccount = accounts.find(acc => acc.id === parseInt(newTransaction.accountId));
-            const toAccount = accounts.find(acc => acc.id === parseInt(newTransaction.transferAccountId));
 
-            // Transaction 1: Debit from source account
-            const sourceTransaction = {
-                ...transactionData,
-                payee: `Transfer to ${toAccount?.name || 'Unknown'}`,
-                amount: -Math.abs(amount), // Always negative for source
-                accountId: parseInt(newTransaction.accountId),
-                transferAccountId: parseInt(newTransaction.transferAccountId)
-            };
-
-            // Transaction 2: Credit to destination account  
-            const destTransaction = {
-                ...transactionData,
-                payee: `Transfer from ${fromAccount?.name || 'Unknown'}`,
-                amount: Math.abs(amount), // Always positive for destination
-                accountId: parseInt(newTransaction.transferAccountId),
-                transferAccountId: parseInt(newTransaction.accountId)
-            };
-
-            // Add both transactions
-            console.log('Calling onAddTransaction for sourceTransaction...');
-            onAddTransaction(sourceTransaction);
-            console.log('Calling onAddTransaction for destTransaction...');
-            onAddTransaction(destTransaction);
-            console.log('Both onAddTransaction calls completed');
-        } else {
-            // Regular transaction
-            onAddTransaction(transactionData);
-        }
-
-        // Handle split transactions
-        if (
-            newTransaction.isSplit &&
-            newTransaction.splits &&
-            newTransaction.splits.length > 0
-        ) {
+        // Handle split transactions FIRST
+        if (newTransaction.isSplit && newTransaction.splits && newTransaction.splits.length > 0) {
             transactionData = {
                 ...transactionData,
                 splits: newTransaction.splits.map((split) => {
-                    const splitAmount =
-                        typeof split.amount === 'number'
-                            ? split.amount
-                            : parseFloat(split.amount) || 0;
+                    const splitAmount = typeof split.amount === 'number'
+                        ? split.amount
+                        : parseFloat(split.amount) || 0;
                     return {
                         amount: splitAmount,
                         categoryId: parseInt(split.categoryId) || null,
@@ -1555,9 +1521,7 @@ const TransactionsTab = ({
                     };
                 })
             };
-        }
-        // Handle regular transactions
-        else {
+        } else {
             transactionData = {
                 ...transactionData,
                 categoryId: newTransaction.categoryId
@@ -1566,60 +1530,208 @@ const TransactionsTab = ({
             };
         }
 
-
         if (editingTransaction) {
-            onEditTransaction({ ...transactionData, id: editingTransaction });
+            // EDITING EXISTING TRANSACTION
+            const originalTransaction = transactions.find(t => t.id === editingTransaction);
+
+            if (originalTransaction) {
+                // Determine transaction types
+                const wasTransfer = !!originalTransaction.transferAccountId;
+                const wasSplit = !!originalTransaction.isSplit && originalTransaction.splits?.length > 0;
+                const isNowTransfer = newTransaction.isTransfer && newTransaction.transferAccountId;
+                const isNowSplit = newTransaction.isSplit && newTransaction.splits?.length > 0;
+
+                // Determine conversion type and show warning if needed
+                const conversionType = getConversionType(wasTransfer, wasSplit, isNowTransfer, isNowSplit);
+
+                if (conversionType !== 'none' && !showConversionWarning) {
+                    const warningMessage = getConversionWarningMessage(conversionType);
+                    setShowConversionWarning({
+                        conversionType,
+                        message: warningMessage,
+                        onConfirm: () => {
+                            setShowConversionWarning(null);
+                            handleTransactionConversion(originalTransaction, transactionData, conversionType);
+                        },
+                        onCancel: () => setShowConversionWarning(null)
+                    });
+                    return; // Wait for user confirmation
+                } else if (conversionType === 'none') {
+                    // No conversion needed, simple update
+                    onEditTransaction({ ...transactionData, id: editingTransaction });
+                }
+            }
         } else {
-            // For transfers, create two transactions
+            // ADDING NEW TRANSACTION (unchanged logic)
             if (newTransaction.isTransfer && newTransaction.transferAccountId) {
-                console.log('Creating transfer transactions...');
-                console.log('isTransfer:', newTransaction.isTransfer);
-                console.log('transferAccountId:', newTransaction.transferAccountId);
-                console.log('All accounts:', accounts.map(acc => ({ id: acc.id, name: acc.name })));
-                console.log('newTransaction.accountId:', newTransaction.accountId);
-                console.log('newTransaction.transferAccountId:', newTransaction.transferAccountId);
-
-                const fromAccount = accounts.find(acc => acc.id === parseInt(newTransaction.accountId));
-                const toAccount = accounts.find(acc => acc.id === parseInt(newTransaction.transferAccountId));
-
-                console.log('fromAccount:', fromAccount);
-                console.log('toAccount:', toAccount);
-
-                // Transaction 1: Debit from source account
-                const sourceTransaction = {
-                    ...transactionData,
-                    payee: `Transfer to ${toAccount?.name || 'Unknown'}`,
-                    amount: -Math.abs(amount), // Always negative for source
-                    accountId: parseInt(newTransaction.accountId),
-                    transferAccountId: parseInt(newTransaction.transferAccountId)
-                };
-
-                // Transaction 2: Credit to destination account  
-                const destTransaction = {
-                    ...transactionData,
-                    payee: `Transfer from ${fromAccount?.name || 'Unknown'}`,
-                    amount: Math.abs(amount), // Always positive for destination
-                    accountId: parseInt(newTransaction.transferAccountId),
-                    transferAccountId: parseInt(newTransaction.accountId)
-                };
-
-                console.log('sourceTransaction:', sourceTransaction);
-                console.log('destTransaction:', destTransaction);
-
-                // Add both transactions
-                console.log('Calling onAddTransaction for sourceTransaction...');
-                onAddTransaction(sourceTransaction);
-                console.log('Calling onAddTransaction for destTransaction...');
-                onAddTransaction(destTransaction);
-                console.log('Both onAddTransaction calls completed');
+                console.log('Creating new transfer transaction...');
+                onAddTransaction(transactionData);
             } else {
-                console.log('Creating regular transaction...');
-                // Regular transaction
+                console.log('Creating new regular transaction...');
                 onAddTransaction(transactionData);
             }
         }
+
         cancelEdit();
     };
+
+    // Helper function: Determine conversion type
+    const getConversionType = (wasTransfer, wasSplit, isNowTransfer, isNowSplit) => {
+        if (wasTransfer && !isNowTransfer && !isNowSplit) {
+            return 'transfer-to-regular';
+        } else if (wasTransfer && !isNowTransfer && isNowSplit) {
+            return 'transfer-to-split';
+        } else if (!wasTransfer && wasSplit && isNowTransfer) {
+            return 'split-to-transfer';
+        } else if (!wasTransfer && !wasSplit && isNowTransfer) {
+            return 'regular-to-transfer';
+        } else if (wasTransfer && isNowTransfer) {
+            return 'transfer-to-transfer';
+        } else if (!wasTransfer && wasSplit && !isNowTransfer && !isNowSplit) {
+            return 'split-to-regular';
+        } else if (!wasTransfer && !wasSplit && !isNowTransfer && isNowSplit) {
+            return 'regular-to-split';
+        } else if (!wasTransfer && wasSplit && isNowSplit) {
+            return 'split-to-split';
+        }
+        return 'none'; // No conversion needed
+    };
+
+    // Helper function: Get warning message for conversion type
+    const getConversionWarningMessage = (conversionType) => {
+        switch (conversionType) {
+            case 'transfer-to-regular':
+                return "Converting this transfer to a regular transaction will delete the linked transaction. Continue?";
+            case 'transfer-to-split':
+                return "Converting this transfer to a split transaction will delete the linked transaction. Continue?";
+            case 'split-to-transfer':
+                return "Converting this split transaction to a transfer will remove all split categories and create a transfer instead. Continue?";
+            case 'regular-to-transfer':
+                return "Converting this to a transfer will replace the current transaction with a transfer between accounts. Continue?";
+            case 'transfer-to-transfer':
+                return "This will update both sides of the transfer. Continue?";
+            case 'split-to-regular':
+                return "Converting this split transaction to a regular transaction will remove all splits except the category information. Continue?";
+            case 'regular-to-split':
+                return "Converting this to a split transaction will replace the single category with multiple splits. Continue?";
+            case 'split-to-split':
+                return "This will update the split information. Continue?";
+            default:
+                return "This will modify the transaction. Continue?";
+        }
+    };
+
+    // Helper function: Handle all conversion types
+    const handleTransactionConversion = (originalTransaction, newTransactionData, conversionType) => {
+        console.log('Handling conversion:', conversionType);
+
+        switch (conversionType) {
+            case 'transfer-to-regular':
+            case 'transfer-to-split':
+                handleTransferToNonTransfer(originalTransaction, newTransactionData);
+                break;
+
+            case 'split-to-transfer':
+            case 'regular-to-transfer':
+                handleNonTransferToTransfer(originalTransaction, newTransactionData);
+                break;
+
+            case 'transfer-to-transfer':
+                handleTransferToTransferEdit(originalTransaction, newTransactionData);
+                break;
+
+            case 'split-to-regular':
+            case 'regular-to-split':
+            case 'split-to-split':
+                // These are simple updates - no linked transactions to worry about
+                onEditTransaction({ ...newTransactionData, id: originalTransaction.id });
+                break;
+
+            default:
+                console.error('Unknown conversion type:', conversionType);
+                onEditTransaction({ ...newTransactionData, id: originalTransaction.id });
+        }
+    };
+
+    // Helper function: Convert any transfer to non-transfer
+    const handleTransferToNonTransfer = (originalTransaction, newTransactionData) => {
+        console.log('Converting transfer to non-transfer');
+
+        // Find and delete the linked transaction
+        const linkedTransaction = transactions.find(t =>
+            t.id !== originalTransaction.id &&
+            t.transferAccountId === originalTransaction.accountId &&
+            t.accountId === originalTransaction.transferAccountId
+        );
+
+        if (linkedTransaction) {
+            console.log('Deleting linked transaction:', linkedTransaction.id);
+            onDeleteTransaction(linkedTransaction.id);
+        }
+
+        // Update the original transaction (could be regular or split now)
+        onEditTransaction({
+            ...newTransactionData,
+            id: originalTransaction.id,
+            transferAccountId: null  // Remove transfer reference
+        });
+    };
+
+    // Helper function: Convert any non-transfer to transfer
+    const handleNonTransferToTransfer = (originalTransaction, newTransactionData) => {
+        console.log('Converting non-transfer to transfer');
+
+        // Delete the original transaction (whether it was regular or split)
+        onDeleteTransaction(originalTransaction.id);
+
+        // Create new transfer (the hook will create both sides)
+        // Make sure to clean transfer data of any split information
+        const cleanTransferData = {
+            ...newTransactionData,
+            isSplit: false,
+            splits: undefined,
+            categoryId: null  // Transfers don't have categories
+        };
+
+        onAddTransaction(cleanTransferData);
+    };
+
+    // Helper function: Edit transfer transaction (unchanged from before)
+    const handleTransferToTransferEdit = (originalTransaction, newTransactionData) => {
+        console.log('Editing transfer transaction');
+
+        // Find the linked transaction
+        const linkedTransaction = transactions.find(t =>
+            t.id !== originalTransaction.id &&
+            t.transferAccountId === originalTransaction.accountId &&
+            t.accountId === originalTransaction.transferAccountId
+        );
+
+        if (linkedTransaction) {
+            // Update both transactions
+            onEditTransaction({
+                ...newTransactionData,
+                id: originalTransaction.id
+            });
+
+            // Update the linked transaction with opposite data
+            const linkedUpdate = {
+                ...newTransactionData,
+                id: linkedTransaction.id,
+                amount: -newTransactionData.amount,
+                accountId: newTransactionData.transferAccountId,
+                transferAccountId: newTransactionData.accountId,
+                payee: newTransactionData.payee?.replace('Transfer to', 'Transfer from') || 'Transfer'
+            };
+
+            onEditTransaction(linkedUpdate);
+        } else {
+            // Fallback: treat as conversion to new transfer
+            handleNonTransferToTransfer(originalTransaction, newTransactionData);
+        }
+    };
+
+
 
     const saveAndAddAnother = () => {
         saveTransaction();
@@ -2100,6 +2212,8 @@ const TransactionsTab = ({
                 </div>
             </div>
 
+
+
             {/* Desktop Table */}
             <div className="bg-theme-primary rounded-lg shadow overflow-hidden">
                 <table className="w-full">
@@ -2324,6 +2438,30 @@ const TransactionsTab = ({
                     </tbody>
                 </table>
             </div>
+
+            {/* ADD THE WARNING DIALOG HERE - DESKTOP SECTION */}
+            {showConversionWarning && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-theme-primary p-6 rounded-lg max-w-md border border-theme-secondary">
+                        <h3 className="text-lg font-medium mb-4 text-theme-primary">Confirm Transaction Change</h3>
+                        <p className="text-theme-secondary mb-6">{showConversionWarning.message}</p>
+                        <div className="flex space-x-3 justify-end">
+                            <button
+                                onClick={showConversionWarning.onCancel}
+                                className="px-4 py-2 btn-secondary rounded"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={showConversionWarning.onConfirm}
+                                className="px-4 py-2 btn-primary rounded"
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
