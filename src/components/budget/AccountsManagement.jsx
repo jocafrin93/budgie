@@ -156,7 +156,7 @@ const AccountFormModal = ({
                             <Button type="button" onClick={onClose} variant="flat">
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="solid">
+                            <Button type="submit" variant="filled">
                                 {isEdit ? 'Update' : 'Create'} Account
                             </Button>
                         </div>
@@ -231,7 +231,7 @@ const BalanceUpdateModal = ({
                             <Button type="button" onClick={onClose} variant="flat">
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="solid">
+                            <Button type="submit" variant="filled">
                                 Update Balance
                             </Button>
                         </div>
@@ -339,7 +339,7 @@ export default function AccountsManagement({
 
                 <Button
                     onClick={() => setShowModal(true)}
-                    variant="solid"
+                    variant="filled"
                     size="sm"
                     className="flex items-center space-x-2"
                 >
@@ -630,7 +630,7 @@ export default function AccountsManagement({
                     </p>
                     <Button
                         onClick={() => setShowModal(true)}
-                        variant="solid"
+                        variant="filled"
                         size="sm"
                     >
                         Add Your First Account
