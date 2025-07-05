@@ -39,6 +39,37 @@ import { TableSortIcon } from 'components/shared/table/TableSortIcon';
 // Custom Components
 import CurrencyField from 'components/form/CurrencyField';
 
+// Inline Icon Swap Components
+const CircleCheck = ({ className = "w-5 h-5", checked = false, ...props }) => (
+    <svg
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        viewBox="0 0 24 24"
+        {...props}
+    >
+        <circle cx="12" cy="12" r="10" className={checked ? "text-green-600" : "text-gray-400"} />
+        <path d="m9 12 2 2 4-4" className={checked ? "text-green-600" : "text-gray-400"} />
+    </svg>
+);
+
+const IconSwap = ({ isOn, onChange, onIcon, offIcon, className = "" }) => (
+    <button
+        type="button"
+        onClick={() => onChange(!isOn)}
+        className={`relative inline-grid place-content-center cursor-pointer transition-colors ${className}`}
+        title={isOn ? "Mark as Pending" : "Mark as Cleared"}
+    >
+        <div className={`col-start-1 row-start-1 transition-opacity duration-300 ${isOn ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
+            {onIcon}
+        </div>
+        <div className={`col-start-1 row-start-1 transition-opacity duration-300 ${!isOn ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
+            {offIcon}
+        </div>
+    </button>
+);
+
 // Inline PayeeAutocomplete Component with Tab functionality
 const PayeeAutocompleteInline = ({
     label,
@@ -550,12 +581,18 @@ const TransactionFormModal = ({
                             onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
                         />
 
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                checked={formData.isCleared}
-                                onChange={(e) => setFormData(prev => ({ ...prev, isCleared: e.target.checked }))}
+                        <div className="flex items-center space-x-3">
+                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                            <IconSwap
+                                isOn={formData.isCleared}
+                                onChange={(newStatus) => setFormData(prev => ({ ...prev, isCleared: newStatus }))}
+                                onIcon={<CircleCheck className="w-5 h-5" checked={true} />}
+                                offIcon={<CircleCheck className="w-5 h-5" checked={false} />}
+                                className="p-1"
                             />
-                            <label>Cleared</label>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                                {formData.isCleared ? 'Cleared' : 'Pending'}
+                            </span>
                         </div>
 
                         {/* Split Transaction Section */}
@@ -759,6 +796,14 @@ export default function TransactionsTab({
         }).format(Math.abs(amount));
     };
 
+    // Handle cleared status toggle
+    const handleToggleCleared = (transactionId, currentStatus) => {
+        const transaction = transactions.find(t => t.id === transactionId);
+        if (transaction) {
+            onEditTransaction({ ...transaction, isCleared: !currentStatus });
+        }
+    };
+
     // Table columns definition
     const columns = useMemo(() => {
         // Get account name
@@ -856,10 +901,14 @@ export default function TransactionsTab({
                     { value: true, label: 'Cleared' },
                     { value: false, label: 'Pending' }
                 ],
-                cell: ({ getValue }) => (
-                    <Badge variant={getValue() ? 'success' : 'warning'} className="text-xs">
-                        {getValue() ? 'Cleared' : 'Pending'}
-                    </Badge>
+                cell: ({ getValue, row }) => (
+                    <IconSwap
+                        isOn={getValue()}
+                        onChange={() => handleToggleCleared(row.original.id, getValue())}
+                        onIcon={<CircleCheck className="w-5 h-5" checked={true} />}
+                        offIcon={<CircleCheck className="w-5 h-5" checked={false} />}
+                        className="p-1"
+                    />
                 ),
             },
             {
@@ -905,7 +954,7 @@ export default function TransactionsTab({
                 ),
             },
         ];
-    }, [accounts, categories, onDeleteTransaction]);
+    }, [accounts, categories, onDeleteTransaction, handleToggleCleared]);
 
     // Filter transactions by account if specified
     const filteredTransactions = useMemo(() => {
