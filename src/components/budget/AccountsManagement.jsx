@@ -384,119 +384,239 @@ export default function AccountsManagement({
                 </Card>
             </div>
 
-            {/* Accounts Table */}
-            <Card className="overflow-hidden">
-                <div className="overflow-x-auto">
-                    <Table hoverable className="min-w-full">
-                        <THead>
-                            <Tr>
-                                <Th>Account</Th>
-                                <Th>Type</Th>
-                                <Th>Institution</Th>
-                                <Th>Balance</Th>
-                                <Th>Status</Th>
-                                <Th>Actions</Th>
-                            </Tr>
-                        </THead>
+            {/* Accounts List - Responsive Design */}
 
-                        <TBody>
-                            {accounts.map((account) => (
-                                <Tr key={account.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                    <Td>
-                                        <div className="flex items-center space-x-3">
-                                            <div className="flex-shrink-0">
-                                                {getAccountTypeIcon(account.type)}
-                                            </div>
-                                            <div>
-                                                <div className="font-medium text-gray-900 dark:text-white">
-                                                    {account.name}
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+                <Card className="overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <Table hoverable className="min-w-full">
+                            <THead>
+                                <Tr>
+                                    <Th>Account</Th>
+                                    <Th>Type</Th>
+                                    <Th>Institution</Th>
+                                    <Th>Balance</Th>
+                                    <Th>Status</Th>
+                                    <Th>Actions</Th>
+                                </Tr>
+                            </THead>
+
+                            <TBody>
+                                {accounts.map((account) => (
+                                    <Tr key={account.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                        <Td>
+                                            <div className="flex items-center space-x-3">
+                                                <div className="flex-shrink-0">
+                                                    {getAccountTypeIcon(account.type)}
                                                 </div>
-                                                {account.accountNumber && (
-                                                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                                                        {account.accountNumber}
+                                                <div>
+                                                    <div className="font-medium text-gray-900 dark:text-white">
+                                                        {account.name}
                                                     </div>
-                                                )}
+                                                    {account.accountNumber && (
+                                                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                            {account.accountNumber}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </Td>
+                                        </Td>
 
-                                    <Td>
+                                        <Td>
+                                            <Badge variant={getAccountTypeBadge(account.type)} className="text-xs">
+                                                {account.type.charAt(0).toUpperCase() + account.type.slice(1)}
+                                            </Badge>
+                                        </Td>
+
+                                        <Td>
+                                            <div className="text-sm text-gray-900 dark:text-white">
+                                                {account.institution || '—'}
+                                            </div>
+                                        </Td>
+
+                                        <Td>
+                                            <div className="flex items-center space-x-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setBalanceAccount(account);
+                                                        setShowBalanceModal(true);
+                                                    }}
+                                                    className={`font-medium hover:underline cursor-pointer ${account.balance >= 0 ? 'text-green-600 hover:text-green-700' : 'text-red-600 hover:text-red-700'}`}
+                                                    title="Click to update balance"
+                                                >
+                                                    {formatCurrency(account.balance)}
+                                                </button>
+                                            </div>
+                                        </Td>
+
+                                        <Td>
+                                            <div className="flex items-center space-x-2">
+                                                <Button
+                                                    onClick={() => onToggleAccountActive(account.id)}
+                                                    variant="flat"
+                                                    size="xs"
+                                                    title={account.isActive ? 'Deactivate Account' : 'Activate Account'}
+                                                >
+                                                    {account.isActive ? (
+                                                        <TbEye className="size-3 text-green-600" />
+                                                    ) : (
+                                                        <TbEyeOff className="size-3 text-gray-400" />
+                                                    )}
+                                                </Button>
+                                                <Badge variant={account.isActive ? 'success' : 'secondary'} className="text-xs">
+                                                    {account.isActive ? 'Active' : 'Inactive'}
+                                                </Badge>
+                                            </div>
+                                        </Td>
+
+                                        <Td>
+                                            <div className="flex items-center space-x-2">
+                                                <Button
+                                                    onClick={() => {
+                                                        setEditingAccount(account);
+                                                        setShowModal(true);
+                                                    }}
+                                                    variant="flat"
+                                                    size="xs"
+                                                    title="Edit Account"
+                                                >
+                                                    <TbEdit className="size-3" />
+                                                </Button>
+                                                <Button
+                                                    onClick={() => onDeleteAccount(account.id)}
+                                                    variant="flat"
+                                                    size="xs"
+                                                    title="Delete Account"
+                                                    className="text-red-600 hover:text-red-700"
+                                                >
+                                                    <TbTrash className="size-3" />
+                                                </Button>
+                                            </div>
+                                        </Td>
+                                    </Tr>
+                                ))}
+                            </TBody>
+                        </Table>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden space-y-4">
+                {accounts.map((account) => (
+                    <Card key={account.id} className="p-4 hover:shadow-md transition-shadow">
+                        {/* Account Header */}
+                        <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center space-x-3 flex-1">
+                                <div className="flex-shrink-0 p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
+                                    {getAccountTypeIcon(account.type)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                                        {account.name}
+                                    </h3>
+                                    <div className="flex items-center space-x-2 mt-1">
                                         <Badge variant={getAccountTypeBadge(account.type)} className="text-xs">
                                             {account.type.charAt(0).toUpperCase() + account.type.slice(1)}
                                         </Badge>
-                                    </Td>
+                                        <Badge variant={account.isActive ? 'success' : 'secondary'} className="text-xs">
+                                            {account.isActive ? 'Active' : 'Inactive'}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </div>
 
-                                    <Td>
-                                        <div className="text-sm text-gray-900 dark:text-white">
-                                            {account.institution || '—'}
-                                        </div>
-                                    </Td>
+                            {/* Quick Actions */}
+                            <div className="flex items-center space-x-1 ml-2">
+                                <Button
+                                    onClick={() => onToggleAccountActive(account.id)}
+                                    variant="flat"
+                                    size="sm"
+                                    title={account.isActive ? 'Deactivate Account' : 'Activate Account'}
+                                >
+                                    {account.isActive ? (
+                                        <TbEye className="size-4 text-green-600" />
+                                    ) : (
+                                        <TbEyeOff className="size-4 text-gray-400" />
+                                    )}
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        setEditingAccount(account);
+                                        setShowModal(true);
+                                    }}
+                                    variant="flat"
+                                    size="sm"
+                                    title="Edit Account"
+                                >
+                                    <TbEdit className="size-4" />
+                                </Button>
+                                <Button
+                                    onClick={() => onDeleteAccount(account.id)}
+                                    variant="flat"
+                                    size="sm"
+                                    title="Delete Account"
+                                    className="text-red-600 hover:text-red-700"
+                                >
+                                    <TbTrash className="size-4" />
+                                </Button>
+                            </div>
+                        </div>
 
-                                    <Td>
-                                        <div className="flex items-center space-x-2">
-                                            <button
-                                                onClick={() => {
-                                                    setBalanceAccount(account);
-                                                    setShowBalanceModal(true);
-                                                }}
-                                                className={`font-medium hover:underline cursor-pointer ${account.balance >= 0 ? 'text-green-600 hover:text-green-700' : 'text-red-600 hover:text-red-700'}`}
-                                                title="Click to update balance"
-                                            >
-                                                {formatCurrency(account.balance)}
-                                            </button>
-                                        </div>
-                                    </Td>
+                        {/* Account Details */}
+                        <div className="space-y-3">
+                            {/* Balance - Prominent Display */}
+                            <div className="text-center py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Balance</div>
+                                <button
+                                    onClick={() => {
+                                        setBalanceAccount(account);
+                                        setShowBalanceModal(true);
+                                    }}
+                                    className={`text-2xl font-bold hover:underline cursor-pointer transition-colors ${account.balance >= 0 ? 'text-green-600 hover:text-green-700' : 'text-red-600 hover:text-red-700'}`}
+                                    title="Tap to update balance"
+                                >
+                                    {formatCurrency(account.balance)}
+                                </button>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    Tap to edit
+                                </div>
+                            </div>
 
-                                    <Td>
-                                        <div className="flex items-center space-x-2">
-                                            <Button
-                                                onClick={() => onToggleAccountActive(account.id)}
-                                                variant="flat"
-                                                size="xs"
-                                                title={account.isActive ? 'Deactivate Account' : 'Activate Account'}
-                                            >
-                                                {account.isActive ? (
-                                                    <TbEye className="size-3 text-green-600" />
-                                                ) : (
-                                                    <TbEyeOff className="size-3 text-gray-400" />
-                                                )}
-                                            </Button>
-                                            <Badge variant={account.isActive ? 'success' : 'secondary'} className="text-xs">
-                                                {account.isActive ? 'Active' : 'Inactive'}
-                                            </Badge>
+                            {/* Additional Info */}
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                {account.institution && (
+                                    <div>
+                                        <div className="text-gray-600 dark:text-gray-400">Institution</div>
+                                        <div className="font-medium text-gray-900 dark:text-white">
+                                            {account.institution}
                                         </div>
-                                    </Td>
+                                    </div>
+                                )}
+                                {account.accountNumber && (
+                                    <div>
+                                        <div className="text-gray-600 dark:text-gray-400">Account</div>
+                                        <div className="font-medium text-gray-900 dark:text-white">
+                                            {account.accountNumber}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
-                                    <Td>
-                                        <div className="flex items-center space-x-2">
-                                            <Button
-                                                onClick={() => {
-                                                    setEditingAccount(account);
-                                                    setShowModal(true);
-                                                }}
-                                                variant="flat"
-                                                size="xs"
-                                                title="Edit Account"
-                                            >
-                                                <TbEdit className="size-3" />
-                                            </Button>
-                                            <Button
-                                                onClick={() => onDeleteAccount(account.id)}
-                                                variant="flat"
-                                                size="xs"
-                                                title="Delete Account"
-                                                className="text-red-600 hover:text-red-700"
-                                            >
-                                                <TbTrash className="size-3" />
-                                            </Button>
-                                        </div>
-                                    </Td>
-                                </Tr>
-                            ))}
-                        </TBody>
-                    </Table>
-                </div>
-            </Card>
+                            {/* Notes */}
+                            {account.notes && (
+                                <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Notes</div>
+                                    <div className="text-sm text-gray-900 dark:text-white">
+                                        {account.notes}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </Card>
+                ))}
+            </div>
 
             {/* Empty State */}
             {accounts.length === 0 && (
