@@ -35,6 +35,45 @@ const protectedRoutes = {
             },
           ],
         },
+        {
+          path: "budget",
+          children: [
+            {
+              index: true,
+              element: <Navigate to="/budget/accounts" />,
+            },
+            {
+              path: "accounts",
+              lazy: async () => ({
+                Component: (await import("app/pages/budget/accounts")).default,
+              }),
+            },
+            {
+              path: "overview",
+              lazy: async () => ({
+                Component: (await import("app/pages/budget/overview")).default,
+              }),
+            },
+            {
+              path: "transactions",
+              lazy: async () => ({
+                Component: (await import("app/pages/budget/transactions")).default,
+              }),
+            },
+            {
+              path: "calendar",
+              lazy: async () => ({
+                Component: (await import("app/pages/budget/calendar")).default,
+              }),
+            },
+            {
+              path: "settings",
+              lazy: async () => ({
+                Component: (await import("app/pages/budget/settings")).default,
+              }),
+            },
+          ],
+        },
       ],
     },
     // The app layout supports only the main layout. Avoid using it for other layouts.
@@ -74,3 +113,4 @@ const protectedRoutes = {
 };
 
 export { protectedRoutes };
+
