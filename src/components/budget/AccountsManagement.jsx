@@ -37,15 +37,31 @@ const AccountFormModal = ({
     onSave,
     isEdit = false
 }) => {
-    const [formData, setFormData] = useState(account || {
-        name: '',
-        type: 'checking',
-        balance: 0,
-        institution: '',
-        accountNumber: '',
-        isActive: true,
-        notes: ''
-    });
+    // Initialize form data based on whether we're editing or creating
+    const getInitialFormData = () => {
+        if (isEdit && account) {
+            return {
+                name: account.name || '',
+                type: account.type || 'checking',
+                balance: account.balance || 0,
+                institution: account.institution || '',
+                accountNumber: account.accountNumber || '',
+                isActive: account.isActive ?? true,
+                notes: account.notes || ''
+            };
+        }
+        return {
+            name: '',
+            type: 'checking',
+            balance: 0,
+            institution: '',
+            accountNumber: '',
+            isActive: true,
+            notes: ''
+        };
+    };
+
+    const [formData, setFormData] = useState(() => getInitialFormData());
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -102,7 +118,7 @@ const AccountFormModal = ({
                         <CurrencyField
                             label="Current Balance"
                             value={formData.balance}
-                            onChange={(value) => setFormData(prev => ({ ...prev, balance: value }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, balance: parseFloat(e.target.value) || 0 }))}
                             required
                         />
 
@@ -158,8 +174,14 @@ const BalanceUpdateModal = ({
     account,
     onSave
 }) => {
-    const [newBalance, setNewBalance] = useState(account?.balance || 0);
+    const [newBalance, setNewBalance] = useState(0);
     const [reason, setReason] = useState('');
+
+    // Initialize balance when modal opens - use conditional state update
+    if (isOpen && account && newBalance !== account.balance) {
+        setNewBalance(account.balance);
+        setReason('');
+    }
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -194,7 +216,7 @@ const BalanceUpdateModal = ({
                         <CurrencyField
                             label="New Balance"
                             value={newBalance}
-                            onChange={(value) => setNewBalance(value)}
+                            onChange={(e) => setNewBalance(parseFloat(e.target.value) || 0)}
                             required
                         />
 
@@ -412,20 +434,16 @@ export default function AccountsManagement({
 
                                     <Td>
                                         <div className="flex items-center space-x-2">
-                                            <span className={`font-medium ${account.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                {formatCurrency(account.balance)}
-                                            </span>
-                                            <Button
+                                            <button
                                                 onClick={() => {
                                                     setBalanceAccount(account);
                                                     setShowBalanceModal(true);
                                                 }}
-                                                variant="flat"
-                                                size="xs"
-                                                title="Update Balance"
+                                                className={`font-medium hover:underline cursor-pointer ${account.balance >= 0 ? 'text-green-600 hover:text-green-700' : 'text-red-600 hover:text-red-700'}`}
+                                                title="Click to update balance"
                                             >
-                                                <TbEdit className="size-3" />
-                                            </Button>
+                                                {formatCurrency(account.balance)}
+                                            </button>
                                         </div>
                                     </Td>
 
@@ -502,6 +520,7 @@ export default function AccountsManagement({
 
             {/* Modals */}
             <AccountFormModal
+                key={editingAccount ? `edit-${editingAccount.id}` : 'add'}
                 isOpen={showModal}
                 onClose={handleCloseModal}
                 account={editingAccount}

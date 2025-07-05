@@ -173,7 +173,7 @@ const TransactionFormModal = ({
                         <CurrencyField
                             label="Amount"
                             value={formData.amount}
-                            onChange={(value) => setFormData(prev => ({ ...prev, amount: value }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
                             required
                         />
 
@@ -241,7 +241,7 @@ const TransactionFormModal = ({
 
                                                 <CurrencyField
                                                     value={split.amount}
-                                                    onChange={(value) => updateSplit(index, 'amount', value)}
+                                                    onChange={(e) => updateSplit(index, 'amount', parseFloat(e.target.value) || 0)}
                                                     placeholder="Amount"
                                                 />
 
