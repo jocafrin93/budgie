@@ -419,8 +419,8 @@ const TransactionFormModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40">
+            <Card skin="shadow" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold">
@@ -472,31 +472,22 @@ const TransactionFormModal = ({
                         {/* Transaction Type Toggle */}
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Transaction Type</label>
-                                <div className="flex items-center space-x-4">
-                                    <label className="flex items-center space-x-2">
-                                        <input
-                                            type="radio"
-                                            name="transactionType"
-                                            value="outflow"
-                                            checked={transactionType === 'outflow'}
-                                            onChange={(e) => setTransactionType(e.target.value)}
-                                            className="text-red-600"
-                                        />
-                                        <span className="text-red-600">💸 Outflow (Expense)</span>
-                                    </label>
-                                    <label className="flex items-center space-x-2">
-                                        <input
-                                            type="radio"
-                                            name="transactionType"
-                                            value="inflow"
-                                            checked={transactionType === 'inflow'}
-                                            onChange={(e) => setTransactionType(e.target.value)}
-                                            className="text-green-600"
-                                        />
-                                        <span className="text-green-600">💰 Inflow (Income)</span>
-                                    </label>
-                                </div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction Type</label>
+                                <label htmlFor="transactionTypeToggle" className="inline-flex items-center p-2 rounded-md cursor-pointer dark:text-gray-100">
+                                    <input
+                                        id="transactionTypeToggle"
+                                        type="checkbox"
+                                        className="hidden peer"
+                                        checked={transactionType === 'inflow'}
+                                        onChange={(e) => setTransactionType(e.target.checked ? 'inflow' : 'outflow')}
+                                    />
+                                    <span className="px-4 py-2 rounded-l-md bg-red-500 text-white peer-checked:bg-gray-300 peer-checked:text-gray-700 dark:bg-red-600 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-300 transition-colors">
+                                        💸 Expense
+                                    </span>
+                                    <span className="px-4 py-2 rounded-r-md bg-gray-300 text-gray-700 peer-checked:bg-green-500 peer-checked:text-white dark:bg-gray-700 dark:text-gray-300 dark:peer-checked:bg-green-600 dark:peer-checked:text-white transition-colors">
+                                        💰 Income
+                                    </span>
+                                </label>
                             </div>
 
                             {/* Transfer Toggle */}
