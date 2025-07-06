@@ -7,7 +7,7 @@ import {
     Plus,
     Unlock
 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { frequencyOptions } from '../../utils/constants';
 import { CurrencyField } from '../form';
 import { Button } from '../ui/Button';
@@ -33,9 +33,9 @@ const UnifiedEnvelopeBudgetView = ({
     onDeleteItem,
     onToggleItemActive,
     onToggleCategoryActive,
-    onMoveItem,
-    onReorderItems,
-    onReorderCategories,
+    // onMoveItem,
+    // onReorderItems,
+    // onReorderCategories,
     monthlyBudgeting = null,
 
     // Optional
@@ -193,7 +193,7 @@ const UnifiedEnvelopeBudgetView = ({
     };
 
     // Pay period urgency calculation
-    const getPayPeriodUrgency = (dateString) => {
+    const getPayPeriodUrgency = useCallback((dateString) => {
         if (!dateString) return null;
 
         const [year, month, day] = dateString.split('-').map(Number);
@@ -211,7 +211,7 @@ const UnifiedEnvelopeBudgetView = ({
         } else {
             return 'future';
         }
-    };
+    }, []);
 
     const getPayPeriodColor = (urgency) => {
         switch (urgency) {
@@ -226,7 +226,7 @@ const UnifiedEnvelopeBudgetView = ({
         }
     };
 
-    const formatDueDate = (dateString) => {
+    const formatDueDate = useCallback((dateString) => {
         if (!dateString) return null;
 
         const [year, month, day] = dateString.split('-').map(Number);
@@ -235,7 +235,7 @@ const UnifiedEnvelopeBudgetView = ({
         const monthStr = date.toLocaleDateString('en-US', { month: 'short' });
         const dayStr = date.getDate();
         return `${monthStr} ${dayStr}`;
-    };
+    }, []);
 
     // Conservative paycheck info
     const getConservativePaycheckInfo = (payFreq) => {
@@ -250,7 +250,7 @@ const UnifiedEnvelopeBudgetView = ({
     };
 
     // Amount display calculation
-    const getAmountDisplayInfo = (item, payFrequency) => {
+    const getAmountDisplayInfo = useCallback((item, payFrequency) => {
         const isGoal = item.type === 'savings-goal';
         const dueDate = item.dueDate ? new Date(item.dueDate) : null;
         const today = new Date();
@@ -341,10 +341,10 @@ const UnifiedEnvelopeBudgetView = ({
             usingConservative: !freqOption || freqOption.isRegular,
             paycheckInfo
         };
-    };
+    }, []);
 
     // Get category data
-    const getCategoryData = (category) => {
+    const getCategoryData = useCallback((category) => {
         const categoryItems = planningItems.filter(item => item.categoryId === category.id);
         const categoryType = category.type || (categoryItems.length <= 1 ? 'single' : 'multiple');
 
@@ -428,7 +428,7 @@ const UnifiedEnvelopeBudgetView = ({
                 dueDateInfo
             };
         }
-    };
+    }, [planningItems, payFrequency, getAmountDisplayInfo, getPayPeriodUrgency, formatDueDate]);
 
     const budgetCategories = useMemo(() => {
         return categories.filter(cat =>
@@ -662,12 +662,12 @@ const UnifiedEnvelopeBudgetView = ({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 dark:divide-dark-600">
-                            {sortedCategories.map((category, index) => (
+                            {sortedCategories.map((category) => (
                                 <CategoryTableRow
                                     key={category.id}
                                     category={category}
                                     categoryData={getCategoryData(category)}
-                                    index={index}
+                                    // index, // TODO: Will be used for DND
                                     sortBy={sortBy}
                                     isExpanded={expandedCategories[category.id]}
                                     onToggleExpand={() => toggleCategoryExpanded(category.id)}
@@ -678,9 +678,9 @@ const UnifiedEnvelopeBudgetView = ({
                                     onDeleteItem={onDeleteItem}
                                     onToggleCategoryActive={onToggleCategoryActive}
                                     onToggleItemActive={onToggleItemActive}
-                                    onMoveItem={onMoveItem}
-                                    onReorderCategories={onReorderCategories}
-                                    onReorderItems={onReorderItems}
+                                    // onMoveItem={onMoveItem}
+                                    // onReorderCategories={onReorderCategories}
+                                    // onReorderItems={onReorderItems}
                                     fundCategory={fundCategory}
                                     transferFunds={transferFunds}
                                     getAmountDisplayInfo={getAmountDisplayInfo}
@@ -741,29 +741,507 @@ const UnifiedEnvelopeBudgetView = ({
     );
 };
 
-// Placeholder components - these will need to be implemented
-const CategoryTableRow = ({ category, categoryData }) => {
+// Category Table Row Component with all functionality
+const CategoryTableRow = ({
+    category,
+    categoryData,
+    // index,
+    sortBy,
+    isExpanded,
+    onToggleExpand,
+    onEditCategory,
+    onDeleteCategory,
+    onAddItem,
+    onEditItem,
+    onDeleteItem,
+    onToggleItemActive,
+    onToggleCategoryActive,
+    // onMoveItem,
+    // onReorderCategories,
+    // onReorderItems,
+    transferFunds,
+    getAmountDisplayInfo,
+    getPayPeriodColor,
+    formatDueDate,
+    getPayPeriodUrgency,
+    payFrequency,
+    categories,
+    monthlyBudgeting,
+    getCategoryMonthData
+}) => {
+    const [showMoveModal, setShowMoveModal] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const isOverspent = (category.available || 0) < 0;
+    const isManualSortMode = sortBy === 'manual';
+
     return (
-        <tr className="hover:bg-gray-50 dark:hover:bg-dark-600">
-            <td className="px-4 py-2 text-sm text-gray-900 dark:text-dark-50">
-                {category.name}
+        <>
+            {/* Main Category Row */}
+            <tr
+                className={`hover:bg-gray-50 dark:hover:bg-dark-600 transition-colors ${isOverspent ? 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500' :
+                    (categoryData.type === 'single' && !categoryData.isActive) ? 'bg-gray-100 dark:bg-dark-600 border-l-4 border-gray-400 dark:border-dark-400 opacity-60' :
+                        'bg-white dark:bg-dark-800'
+                    }`}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
+                {/* Expand/Collapse + Drag Handle */}
+                <td className="px-1 py-2 min-w-0 w-18">
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                        {/* Drag Handle */}
+                        <div
+                            className={`p-0.5 flex-shrink-0 transition-colors ${isManualSortMode
+                                ? 'cursor-grab active:cursor-grabbing text-gray-400 dark:text-dark-500 hover:text-gray-600 dark:hover:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-600 rounded'
+                                : 'cursor-not-allowed text-gray-300 dark:text-dark-600 opacity-50'
+                                }`}
+                            title={
+                                isManualSortMode
+                                    ? "Drag to reorder categories"
+                                    : "Click the unlock button in header to enable reordering"
+                            }
+                        >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                            </svg>
+                        </div>
+
+                        {/* Expand/Collapse Button */}
+                        <button
+                            onClick={onToggleExpand}
+                            className="text-gray-400 dark:text-dark-500 hover:text-gray-600 dark:hover:text-dark-300 p-0.5 flex-shrink-0 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
+                            title="Expand/collapse category"
+                        >
+                            {isExpanded ? (
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            ) : (
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
+                </td>
+
+                {/* Category Name */}
+                <td className="px-4 py-2" style={{ minWidth: '280px' }}>
+                    <div className="flex items-center justify-between">
+                        {/* Left side: Color dot + name + icon */}
+                        <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${category.color || 'bg-gray-400 dark:bg-dark-500'} border border-gray-300 dark:border-dark-500 shadow-sm`}></div>
+
+                            <button
+                                onClick={() => onEditCategory(category)}
+                                className={`font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left ${categoryData.type === 'single' && !categoryData.isActive
+                                    ? 'text-gray-500 dark:text-dark-400'
+                                    : 'text-gray-900 dark:text-dark-50'
+                                    }`}
+                            >
+                                {category.name}
+                            </button>
+                            {categoryData.type === 'multiple' && (
+                                <svg className="w-3 h-3 text-gray-400 dark:text-dark-500 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
+                                </svg>
+                            )}
+                        </div>
+
+                        {/* Right side: Actions aligned to right edge */}
+                        <div className={`flex items-center gap-1 transition-all duration-200 ${isHovered
+                            ? 'opacity-100 scale-100'
+                            : 'opacity-0 scale-95 pointer-events-none'
+                            }`}>
+                            {categoryData.type === 'single' && (
+                                <button
+                                    onClick={() => onToggleCategoryActive(category.id, !(category.isActive ?? true))}
+                                    className={`p-1 rounded transition-colors ${(category.isActive ?? true)
+                                        ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                        : 'text-gray-400 dark:text-dark-500 hover:text-gray-600 dark:hover:text-dark-300 hover:bg-gray-50 dark:hover:bg-dark-600'
+                                        }`}
+                                    title={(category.isActive ?? true) ? 'Mark as planning only' : 'Mark as active'}
+                                >
+                                    {(category.isActive ?? true) ? (
+                                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                        </svg>
+                                    )}
+                                </button>
+                            )}
+                            {categoryData.type === 'multiple' && (
+                                <button
+                                    onClick={() => onAddItem({ preselectedCategory: category })}
+                                    className="p-1 text-gray-400 dark:text-dark-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                                    title="Add item"
+                                >
+                                    <Plus className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                            <button
+                                onClick={() => onDeleteCategory(category.id)}
+                                className="p-1 text-gray-400 dark:text-dark-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                title="Delete category"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    {monthlyBudgeting && (
+                        <div className="text-xs mt-1 text-gray-500 dark:text-dark-400">
+                            This Month: ${getCategoryMonthData(category.id).allocated.toFixed(2)} allocated,
+                            ${getCategoryMonthData(category.id).spent.toFixed(2)} spent
+                        </div>
+                    )}
+                </td>
+
+                {/* Needed per Month */}
+                <td className="px-4 py-2 text-right">
+                    <div className={`font-medium ${categoryData.type === 'single' && !categoryData.isActive
+                        ? 'text-gray-500 dark:text-dark-400'
+                        : 'text-gray-900 dark:text-dark-50'
+                        }`}>
+                        ${categoryData.monthlyNeed.toFixed(2)}
+                    </div>
+                </td>
+
+                {/* Per Paycheck */}
+                <td className="px-4 py-2 text-right">
+                    <div className={`font-medium ${categoryData.type === 'single' && !categoryData.isActive
+                        ? 'text-gray-500 dark:text-dark-400'
+                        : 'text-gray-600 dark:text-dark-300'
+                        }`}>
+                        ${categoryData.perPaycheckNeed.toFixed(2)}
+                    </div>
+                </td>
+
+                {/* Available */}
+                <td className="px-4 py-2 text-right">
+                    <span
+                        onClick={() => setShowMoveModal(true)}
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium cursor-pointer transition-all hover:opacity-80 ${isOverspent
+                            ? 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-700'
+                            : 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/20 border border-green-300 dark:border-green-700'
+                            }`}
+                        title="Click to move money"
+                    >
+                        ${((category.available || 0) - getCategoryMonthData(category.id).spent).toFixed(2)}
+                    </span>
+                </td>
+
+                {/* Due Date */}
+                <td className="px-4 py-2 text-center">
+                    {categoryData.dueDateInfo ? (
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium cursor-default transition-all ${getPayPeriodColor(categoryData.dueDateInfo.urgency)}`}>
+                            {categoryData.dueDateInfo.display}
+                            {categoryData.dueDateInfo.additionalCount > 0 && (
+                                <span className="text-xs opacity-75">
+                                    +{categoryData.dueDateInfo.additionalCount}
+                                </span>
+                            )}
+                        </span>
+                    ) : (
+                        <span className="text-gray-400 dark:text-dark-500 text-xs">—</span>
+                    )}
+                </td>
+            </tr>
+
+            {/* Expanded Content */}
+            {isExpanded && (
+                <>
+                    {categoryData.type === 'single' ? (
+                        /* Single Category - Show additional info */
+                        <tr className="bg-gray-50 dark:bg-dark-700">
+                            <td className="px-4 py-2 min-w-0 w-16"></td>
+                            <td colSpan="5" className="px-4 py-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="text-sm text-gray-600 dark:text-dark-300">
+                                            <span className="font-medium">Paychecks remaining:</span> {categoryData.paychecksUntilDue || '—'}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    ) : (
+                        /* Multiple Category - Show items */
+                        <>
+                            {categoryData.items.map((item) => (
+                                <ItemTableRow
+                                    key={item.id}
+                                    item={item}
+                                    // itemIndex={itemIndex}
+                                    // category={category}
+                                    onEditItem={onEditItem}
+                                    onDeleteItem={onDeleteItem}
+                                    onToggleItemActive={onToggleItemActive}
+                                    // onReorderItems={onReorderItems}
+                                    getAmountDisplayInfo={getAmountDisplayInfo}
+                                    getPayPeriodColor={getPayPeriodColor}
+                                    formatDueDate={formatDueDate}
+                                    getPayPeriodUrgency={getPayPeriodUrgency}
+                                    payFrequency={payFrequency}
+                                />
+                            ))}
+
+                            {/* Add Item Row */}
+                            <tr className="bg-gray-100 dark:bg-dark-600">
+                                <td className="px-4 py-1 min-w-0 w-16"></td>
+                                <td colSpan="5" className="px-4 py-1">
+                                    <button
+                                        onClick={() => onAddItem({ preselectedCategory: category })}
+                                        className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 ml-8"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add Item to {category.name}
+                                    </button>
+                                </td>
+                            </tr>
+                        </>
+                    )}
+                </>
+            )}
+
+            {/* Money Movement Modal */}
+            {showMoveModal && (
+                <MoneyMovementModal
+                    amount={category.available || 0}
+                    sourceCategory={category}
+                    categories={categories}
+                    onMove={transferFunds}
+                    onClose={() => setShowMoveModal(false)}
+                />
+            )}
+        </>
+    );
+};
+
+// Item Table Row Component
+const ItemTableRow = ({
+    item,
+    // itemIndex,
+    // category,
+    onEditItem,
+    onDeleteItem,
+    onToggleItemActive,
+    // onReorderItems,
+    getAmountDisplayInfo,
+    getPayPeriodColor,
+    formatDueDate,
+    getPayPeriodUrgency,
+    payFrequency
+}) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const displayInfo = getAmountDisplayInfo(item, payFrequency);
+    const urgency = getPayPeriodUrgency(item.dueDate);
+
+    return (
+        <tr
+            className={`${item.isActive ? 'bg-gray-50 dark:bg-dark-700' : 'bg-gray-100 dark:bg-dark-600'} border-l-4 ${item.isActive ? 'border-green-500' : 'border-gray-400 dark:border-dark-400'
+                }`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <td className="px-4 py-2 min-w-0 w-16">
+                <div className="flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3 h-3 text-gray-400 dark:text-dark-500 cursor-grab" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>
+                </div>
             </td>
-            <td className="px-4 py-2 text-sm text-gray-600 dark:text-dark-300">
-                ${categoryData.monthlyNeed?.toFixed(2) || '0.00'}
+
+            <td className="px-4 py-2" style={{ minWidth: '280px' }}>
+                <div className="flex items-center justify-between ml-8">
+                    <div className="flex-1 min-w-0">
+                        <button
+                            onClick={() => onEditItem(item)}
+                            className="font-medium text-gray-900 dark:text-dark-50 text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
+                        >
+                            {item.name}
+                        </button>
+                        <div className="text-xs text-gray-600 dark:text-dark-300">
+                            ${item.amount} {item.frequency}
+                        </div>
+                    </div>
+
+                    <div className={`flex items-center gap-1 transition-all duration-200 ${isHovered
+                        ? 'opacity-100 scale-100'
+                        : 'opacity-0 scale-95 pointer-events-none'
+                        }`}>
+                        <button
+                            onClick={() => onToggleItemActive(item.id, !item.isActive)}
+                            className={`p-1 rounded transition-colors ${item.isActive
+                                ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'
+                                : 'text-gray-400 dark:text-dark-500 hover:text-gray-600 dark:hover:text-dark-300 hover:bg-gray-50 dark:hover:bg-dark-600'
+                                }`}
+                            title={item.isActive ? 'Mark as planning only' : 'Mark as active'}
+                        >
+                            {item.isActive ? (
+                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                </svg>
+                            ) : (
+                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => onDeleteItem(item)}
+                            className="p-1 text-gray-400 dark:text-dark-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            title="Delete item"
+                        >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </td>
-            <td className="px-4 py-2 text-sm text-gray-600 dark:text-dark-300">
-                ${categoryData.perPaycheckNeed?.toFixed(2) || '0.00'}
+
+            <td className="px-4 py-2 text-right">
+                <div className="text-sm text-gray-600 dark:text-dark-300">
+                    ${(displayInfo.monthlyAmount || 0).toFixed(2)}
+                </div>
             </td>
-            <td className="px-4 py-2 text-sm text-gray-600 dark:text-dark-300">
-                ${(category.available || 0).toFixed(2)}
+
+            <td className="px-4 py-2 text-right">
+                <div className="text-sm text-gray-600 dark:text-dark-300">
+                    ${(displayInfo.perPaycheckAmount || 0).toFixed(2)}
+                    {displayInfo.paychecksUntilDue && (
+                        <div className="text-xs text-gray-500 dark:text-dark-400 mt-1">
+                            {displayInfo.paychecksUntilDue} left
+                        </div>
+                    )}
+                </div>
             </td>
-            <td className="px-4 py-2 text-sm text-gray-600 dark:text-dark-300">
-                {categoryData.dueDateInfo?.display || '—'}
+
+            <td className="px-4 py-2 text-right">
+                <div className="text-sm font-medium text-gray-900 dark:text-dark-50">
+                    ${(item.allocated || 0).toFixed(2)}
+                </div>
+            </td>
+
+            <td className="px-4 py-2 text-center">
+                {item.dueDate ? (
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs ${getPayPeriodColor(urgency)}`}>
+                        {formatDueDate(item.dueDate)}
+                    </span>
+                ) : (
+                    <span className="text-gray-400 dark:text-dark-500 text-xs">—</span>
+                )}
             </td>
         </tr>
     );
 };
 
+// Money Movement Modal Component
+const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClose }) => {
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
+    const [moveAmount, setMoveAmount] = useState(Math.abs(amount).toFixed(2));
+
+    const handleMove = () => {
+        if (selectedCategoryId && moveAmount) {
+            const parsedAmount = parseFloat(moveAmount);
+            const source = sourceCategory.id;
+
+            let destination;
+            if (selectedCategoryId === 'ready-to-assign') {
+                destination = 'toBeAllocated';
+            } else {
+                destination = parseInt(selectedCategoryId, 10);
+            }
+
+            if (!isNaN(parsedAmount) && parsedAmount > 0) {
+                onMove(source, destination, parsedAmount);
+                onClose();
+            }
+        }
+    };
+
+    const maxAmount = Math.abs(amount);
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <Card className="w-96 p-6">
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-dark-50">Move Money</h3>
+
+                <div className="space-y-4">
+                    <div className="p-3 bg-gray-50 dark:bg-dark-600 border border-gray-200 dark:border-dark-500 rounded-lg">
+                        <div className="text-sm text-gray-600 dark:text-dark-300">Moving from:</div>
+                        <div className="text-lg font-bold text-gray-900 dark:text-dark-50">
+                            {sourceCategory.name}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-dark-300">
+                            Available: ${maxAmount.toFixed(2)}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-900 dark:text-dark-50 mb-1">
+                            To Category
+                        </label>
+                        <select
+                            value={selectedCategoryId}
+                            onChange={(e) => setSelectedCategoryId(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-dark-500 rounded-lg bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            <option value="">Select destination...</option>
+                            <option value="ready-to-assign">Ready to Assign</option>
+                            {categories.filter(cat => cat.id !== sourceCategory.id).map(cat => (
+                                <option key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-900 dark:text-dark-50 mb-1">
+                            Amount
+                        </label>
+                        <CurrencyField
+                            name="moveAmount"
+                            value={moveAmount}
+                            onChange={(e) => setMoveAmount(e.target.value)}
+                            placeholder="0.00"
+                            className="w-full border border-gray-300 dark:border-dark-500 rounded-lg bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-primary"
+                            hideLabel={true}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                    <Button
+                        onClick={onClose}
+                        variant="secondary"
+                        size="sm"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleMove}
+                        disabled={!selectedCategoryId || !moveAmount || parseFloat(moveAmount) <= 0}
+                        variant="success"
+                        size="sm"
+                    >
+                        Move Money
+                    </Button>
+                </div>
+            </Card>
+        </div>
+    );
+};
+
+// Assign Money Modal Component
 const AssignMoneyModal = ({ availableAmount, categories, onAssign, onClose }) => {
     const [selectedCategoryId, setSelectedCategoryId] = useState('');
     const [assignAmount, setAssignAmount] = useState('');

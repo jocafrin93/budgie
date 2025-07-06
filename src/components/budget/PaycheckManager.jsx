@@ -472,7 +472,7 @@ const PaycheckManager = ({
 
     return (
         <Card className="p-6">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
                 <div>
                     <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-dark-50">Paychecks</h3>
                     <p className="text-sm text-gray-600 dark:text-dark-300">
@@ -486,7 +486,7 @@ const PaycheckManager = ({
                         onClick={onStartPaydayWorkflow}
                         color="success"
                         variant="filled"
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 w-full lg:w-auto justify-center lg:justify-start"
                     >
                         💰 Start Payday Workflow
                     </Button>
@@ -610,8 +610,11 @@ const PaycheckManager = ({
                     onClick={handleAddNewPaycheck}
                     color="primary"
                     variant="filled"
+                    className="flex items-center gap-2 w-full lg:w-auto justify-center lg:justify-start"
+
                 >
                     + Add New Paycheck
+
                 </Button>
             </div>
 
