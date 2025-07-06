@@ -1,4 +1,5 @@
 import SimplifiedSummaryCards from "components/budget/SimplifiedSummaryCards";
+import UpcomingPaychecks from "components/budget/UpcomingPaychecks";
 import { Page } from "components/shared/Page";
 
 export default function Home() {
@@ -56,7 +57,17 @@ export default function Home() {
             className="mb-6"
           />
 
-          {/* Additional dashboard content can go here */}
+          {/* Upcoming Paychecks - Payday Functionality */}
+          <UpcomingPaychecks
+            accounts={mockData.accounts}
+            onStartPaydayWorkflow={(paycheck) => {
+              console.log('Starting payday workflow for:', paycheck);
+              // This will be implemented with the full payday workflow
+            }}
+            maxPaychecks={3}
+          />
+
+          {/* Additional dashboard content */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-dark-700 rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-medium text-gray-800 dark:text-dark-50 mb-4">

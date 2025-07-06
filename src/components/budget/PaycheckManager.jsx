@@ -1,9 +1,10 @@
 // src/components/budget/PaycheckManager.jsx
-import { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { usePaycheckManagement } from '../../hooks/usePaycheckManagement';
 import { CurrencyField } from '../form';
 import { Button } from '../ui/Button/index.jsx';
 import { Card } from '../ui/Card/index.jsx';
+import { Checkbox } from '../ui/Form/Checkbox.jsx';
 
 /**
  * Component for managing multiple paychecks
@@ -22,6 +23,9 @@ const PaycheckManager = ({
         getFrequencyOptions,
         generatePaycheckDates
     } = usePaycheckManagement(accounts);
+
+    // Ref for form container to enable auto-scroll
+    const formRef = useRef(null);
 
     // Helper function to validate amount - handles both strings and numbers
     const validateAmount = (amount) => {
@@ -58,7 +62,8 @@ const PaycheckManager = ({
         startDate: formatDateForInput(new Date()),
         baseAmount: 0,
         variableAmount: false,
-        accountDistribution: []
+        accountDistribution: [],
+        useMultipleAccounts: false // New flag for distribution mode
     });
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
     const [showDates, setShowDates] = useState(null);
@@ -89,8 +94,17 @@ const PaycheckManager = ({
             startDate: paycheck.startDate || formatDateForInput(new Date()),
             baseAmount: paycheck.baseAmount || 0,
             variableAmount: paycheck.variableAmount || false,
-            accountDistribution: accountDist
+            accountDistribution: accountDist,
+            useMultipleAccounts: accountDist.length > 1 // Set based on existing distribution
         });
+
+        // Scroll to form after a brief delay to ensure it's rendered
+        setTimeout(() => {
+            formRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }, 100);
     };
 
     // Initialize add form
@@ -115,8 +129,17 @@ const PaycheckManager = ({
             startDate: formatDateForInput(new Date()),
             baseAmount: 0,
             variableAmount: false,
-            accountDistribution: defaultDistribution
+            accountDistribution: defaultDistribution,
+            useMultipleAccounts: false // Default to single account mode
         });
+
+        // Scroll to form after a brief delay to ensure it's rendered
+        setTimeout(() => {
+            formRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }, 100);
     };
 
     // Handle distribution changes - properly convert strings to numbers
@@ -139,36 +162,47 @@ const PaycheckManager = ({
         });
     };
 
-    // Recalculate distribution amounts when base amount changes - handle string input
-    const handleBaseAmountChange = (newAmount) => {
-        // Convert string to number if needed
+    // Recalculate distribution amounts when base amount changes - handle CurrencyField event
+    const handleBaseAmountChange = (e) => {
+        // CurrencyField passes an event object with e.target.value as string
+        const newAmount = e.target.value;
         const numericAmount = typeof newAmount === 'string' ? parseFloat(newAmount) || 0 : newAmount;
         const validatedAmount = validateAmount(numericAmount);
 
         setFormValues(prev => {
-            // Update distribution amounts proportionally
-            const totalCurrentDistribution = prev.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0);
-
             let updatedDistribution;
-            if (totalCurrentDistribution > 0) {
-                // Proportional update
-                updatedDistribution = prev.accountDistribution.map(dist => {
-                    const proportion = dist.amount / totalCurrentDistribution;
-                    const newAmount = proportion * validatedAmount;
-                    return {
-                        ...dist,
-                        amount: newAmount,
-                        distributionValue: newAmount
-                    };
-                });
-            } else {
-                // Equal distribution if no current distribution
-                const amountPerAccount = validatedAmount / Math.max(1, prev.accountDistribution.length);
+
+            if (!prev.useMultipleAccounts) {
+                // Single account mode - set full amount to the selected account
                 updatedDistribution = prev.accountDistribution.map(dist => ({
                     ...dist,
-                    amount: amountPerAccount,
-                    distributionValue: amountPerAccount
+                    amount: validatedAmount,
+                    distributionValue: validatedAmount
                 }));
+            } else {
+                // Multiple account mode - update distribution amounts proportionally
+                const totalCurrentDistribution = prev.accountDistribution.reduce((sum, dist) => sum + (dist.amount || 0), 0);
+
+                if (totalCurrentDistribution > 0) {
+                    // Proportional update
+                    updatedDistribution = prev.accountDistribution.map(dist => {
+                        const proportion = dist.amount / totalCurrentDistribution;
+                        const newAmount = proportion * validatedAmount;
+                        return {
+                            ...dist,
+                            amount: newAmount,
+                            distributionValue: newAmount
+                        };
+                    });
+                } else {
+                    // Equal distribution if no current distribution
+                    const amountPerAccount = validatedAmount / Math.max(1, prev.accountDistribution.length);
+                    updatedDistribution = prev.accountDistribution.map(dist => ({
+                        ...dist,
+                        amount: amountPerAccount,
+                        distributionValue: amountPerAccount
+                    }));
+                }
             }
 
             return {
@@ -238,6 +272,26 @@ const PaycheckManager = ({
         });
     };
 
+    // Validation helper functions
+    const getTotalDistribution = () => {
+        return formValues.accountDistribution.reduce((sum, dist) => sum + (validateAmount(dist.amount) || 0), 0);
+    };
+
+    const getDistributionValidation = () => {
+        const baseAmount = validateAmount(formValues.baseAmount);
+        const totalDistribution = getTotalDistribution();
+        const difference = totalDistribution - baseAmount;
+
+        return {
+            isValid: Math.abs(difference) < 0.01, // Allow for small floating point differences
+            isOver: difference > 0.01,
+            isUnder: difference < -0.01,
+            difference: Math.abs(difference),
+            totalDistribution,
+            baseAmount
+        };
+    };
+
     // Save paycheck (add or edit) - ensure proper number conversion
     const handleSavePaycheck = () => {
         // Convert and validate form values
@@ -258,6 +312,19 @@ const PaycheckManager = ({
         if (invalidDistribution) {
             alert('Please ensure all accounts have valid distribution amounts.');
             return;
+        }
+
+        // Validate distribution total (only for multiple account mode)
+        if (formValues.useMultipleAccounts) {
+            const validation = getDistributionValidation();
+            if (!validation.isValid) {
+                if (validation.isOver) {
+                    alert(`Distribution total (${formatCurrency(validation.totalDistribution)}) exceeds base amount (${formatCurrency(validation.baseAmount)}) by ${formatCurrency(validation.difference)}. Please adjust the distribution amounts.`);
+                } else {
+                    alert(`Distribution total (${formatCurrency(validation.totalDistribution)}) is less than base amount (${formatCurrency(validation.baseAmount)}) by ${formatCurrency(validation.difference)}. Please adjust the distribution amounts.`);
+                }
+                return;
+            }
         }
 
         // Prepare the data with proper number conversion
@@ -321,11 +388,87 @@ const PaycheckManager = ({
         }).format(amount);
     };
 
-    // Get account name by ID
+    // Get account name by ID with safety checks
     const getAccountName = (accountId) => {
         const account = accounts.find(acc => acc.id === accountId);
-        return account ? account.name : 'Unknown Account';
+        return account ? account.name : `⚠️ Deleted Account (ID: ${accountId})`;
     };
+
+    // Validate and clean paycheck account references
+    const validatePaycheckAccounts = (paycheck) => {
+        if (!paycheck.accountDistribution || paycheck.accountDistribution.length === 0) {
+            return false;
+        }
+
+        // Check if any referenced accounts no longer exist
+        const hasInvalidAccounts = paycheck.accountDistribution.some(dist =>
+            !accounts.find(acc => acc.id === dist.accountId)
+        );
+
+        return !hasInvalidAccounts;
+    };
+
+    // Clean up orphaned account references in paychecks
+    const cleanupOrphanedReferences = () => {
+        const needsCleanup = paychecks.some(paycheck => !validatePaycheckAccounts(paycheck));
+
+        if (needsCleanup && accounts.length > 0) {
+            const cleanedPaychecks = paychecks.map(paycheck => {
+                if (!validatePaycheckAccounts(paycheck)) {
+                    console.warn(`Cleaning up orphaned account references in paycheck: ${paycheck.name}`);
+
+                    // Filter out invalid account references
+                    const validDistributions = paycheck.accountDistribution.filter(dist =>
+                        accounts.find(acc => acc.id === dist.accountId)
+                    );
+
+                    // If no valid distributions remain, create one with the first available account
+                    if (validDistributions.length === 0) {
+                        return {
+                            ...paycheck,
+                            accountDistribution: [{
+                                accountId: accounts[0].id,
+                                amount: paycheck.baseAmount,
+                                distributionType: 'fixed',
+                                distributionValue: paycheck.baseAmount
+                            }],
+                            useMultipleAccounts: false // Reset to single account mode
+                        };
+                    }
+
+                    // If some valid distributions remain, redistribute the total amount
+                    const totalValidAmount = validDistributions.reduce((sum, dist) => sum + (dist.amount || 0), 0);
+                    const redistributionRatio = paycheck.baseAmount / Math.max(totalValidAmount, 1);
+
+                    const redistributedDistributions = validDistributions.map(dist => ({
+                        ...dist,
+                        amount: dist.amount * redistributionRatio,
+                        distributionValue: dist.amount * redistributionRatio
+                    }));
+
+                    return {
+                        ...paycheck,
+                        accountDistribution: redistributedDistributions,
+                        useMultipleAccounts: redistributedDistributions.length > 1
+                    };
+                }
+                return paycheck;
+            });
+
+            // Update paychecks with cleaned data - need to use setPaychecks directly
+            // since updatePaycheck is for individual paycheck updates
+            cleanedPaychecks.forEach(cleanedPaycheck => {
+                updatePaycheck(cleanedPaycheck.id, cleanedPaycheck);
+            });
+        }
+    };
+
+    // Run cleanup when accounts change
+    React.useEffect(() => {
+        if (accounts.length > 0) {
+            cleanupOrphanedReferences();
+        }
+    }, [accounts]);
 
     return (
         <Card className="p-6">
@@ -474,7 +617,7 @@ const PaycheckManager = ({
 
             {/* Add/Edit Form */}
             {(showAddForm || editingPaycheck) && (
-                <div className="mt-6 p-6 bg-gray-50 dark:bg-dark-600 rounded-lg border border-gray-200 dark:border-dark-500">
+                <div ref={formRef} className="mt-6 p-6 bg-gray-50 dark:bg-dark-600 rounded-lg border border-gray-200 dark:border-dark-500">
                     <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-dark-50">
                         {editingPaycheck ? 'Edit Paycheck' : 'Add New Paycheck'}
                     </h4>
@@ -532,12 +675,13 @@ const PaycheckManager = ({
 
                         {/* Variable Amount Option */}
                         <div className="flex items-center gap-3">
-                            <input
+                            <Checkbox
+                                color="info"
+                                className="rounded-full"
                                 type="checkbox"
                                 id="variableAmount"
                                 checked={formValues.variableAmount}
                                 onChange={(e) => setFormValues(prev => ({ ...prev, variableAmount: e.target.checked }))}
-                                className="rounded border-gray-300 dark:border-dark-500"
                             />
                             <label htmlFor="variableAmount" className="text-sm text-gray-900 dark:text-dark-50">
                                 This paycheck has a variable amount (will track history for averaging)
@@ -548,23 +692,64 @@ const PaycheckManager = ({
                         <div>
                             <div className="flex justify-between items-center mb-3">
                                 <label className="block text-sm font-medium text-gray-900 dark:text-dark-50">Account Distribution</label>
-                                {formValues.accountDistribution.length < accounts.length && (
-                                    <button
-                                        onClick={handleAddAccount}
-                                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
-                                    >
-                                        + Add Account
-                                    </button>
+                                {accounts.length > 1 && (
+                                    <div className="flex items-center gap-3">
+                                        <Checkbox
+                                            color="info"
+                                            className="rounded-full"
+                                            type="checkbox"
+                                            id="useMultipleAccounts"
+                                            checked={formValues.useMultipleAccounts}
+                                            onChange={(e) => {
+                                                const useMultiple = e.target.checked;
+                                                setFormValues(prev => {
+                                                    if (useMultiple) {
+                                                        // Switch to multiple account mode - keep existing distribution
+                                                        return { ...prev, useMultipleAccounts: true };
+                                                    } else {
+                                                        // Switch to single account mode - use first account with full amount
+                                                        const singleDistribution = [{
+                                                            accountId: prev.accountDistribution[0]?.accountId || accounts[0].id,
+                                                            amount: prev.baseAmount,
+                                                            distributionType: 'fixed',
+                                                            distributionValue: prev.baseAmount
+                                                        }];
+                                                        return {
+                                                            ...prev,
+                                                            useMultipleAccounts: false,
+                                                            accountDistribution: singleDistribution
+                                                        };
+                                                    }
+                                                });
+                                            }}
+                                        />
+                                        <label htmlFor="useMultipleAccounts" className="text-sm text-gray-900 dark:text-dark-50">
+                                            Split across multiple accounts
+                                        </label>
+                                    </div>
                                 )}
                             </div>
 
-                            <div className="space-y-2">
-                                {formValues.accountDistribution.map((dist, index) => (
-                                    <div key={index} className="flex items-center gap-3">
+                            {/* Single Account Mode */}
+                            {!formValues.useMultipleAccounts && (
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3">
                                         <div className="flex-1">
+                                            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-dark-300">Account</label>
                                             <select
-                                                value={dist.accountId}
-                                                onChange={(e) => handleDistributionChange(index, 'accountId', e.target.value)}
+                                                value={formValues.accountDistribution[0]?.accountId || ''}
+                                                onChange={(e) => {
+                                                    const accountId = parseInt(e.target.value);
+                                                    setFormValues(prev => ({
+                                                        ...prev,
+                                                        accountDistribution: [{
+                                                            accountId: accountId,
+                                                            amount: prev.baseAmount,
+                                                            distributionType: 'fixed',
+                                                            distributionValue: prev.baseAmount
+                                                        }]
+                                                    }));
+                                                }}
                                                 className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                             >
                                                 {accounts.map(account => (
@@ -574,27 +759,137 @@ const PaycheckManager = ({
                                                 ))}
                                             </select>
                                         </div>
-
                                         <div className="flex-1">
-                                            <CurrencyField
-                                                value={dist.amount}
-                                                onChange={(value) => handleDistributionChange(index, 'amount', value)}
-                                                placeholder="0.00"
-                                            />
+                                            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-dark-300">Amount</label>
+                                            <div className="p-2 bg-gray-100 dark:bg-dark-700 border border-gray-300 dark:border-dark-500 rounded text-gray-900 dark:text-dark-50">
+                                                {formatCurrency(formValues.baseAmount)} (Full Amount)
+                                            </div>
                                         </div>
-
-                                        {formValues.accountDistribution.length > 1 && (
-                                            <button
-                                                onClick={() => handleRemoveAccount(index)}
-                                                className="text-red-500 hover:text-red-700 p-1"
-                                                title="Remove account"
-                                            >
-                                                ✕
-                                            </button>
-                                        )}
                                     </div>
-                                ))}
-                            </div>
+                                    <p className="text-xs text-gray-500 dark:text-dark-400 mt-2">
+                                        💡 The full paycheck amount will go to the selected account. Enable &quot;Split across multiple accounts&quot; above to customize distribution.
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Multiple Account Mode */}
+                            {formValues.useMultipleAccounts && (
+                                <>
+                                    <div className="space-y-2">
+                                        {formValues.accountDistribution.map((dist, index) => {
+                                            const validation = getDistributionValidation();
+                                            const hasValidationError = !validation.isValid && formValues.baseAmount > 0;
+
+                                            return (
+                                                <div key={index} className="flex items-center gap-3">
+                                                    <div className="flex-1">
+                                                        <select
+                                                            value={dist.accountId}
+                                                            onChange={(e) => handleDistributionChange(index, 'accountId', e.target.value)}
+                                                            className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        >
+                                                            {accounts.map(account => (
+                                                                <option key={account.id} value={account.id}>
+                                                                    {account.name}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+
+                                                    <div className="flex-1">
+                                                        <CurrencyField
+                                                            value={dist.amount}
+                                                            onChange={(e) => handleDistributionChange(index, 'amount', e.target.value)}
+                                                            placeholder="0.00"
+                                                            className={hasValidationError ?
+                                                                "border-red-500 dark:border-red-400 focus:ring-red-500" :
+                                                                ""
+                                                            }
+                                                        />
+                                                    </div>
+
+                                                    {formValues.accountDistribution.length > 1 && (
+                                                        <button
+                                                            onClick={() => handleRemoveAccount(index)}
+                                                            className="text-red-500 hover:text-red-700 p-1"
+                                                            title="Remove account"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Add Account Button */}
+                                    {formValues.accountDistribution.length < accounts.length && (
+                                        <button
+                                            onClick={handleAddAccount}
+                                            className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                        >
+                                            + Add Another Account
+                                        </button>
+                                    )}
+
+                                    {/* Distribution Validation Summary */}
+                                    {formValues.baseAmount > 0 && formValues.accountDistribution.length > 0 && (() => {
+                                        const validation = getDistributionValidation();
+                                        const totalDistribution = getTotalDistribution();
+
+                                        return (
+                                            <div className={`mt-3 p-3 rounded-lg border ${validation.isValid
+                                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                                                : validation.isOver
+                                                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                                                    : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                                                }`}>
+                                                <div className="flex justify-between items-center text-sm">
+                                                    <span className={`font-medium ${validation.isValid
+                                                        ? 'text-green-700 dark:text-green-300'
+                                                        : validation.isOver
+                                                            ? 'text-red-700 dark:text-red-300'
+                                                            : 'text-yellow-700 dark:text-yellow-300'
+                                                        }`}>
+                                                        Distribution Total:
+                                                    </span>
+                                                    <span className={`font-bold ${validation.isValid
+                                                        ? 'text-green-800 dark:text-green-200'
+                                                        : validation.isOver
+                                                            ? 'text-red-800 dark:text-red-200'
+                                                            : 'text-yellow-800 dark:text-yellow-200'
+                                                        }`}>
+                                                        {formatCurrency(totalDistribution)}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex justify-between items-center text-sm mt-1">
+                                                    <span className="text-gray-600 dark:text-dark-300">Base Amount:</span>
+                                                    <span className="text-gray-800 dark:text-dark-100">{formatCurrency(validation.baseAmount)}</span>
+                                                </div>
+
+                                                {!validation.isValid && (
+                                                    <div className={`text-xs mt-2 ${validation.isOver
+                                                        ? 'text-red-600 dark:text-red-400'
+                                                        : 'text-yellow-600 dark:text-yellow-400'
+                                                        }`}>
+                                                        {validation.isOver
+                                                            ? `⚠️ Over by ${formatCurrency(validation.difference)}`
+                                                            : `⚠️ Under by ${formatCurrency(validation.difference)}`
+                                                        }
+                                                    </div>
+                                                )}
+
+                                                {validation.isValid && (
+                                                    <div className="text-xs mt-2 text-green-600 dark:text-green-400">
+                                                        ✅ Distribution matches base amount
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
+                                </>
+                            )}
                         </div>
 
                         {/* Action Buttons */}

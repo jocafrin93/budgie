@@ -213,6 +213,15 @@ export const usePaycheckManagement = (accounts = []) => {
     }
   }, []);
 
+  // Helper function to get today's date in local timezone (avoiding timezone issues)
+  const getTodayLocal = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Helper function to add days to a date
   const addDays = (date, days) => {
     const result = new Date(date);
@@ -229,6 +238,32 @@ export const usePaycheckManagement = (accounts = []) => {
     return `${year}-${month}-${day}`;
   };
 
+  // Helper function to create a date from YYYY-MM-DD string in local timezone
+  const createLocalDate = (dateString) => {
+    if (!dateString) return new Date();
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month is 0-indexed
+  };
+
+  // Helper function to check if a date is today or in the future
+  const isUpcoming = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate >= today;
+  };
+
+  // Helper function to calculate days until a date
+  const daysUntil = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    const diffTime = targetDate - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   /**
    * Generate the next N paycheck dates for a specific paycheck
    */
@@ -240,7 +275,8 @@ export const usePaycheckManagement = (accounts = []) => {
     let currentDate;
 
     try {
-      currentDate = new Date(paycheck.startDate);
+      // Use createLocalDate to avoid timezone issues
+      currentDate = createLocalDate(paycheck.startDate);
     } catch {
       // Fallback if date parsing fails
       currentDate = new Date();
@@ -296,9 +332,12 @@ export const usePaycheckManagement = (accounts = []) => {
   /**
    * Get all upcoming paycheck dates across all active paychecks
    * Returns dates sorted chronologically with paycheck information
+   * Uses timezone-safe date handling
    */
   const getAllUpcomingPaycheckDates = useCallback((numberOfMonths = 3) => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+
     const endDate = new Date(today);
     endDate.setMonth(today.getMonth() + numberOfMonths);
 
@@ -308,14 +347,23 @@ export const usePaycheckManagement = (accounts = []) => {
       .filter(p => p.isActive)
       .forEach(paycheck => {
         // Get more dates than we need to ensure we cover the time period
-        const dates = generatePaycheckDates(paycheck.id, getPaychecksPerYear(paycheck.frequency) / 4 * numberOfMonths);
+        const dates = generatePaycheckDates(paycheck.id, Math.ceil(getPaychecksPerYear(paycheck.frequency) / 12 * numberOfMonths) + 2);
 
         dates.forEach(date => {
-          if (date >= today && date <= endDate) {
+          const paycheckDate = new Date(date);
+          paycheckDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+
+          if (paycheckDate >= today && paycheckDate <= endDate) {
+            const daysFromToday = daysUntil(paycheckDate);
+
             allDates.push({
-              date,
+              date: paycheckDate,
               paycheck: { ...paycheck },
-              formattedDate: formatDate(date)
+              formattedDate: formatDate(paycheckDate),
+              daysUntil: daysFromToday,
+              isToday: daysFromToday === 0,
+              isThisWeek: daysFromToday <= 7,
+              isThisMonth: paycheckDate.getMonth() === today.getMonth() && paycheckDate.getFullYear() === today.getFullYear()
             });
           }
         });
@@ -324,6 +372,70 @@ export const usePaycheckManagement = (accounts = []) => {
     // Sort dates chronologically
     return allDates.sort((a, b) => a.date - b.date);
   }, [paychecks, generatePaycheckDates, getPaychecksPerYear]);
+
+  /**
+   * Get the next paycheck date across all active paychecks
+   * Returns the soonest upcoming paycheck
+   */
+  const getNextPaycheckDate = useCallback(() => {
+    const upcomingPaychecks = getAllUpcomingPaycheckDates(1);
+    return upcomingPaychecks.length > 0 ? upcomingPaychecks[0] : null;
+  }, [getAllUpcomingPaycheckDates]);
+
+  /**
+   * Get paychecks for a specific date range
+   * Useful for calendar integration and budget planning
+   */
+  const getPaychecksInDateRange = useCallback((startDate, endDate) => {
+    const start = createLocalDate(startDate);
+    const end = createLocalDate(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    const paychecksInRange = [];
+
+    paychecks
+      .filter(p => p.isActive)
+      .forEach(paycheck => {
+        // Calculate how many paychecks we might need to cover the date range
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const estimatedPaychecks = Math.ceil(daysDiff / (getPaychecksPerYear(paycheck.frequency) / 365)) + 2;
+
+        const dates = generatePaycheckDates(paycheck.id, estimatedPaychecks);
+
+        dates.forEach(date => {
+          const paycheckDate = new Date(date);
+          paycheckDate.setHours(0, 0, 0, 0);
+
+          if (paycheckDate >= start && paycheckDate <= end) {
+            paychecksInRange.push({
+              date: paycheckDate,
+              paycheck: { ...paycheck },
+              formattedDate: formatDate(paycheckDate),
+              daysFromStart: Math.ceil((paycheckDate - start) / (1000 * 60 * 60 * 24))
+            });
+          }
+        });
+      });
+
+    return paychecksInRange.sort((a, b) => a.date - b.date);
+  }, [paychecks, generatePaycheckDates, getPaychecksPerYear, createLocalDate, formatDate]);
+
+  /**
+   * Calculate expected income for a specific month
+   * Takes into account all active paychecks and their schedules
+   */
+  const calculateMonthlyExpectedIncome = useCallback((year, month) => {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = new Date(year, month, 0); // Last day of the month
+    const endDateString = formatDate(endDate);
+
+    const monthlyPaychecks = getPaychecksInDateRange(startDate, endDateString);
+
+    return monthlyPaychecks.reduce((total, paycheckEntry) => {
+      return total + paycheckEntry.paycheck.baseAmount;
+    }, 0);
+  }, [getPaychecksInDateRange, formatDate]);
 
   return {
     paychecks,
@@ -337,6 +449,13 @@ export const usePaycheckManagement = (accounts = []) => {
     getPaychecksPerYear,
     generatePaycheckDates,
     calculateTotalMonthlyIncome,
-    getAllUpcomingPaycheckDates
+    getAllUpcomingPaycheckDates,
+    getNextPaycheckDate,
+    getPaychecksInDateRange,
+    calculateMonthlyExpectedIncome,
+    // Utility functions for timezone-safe date handling
+    getTodayLocal,
+    isUpcoming,
+    daysUntil
   };
 };
