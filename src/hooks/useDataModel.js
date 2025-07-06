@@ -57,50 +57,11 @@ export const useDataModel = ({
     }
   }, [expenses, savingsGoals, planningItems.length, setPlanningItems, setActiveBudgetAllocations, payFrequency, payFrequencyOptions]);
 
-  // Sync legacy state with unified model when planning items change
-  // Use a more careful approach to prevent infinite loops
-  useEffect(() => {
-    if (planningItems.length > 0 && !isSyncing.current) {
-      isSyncing.current = true;
-
-      try {
-        const derivedExpenses = getExpensesFromPlanningItems(planningItems);
-        const derivedSavingsGoals = getSavingsGoalsFromPlanningItems(planningItems);
-
-        // Create a deep comparison function that's more reliable than JSON.stringify
-        const arraysAreEqual = (arr1, arr2) => {
-          if (arr1.length !== arr2.length) return false;
-
-          return arr1.every((item1, index) => {
-            const item2 = arr2[index];
-            if (!item2) return false;
-
-            // Compare key properties
-            const keys = ['id', 'name', 'amount', 'targetAmount', 'frequency', 'categoryId', 'priorityState', 'alreadySaved'];
-            return keys.every(key => item1[key] === item2[key]);
-          });
-        };
-
-        // Only update if there are actual differences to avoid infinite loops
-        if (!arraysAreEqual(derivedExpenses, expenses)) {
-          console.log('Syncing expenses from planning items');
-          setExpenses(derivedExpenses);
-        }
-
-        if (!arraysAreEqual(derivedSavingsGoals, savingsGoals)) {
-          console.log('Syncing savings goals from planning items');
-          setSavingsGoals(derivedSavingsGoals);
-        }
-      } catch (error) {
-        console.error('Error syncing legacy state:', error);
-      } finally {
-        // Use setTimeout to reset the flag after the current execution cycle
-        setTimeout(() => {
-          isSyncing.current = false;
-        }, 0);
-      }
-    }
-  }, [planningItems]); // Remove setExpenses and setSavingsGoals from dependencies
+  // DISABLED: Sync legacy state with unified model when planning items change
+  // This was causing infinite loops - legacy sync is not critical for core functionality
+  // useEffect(() => {
+  //   // Sync logic disabled to prevent infinite loops
+  // }, []);
 
   // Recalculate per-paycheck amounts when pay frequency changes
   useEffect(() => {
@@ -110,14 +71,21 @@ export const useDataModel = ({
         payFrequency,
         payFrequencyOptions
       );
-      setActiveBudgetAllocations(calculatedAllocations);
+
+      // Only update if the calculated allocations are actually different
+      const hasChanges = calculatedAllocations.some((calc, index) => {
+        const current = activeBudgetAllocations[index];
+        return !current || calc.perPaycheckAmount !== current.perPaycheckAmount;
+      });
+
+      if (hasChanges) {
+        setActiveBudgetAllocations(calculatedAllocations);
+      }
     }
-  }, [payFrequency, payFrequencyOptions, setActiveBudgetAllocations]);
+  }, [payFrequency, payFrequencyOptions]); // REMOVED setActiveBudgetAllocations from dependencies
 
   // Add a new planning item
   const addItem = useCallback((newItem) => {
-    console.log('Adding new item:', newItem);
-
     // Validate category exists and ensure categoryId is a number
     const categoryId = parseInt(newItem.categoryId, 10);
     if (isNaN(categoryId) || !categories.some(cat => parseInt(cat.id, 10) === categoryId)) {
@@ -141,13 +109,9 @@ export const useDataModel = ({
       isActive: newItem.isActive || (!newItem.allocationPaused && newItem.priorityState === 'active')
     };
 
-    console.log('Generated ID for new item:', newItemId);
-
     // Update planning items
     setPlanningItems(prev => {
       const updatedItems = [...prev, itemWithId];
-      console.log('Last added item:', itemWithId);
-      console.log('Updated planning items:', updatedItems);
       return updatedItems;
     });
 

@@ -42,14 +42,36 @@ const BudgetCategoriesTable = ({
 
     const formatDueDate = (dateString) => {
         if (!dateString) return '—';
+
+        // Handle date string properly to avoid timezone issues
+        // If it's in YYYY-MM-DD format, parse it as local date
+        if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day); // month is 0-indexed
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // For other date formats, use standard parsing
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
     const getDueDateUrgency = (dateString) => {
         if (!dateString) return 'none';
-        const dueDate = new Date(dateString);
+
+        let dueDate;
+        // Handle date string properly to avoid timezone issues
+        if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = dateString.split('-').map(Number);
+            dueDate = new Date(year, month - 1, day); // month is 0-indexed
+        } else {
+            dueDate = new Date(dateString);
+        }
+
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+        dueDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+
         const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
         if (daysUntil < 0) return 'overdue';
@@ -100,16 +122,18 @@ const BudgetCategoriesTable = ({
                     });
                 }
 
-                // Always add "Add Item" row when expanded (for both single and multiple categories)
-                result.push({
-                    id: `add-item-${category.id}`,
-                    name: `Add Item to ${category.name}`,
-                    isAddRow: true,
-                    originalIndex: index,
-                    isParent: false,
-                    depth: 1,
-                    parentCategory: category,
-                });
+                // Only add "Add Item" row for multiple categories (not single categories)
+                if (category.type === 'multiple') {
+                    result.push({
+                        id: `add-item-${category.id}`,
+                        name: `Add Item to ${category.name}`,
+                        isAddRow: true,
+                        originalIndex: index,
+                        isParent: false,
+                        depth: 1,
+                        parentCategory: category,
+                    });
+                }
             }
         });
         return result;
@@ -209,7 +233,7 @@ const BudgetCategoriesTable = ({
                             <div style={{ marginLeft: item.depth * 20 + 16 }}>
                                 <button
                                     onClick={() => onAddItem && onAddItem({ categoryId: item.parentCategory.id })}
-                                    className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border-l-2 border-gray-200 dark:border-dark-600 pl-4"
+                                    className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-blue-700 dark:hover:text-blue-300 border-l-2 border-gray-200 dark:border-dark-600 pl-4"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Add Item to {item.parentCategory.name}
@@ -532,7 +556,7 @@ const BudgetCategoriesTable = ({
                                     <tr
                                         key={row.id}
                                         className={`transition-colors ${isAddRow
-                                            ? 'bg-blue-25 hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-blue-800/30'
+                                            ? 'bg-primary-25 hover:bg-primary-50 dark:bg-primary-900/20 dark:hover:bg-primary-800/30'
                                             : isSubItem
                                                 ? 'bg-gray-25 hover:bg-gray-50 dark:bg-dark-750 dark:hover:bg-dark-700'
                                                 : isInactive

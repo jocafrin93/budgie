@@ -466,7 +466,7 @@ const UnifiedCategoryForm = ({
                                                 form.setFieldValue('usePercentage', false);
                                             }}
                                             variant={!form.values.usePercentage ? 'filled' : 'outlined'}
-                                            color={!form.values.usePercentage ? 'success' : 'neutral'}
+                                            color={!form.values.usePercentage ? 'secondary' : 'neutral'}
                                             className="flex-1 h-12 flex items-center justify-center space-x-1 text-sm"
                                         >
                                             <span>💰</span>

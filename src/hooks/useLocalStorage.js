@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { useEventCallback, useEventListener } from 'hooks'
 
@@ -11,21 +11,29 @@ export function useLocalStorage(
 ) {
     const { initializeWithValue = true } = options
 
+    // Use refs to store latest values without causing dependency issues
+    const optionsRef = useRef(options)
+    const initialValueRef = useRef(initialValue)
+
+    // Update refs when values change
+    optionsRef.current = options
+    initialValueRef.current = initialValue
+
     const serializer = useCallback(
         value => {
-            if (options.serializer) {
-                return options.serializer(value)
+            if (optionsRef.current.serializer) {
+                return optionsRef.current.serializer(value)
             }
 
             return JSON.stringify(value)
         },
-        [options],
+        [], // No dependencies to prevent recreation
     )
 
     const deserializer = useCallback(
         value => {
-            if (options.deserializer) {
-                return options.deserializer(value)
+            if (optionsRef.current.deserializer) {
+                return optionsRef.current.deserializer(value)
             }
             // Support 'undefined' as a value
             if (value === 'undefined') {
@@ -33,7 +41,7 @@ export function useLocalStorage(
             }
 
             const defaultValue =
-                initialValue instanceof Function ? initialValue() : initialValue
+                initialValueRef.current instanceof Function ? initialValueRef.current() : initialValueRef.current
 
             let parsed
             try {
@@ -45,14 +53,14 @@ export function useLocalStorage(
 
             return parsed
         },
-        [options, initialValue],
+        [], // No dependencies to prevent recreation
     )
 
     // Get from local storage then
     // parse stored json or return initialValue
     const readValue = useCallback(() => {
         const initialValueToUse =
-            initialValue instanceof Function ? initialValue() : initialValue
+            initialValueRef.current instanceof Function ? initialValueRef.current() : initialValueRef.current
 
         // Prevent build error "window is undefined" but keep working
         if (IS_SERVER) {
@@ -63,10 +71,10 @@ export function useLocalStorage(
             const raw = window.localStorage.getItem(key)
             return raw ? deserializer(raw) : initialValueToUse
         } catch (error) {
-            console.warn(`Error reading localStorage key “${key}”:`, error)
+            console.warn(`Error reading localStorage key "${key}":`, error)
             return initialValueToUse
         }
-    }, [initialValue, key, deserializer])
+    }, [key, deserializer]) // Removed initialValue dependency
 
     const [storedValue, setStoredValue] = useState(() => {
         if (initializeWithValue) {
@@ -82,7 +90,7 @@ export function useLocalStorage(
         // Prevent build error "window is undefined" but keeps working
         if (IS_SERVER) {
             console.warn(
-                `Tried setting localStorage key “${key}” even though environment is not a client`,
+                `Tried setting localStorage key "${key}" even though environment is not a client`,
             )
         }
 
@@ -96,10 +104,12 @@ export function useLocalStorage(
             // Save state
             setStoredValue(newValue)
 
-            // We dispatch a custom event so every similar useLocalStorage hook is notified
-            window.dispatchEvent(new StorageEvent('local-storage', { key }))
+            // DISABLED: Custom event dispatch was causing infinite loops
+            // Cross-tab synchronization will rely on native storage events only
+            // const customEvent = new CustomEvent('local-storage', { detail: { key } })
+            // window.dispatchEvent(customEvent)
         } catch (error) {
-            console.warn(`Error setting localStorage key “${key}”:`, error)
+            console.warn(`Error setting localStorage key "${key}":`, error)
         }
     })
 
@@ -107,12 +117,12 @@ export function useLocalStorage(
         // Prevent build error "window is undefined" but keeps working
         if (IS_SERVER) {
             console.warn(
-                `Tried removing localStorage key “${key}” even though environment is not a client`,
+                `Tried removing localStorage key "${key}" even though environment is not a client`,
             )
         }
 
         const defaultValue =
-            initialValue instanceof Function ? initialValue() : initialValue
+            initialValueRef.current instanceof Function ? initialValueRef.current() : initialValueRef.current
 
         // Remove the key from local storage
         window.localStorage.removeItem(key)
@@ -120,23 +130,53 @@ export function useLocalStorage(
         // Save state with default value
         setStoredValue(defaultValue)
 
-        // We dispatch a custom event so every similar useLocalStorage hook is notified
-        window.dispatchEvent(new StorageEvent('local-storage', { key }))
+        // DISABLED: Custom event dispatch was causing infinite loops
+        // Cross-tab synchronization will rely on native storage events only
+        // const customEvent = new CustomEvent('local-storage', { detail: { key } })
+        // window.dispatchEvent(customEvent)
     })
 
-    useEffect(() => {
-        setStoredValue(readValue())
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [key])
+    // DISABLED: This useEffect was causing infinite loops
+    // The initial value is set in useState, so this sync is not critical
+    // useEffect(() => {
+    //     setStoredValue(readValue())
+    //     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // }, [key]) // Only depend on key, not readValue to prevent infinite loops
 
     const handleStorageChange = useCallback(
         (event) => {
-            if ((event).key && (event).key !== key) {
+            // Get the key from either the event.key (native storage events) or event.detail.key (custom events)
+            const eventKey = event?.key || event?.detail?.key
+
+            // CRITICAL FIX: Only process events for THIS specific key
+            if (eventKey && eventKey !== key) {
                 return
             }
-            setStoredValue(readValue())
+
+            // For custom events without a key in detail, ignore them
+            if (event?.type === 'local-storage' && !event?.detail?.key) {
+                return
+            }
+
+            // Use a fresh read instead of depending on readValue to prevent infinite loops
+            const initialValueToUse =
+                initialValueRef.current instanceof Function ? initialValueRef.current() : initialValueRef.current
+
+            if (IS_SERVER) {
+                setStoredValue(initialValueToUse)
+                return
+            }
+
+            try {
+                const raw = window.localStorage.getItem(key)
+                const newValue = raw ? deserializer(raw) : initialValueToUse
+                setStoredValue(newValue)
+            } catch (error) {
+                console.warn(`Error reading localStorage key "${key}":`, error)
+                setStoredValue(initialValueToUse)
+            }
         },
-        [key, readValue],
+        [key, deserializer], // Only depend on key and deserializer, not readValue
     )
 
     // this only works for other documents, not the current one

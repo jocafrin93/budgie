@@ -7,13 +7,19 @@ import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
 import { useDataModel } from "../../../../hooks/useDataModel";
 import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
 
-// Dynamic import for UnifiedCategoryForm
+// Dynamic imports for forms
 const UnifiedCategoryForm = React.lazy(() => import("../../../../components/budget/UnifiedCategoryForm"));
+const UnifiedItemForm = React.lazy(() => import("../../../../components/budget/UnifiedItemForm"));
 
 export default function BudgetOverview() {
     // Modal state for category form
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
+
+    // Modal state for item form
+    const [showItemModal, setShowItemModal] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
+    const [preselectedCategory, setPreselectedCategory] = useState(null);
 
     // Get accounts data from the hook
     const { accounts } = useAccountManagement();
@@ -21,14 +27,13 @@ export default function BudgetOverview() {
     // Category management hook
     const {
         categories,
-        setCategories,
         addCategory,
         updateCategory,
         deleteCategory,
         migrateCategoriesWithTypes
     } = useCategoryManagement();
 
-    // Data model hook for planning items
+    // Data model hook for planning items - simplified to prevent infinite loops
     const {
         planningItems,
         addItem,
@@ -36,8 +41,8 @@ export default function BudgetOverview() {
         removeItem,
         toggleItemActive
     } = useDataModel({
-        initialCategories: categories,
-        initialAccounts: accounts,
+        initialCategories: [],
+        initialAccounts: [],
         payFrequency: 'bi-weekly'
     });
 
@@ -46,7 +51,6 @@ export default function BudgetOverview() {
         calculateToBeAllocated
     } = useEnvelopeBudgeting({
         categories,
-        setCategories,
         planningItems,
         transactions: [], // No transactions for now
         accounts
@@ -60,46 +64,65 @@ export default function BudgetOverview() {
     // Transform data for the budget table
     const transformDataForBudgetTable = (categories = [], planningItems = []) => {
         return categories.map(category => {
-            // Get planning items for this category
-            const categoryItems = planningItems.filter(item =>
-                item.categoryId === category.id && item.isActive
-            );
+            let monthlyNeed = 0;
+            let subItems = [];
+            let categoryDueDate = null;
 
-            // Calculate totals for the category
-            const monthlyNeed = categoryItems.reduce((sum, item) => {
-                if (item.type === 'savings-goal') {
-                    return sum + (item.monthlyContribution || 0);
-                } else {
-                    // For expenses, calculate monthly amount based on frequency
-                    return sum + calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly');
+            if (category.type === 'single') {
+                // For single categories, use the category's own data
+                if (category.planningType === 'expense') {
+                    // Calculate monthly need from category's amount and frequency
+                    monthlyNeed = calculateMonthlyAmount(category.amount || 0, category.frequency || 'monthly');
+                    categoryDueDate = category.dueDate || null;
+                } else if (category.planningType === 'goal') {
+                    // For goals, use monthly contribution
+                    monthlyNeed = category.monthlyContribution || 0;
                 }
-            }, 0);
+
+                // Single categories don't have sub-items, they are self-contained
+                subItems = [];
+            } else {
+                // For multiple categories, get planning items for this category
+                const categoryItems = planningItems.filter(item =>
+                    item.categoryId === category.id && item.isActive
+                );
+
+                // Calculate totals for the category from planning items
+                monthlyNeed = categoryItems.reduce((sum, item) => {
+                    if (item.type === 'savings-goal') {
+                        return sum + (item.monthlyContribution || 0);
+                    } else {
+                        // For expenses, calculate monthly amount based on frequency
+                        return sum + calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly');
+                    }
+                }, 0);
+
+                // Transform sub-items
+                subItems = categoryItems.map(item => ({
+                    id: item.id,
+                    parentId: category.id,
+                    name: item.name,
+                    amount: item.amount || (item.type === 'savings-goal' ? item.monthlyContribution : 0),
+                    frequency: item.frequency || 'monthly',
+                    monthlyNeed: item.type === 'savings-goal'
+                        ? (item.monthlyContribution || 0)
+                        : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly'),
+                    perPaycheck: (item.type === 'savings-goal'
+                        ? (item.monthlyContribution || 0)
+                        : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly')) / 2.17,
+                    allocated: item.allocated || 0,
+                    spent: 0, // TODO: Calculate from transactions
+                    available: (item.allocated || 0) - 0, // allocated - spent
+                    dueDate: item.dueDate || null,
+                    paychecksUntilDue: item.dueDate ? calculatePaychecksUntilDue(item.dueDate) : null,
+                    isSubItem: true,
+                    isActive: item.isActive || true,
+                    type: item.type
+                }));
+            }
 
             // Calculate per paycheck amount (assuming bi-weekly)
             const perPaycheck = monthlyNeed / 2.17; // Approximate monthly to bi-weekly conversion
-
-            // Transform sub-items
-            const subItems = categoryItems.map(item => ({
-                id: item.id,
-                parentId: category.id,
-                name: item.name,
-                amount: item.amount || (item.type === 'savings-goal' ? item.monthlyContribution : 0),
-                frequency: item.frequency || 'monthly',
-                monthlyNeed: item.type === 'savings-goal'
-                    ? (item.monthlyContribution || 0)
-                    : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly'),
-                perPaycheck: (item.type === 'savings-goal'
-                    ? (item.monthlyContribution || 0)
-                    : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly')) / 2.17,
-                allocated: item.allocated || 0,
-                spent: 0, // TODO: Calculate from transactions
-                available: (item.allocated || 0) - 0, // allocated - spent
-                dueDate: item.dueDate || null,
-                paychecksUntilDue: item.dueDate ? calculatePaychecksUntilDue(item.dueDate) : null,
-                isSubItem: true,
-                isActive: item.isActive || true,
-                type: item.type
-            }));
 
             return {
                 id: category.id,
@@ -110,7 +133,7 @@ export default function BudgetOverview() {
                 allocated: category.allocated || 0,
                 spent: category.spent || 0,
                 available: category.available || 0,
-                dueDate: category.type === 'single' && subItems.length > 0 ? subItems[0].dueDate : null,
+                dueDate: categoryDueDate,
                 color: category.color || 'bg-blue-500',
                 isActive: category.isActive !== false, // Default to true if not specified
                 isParent: true,
@@ -151,8 +174,8 @@ export default function BudgetOverview() {
 
     // Transform the real data for the table
     const tableData = useMemo(() =>
-        transformDataForBudgetTable(categories, planningItems, accounts),
-        [categories, planningItems, accounts]
+        transformDataForBudgetTable(categories, planningItems),
+        [categories, planningItems, transformDataForBudgetTable]
     );
 
     // Calculate summary data
@@ -167,6 +190,12 @@ export default function BudgetOverview() {
     const handleCloseCategoryModal = useCallback(() => {
         setShowCategoryModal(false);
         setEditingCategory(null);
+    }, []);
+
+    const handleCloseItemModal = useCallback(() => {
+        setShowItemModal(false);
+        setEditingItem(null);
+        setPreselectedCategory(null);
     }, []);
 
     // Handler functions for the table
@@ -188,7 +217,17 @@ export default function BudgetOverview() {
                     description: categoryData.description,
                     autoFunding: categoryData.autoFunding,
                     accountId: categoryData.accountId,
-                    isActive: categoryData.status === 'active'
+                    isActive: categoryData.status === 'active',
+                    // Include planning data for single categories
+                    planningType: categoryData.planningType,
+                    amount: categoryData.amount,
+                    frequency: categoryData.frequency,
+                    dueDate: categoryData.dueDate,
+                    isRecurring: categoryData.isRecurring,
+                    targetAmount: categoryData.targetAmount,
+                    targetDate: categoryData.targetDate,
+                    monthlyContribution: categoryData.monthlyContribution,
+                    alreadySaved: categoryData.alreadySaved
                 });
 
                 // For single categories, remove any existing planning items since they shouldn't exist
@@ -215,7 +254,17 @@ export default function BudgetOverview() {
                     description: categoryData.description,
                     autoFunding: categoryData.autoFunding,
                     accountId: categoryData.accountId,
-                    isActive: categoryData.status === 'active'
+                    isActive: categoryData.status === 'active',
+                    // Include planning data for single categories
+                    planningType: categoryData.planningType,
+                    amount: categoryData.amount,
+                    frequency: categoryData.frequency,
+                    dueDate: categoryData.dueDate,
+                    isRecurring: categoryData.isRecurring,
+                    targetAmount: categoryData.targetAmount,
+                    targetDate: categoryData.targetDate,
+                    monthlyContribution: categoryData.monthlyContribution,
+                    alreadySaved: categoryData.alreadySaved
                 });
 
                 // For single categories, DO NOT create separate planning items
@@ -232,7 +281,7 @@ export default function BudgetOverview() {
         } catch (error) {
             console.error("Error saving category:", error);
         }
-    }, [editingCategory, addCategory, updateCategory, addItem, updateItem, planningItems, handleCloseCategoryModal]);
+    }, [editingCategory, addCategory, updateCategory, planningItems, handleCloseCategoryModal, removeItem]);
 
     const handleEditCategory = useCallback((categoryData) => {
         try {
@@ -301,21 +350,59 @@ export default function BudgetOverview() {
 
     const handleAddItem = useCallback((itemData) => {
         try {
-            addItem(itemData);
-            console.log('Added item:', itemData);
+            // If itemData has categoryId, it's coming from the "Add Item" button in table
+            if (itemData && itemData.categoryId) {
+                const category = categories.find(cat => cat.id === itemData.categoryId);
+                setPreselectedCategory(category);
+                setEditingItem(null);
+                setShowItemModal(true);
+            } else {
+                // This is actual item data from the form
+                addItem(itemData);
+                console.log('Added item:', itemData);
+            }
         } catch (error) {
             console.error("Error adding item:", error);
         }
-    }, [addItem]);
+    }, [addItem, categories]);
 
     const handleEditItem = useCallback((itemData) => {
         try {
-            updateItem(itemData.id, itemData);
-            console.log('Updated item:', itemData);
+            // If itemData has all the item properties, it's coming from the edit button
+            if (itemData && itemData.id && itemData.name) {
+                setEditingItem(itemData);
+                setPreselectedCategory(null);
+                setShowItemModal(true);
+            } else {
+                // This is actual item data from the form
+                updateItem(itemData.id, itemData);
+                console.log('Updated item:', itemData);
+            }
         } catch (error) {
             console.error("Error editing item:", error);
         }
     }, [updateItem]);
+
+    const handleSaveItem = useCallback((itemData, addAnother = false) => {
+        try {
+            if (editingItem) {
+                // Update existing item
+                updateItem(editingItem.id, itemData);
+                console.log('Updated item:', itemData);
+            } else {
+                // Add new item
+                addItem(itemData);
+                console.log('Added item:', itemData);
+            }
+
+            // Close modal if not adding another
+            if (!addAnother) {
+                handleCloseItemModal();
+            }
+        } catch (error) {
+            console.error("Error saving item:", error);
+        }
+    }, [editingItem, addItem, updateItem, handleCloseItemModal]);
 
     const handleDeleteItem = useCallback((itemId) => {
         try {
@@ -545,6 +632,21 @@ export default function BudgetOverview() {
                             onCancel={handleCloseCategoryModal}
                             accounts={accounts}
                             currentPay={accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0)}
+                        />
+                    </React.Suspense>
+                )}
+
+                {/* Item Form Modal */}
+                {showItemModal && (
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                        <UnifiedItemForm
+                            item={editingItem}
+                            onSave={handleSaveItem}
+                            onCancel={handleCloseItemModal}
+                            categories={categories}
+                            accounts={accounts}
+                            currentPay={accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0)}
+                            preselectedCategory={preselectedCategory}
                         />
                     </React.Suspense>
                 )}

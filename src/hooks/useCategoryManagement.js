@@ -95,6 +95,18 @@ export const useCategoryManagement = () => {
         maxAmount: categoryData.autoFunding?.maxAmount || 500,
         priority: categoryData.autoFunding?.priority || 'medium'
       },
+      // Store planning data directly on category for single categories
+      ...(categoryData.type === 'single' && {
+        planningType: categoryData.planningType,
+        amount: categoryData.amount || 0,
+        frequency: categoryData.frequency || 'monthly',
+        dueDate: categoryData.dueDate || null,
+        isRecurring: categoryData.isRecurring || false,
+        targetAmount: categoryData.targetAmount || 0,
+        targetDate: categoryData.targetDate,
+        monthlyContribution: categoryData.monthlyContribution || 0,
+        alreadySaved: categoryData.alreadySaved || 0
+      }),
       // NEW: Category type specific settings
       settings: {
         // For single categories - the main expense details
@@ -127,6 +139,18 @@ export const useCategoryManagement = () => {
           const updatedCategory = {
             ...cat,
             ...categoryData,
+            // Store planning data directly on category for single categories
+            ...(categoryData.type === 'single' && {
+              planningType: categoryData.planningType,
+              amount: categoryData.amount || 0,
+              frequency: categoryData.frequency || 'monthly',
+              dueDate: categoryData.dueDate || null,
+              isRecurring: categoryData.isRecurring || false,
+              targetAmount: categoryData.targetAmount || 0,
+              targetDate: categoryData.targetDate,
+              monthlyContribution: categoryData.monthlyContribution || 0,
+              alreadySaved: categoryData.alreadySaved || 0
+            }),
             // Reset type-specific settings when changing type
             settings: {
               ...(categoryData.type === 'single' && {
@@ -143,8 +167,24 @@ export const useCategoryManagement = () => {
           return updatedCategory;
         }
 
-        // Normal update
-        return { ...cat, ...categoryData };
+        // Normal update - include planning data for single categories
+        const updatedCategory = {
+          ...cat,
+          ...categoryData,
+          // Store planning data directly on category for single categories
+          ...(cat.type === 'single' && {
+            planningType: categoryData.planningType !== undefined ? categoryData.planningType : cat.planningType,
+            amount: categoryData.amount !== undefined ? categoryData.amount : cat.amount,
+            frequency: categoryData.frequency !== undefined ? categoryData.frequency : cat.frequency,
+            dueDate: categoryData.dueDate !== undefined ? categoryData.dueDate : cat.dueDate,
+            isRecurring: categoryData.isRecurring !== undefined ? categoryData.isRecurring : cat.isRecurring,
+            targetAmount: categoryData.targetAmount !== undefined ? categoryData.targetAmount : cat.targetAmount,
+            targetDate: categoryData.targetDate !== undefined ? categoryData.targetDate : cat.targetDate,
+            monthlyContribution: categoryData.monthlyContribution !== undefined ? categoryData.monthlyContribution : cat.monthlyContribution,
+            alreadySaved: categoryData.alreadySaved !== undefined ? categoryData.alreadySaved : cat.alreadySaved
+          })
+        };
+        return updatedCategory;
       }
       return cat;
     }));
