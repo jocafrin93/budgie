@@ -194,19 +194,61 @@ export const useCategoryManagement = () => {
    * Delete a category - ENHANCED with type-aware cleanup
    */
   const deleteCategory = useCallback((categoryId, planningItems = []) => {
+    console.log('=== DELETE CATEGORY DEBUG ===');
+    console.log('Input categoryId:', categoryId, 'type:', typeof categoryId);
+    console.log('Input planningItems:', planningItems);
+    console.log('All categories:', categories);
+    console.log('Category types breakdown:', categories.map(cat => ({ id: cat.id, name: cat.name, type: cat.type })));
+
+    // Show item count for each category
+    const categoryItemCounts = categories.map(cat => {
+      const itemCount = planningItems.filter(item => {
+        const itemCategoryId = parseInt(item.categoryId, 10);
+        const catId = parseInt(cat.id, 10);
+        return !isNaN(itemCategoryId) && !isNaN(catId) && itemCategoryId === catId;
+      }).length;
+      return { id: cat.id, name: cat.name, type: cat.type, itemCount };
+    });
+    console.log('Category item counts:', categoryItemCounts);
+
     const categoryToDelete = categories.find(cat => cat.id === categoryId);
-    if (!categoryToDelete) return { success: false, error: 'Category not found' };
+    console.log('Category to delete:', categoryToDelete);
+
+    if (!categoryToDelete) {
+      console.log('Category not found, returning error');
+      return { success: false, error: 'Category not found' };
+    }
+
+    console.log('Category type:', categoryToDelete.type);
 
     // For single categories, the category IS the item, so we can delete it directly
     if (categoryToDelete.type === 'single') {
+      console.log('Single category - deleting directly');
       setCategories(prev => prev.filter(cat => cat.id !== categoryId));
       return { success: true };
     }
 
-    // For multiple categories, check for associated items (use loose equality to handle string/number mismatch)
-    const associatedItems = planningItems.filter(item => item.categoryId == categoryId);
+    // For multiple categories, check for associated items
+    console.log('Multiple category - checking for associated items');
+    console.log('Planning items to check:', planningItems.length);
+
+    // Convert both to numbers for proper comparison to handle string/number mismatch
+    const associatedItems = planningItems.filter(item => {
+      const itemCategoryId = parseInt(item.categoryId, 10);
+      const targetCategoryId = parseInt(categoryId, 10);
+      const matches = !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+      const isActive = item.isActive !== false; // Default to true if not specified
+
+      console.log(`Item ${item.id}: categoryId=${item.categoryId} (${typeof item.categoryId}) -> parsed=${itemCategoryId}, target=${targetCategoryId}, matches=${matches}, isActive=${isActive}`);
+
+      return matches; // Count ALL items (active and inactive)
+    });
+
+    console.log('Associated items found:', associatedItems.length);
+    console.log('Associated items:', associatedItems);
 
     if (associatedItems.length > 0) {
+      console.log('Cannot delete - has associated items');
       return {
         success: false,
         error: `Cannot delete category "${categoryToDelete.name}" because it has ${associatedItems.length} item(s). Please move or delete the items first.`,
@@ -214,7 +256,9 @@ export const useCategoryManagement = () => {
       };
     }
 
+    console.log('No associated items - deleting category');
     setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+    console.log('=== DELETE CATEGORY COMPLETE ===');
     return { success: true };
   }, [setCategories, categories]);
 
@@ -228,7 +272,12 @@ export const useCategoryManagement = () => {
 
     if (category.type === newType) return { success: true }; // Already correct type
 
-    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+    // Convert both to numbers for proper comparison to handle string/number mismatch
+    const associatedItems = planningItems.filter(item => {
+      const itemCategoryId = parseInt(item.categoryId, 10);
+      const targetCategoryId = parseInt(categoryId, 10);
+      return !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+    });
 
     // Validate conversion rules
     if (newType === 'single' && associatedItems.length > 1) {
@@ -264,7 +313,12 @@ export const useCategoryManagement = () => {
     const category = categories.find(cat => cat.id === categoryId);
     if (!category) return null;
 
-    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+    // Convert both to numbers for proper comparison to handle string/number mismatch
+    const associatedItems = planningItems.filter(item => {
+      const itemCategoryId = parseInt(item.categoryId, 10);
+      const targetCategoryId = parseInt(categoryId, 10);
+      return !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+    });
     const activeItems = associatedItems.filter(item => item.isActive);
 
     return {
@@ -283,7 +337,12 @@ export const useCategoryManagement = () => {
    */
   const suggestCategoryType = useCallback((planningItems = []) => {
     return (categoryId) => {
-      const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+      // Convert both to numbers for proper comparison to handle string/number mismatch
+      const associatedItems = planningItems.filter(item => {
+        const itemCategoryId = parseInt(item.categoryId, 10);
+        const targetCategoryId = parseInt(categoryId, 10);
+        return !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+      });
 
       if (associatedItems.length === 0) {
         return 'single'; // Default for empty categories
@@ -408,6 +467,24 @@ export const useCategoryManagement = () => {
     return { migrated: migratedCount };
   }, [categories, setCategories]);
 
+  /**
+   * DEBUG HELPER: Create a test single category for deletion testing
+   */
+  const createTestSingleCategory = useCallback(() => {
+    const testCategory = {
+      name: 'Test Single Category',
+      type: 'single',
+      color: 'bg-gradient-to-r from-red-500 to-orange-500',
+      planningType: 'expense',
+      amount: 100,
+      frequency: 'monthly'
+    };
+
+    const newCategory = addCategory(testCategory);
+    console.log('Created test single category:', newCategory);
+    return newCategory;
+  }, [addCategory]);
+
   return {
     // Existing functions
     categories,
@@ -424,6 +501,9 @@ export const useCategoryManagement = () => {
     convertCategoryType,
     getCategoryTypeInfo,
     suggestCategoryType,
-    migrateCategoriesWithTypes
+    migrateCategoriesWithTypes,
+
+    // DEBUG HELPER
+    createTestSingleCategory
   };
 };

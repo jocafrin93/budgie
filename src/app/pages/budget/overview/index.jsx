@@ -84,7 +84,7 @@ export default function BudgetOverview() {
             } else {
                 // For multiple categories, get planning items for this category
                 const categoryItems = planningItems.filter(item =>
-                    item.categoryId === category.id && item.isActive
+                    item.categoryId === category.id // Show ALL items (active and inactive)
                 );
 
                 // Calculate totals for the category from planning items
@@ -98,31 +98,48 @@ export default function BudgetOverview() {
                 }, 0);
 
                 // Transform sub-items
-                subItems = categoryItems.map(item => ({
-                    id: item.id,
-                    parentId: category.id,
-                    name: item.name,
-                    amount: item.amount || (item.type === 'savings-goal' ? item.monthlyContribution : 0),
-                    frequency: item.frequency || 'monthly',
-                    monthlyNeed: item.type === 'savings-goal'
+                subItems = categoryItems.map(item => {
+                    const monthlyNeed = item.type === 'savings-goal'
                         ? (item.monthlyContribution || 0)
-                        : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly'),
-                    perPaycheck: (item.type === 'savings-goal'
-                        ? (item.monthlyContribution || 0)
-                        : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly')) / 2.17,
-                    allocated: item.allocated || 0,
-                    spent: 0, // TODO: Calculate from transactions
-                    available: (item.allocated || 0) - 0, // allocated - spent
-                    dueDate: item.dueDate || null,
-                    paychecksUntilDue: item.dueDate ? calculatePaychecksUntilDue(item.dueDate) : null,
-                    isSubItem: true,
-                    isActive: item.isActive || true,
-                    type: item.type
-                }));
+                        : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly');
+
+                    const paychecksUntilDue = item.dueDate ? calculatePaychecksUntilDue(item.dueDate) : null;
+
+                    // Calculate per paycheck based on due date if available
+                    let perPaycheck;
+                    const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+
+                    if (item.dueDate && paychecksUntilDue > 0) {
+                        // For items with due dates, calculate based on actual paychecks until due
+                        perPaycheck = (item.amount || 0) / paychecksUntilDue;
+                    } else {
+                        // For items without due dates, use conservative approach (2 paychecks per month for bi-weekly)
+                        perPaycheck = monthlyNeed / paycheckInfo.conservative;
+                    }
+
+                    return {
+                        id: item.id,
+                        parentId: category.id,
+                        name: item.name,
+                        amount: item.amount || (item.type === 'savings-goal' ? item.monthlyContribution : 0),
+                        frequency: item.frequency || 'monthly',
+                        monthlyNeed,
+                        perPaycheck,
+                        allocated: item.allocated || 0,
+                        spent: 0, // TODO: Calculate from transactions
+                        available: (item.allocated || 0) - 0, // allocated - spent
+                        dueDate: item.dueDate || null,
+                        paychecksUntilDue,
+                        isSubItem: true,
+                        isActive: item.isActive || true,
+                        type: item.type
+                    };
+                });
             }
 
-            // Calculate per paycheck amount (assuming bi-weekly)
-            const perPaycheck = monthlyNeed / 2.17; // Approximate monthly to bi-weekly conversion
+            // Calculate per paycheck amount using conservative approach
+            const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+            const perPaycheck = monthlyNeed / paycheckInfo.conservative; // Conservative: 2 paychecks per month for bi-weekly
 
             return {
                 id: category.id,
@@ -141,6 +158,18 @@ export default function BudgetOverview() {
             };
         });
     };
+
+    // Conservative paycheck info (from EnhancedBudgetTable)
+    const getConservativePaycheckInfo = useCallback((payFreq) => {
+        switch (payFreq) {
+            case 'weekly': return { conservative: 4, average: 4.33, bonusPerYear: 4 };
+            case 'biweekly':
+            case 'bi-weekly': return { conservative: 2, average: 2.17, bonusPerYear: 2 };
+            case 'semimonthly': return { conservative: 2, average: 2, bonusPerYear: 0 };
+            case 'monthly': return { conservative: 1, average: 1, bonusPerYear: 0 };
+            default: return { conservative: 2, average: 2.17, bonusPerYear: 2 };
+        }
+    }, []);
 
     // Helper function to calculate monthly amount based on frequency
     const calculateMonthlyAmount = (amount, frequency) => {
@@ -295,17 +324,28 @@ export default function BudgetOverview() {
 
     const handleDeleteCategory = useCallback((categoryId) => {
         try {
-            // Debug: Log the category ID and associated items
-            console.log('Attempting to delete category:', categoryId, typeof categoryId);
-            const associatedItems = planningItems.filter(item => {
-                console.log('Checking item:', item.id, item.categoryId, typeof item.categoryId, 'matches:', item.categoryId == categoryId, item.categoryId === categoryId);
-                return item.categoryId == categoryId; // Use loose equality to handle string/number mismatch
-            });
-            console.log('Found associated items:', associatedItems);
+            console.log('=== OVERVIEW DELETE CATEGORY DEBUG ===');
+            console.log('Input categoryId:', categoryId, 'type:', typeof categoryId);
+            console.log('All planning items:', planningItems);
+            console.log('Planning items count:', planningItems.length);
 
+            // Use the same strict integer comparison as the deleteCategory function
+            const associatedItems = planningItems.filter(item => {
+                const itemCategoryId = parseInt(item.categoryId, 10);
+                const targetCategoryId = parseInt(categoryId, 10);
+                const matches = !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+                console.log(`Overview filter - Item ${item.id}: categoryId=${item.categoryId} (${typeof item.categoryId}) -> parsed=${itemCategoryId}, target=${targetCategoryId}, matches=${matches}`);
+                return matches;
+            });
+            console.log('Overview found associated items:', associatedItems.length);
+            console.log('Overview associated items:', associatedItems);
+
+            console.log('Calling deleteCategory hook with:', categoryId, planningItems.length, 'items');
             const result = deleteCategory(categoryId, planningItems);
+            console.log('DeleteCategory result:', result);
+
             if (result.success) {
-                console.log('Deleted category:', categoryId);
+                console.log('Deleted category successfully:', categoryId);
 
                 // Clean up any orphaned planning items after successful category deletion
                 associatedItems.forEach(item => {
@@ -313,6 +353,7 @@ export default function BudgetOverview() {
                     removeItem(item.id);
                 });
             } else {
+                console.log('Delete failed, showing confirmation dialog');
                 // Show user-friendly alert with option to force delete
                 const forceDelete = confirm(
                     `${result.error}\n\nWould you like to force delete this category and remove all associated items? This action cannot be undone.`
@@ -330,7 +371,9 @@ export default function BudgetOverview() {
 
                     // Try deleting the category again
                     setTimeout(() => {
+                        console.log('Retrying category deletion after item removal');
                         const secondResult = deleteCategory(categoryId, []);
+                        console.log('Second delete result:', secondResult);
                         if (secondResult.success) {
                             console.log('Force deleted category:', categoryId);
                         } else {
@@ -342,6 +385,7 @@ export default function BudgetOverview() {
                     console.log('User cancelled force delete');
                 }
             }
+            console.log('=== OVERVIEW DELETE CATEGORY COMPLETE ===');
         } catch (error) {
             console.error("Error deleting category:", error);
             alert("An unexpected error occurred while deleting the category.");
@@ -406,10 +450,15 @@ export default function BudgetOverview() {
 
     const handleDeleteItem = useCallback((itemId) => {
         try {
+            console.log('=== DELETE ITEM DEBUG ===');
+            console.log('Input itemId:', itemId, 'type:', typeof itemId);
+            console.log('Calling removeItem with:', itemId);
+
             removeItem(itemId);
-            console.log('Deleted item:', itemId);
+            console.log('Successfully deleted item:', itemId);
         } catch (error) {
             console.error("Error deleting item:", error);
+            console.error("Error details:", error.message, error.stack);
         }
     }, [removeItem]);
 
