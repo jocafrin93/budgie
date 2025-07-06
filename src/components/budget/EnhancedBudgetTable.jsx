@@ -1,4 +1,4 @@
-// src/components/budget/UnifiedEnvelopeBudgetView.jsx
+// src/components/budget/EnhancedBudgetTable.jsx
 import {
     flexRender,
     getCoreRowModel,
@@ -43,7 +43,7 @@ import UnifiedItemForm from './UnifiedItemForm';
 // Utils
 import { frequencyOptions } from '../../utils/constants';
 
-const UnifiedEnvelopeBudgetView = ({
+const EnhancedBudgetTable = ({
     // Data
     categories = [],
     planningItems = [],
@@ -68,8 +68,8 @@ const UnifiedEnvelopeBudgetView = ({
     monthlyBudgeting = null,
 
     // Optional
-    onShowPaydayWorkflow,
-    recentPaycheck = null,
+    // onShowPaydayWorkflow, // TODO: Will be used later
+    // recentPaycheck = null, // TODO: Will be used later
 
     // Paycheck configuration
     payFrequency,
@@ -926,4 +926,4 @@ const UnifiedEnvelopeBudgetView = ({
     );
 };
 
-export default UnifiedEnvelopeBudgetView;
+export default EnhancedBudgetTable;

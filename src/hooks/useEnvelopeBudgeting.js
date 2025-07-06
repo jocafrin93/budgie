@@ -156,7 +156,7 @@ export const useEnvelopeBudgeting = ({
     );
 
     // For manual allocations, we'll update the items' allocated amounts
-    const isManualAllocation = !paycheckId;
+    // const isManualAllocation = !paycheckId; // TODO: Will be used later
 
     // Update category
     setCategories(currentCategories =>
@@ -225,7 +225,7 @@ export const useEnvelopeBudgeting = ({
     }
 
     return true;
-  }, [setCategories, setCategoryFundingHistory, planningItems]);
+  }, [categories, setCategories, setCategoryFundingHistory, planningItems]);
 
   /**
    * Move money from one category to another
@@ -377,7 +377,7 @@ export const useEnvelopeBudgeting = ({
       fundingResults,
       remainingToAllocate: validateAmount(validatedTotal - totalFunded)
     };
-  }, [monthlyBudget, fundCategory, planningItems]);
+  }, [fundCategory, planningItems]);
 
   /**
    * Get funding suggestions based on active planning items

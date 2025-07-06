@@ -43,12 +43,13 @@ export const generatePaycheckDates = (paySchedule, monthsAhead = 12) => {
             case 'bi-weekly':
                 paycheckDate = new Date(start.getTime() + (i * 14 * 24 * 60 * 60 * 1000));
                 break;
-            case 'semi-monthly':
+            case 'semi-monthly': {
                 // 1st and 15th of each month
                 const monthsFromStart = Math.floor(i / 2);
                 const isFirstHalf = i % 2 === 0;
                 paycheckDate = new Date(start.getFullYear(), start.getMonth() + monthsFromStart, isFirstHalf ? 1 : 15);
                 break;
+            }
             case 'monthly':
                 paycheckDate = new Date(start.getFullYear(), start.getMonth() + i, start.getDate());
                 break;
@@ -79,10 +80,9 @@ export const generatePaycheckDates = (paySchedule, monthsAhead = 12) => {
  * @param {string|Date} targetDate - The target date to get paychecks up to
  * @param {number|string} accountId - The account ID to get paychecks for
  * @param {Object} paySchedule - The pay schedule configuration
- * @param {Array} accounts - Array of account objects
  * @returns {Array} Array of paycheck objects relevant to the account and target date
  */
-export const getRelevantPaychecks = (targetDate, accountId, paySchedule, accounts) => {
+export const getRelevantPaychecks = (targetDate, accountId, paySchedule) => {
     if (!targetDate) return [];
     if (!paySchedule) {
         // Silent fail - return empty array without warning

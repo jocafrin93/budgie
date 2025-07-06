@@ -29,4 +29,3 @@ export const categoryColors = [
     "bg-gradient-to-r from-purple-600 to-teal-500",
     "bg-gradient-to-r from-violet-600 to-purple-800",
 ];
-

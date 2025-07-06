@@ -5,6 +5,8 @@ export { default as PaycheckManager } from './PaycheckManager';
 export { default as SimplifiedSummaryCards } from './SimplifiedSummaryCards';
 export { default as SummaryCard } from './SummaryCard';
 export { default as TransactionsTab } from './TransactionsTab';
+export { default as UnifiedCategoryForm } from './UnifiedCategoryForm';
 export { default as UnifiedEnvelopeBudgetView } from './UnifiedEnvelopeBudgetView';
+export { default as UnifiedItemForm } from './UnifiedItemForm';
 export { default as UpcomingPaychecks } from './UpcomingPaychecks';
 

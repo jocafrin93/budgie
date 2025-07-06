@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Modal Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom backdrop blur for better browser support */
+        .backdrop-blur-sm {
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <h1 class="text-2xl font-bold mb-4">Category Modal Test</h1>
+    <p class="mb-4">This demonstrates the modal behavior that both UnifiedCategoryForm and AddTransaction form use.</p>
+
+    <button id="openModal" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+        Open Category Modal
+    </button>
+
+    <!-- Modal (hidden by default) -->
+    <div id="modal"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40 hidden">
+        <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto m-4 bg-white rounded-lg shadow-xl">
+            <div class="p-6">
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">
+                        Add New Category
+                    </h2>
+                    <button id="closeModal"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Description -->
+                <p class="text-sm text-gray-600 mb-6">
+                    Categories organize your expenses and goals for easier budgeting
+                </p>
+
+                <!-- Sample Form Content -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-900 mb-1">
+                            Category Name
+                        </label>
+                        <input type="text" placeholder="Enter category name"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-900 mb-1">
+                            Category Type
+                        </label>
+                        <select
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option>Single Item Category</option>
+                            <option>Multiple Items Category</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-900 mb-1">
+                            Amount
+                        </label>
+                        <input type="number" placeholder="0.00"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex justify-end gap-3 pt-6 border-t border-gray-200 mt-6">
+                    <button id="cancelBtn"
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        Add Category
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('modal');
+        const openBtn = document.getElementById('openModal');
+        const closeBtn = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+
+        // Open modal
+        openBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+        });
+
+        // Close modal
+        function closeModal() {
+            modal.classList.add('hidden');
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        // Close on background click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+
+</html>
