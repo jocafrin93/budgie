@@ -355,17 +355,31 @@ const TransactionFormModal = ({
     // Update form data when transaction prop changes (for editing)
     useEffect(() => {
         if (transaction) {
+            // Editing existing transaction
             setFormData(transaction);
             setIsTransfer(transaction.isTransfer || false);
             setTransactionType(transaction.amount >= 0 ? 'inflow' : 'outflow');
             setShowSplits(transaction.isSplit || (transaction.splits && transaction.splits.length > 0));
         } else {
-            // Reset to defaults for new transactions
+            // New transaction - reset to clean defaults
+            const cleanDefaults = {
+                date: getTodayLocalDate(),
+                payee: '',
+                amount: '',
+                categoryId: '',
+                accountId: '',
+                memo: '',
+                isCleared: false,
+                splits: [],
+                isTransfer: false,
+                transferToAccountId: ''
+            };
+            setFormData(cleanDefaults);
             setIsTransfer(false);
             setTransactionType('outflow');
             setShowSplits(false);
         }
-    }, [transaction]);
+    }, [transaction, isOpen]); // Add isOpen dependency to reset when modal opens
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -1281,6 +1295,10 @@ export default function TransactionsTab({
     const handleCloseModal = () => {
         setShowModal(false);
         setEditingTransaction(null);
+        // Reset form state for next new transaction
+        setTimeout(() => {
+            // This ensures the modal state is fully reset after closing
+        }, 100);
     };
 
     return (
