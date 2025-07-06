@@ -37,13 +37,23 @@ const AccountFormModal = ({
     onSave,
     isEdit = false
 }) => {
+    // Get today's date for starting balance date
+    const getTodayDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     // Initialize form data based on whether we're editing or creating
     const getInitialFormData = () => {
         if (isEdit && account) {
             return {
                 name: account.name || '',
                 type: account.type || 'checking',
-                balance: account.balance || 0,
+                startingBalance: account.startingBalance || account.balance || 0, // Migrate old balance field
+                startingBalanceDate: account.startingBalanceDate || getTodayDate(),
                 institution: account.institution || '',
                 accountNumber: account.accountNumber || '',
                 isActive: account.isActive ?? true,
@@ -53,7 +63,8 @@ const AccountFormModal = ({
         return {
             name: '',
             type: 'checking',
-            balance: 0,
+            startingBalance: 0,
+            startingBalanceDate: getTodayDate(),
             institution: '',
             accountNumber: '',
             isActive: true,
@@ -65,7 +76,17 @@ const AccountFormModal = ({
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(formData);
+
+        // For new accounts, set reconciliation fields
+        const accountData = {
+            ...formData,
+            // Initialize reconciliation fields for new accounts
+            lastReconciledDate: null,
+            lastReconciledBalance: 0,
+            isReconciling: false
+        };
+
+        onSave(accountData);
         onClose();
     };
 
@@ -115,12 +136,44 @@ const AccountFormModal = ({
                             ))}
                         </Select>
 
-                        <CurrencyField
-                            label="Current Balance"
-                            value={formData.balance}
-                            onChange={(e) => setFormData(prev => ({ ...prev, balance: parseFloat(e.target.value) || 0 }))}
-                            required
-                        />
+                        {/* Starting Balance Section */}
+                        <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                <h3 className="font-medium text-blue-900 dark:text-blue-100">Starting Balance</h3>
+                            </div>
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                {isEdit ?
+                                    "This is the balance when you first added this account to the system." :
+                                    "Enter your current account balance. This will be your starting point for transaction tracking."
+                                }
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <CurrencyField
+                                    label="Starting Balance"
+                                    value={formData.startingBalance}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, startingBalance: parseFloat(e.target.value) || 0 }))}
+                                    required
+                                    disabled={isEdit} // Can't change starting balance after creation
+                                />
+
+                                <Input
+                                    label="Starting Date"
+                                    type="date"
+                                    value={formData.startingBalanceDate}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, startingBalanceDate: e.target.value }))}
+                                    required
+                                    disabled={isEdit} // Can't change starting date after creation
+                                />
+                            </div>
+
+                            {isEdit && (
+                                <div className="text-xs text-blue-700 dark:text-blue-300">
+                                    💡 Starting balance and date cannot be changed after account creation. Use transactions to track balance changes.
+                                </div>
+                            )}
+                        </div>
 
                         <Input
                             label="Institution"
@@ -167,72 +220,131 @@ const AccountFormModal = ({
     );
 };
 
-// Balance Update Modal Component
-const BalanceUpdateModal = ({
+// Reconciliation Modal Component
+const ReconciliationModal = ({
     isOpen,
     onClose,
     account,
-    onSave
+    transactions = [],
+    onReconcile
 }) => {
-    const [newBalance, setNewBalance] = useState(0);
-    const [reason, setReason] = useState('');
+    const [bankBalance, setBankBalance] = useState(0);
 
-    // Initialize balance when modal opens - use conditional state update
-    if (isOpen && account && newBalance !== account.balance) {
-        setNewBalance(account.balance);
-        setReason('');
-    }
+    // Calculate account balances
+    const calculateBalances = (account, transactions) => {
+        if (!account) return { workingBalance: 0, clearedBalance: 0, pendingBalance: 0 };
+
+        const accountTransactions = transactions.filter(t => t.accountId === account.id);
+        const startingBalance = account.startingBalance || account.balance || 0;
+
+        const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const clearedBalance = startingBalance + accountTransactions
+            .filter(t => t.isCleared)
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
+        const pendingBalance = workingBalance - clearedBalance;
+
+        return { workingBalance, clearedBalance, pendingBalance };
+    };
+
+    const balances = calculateBalances(account, transactions);
+    const difference = bankBalance - balances.clearedBalance;
+    const isBalanced = Math.abs(difference) < 0.01;
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave(account.id, newBalance, reason);
-        onClose();
+        if (isBalanced) {
+            onReconcile(account.id, bankBalance);
+            onClose();
+        }
     };
 
     if (!isOpen || !account) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <Card className="w-full max-w-md m-4">
+            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold">
-                            Update Balance
+                            Reconcile {account.name}
                         </h2>
                         <Button onClick={onClose} variant="flat" isIcon>
                             ×
                         </Button>
                     </div>
 
-                    <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Account:</div>
-                        <div className="font-medium">{account.name}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            Current Balance: <span className="font-medium">${account.balance.toFixed(2)}</span>
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Bank Balance Input */}
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <CurrencyField
+                                label="Bank Statement Balance"
+                                value={bankBalance}
+                                onChange={(e) => setBankBalance(parseFloat(e.target.value) || 0)}
+                                required
+                                placeholder="Enter your bank balance"
+                            />
+                            <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
+                                Enter the balance shown on your bank statement or online banking.
+                            </p>
                         </div>
-                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <CurrencyField
-                            label="New Balance"
-                            value={newBalance}
-                            onChange={(e) => setNewBalance(parseFloat(e.target.value) || 0)}
-                            required
-                        />
+                        {/* Balance Comparison */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Working Balance</div>
+                                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balances.workingBalance)}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">All transactions</div>
+                            </div>
 
-                        <Input
-                            label="Reason for Change (Optional)"
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            placeholder="e.g., Bank reconciliation, manual adjustment"
-                        />
+                            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <div className="text-sm text-green-600 dark:text-green-400">Cleared Balance</div>
+                                <div className="text-lg font-bold text-green-700 dark:text-green-300">
+                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balances.clearedBalance)}
+                                </div>
+                                <div className="text-xs text-green-600 dark:text-green-400">Cleared transactions</div>
+                            </div>
 
+                            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                <div className="text-sm text-yellow-600 dark:text-yellow-400">Pending</div>
+                                <div className="text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balances.pendingBalance)}
+                                </div>
+                                <div className="text-xs text-yellow-600 dark:text-yellow-400">Uncleared transactions</div>
+                            </div>
+                        </div>
+
+                        {/* Difference Display */}
+                        <div className={`p-4 rounded-lg border ${isBalanced
+                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                            }`}>
+                            <div className="text-center">
+                                <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    Difference
+                                </div>
+                                <div className={`text-2xl font-bold ${isBalanced ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.abs(difference))}
+                                </div>
+                                <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                    {isBalanced ? '✅ Perfect match!' : `${difference > 0 ? 'Bank higher' : 'Bank lower'} - Review transactions`}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Form Actions */}
                         <div className="flex justify-end space-x-3 pt-4 border-t">
                             <Button type="button" onClick={onClose} variant="flat">
                                 Cancel
                             </Button>
-                            <Button type="submit" variant="filled">
-                                Update Balance
+                            <Button
+                                type="submit"
+                                variant="filled"
+                                disabled={!isBalanced}
+                                className={!isBalanced ? 'opacity-50 cursor-not-allowed' : ''}
+                            >
+                                {isBalanced ? 'Complete Reconciliation' : 'Balance Required'}
                             </Button>
                         </div>
                     </form>
@@ -245,16 +357,17 @@ const BalanceUpdateModal = ({
 // Main AccountsManagement Component
 export default function AccountsManagement({
     accounts = [],
+    transactions = [],
     onAddAccount,
     onEditAccount,
     onDeleteAccount,
     onToggleAccountActive,
-    onUpdateBalance
+    onReconcileAccount
 }) {
     const [showModal, setShowModal] = useState(false);
-    const [showBalanceModal, setShowBalanceModal] = useState(false);
+    const [showReconcileModal, setShowReconcileModal] = useState(false);
     const [editingAccount, setEditingAccount] = useState(null);
-    const [balanceAccount, setBalanceAccount] = useState(null);
+    const [reconcilingAccount, setReconcilingAccount] = useState(null);
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -310,17 +423,87 @@ export default function AccountsManagement({
         setEditingAccount(null);
     };
 
-    const handleCloseBalanceModal = () => {
-        setShowBalanceModal(false);
-        setBalanceAccount(null);
+    const handleCloseReconcileModal = () => {
+        setShowReconcileModal(false);
+        setReconcilingAccount(null);
     };
 
-    const handleBalanceUpdate = (accountId, newBalance, reason) => {
-        onUpdateBalance(accountId, newBalance, reason);
+    const handleReconcile = (accountId, bankBalance) => {
+        onReconcileAccount(accountId, bankBalance);
     };
 
-    // Calculate totals
-    const totalBalance = accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+    // Calculate account balances for display
+    const calculateAccountBalances = (account) => {
+        if (!account) return { workingBalance: 0, clearedBalance: 0, pendingBalance: 0 };
+
+        const accountTransactions = transactions.filter(t => t.accountId === account.id);
+        const startingBalance = account.startingBalance || account.balance || 0;
+
+        const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+        const clearedBalance = startingBalance + accountTransactions
+            .filter(t => t.isCleared)
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
+        const pendingBalance = workingBalance - clearedBalance;
+
+        return { workingBalance, clearedBalance, pendingBalance };
+    };
+
+    // Get reconciliation status and time indicator
+    const getReconciliationStatus = (account) => {
+        if (!account.lastReconciledDate) {
+            return {
+                status: 'never',
+                message: 'Never reconciled',
+                color: 'text-red-600',
+                bgColor: 'bg-red-50 dark:bg-red-900/20',
+                borderColor: 'border-red-200 dark:border-red-800'
+            };
+        }
+
+        const lastReconciled = new Date(account.lastReconciledDate);
+        const now = new Date();
+        const daysDiff = Math.floor((now - lastReconciled) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff <= 3) {
+            return {
+                status: 'recent',
+                message: `${daysDiff === 0 ? 'Today' : `${daysDiff} day${daysDiff === 1 ? '' : 's'} ago`}`,
+                color: 'text-green-600',
+                bgColor: 'bg-green-50 dark:bg-green-900/20',
+                borderColor: 'border-green-200 dark:border-green-800'
+            };
+        } else if (daysDiff <= 7) {
+            return {
+                status: 'warning',
+                message: `${daysDiff} days ago`,
+                color: 'text-yellow-600',
+                bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
+                borderColor: 'border-yellow-200 dark:border-yellow-800'
+            };
+        } else if (daysDiff <= 14) {
+            return {
+                status: 'overdue',
+                message: `${daysDiff} days ago - Reconcile recommended`,
+                color: 'text-orange-600',
+                bgColor: 'bg-orange-50 dark:bg-orange-900/20',
+                borderColor: 'border-orange-200 dark:border-orange-800'
+            };
+        } else {
+            return {
+                status: 'critical',
+                message: `${daysDiff} days ago - Reconcile overdue`,
+                color: 'text-red-600',
+                bgColor: 'bg-red-50 dark:bg-red-900/20',
+                borderColor: 'border-red-200 dark:border-red-800'
+            };
+        }
+    };
+
+    // Calculate totals using working balances
+    const totalWorkingBalance = accounts.reduce((sum, account) => {
+        const balances = calculateAccountBalances(account);
+        return sum + balances.workingBalance;
+    }, 0);
     const activeAccounts = accounts.filter(account => account.isActive);
 
     return (
@@ -374,11 +557,11 @@ export default function AccountsManagement({
 
                 <Card className="p-4">
                     <div className="text-center">
-                        <div className={`text-2xl font-bold ${totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {formatCurrency(totalBalance)}
+                        <div className={`text-2xl font-bold ${totalWorkingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(totalWorkingBalance)}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Total Balance
+                            Total Working Balance
                         </div>
                     </div>
                 </Card>
@@ -436,17 +619,32 @@ export default function AccountsManagement({
                                         </Td>
 
                                         <Td>
-                                            <div className="flex items-center space-x-2">
-                                                <button
-                                                    onClick={() => {
-                                                        setBalanceAccount(account);
-                                                        setShowBalanceModal(true);
-                                                    }}
-                                                    className={`font-medium hover:underline cursor-pointer ${account.balance >= 0 ? 'text-green-600 hover:text-green-700' : 'text-red-600 hover:text-red-700'}`}
-                                                    title="Click to update balance"
-                                                >
-                                                    {formatCurrency(account.balance)}
-                                                </button>
+                                            <div className="space-y-1">
+                                                {(() => {
+                                                    const balances = calculateAccountBalances(account);
+                                                    const reconcileStatus = getReconciliationStatus(account);
+                                                    return (
+                                                        <>
+                                                            <div className="flex items-center space-x-2">
+                                                                <span className={`font-medium ${balances.workingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                    {formatCurrency(balances.workingBalance)}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500">Working</span>
+                                                            </div>
+                                                            <div className="flex items-center space-x-2">
+                                                                <span className="text-sm text-green-600">
+                                                                    {formatCurrency(balances.clearedBalance)}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500">Cleared</span>
+                                                            </div>
+                                                            <div className={`text-xs px-2 py-1 rounded ${reconcileStatus.bgColor} ${reconcileStatus.borderColor} border`}>
+                                                                <span className={reconcileStatus.color}>
+                                                                    {reconcileStatus.message}
+                                                                </span>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
                                         </Td>
 
@@ -472,6 +670,18 @@ export default function AccountsManagement({
 
                                         <Td>
                                             <div className="flex items-center space-x-2">
+                                                <Button
+                                                    onClick={() => {
+                                                        setReconcilingAccount(account);
+                                                        setShowReconcileModal(true);
+                                                    }}
+                                                    variant="flat"
+                                                    size="xs"
+                                                    title="Reconcile Account"
+                                                    className="text-blue-600 hover:text-blue-700"
+                                                >
+                                                    ⚖️
+                                                </Button>
                                                 <Button
                                                     onClick={() => {
                                                         setEditingAccount(account);
@@ -566,22 +776,57 @@ export default function AccountsManagement({
 
                         {/* Account Details */}
                         <div className="space-y-3">
-                            {/* Balance - Prominent Display */}
-                            <div className="text-center py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Balance</div>
-                                <button
-                                    onClick={() => {
-                                        setBalanceAccount(account);
-                                        setShowBalanceModal(true);
-                                    }}
-                                    className={`text-2xl font-bold hover:underline cursor-pointer transition-colors ${account.balance >= 0 ? 'text-green-600 hover:text-green-700' : 'text-red-600 hover:text-red-700'}`}
-                                    title="Tap to update balance"
-                                >
-                                    {formatCurrency(account.balance)}
-                                </button>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    Tap to edit
-                                </div>
+                            {/* Balance - Reconciliation Display */}
+                            <div className="py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                {(() => {
+                                    const balances = calculateAccountBalances(account);
+                                    const reconcileStatus = getReconciliationStatus(account);
+                                    return (
+                                        <>
+                                            <div className="text-center mb-3">
+                                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Working Balance</div>
+                                                <div className={`text-2xl font-bold ${balances.workingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {formatCurrency(balances.workingBalance)}
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 text-sm mb-3">
+                                                <div className="text-center">
+                                                    <div className="text-gray-600 dark:text-gray-400">Cleared</div>
+                                                    <div className="font-medium text-green-600">
+                                                        {formatCurrency(balances.clearedBalance)}
+                                                    </div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-gray-600 dark:text-gray-400">Pending</div>
+                                                    <div className="font-medium text-yellow-600">
+                                                        {formatCurrency(balances.pendingBalance)}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className={`text-xs px-2 py-1 rounded text-center ${reconcileStatus.bgColor} ${reconcileStatus.borderColor} border mb-3`}>
+                                                <span className={reconcileStatus.color}>
+                                                    {reconcileStatus.message}
+                                                </span>
+                                            </div>
+
+                                            <div className="text-center">
+                                                <Button
+                                                    onClick={() => {
+                                                        setReconcilingAccount(account);
+                                                        setShowReconcileModal(true);
+                                                    }}
+                                                    variant="filled"
+                                                    size="sm"
+                                                    className="bg-blue-600 hover:bg-blue-700"
+                                                >
+                                                    ⚖️ Reconcile Account
+                                                </Button>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
 
                             {/* Additional Info */}
@@ -648,11 +893,12 @@ export default function AccountsManagement({
                 isEdit={!!editingAccount}
             />
 
-            <BalanceUpdateModal
-                isOpen={showBalanceModal}
-                onClose={handleCloseBalanceModal}
-                account={balanceAccount}
-                onSave={handleBalanceUpdate}
+            <ReconciliationModal
+                isOpen={showReconcileModal}
+                onClose={handleCloseReconcileModal}
+                account={reconcilingAccount}
+                transactions={transactions}
+                onReconcile={handleReconcile}
             />
         </div>
     );

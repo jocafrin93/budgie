@@ -873,12 +873,35 @@ export default function TransactionsTab({
         }).format(Math.abs(amount));
     };
 
-    // Handle cleared status toggle
+    // Check if a transaction is reconciled (cleared and account has been reconciled after transaction date)
+    const isTransactionReconciled = (transaction) => {
+        if (!transaction.isCleared) return false;
+
+        const account = accounts.find(acc => acc.id === transaction.accountId);
+        if (!account || !account.lastReconciledDate) return false;
+
+        const transactionDate = new Date(transaction.date);
+        const reconciledDate = new Date(account.lastReconciledDate);
+
+        return transactionDate <= reconciledDate;
+    };
+
+    // Handle cleared status toggle with reconciliation warning
     const handleToggleCleared = (transactionId, currentStatus) => {
         const transaction = transactions.find(t => t.id === transactionId);
-        if (transaction) {
-            onEditTransaction({ ...transaction, isCleared: !currentStatus });
+        if (!transaction) return;
+
+        // Check if transaction is reconciled
+        if (isTransactionReconciled(transaction)) {
+            const shouldProceed = window.confirm(
+                '⚠️ This transaction has been reconciled!\n\n' +
+                'Changing its cleared status may affect your reconciliation accuracy. ' +
+                'Are you sure you want to proceed?'
+            );
+            if (!shouldProceed) return;
         }
+
+        onEditTransaction({ ...transaction, isCleared: !currentStatus });
     };
 
     // Handle linked deletion for transfer transactions
@@ -1081,15 +1104,28 @@ export default function TransactionsTab({
                     { value: true, label: 'Cleared' },
                     { value: false, label: 'Pending' }
                 ],
-                cell: ({ getValue, row }) => (
-                    <IconSwap
-                        isOn={getValue()}
-                        onChange={() => handleToggleCleared(row.original.id, getValue())}
-                        onIcon={<CircleCheck className="w-5 h-5" checked={true} />}
-                        offIcon={<CircleCheck className="w-5 h-5" checked={false} />}
-                        className="p-1"
-                    />
-                ),
+                cell: ({ getValue, row }) => {
+                    const isReconciled = isTransactionReconciled(row.original);
+                    return (
+                        <div className="flex items-center space-x-1">
+                            <IconSwap
+                                isOn={getValue()}
+                                onChange={() => handleToggleCleared(row.original.id, getValue())}
+                                onIcon={<CircleCheck className="w-5 h-5" checked={true} />}
+                                offIcon={<CircleCheck className="w-5 h-5" checked={false} />}
+                                className="p-1"
+                            />
+                            {isReconciled && (
+                                <div
+                                    className="text-blue-600 dark:text-blue-400"
+                                    title="This transaction has been reconciled"
+                                >
+                                    🔒
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'memo',
