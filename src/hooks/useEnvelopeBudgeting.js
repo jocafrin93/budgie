@@ -1,5 +1,5 @@
 // src/hooks/useEnvelopeBudgeting.js
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 
 /**
@@ -81,48 +81,6 @@ export const useEnvelopeBudgeting = ({
     return needed;
   }, [planningItems]);
 
-  /**
-   * Calculate the available balance for each category
-   * Available = Allocated - Spent
-   */
-  const calculateCategoryBalances = useCallback(() => {
-    // Create a map of category ID to spent amount from transactions
-    const categorySpending = {};
-
-    transactions.forEach(transaction => {
-      if (transaction.categoryId && transaction.amount < 0) {
-        if (!categorySpending[transaction.categoryId]) {
-          categorySpending[transaction.categoryId] = 0;
-        }
-        const validatedAmount = validateAmount(Math.abs(transaction.amount));
-        if (validatedAmount > 0) {
-          categorySpending[transaction.categoryId] = validateAmount(
-            categorySpending[transaction.categoryId] + validatedAmount
-          );
-        }
-      }
-    });
-
-    // Update category available balances
-    setCategories(currentCategories =>
-      currentCategories.map(category => {
-        const spent = validateAmount(categorySpending[category.id] || 0);
-        const allocated = validateAmount(category.allocated || 0);
-        const available = validateAmount(allocated - spent);
-
-        return {
-          ...category,
-          spent,
-          available
-        };
-      })
-    );
-  }, [transactions, setCategories]);
-
-  /**
-   * Fund a category with a specific amount
-   * This increases the category's allocated and available amounts
-   */
   // Helper function to validate amounts
   const validateAmount = (amount) => {
     if (typeof amount !== 'number' || isNaN(amount)) return 0;
@@ -130,6 +88,48 @@ export const useEnvelopeBudgeting = ({
     return Math.min(Math.max(amount, -100000), 100000);
   };
 
+  /**
+   * Calculate the available balance for each category
+   * Available = Allocated - Spent
+   */
+  // const calculateCategoryBalances = useCallback(() => {
+  //   // Create a map of category ID to spent amount from transactions
+  //   const categorySpending = {};
+
+  //   transactions.forEach(transaction => {
+  //     if (transaction.categoryId && transaction.amount < 0) {
+  //       if (!categorySpending[transaction.categoryId]) {
+  //         categorySpending[transaction.categoryId] = 0;
+  //       }
+  //       const validatedAmount = validateAmount(Math.abs(transaction.amount));
+  //       if (validatedAmount > 0) {
+  //         categorySpending[transaction.categoryId] = validateAmount(
+  //           categorySpending[transaction.categoryId] + validatedAmount
+  //         );
+  //       }
+  //     }
+  //   });
+
+  //   // Update category available balances
+  //   setCategories(currentCategories =>
+  //     currentCategories.map(category => {
+  //       const spent = validateAmount(categorySpending[category.id] || 0);
+  //       const allocated = validateAmount(category.allocated || 0);
+  //       const available = validateAmount(allocated - spent);
+
+  //       return {
+  //         ...category,
+  //         spent,
+  //         available
+  //       };
+  //     })
+  //   );
+  // }, [transactions, setCategories]);
+
+  /**
+   * Fund a category with a specific amount
+   * This increases the category's allocated and available amounts
+   */
   const fundCategory = useCallback((categoryId, amount, paycheckId = null, date = new Date()) => {
     // Validate inputs
     if (!categoryId || amount === 0) return false;
@@ -513,10 +513,8 @@ export const useEnvelopeBudgeting = ({
     };
   }, [transactions, categoryFundingHistory]);
 
-  // Calculate category balances when transactions change
-  useEffect(() => {
-    calculateCategoryBalances();
-  }, [transactions, calculateCategoryBalances]);
+  // Note: calculateCategoryBalances is available but not automatically called
+  // to avoid infinite loops. Call it manually when needed.
 
   /**
    * Unified function to transfer funds between categories or between a category and the "to be allocated" pool

@@ -5,122 +5,376 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Category Modal Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom backdrop blur for better browser support */
-        .backdrop-blur-sm {
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+        /* Modal overlay styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Button styles */
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+
+        /* Table styles */
+        .budget-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .budget-table th,
+        .budget-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .budget-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+
+        .budget-table button {
+            padding: 4px 8px;
+            margin: 0 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #f3f4f6;
+        }
+
+        .budget-table button:hover {
+            background-color: #e5e7eb;
+        }
+
+        .expand-btn {
+            background: none !important;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
         }
     </style>
 </head>
 
 <body class="bg-gray-100 p-8">
-    <h1 class="text-2xl font-bold mb-4">Category Modal Test</h1>
-    <p class="mb-4">This demonstrates the modal behavior that both UnifiedCategoryForm and AddTransaction form use.</p>
+    <div id="root"></div>
 
-    <button id="openModal" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-        Open Category Modal
-    </button>
+    <script type="text/babel">
+        const { useState, useCallback } = React;
 
-    <!-- Modal (hidden by default) -->
-    <div id="modal"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40 hidden">
-        <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto m-4 bg-white rounded-lg shadow-xl">
-            <div class="p-6">
-                <!-- Header -->
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-xl font-semibold text-gray-900">
-                        Add New Category
-                    </h2>
-                    <button id="closeModal"
-                        class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
-                        ✕
-                    </button>
+        // Mock UnifiedCategoryForm component
+        const UnifiedCategoryForm = ({ category, onSave, onCancel, accounts, currentPay }) => {
+            const [formData, setFormData] = useState({
+                name: category?.name || '',
+                type: category?.type || 'multiple',
+                color: category?.color || 'bg-blue-500',
+                status: category?.status || 'active',
+                priority: category?.priority || 'medium',
+                description: category?.description || '',
+                autoFunding: category?.autoFunding || false,
+                accountId: category?.accountId || '',
+                planningType: 'expense',
+                amount: 0,
+                frequency: 'monthly',
+                dueDate: '',
+                isRecurring: false,
+                targetAmount: 0,
+                targetDate: '',
+                monthlyContribution: 0,
+                alreadySaved: 0
+            });
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onSave(formData);
+            };
+
+            const handleSaveAndAddAnother = (e) => {
+                e.preventDefault();
+                onSave(formData, true);
+            };
+
+            return (
+                <div className="modal-overlay" onClick={onCancel}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900">
+                                {category ? 'Edit Category' : 'Add New Category'}
+                            </h2>
+                            <button
+                                onClick={onCancel}
+                                className="text-gray-400 hover:text-gray-600 text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit}>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Category Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Enter category name"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Category Type
+                                    </label>
+                                    <select
+                                        value={formData.type}
+                                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="multiple">Multiple Items</option>
+                                        <option value="single">Single Item</option>
+                                    </select>
+                                </div>
+
+                                {formData.type === 'single' && (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Planning Type
+                                            </label>
+                                            <select
+                                                value={formData.planningType}
+                                                onChange={(e) => setFormData({ ...formData, planningType: e.target.value })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="expense">Expense</option>
+                                                <option value="goal">Savings Goal</option>
+                                            </select>
+                                        </div>
+
+                                        {formData.planningType === 'expense' && (
+                                            <>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Amount
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={formData.amount}
+                                                        onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Frequency
+                                                    </label>
+                                                    <select
+                                                        value={formData.frequency}
+                                                        onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    >
+                                                        <option value="monthly">Monthly</option>
+                                                        <option value="bi-weekly">Bi-weekly</option>
+                                                        <option value="weekly">Weekly</option>
+                                                        <option value="annually">Annually</option>
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {formData.planningType === 'goal' && (
+                                            <>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Target Amount
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={formData.targetAmount}
+                                                        onChange={(e) => setFormData({ ...formData, targetAmount: parseFloat(e.target.value) || 0 })}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Monthly Contribution
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={formData.monthlyContribution}
+                                                        onChange={(e) => setFormData({ ...formData, monthlyContribution: parseFloat(e.target.value) || 0 })}
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Color
+                                    </label>
+                                    <select
+                                        value={formData.color}
+                                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="bg-blue-500">Blue</option>
+                                        <option value="bg-green-500">Green</option>
+                                        <option value="bg-red-500">Red</option>
+                                        <option value="bg-yellow-500">Yellow</option>
+                                        <option value="bg-purple-500">Purple</option>
+                                        <option value="bg-pink-500">Pink</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Status
+                                    </label>
+                                    <select
+                                        value={formData.status}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="inactive">Inactive</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end space-x-3 mt-6">
+                                <button
+                                    type="button"
+                                    onClick={onCancel}
+                                    className="btn-secondary"
+                                >
+                                    Cancel
+                                </button>
+                                {!category && (
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveAndAddAnother}
+                                        className="btn-primary"
+                                    >
+                                        Save & Add Another
+                                    </button>
+                                )}
+                                <button
+                                    type="submit"
+                                    className="btn-primary"
+                                >
+                                    {category ? 'Update Category' : 'Save Category'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
+            );
+        };
 
-                <!-- Description -->
-                <p class="text-sm text-gray-600 mb-6">
-                    Categories organize your expenses and goals for easier budgeting
-                </p>
+        // Mock BudgetCategoriesTable component
+        const BudgetCategoriesTable = ({ data, onAddCategory, onEditCategory, onDeleteCategory }) => {
+            const [expanded, setExpanded] = useState({ 0: true });
 
-                <!-- Sample Form Content -->
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-900 mb-1">
-                            Category Name
-                        </label>
-                        <input type="text" placeholder="Enter category name"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            const toggleExpanded = (index) => {
+                setExpanded(prev => ({
+                    ...prev,
+                    [index]: !prev[index]
+                }));
+            };
+
+            return (
+                <div className="bg-white rounded-lg shadow">
+                    <div className="p-6 border-b border-gray-200">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-semibold text-gray-900">Budget Categories</h2>
+                            <button
+                                onClick={() => onAddCategory()}
+                                className="btn-primary"
+                            >
+                                + Add Category
+                            </button>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-900 mb-1">
-                            Category Type
-                        </label>
-                        <select
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option>Single Item Category</option>
-                            <option>Multiple Items Category</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-900 mb-1">
-                            Amount
-                        </label>
-                        <input type="number" placeholder="0.00"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                </div>
-
-                <!-- Form Actions -->
-                <div class="flex justify-end gap-3 pt-6 border-t border-gray-200 mt-6">
-                    <button id="cancelBtn"
-                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                        Cancel
-                    </button>
-                    <button class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
-                        Add Category
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const modal = document.getElementById('modal');
-        const openBtn = document.getElementById('openModal');
-        const closeBtn = document.getElementById('closeModal');
-        const cancelBtn = document.getElementById('cancelBtn');
-
-        // Open modal
-        openBtn.addEventListener('click', () => {
-            modal.classList.remove('hidden');
-        });
-
-        // Close modal
-        function closeModal() {
-            modal.classList.add('hidden');
-        }
-
-        closeBtn.addEventListener('click', closeModal);
-        cancelBtn.addEventListener('click', closeModal);
-
-        // Close on background click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-
-        // Close on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
-                closeModal();
-            }
-        });
-    </script>
-</body>
-
-</html>
+                    <table className="budget-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Category</th>
+                                <th>Per Month</th>
+                                <th>Per Paycheck</th>
+                                <th>Allocated</th>
+                                <th>Available</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {data.map((category, index) => (
+                                <React.Fragment key={category.id}>
+                                    <tr className="hover:bg-gray-50">
+                                        <td>
+                                            <button
+                                                className="expand-btn"
+                                                onClick={() => toggleExpanded(index)}

@@ -1,5 +1,5 @@
 import { Page } from "components/shared/Page";
-import { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import BudgetCategoriesTable from "../../../../components/budget/BudgetCategoriesTable";
 import SimplifiedSummaryCards from "../../../../components/budget/SimplifiedSummaryCards";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
@@ -7,7 +7,14 @@ import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
 import { useDataModel } from "../../../../hooks/useDataModel";
 import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
 
+// Dynamic import for UnifiedCategoryForm
+const UnifiedCategoryForm = React.lazy(() => import("../../../../components/budget/UnifiedCategoryForm"));
+
 export default function BudgetOverview() {
+    // Modal state for category form
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
+    const [editingCategory, setEditingCategory] = useState(null);
+
     // Get accounts data from the hook
     const { accounts } = useAccountManagement();
 
@@ -51,7 +58,7 @@ export default function BudgetOverview() {
     }, [migrateCategoriesWithTypes, planningItems]);
 
     // Transform data for the budget table
-    const transformDataForBudgetTable = (categories = [], planningItems = [], accounts = []) => {
+    const transformDataForBudgetTable = (categories = [], planningItems = []) => {
         return categories.map(category => {
             // Get planning items for this category
             const categoryItems = planningItems.filter(item =>
@@ -143,7 +150,10 @@ export default function BudgetOverview() {
     };
 
     // Transform the real data for the table
-    const tableData = transformDataForBudgetTable(categories, planningItems, accounts);
+    const tableData = useMemo(() =>
+        transformDataForBudgetTable(categories, planningItems, accounts),
+        [categories, planningItems, accounts]
+    );
 
     // Calculate summary data
     const summaryData = {
@@ -153,37 +163,141 @@ export default function BudgetOverview() {
         totalSpent: categories.reduce((sum, cat) => sum + (cat.spent || 0), 0)
     };
 
+    // Modal handlers
+    const handleCloseCategoryModal = useCallback(() => {
+        setShowCategoryModal(false);
+        setEditingCategory(null);
+    }, []);
+
     // Handler functions for the table
-    const handleAddCategory = useCallback((categoryData) => {
+    const handleAddCategory = useCallback(() => {
+        setEditingCategory(null);
+        setShowCategoryModal(true);
+    }, []);
+
+    const handleSaveCategory = useCallback((categoryData, addAnother = false) => {
         try {
-            const newCategory = addCategory(categoryData);
-            console.log('Added category:', newCategory);
+            if (editingCategory) {
+                // Update existing category
+                const updatedCategory = updateCategory(editingCategory.id, {
+                    name: categoryData.name,
+                    type: categoryData.type,
+                    color: categoryData.color,
+                    status: categoryData.status,
+                    priority: categoryData.priority,
+                    description: categoryData.description,
+                    autoFunding: categoryData.autoFunding,
+                    accountId: categoryData.accountId,
+                    isActive: categoryData.status === 'active'
+                });
+
+                // For single categories, remove any existing planning items since they shouldn't exist
+                if (categoryData.type === 'single') {
+                    const existingItems = planningItems.filter(item => item.categoryId === editingCategory.id);
+                    existingItems.forEach(item => {
+                        console.log('Removing orphaned planning item from single category:', item.id);
+                        removeItem(item.id);
+                    });
+                }
+
+                console.log('Updated category:', updatedCategory);
+            } else {
+                // Add new category
+                const categoryId = Date.now().toString();
+
+                const newCategory = addCategory({
+                    id: categoryId,
+                    name: categoryData.name,
+                    type: categoryData.type,
+                    color: categoryData.color,
+                    status: categoryData.status,
+                    priority: categoryData.priority,
+                    description: categoryData.description,
+                    autoFunding: categoryData.autoFunding,
+                    accountId: categoryData.accountId,
+                    isActive: categoryData.status === 'active'
+                });
+
+                // For single categories, DO NOT create separate planning items
+                // The category itself contains all the planning data
+                console.log('Single category created - no separate planning items needed');
+
+                console.log('Added category:', newCategory);
+            }
+
+            // Close modal if not adding another
+            if (!addAnother) {
+                handleCloseCategoryModal();
+            }
         } catch (error) {
-            console.error("Error adding category:", error);
+            console.error("Error saving category:", error);
         }
-    }, [addCategory]);
+    }, [editingCategory, addCategory, updateCategory, addItem, updateItem, planningItems, handleCloseCategoryModal]);
 
     const handleEditCategory = useCallback((categoryData) => {
         try {
-            updateCategory(categoryData.id, categoryData);
-            console.log('Updated category:', categoryData);
+            // Set the category to edit and show the modal
+            setEditingCategory(categoryData);
+            setShowCategoryModal(true);
         } catch (error) {
             console.error("Error editing category:", error);
         }
-    }, [updateCategory]);
+    }, []);
 
     const handleDeleteCategory = useCallback((categoryId) => {
         try {
+            // Debug: Log the category ID and associated items
+            console.log('Attempting to delete category:', categoryId, typeof categoryId);
+            const associatedItems = planningItems.filter(item => {
+                console.log('Checking item:', item.id, item.categoryId, typeof item.categoryId, 'matches:', item.categoryId == categoryId, item.categoryId === categoryId);
+                return item.categoryId == categoryId; // Use loose equality to handle string/number mismatch
+            });
+            console.log('Found associated items:', associatedItems);
+
             const result = deleteCategory(categoryId, planningItems);
             if (result.success) {
                 console.log('Deleted category:', categoryId);
+
+                // Clean up any orphaned planning items after successful category deletion
+                associatedItems.forEach(item => {
+                    console.log('Cleaning up orphaned planning item:', item.id);
+                    removeItem(item.id);
+                });
             } else {
-                console.error("Cannot delete category:", result.error);
+                // Show user-friendly alert with option to force delete
+                const forceDelete = confirm(
+                    `${result.error}\n\nWould you like to force delete this category and remove all associated items? This action cannot be undone.`
+                );
+
+                if (forceDelete) {
+                    // Force delete: remove all associated items first, then delete category
+                    console.log('Force deleting category and associated items:', associatedItems);
+
+                    // Remove all associated planning items
+                    associatedItems.forEach(item => {
+                        console.log('Force removing item:', item.id);
+                        removeItem(item.id);
+                    });
+
+                    // Try deleting the category again
+                    setTimeout(() => {
+                        const secondResult = deleteCategory(categoryId, []);
+                        if (secondResult.success) {
+                            console.log('Force deleted category:', categoryId);
+                        } else {
+                            console.error("Failed to force delete category:", secondResult.error);
+                            alert("Failed to delete category even after removing items. Please refresh the page and try again.");
+                        }
+                    }, 100);
+                } else {
+                    console.log('User cancelled force delete');
+                }
             }
         } catch (error) {
             console.error("Error deleting category:", error);
+            alert("An unexpected error occurred while deleting the category.");
         }
-    }, [deleteCategory, planningItems]);
+    }, [deleteCategory, planningItems, removeItem]);
 
     const handleAddItem = useCallback((itemData) => {
         try {
@@ -421,6 +535,19 @@ export default function BudgetOverview() {
                     onToggleItemActive={handleToggleItemActive}
                     onToggleCategoryActive={handleToggleCategoryActive}
                 />
+
+                {/* Category Form Modal */}
+                {showCategoryModal && (
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                        <UnifiedCategoryForm
+                            category={editingCategory}
+                            onSave={handleSaveCategory}
+                            onCancel={handleCloseCategoryModal}
+                            accounts={accounts}
+                            currentPay={accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0)}
+                        />
+                    </React.Suspense>
+                )}
             </div>
         </Page>
     );

@@ -157,8 +157,14 @@ export const useCategoryManagement = () => {
     const categoryToDelete = categories.find(cat => cat.id === categoryId);
     if (!categoryToDelete) return { success: false, error: 'Category not found' };
 
-    // Check for associated items
-    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+    // For single categories, the category IS the item, so we can delete it directly
+    if (categoryToDelete.type === 'single') {
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      return { success: true };
+    }
+
+    // For multiple categories, check for associated items (use loose equality to handle string/number mismatch)
+    const associatedItems = planningItems.filter(item => item.categoryId == categoryId);
 
     if (associatedItems.length > 0) {
       return {

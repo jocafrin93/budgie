@@ -15,7 +15,6 @@ import {
     ChevronRight,
     DollarSign,
     Edit,
-    MoreHorizontal,
     Plus,
     Search,
     Trash2
@@ -121,7 +120,7 @@ const BudgetCategoriesTable = ({
         const sorted = column.getIsSorted();
         return (
             <button
-                className="flex items-center gap-2 font-medium text-left w-full hover:text-blue-600 transition-colors"
+                className="flex items-center gap-2 font-medium text-left w-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 onClick={() => column.toggleSorting()}
             >
                 {children}
@@ -131,7 +130,7 @@ const BudgetCategoriesTable = ({
                     ) : sorted === 'desc' ? (
                         <ArrowDown className="w-4 h-4" />
                     ) : (
-                        <ArrowUpDown className="w-4 h-4 text-gray-400" />
+                        <ArrowUpDown className="w-4 h-4 text-gray-400 dark:text-dark-400" />
                     )}
                 </div>
             </button>
@@ -186,12 +185,12 @@ const BudgetCategoriesTable = ({
                                     [row.original.originalIndex]: !prev[row.original.originalIndex]
                                 }));
                             }}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
                         >
                             {isExpanded ? (
-                                <ChevronDown className="w-4 h-4" />
+                                <ChevronDown className="w-4 h-4 text-gray-600 dark:text-dark-300" />
                             ) : (
-                                <ChevronRight className="w-4 h-4" />
+                                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-dark-300" />
                             )}
                         </button>
                     );
@@ -210,7 +209,7 @@ const BudgetCategoriesTable = ({
                             <div style={{ marginLeft: item.depth * 20 + 16 }}>
                                 <button
                                     onClick={() => onAddItem && onAddItem({ categoryId: item.parentCategory.id })}
-                                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 border-l-2 border-gray-200 pl-4"
+                                    className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 border-l-2 border-gray-200 dark:border-dark-600 pl-4"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Add Item to {item.parentCategory.name}
@@ -223,10 +222,10 @@ const BudgetCategoriesTable = ({
                         return (
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-3 h-3 rounded-full ${item.color} border border-gray-200`}></div>
+                                    <div className={`w-3 h-3 rounded-full ${item.color} border border-gray-200 dark:border-dark-600`}></div>
                                     <div>
-                                        <div className="font-medium text-gray-900">{item.name}</div>
-                                        <div className="text-sm text-gray-500">
+                                        <div className="font-medium text-gray-900 dark:text-dark-100">{item.name}</div>
+                                        <div className="text-sm text-gray-500 dark:text-dark-400">
                                             {item.type === 'multiple'
                                                 ? `${item.subItems?.length || 0} items`
                                                 : 'Single category'
@@ -239,12 +238,12 @@ const BudgetCategoriesTable = ({
                     } else {
                         // Sub-item
                         return (
-                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-gray-200 pl-4">
-                                <div className="font-medium text-gray-700">{item.name}</div>
-                                <div className="text-sm text-gray-500">
+                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-gray-200 dark:border-dark-600 pl-4">
+                                <div className="font-medium text-gray-700 dark:text-dark-200">{item.name}</div>
+                                <div className="text-sm text-gray-500 dark:text-dark-400">
                                     ${item.amount} {item.frequency}
                                     {item.paychecksUntilDue && (
-                                        <span className="ml-2 text-blue-600">
+                                        <span className="ml-2 text-blue-600 dark:text-blue-400">
                                             • {item.paychecksUntilDue} paychecks left
                                         </span>
                                     )}
@@ -264,7 +263,7 @@ const BudgetCategoriesTable = ({
                     const value = getValue();
                     const isSubItem = !row.original.isParent;
                     return (
-                        <div className={`text-right font-medium ${isSubItem ? 'text-gray-600' : 'text-gray-900'}`}>
+                        <div className={`text-right font-medium ${isSubItem ? 'text-gray-600 dark:text-dark-300' : 'text-gray-900 dark:text-dark-100'}`}>
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -375,25 +374,47 @@ const BudgetCategoriesTable = ({
 
                     return (
                         <div className="flex items-center justify-center gap-1">
-                            <button className="p-2 hover:bg-gray-100 rounded transition-colors">
-                                <Edit className="w-4 h-4 text-gray-600" />
+                            <button
+                                onClick={() => {
+                                    console.log('Edit button clicked!');
+                                    console.log('Row data:', row.original);
+                                    console.log('Is sub item:', isSubItem);
+                                    console.log('onEditItem function:', onEditItem);
+                                    console.log('onEditCategory function:', onEditCategory);
+
+                                    if (isSubItem) {
+                                        console.log('Calling onEditItem with:', row.original);
+                                        onEditItem && onEditItem(row.original);
+                                    } else {
+                                        console.log('Calling onEditCategory with:', row.original);
+                                        onEditCategory && onEditCategory(row.original);
+                                    }
+                                }}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
+                                title={isSubItem ? "Edit Item" : "Edit Category"}
+                            >
+                                <Edit className="w-4 h-4 text-gray-600 dark:text-dark-300" />
                             </button>
-                            {isSubItem ? (
-                                <button className="p-2 hover:bg-gray-100 rounded transition-colors">
-                                    <Trash2 className="w-4 h-4 text-gray-600" />
-                                </button>
-                            ) : (
-                                <button className="p-2 hover:bg-gray-100 rounded transition-colors">
-                                    <MoreHorizontal className="w-4 h-4 text-gray-600" />
-                                </button>
-                            )}
+                            <button
+                                onClick={() => {
+                                    if (isSubItem) {
+                                        onDeleteItem && onDeleteItem(row.original.id);
+                                    } else {
+                                        onDeleteCategory && onDeleteCategory(row.original.id);
+                                    }
+                                }}
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
+                                title={isSubItem ? "Delete Item" : "Delete Category"}
+                            >
+                                <Trash2 className="w-4 h-4 text-gray-600 dark:text-dark-300" />
+                            </button>
                         </div>
                     );
                 },
                 size: 100,
             }),
         ],
-        [expanded, data, columnHelper, onAddItem, onEditCategory, onEditItem, onDeleteCategory, onDeleteItem]
+        [expanded, data]
     );
 
     const table = useReactTable({
@@ -429,20 +450,20 @@ const BudgetCategoriesTable = ({
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-6 bg-white">
+        <div className="w-full max-w-7xl mx-auto p-6 bg-white dark:bg-dark-800">
             {/* Header */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                            <DollarSign className="w-7 h-7 text-green-600" />
+                        <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-100 flex items-center gap-2">
+                            <DollarSign className="w-7 h-7 text-green-600 dark:text-green-400" />
                             Budget Categories
                         </h2>
-                        <p className="text-gray-600">Manage your envelope budgeting categories and items</p>
+                        <p className="text-gray-600 dark:text-dark-300">Manage your envelope budgeting categories and items</p>
                     </div>
                     <button
                         onClick={() => onAddCategory && onAddCategory()}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add Category
@@ -452,24 +473,24 @@ const BudgetCategoriesTable = ({
                 {/* Search and bulk actions */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-dark-400 w-4 h-4" />
                         <input
                             type="text"
                             placeholder="Search categories..."
                             value={globalFilter}
                             onChange={(e) => setGlobalFilter(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-gray-500 dark:placeholder-dark-400"
                         />
                     </div>
 
                     {selectedRowCount > 0 && (
                         <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-dark-300">
                                 {selectedRowCount} selected
                             </span>
                             <button
                                 onClick={handleBulkDelete}
-                                className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
                             >
                                 <Trash2 className="w-4 h-4" />
                                 Delete Selected
@@ -480,16 +501,16 @@ const BudgetCategoriesTable = ({
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-dark-800 rounded-lg border border-gray-200 dark:border-dark-600 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gray-50 border-b border-gray-200">
+                        <thead className="bg-gray-50 dark:bg-dark-700 border-b border-gray-200 dark:border-dark-600">
                             {table.getHeaderGroups().map(headerGroup => (
                                 <tr key={headerGroup.id}>
                                     {headerGroup.headers.map(header => (
                                         <th
                                             key={header.id}
-                                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider"
                                             style={{ width: header.getSize() }}
                                         >
                                             {header.isPlaceholder
@@ -501,7 +522,7 @@ const BudgetCategoriesTable = ({
                                 </tr>
                             ))}
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-600">
                             {table.getRowModel().rows.map(row => {
                                 const isSubItem = !row.original.isParent && !row.original.isAddRow;
                                 const isAddRow = row.original.isAddRow;
@@ -511,12 +532,12 @@ const BudgetCategoriesTable = ({
                                     <tr
                                         key={row.id}
                                         className={`transition-colors ${isAddRow
-                                            ? 'bg-blue-25 hover:bg-blue-50'
+                                            ? 'bg-blue-25 hover:bg-blue-50 dark:bg-blue-900/20 dark:hover:bg-blue-800/30'
                                             : isSubItem
-                                                ? 'bg-gray-25 hover:bg-gray-50'
+                                                ? 'bg-gray-25 hover:bg-gray-50 dark:bg-dark-750 dark:hover:bg-dark-700'
                                                 : isInactive
-                                                    ? 'bg-gray-50 opacity-60'
-                                                    : 'hover:bg-gray-50'
+                                                    ? 'bg-gray-50 dark:bg-dark-750 opacity-60'
+                                                    : 'hover:bg-gray-50 dark:hover:bg-dark-700'
                                             }`}
                                     >
                                         {row.getVisibleCells().map(cell => (
@@ -536,27 +557,27 @@ const BudgetCategoriesTable = ({
                 </div>
 
                 {/* Summary footer */}
-                <div className="bg-gray-50 border-t border-gray-200 px-4 py-3">
+                <div className="bg-gray-50 dark:bg-dark-700 border-t border-gray-200 dark:border-dark-600 px-4 py-3">
                     <div className="flex items-center justify-between text-sm">
-                        <div className="text-gray-600">
+                        <div className="text-gray-600 dark:text-dark-300">
                             {data.length} categories • {data.reduce((sum, cat) => sum + (cat.subItems?.length || 0), 0)} total items
                         </div>
                         <div className="flex items-center gap-6 text-right">
                             <div>
-                                <span className="text-gray-500">Total Monthly Need: </span>
-                                <span className="font-medium text-gray-900">
+                                <span className="text-gray-500 dark:text-dark-400">Total Monthly Need: </span>
+                                <span className="font-medium text-gray-900 dark:text-dark-100">
                                     {formatCurrency(data.reduce((sum, cat) => sum + cat.monthlyNeed, 0))}
                                 </span>
                             </div>
                             <div>
-                                <span className="text-gray-500">Total Allocated: </span>
-                                <span className="font-medium text-green-600">
+                                <span className="text-gray-500 dark:text-dark-400">Total Allocated: </span>
+                                <span className="font-medium text-green-600 dark:text-green-400">
                                     {formatCurrency(data.reduce((sum, cat) => sum + cat.allocated, 0))}
                                 </span>
                             </div>
                             <div>
-                                <span className="text-gray-500">Total Available: </span>
-                                <span className="font-medium text-blue-600">
+                                <span className="text-gray-500 dark:text-dark-400">Total Available: </span>
+                                <span className="font-medium text-blue-600 dark:text-blue-400">
                                     {formatCurrency(data.reduce((sum, cat) => sum + cat.available, 0))}
                                 </span>
                             </div>
