@@ -1,5 +1,4 @@
 // src/hooks/usePaycheckManagement.js
-import { addDays, format, parseISO } from 'date-fns';
 import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 
@@ -214,6 +213,22 @@ export const usePaycheckManagement = (accounts = []) => {
     }
   }, []);
 
+  // Helper function to add days to a date
+  const addDays = (date, days) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  };
+
+  // Helper function to format date as YYYY-MM-DD
+  const formatDate = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   /**
    * Generate the next N paycheck dates for a specific paycheck
    */
@@ -225,8 +240,8 @@ export const usePaycheckManagement = (accounts = []) => {
     let currentDate;
 
     try {
-      currentDate = parseISO(paycheck.startDate);
-    } catch (e) {
+      currentDate = new Date(paycheck.startDate);
+    } catch {
       // Fallback if date parsing fails
       currentDate = new Date();
     }
@@ -300,7 +315,7 @@ export const usePaycheckManagement = (accounts = []) => {
             allDates.push({
               date,
               paycheck: { ...paycheck },
-              formattedDate: format(date, 'yyyy-MM-dd')
+              formattedDate: formatDate(date)
             });
           }
         });

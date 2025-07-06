@@ -1,8 +1,15 @@
 import { Page } from "components/shared/Page";
 import PayeeManagement from "../../../../components/budget/PayeeManagement";
+import { useAccountManagement } from "../../../../hooks/useAccountManagement";
 import { useLocalStorage } from "../../../../hooks/useLocalStorage";
 
+// Import PaycheckManager
+import PaycheckManager from "../../../../components/budget/PaycheckManager";
+
 export default function BudgetSettings() {
+    // Account management for paycheck configuration
+    const { accounts } = useAccountManagement();
+
     // Use the same payee storage as transactions page
     const [payees, setPayees] = useLocalStorage('budgetCalc_payees', [
         'Amazon',
@@ -52,15 +59,14 @@ export default function BudgetSettings() {
                         onDeletePayee={handleDeletePayee}
                     />
 
-                    {/* Future Configuration Sections */}
-                    <div className="bg-white dark:bg-dark-700 rounded-lg p-6 shadow-sm">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            Additional Settings
-                        </h3>
-                        <p className="text-gray-600 dark:text-dark-300">
-                            More configuration options will be added here in the future.
-                        </p>
-                    </div>
+                    {/* Paycheck Management Section */}
+                    <PaycheckManager
+                        accounts={accounts}
+                        onStartPaydayWorkflow={() => {
+                            // TODO: Implement payday workflow modal
+                            console.log('Starting payday workflow...');
+                        }}
+                    />
                 </div>
             </div>
         </Page>

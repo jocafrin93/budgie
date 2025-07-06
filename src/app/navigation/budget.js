@@ -1,6 +1,7 @@
 import {
-    CalculatorIcon,
+    BanknotesIcon,
     CalendarIcon,
+    ChartBarIcon,
     CogIcon,
     CreditCardIcon
 } from '@heroicons/react/24/outline';
@@ -16,7 +17,7 @@ export const budget = {
     path: '/budget',
     title: 'Budget',
     transKey: 'nav.budget.budget',
-    Icon: CalculatorIcon,
+    Icon: ChartBarIcon,
     childs: [
         {
             id: 'budget.accounts',
@@ -32,7 +33,7 @@ export const budget = {
             type: NAV_TYPE_ITEM,
             title: 'Budget Overview',
             transKey: 'nav.budget.overview',
-            Icon: CalculatorIcon,
+            Icon: ChartBarIcon,
         },
         {
             id: 'budget.transactions',
@@ -40,7 +41,7 @@ export const budget = {
             type: NAV_TYPE_ITEM,
             title: 'Transactions',
             transKey: 'nav.budget.transactions',
-            Icon: CreditCardIcon,
+            Icon: BanknotesIcon,
         },
         {
             id: 'budget.calendar',

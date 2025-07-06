@@ -4,6 +4,14 @@
       "dashboards": "Dashboards",
       "home": "Home"
     },
+    "budget": {
+      "budget": "Budget",
+      "accounts": "Accounts",
+      "overview": "Budget Overview",
+      "transactions": "Transactions",
+      "calendar": "Calendar",
+      "settings": "Budget Settings"
+    },
     "settings": {
       "settings": "Settings",
       "general": "General",
