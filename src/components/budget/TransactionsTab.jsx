@@ -39,6 +39,8 @@ import { TableSortIcon } from 'components/shared/table/TableSortIcon';
 // Custom Components
 import CurrencyField from 'components/form/CurrencyField';
 
+// Date utilities
+
 // Inline Icon Swap Components
 const CircleCheck = ({ className = "w-5 h-5", checked = false, ...props }) => (
     <svg
@@ -79,8 +81,16 @@ const PayeeAutocompleteInline = ({
     onAddPayee,
     placeholder = "Enter payee name...",
     required = false,
+    disabled = false,
     ...props
 }) => {
+    // Debug payees array
+    console.log('🔍 PayeeAutocomplete Debug:', {
+        payeesLength: payees.length,
+        payees: payees,
+        payeesType: typeof payees,
+        isArray: Array.isArray(payees)
+    });
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState(value || '');
     const [filteredPayees, setFilteredPayees] = useState(payees);
@@ -231,16 +241,18 @@ const PayeeAutocompleteInline = ({
                     type="text"
                     value={inputValue}
                     onChange={handleInputChange}
-                    onFocus={() => setIsOpen(true)}
+                    onFocus={() => !disabled && setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     required={required}
-                    className="w-full px-3 py-2 pr-10 border border-gray-400 dark:border-gray-500 rounded-lg 
+                    disabled={disabled}
+                    className={`w-full px-3 py-2 pr-10 border border-gray-400 dark:border-gray-500 rounded-lg 
                              bg-white dark:bg-gray-800 
                              text-gray-900 dark:text-gray-100
                              placeholder-gray-500 dark:placeholder-gray-400
                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-                             transition-colors"
+                             transition-colors
+                             ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700' : ''}`}
                     {...props}
                 />
 
@@ -314,10 +326,19 @@ const TransactionFormModal = ({
     onSave,
     isEdit = false
 }) => {
+    // Get today's date in local timezone to avoid timezone issues
+    const getTodayLocalDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     const [formData, setFormData] = useState(transaction || {
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayLocalDate(),
         payee: '',
-        amount: 0,
+        amount: '',
         categoryId: '',
         accountId: '',
         memo: '',
@@ -328,8 +349,23 @@ const TransactionFormModal = ({
     });
 
     const [showSplits, setShowSplits] = useState(false);
-    const [isTransfer, setIsTransfer] = useState(formData.isTransfer || false);
+    const [isTransfer, setIsTransfer] = useState(false); // Always start as false for new transactions
     const [transactionType, setTransactionType] = useState('outflow'); // 'inflow' or 'outflow'
+
+    // Update form data when transaction prop changes (for editing)
+    useEffect(() => {
+        if (transaction) {
+            setFormData(transaction);
+            setIsTransfer(transaction.isTransfer || false);
+            setTransactionType(transaction.amount >= 0 ? 'inflow' : 'outflow');
+            setShowSplits(transaction.isSplit || (transaction.splits && transaction.splits.length > 0));
+        } else {
+            // Reset to defaults for new transactions
+            setIsTransfer(false);
+            setTransactionType('outflow');
+            setShowSplits(false);
+        }
+    }, [transaction]);
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -375,7 +411,8 @@ const TransactionFormModal = ({
         }
 
         // Prepare transaction data with proper amount sign based on transaction type
-        const finalAmount = transactionType === 'outflow' ? -Math.abs(formData.amount) : Math.abs(formData.amount);
+        const parsedAmount = parseFloat(formData.amount) || 0;
+        const finalAmount = transactionType === 'outflow' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount);
 
         const transactionData = {
             ...formData,
@@ -479,6 +516,7 @@ const TransactionFormModal = ({
                                 value={formData.accountId}
                                 onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
                                 required
+                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                             >
                                 <option value="">Select Account</option>
                                 {accounts.map(account => (
@@ -489,15 +527,16 @@ const TransactionFormModal = ({
                             </Select>
                         </div>
 
-                        {/* Payee Autocomplete - Using inline component to avoid import issues */}
+                        {/* Payee Autocomplete - Disabled for transfers */}
                         <PayeeAutocompleteInline
                             label="Payee"
                             value={formData.payee}
                             onChange={(e) => setFormData(prev => ({ ...prev, payee: e.target.value }))}
                             payees={payees}
                             onAddPayee={onAddPayee}
-                            placeholder="Enter payee name..."
-                            required
+                            placeholder={isTransfer ? "Transfer (no payee needed)" : "Enter payee name..."}
+                            required={!isTransfer}
+                            disabled={isTransfer}
                         />
 
                         {/* Transaction Type Toggle */}
@@ -526,8 +565,13 @@ const TransactionFormModal = ({
                                 <Checkbox
                                     checked={isTransfer}
                                     onChange={(e) => {
-                                        setIsTransfer(e.target.checked);
-                                        setFormData(prev => ({ ...prev, isTransfer: e.target.checked }));
+                                        const isTransferChecked = e.target.checked;
+                                        setIsTransfer(isTransferChecked);
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            isTransfer: isTransferChecked,
+                                            payee: isTransferChecked ? '' : prev.payee // Clear payee when transfer is selected
+                                        }));
                                     }}
                                 />
                                 <label>This is a transfer</label>
@@ -543,7 +587,19 @@ const TransactionFormModal = ({
                                 required
                             >
                                 <option value="">Select Account</option>
-                                {accounts.filter(acc => acc.id !== formData.accountId).map(account => (
+                                {accounts.filter(acc => {
+                                    // Enhanced filtering with type coercion and debugging
+                                    const isFiltered = String(acc.id) !== String(formData.accountId);
+                                    console.log('🔍 Transfer Account Filter:', {
+                                        accountId: acc.id,
+                                        accountName: acc.name,
+                                        sourceAccountId: formData.accountId,
+                                        isFiltered,
+                                        accountIdType: typeof acc.id,
+                                        sourceAccountIdType: typeof formData.accountId
+                                    });
+                                    return isFiltered;
+                                }).map(account => (
                                     <option key={account.id} value={account.id}>
                                         {account.name}
                                     </option>
@@ -557,6 +613,8 @@ const TransactionFormModal = ({
                             value={formData.amount}
                             onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
                             required
+                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+
                         />
 
                         {/* Category (not for transfers) */}
@@ -565,6 +623,8 @@ const TransactionFormModal = ({
                                 label="Category"
                                 value={formData.categoryId}
                                 onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+
                             >
                                 <option value="">Select Category</option>
                                 {categories.map(category => (
@@ -579,6 +639,8 @@ const TransactionFormModal = ({
                             label="Memo"
                             value={formData.memo}
                             onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
+                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+
                         />
 
                         <div className="flex items-center space-x-3">
@@ -784,9 +846,10 @@ export default function TransactionsTab({
     const [tableSettings, setTableSettings] = useState({
         enableColumnFilters: true,
         enableSorting: true,
-        enableRowDense: false,
-        enableFullScreen: false
+        enableRowDense: true,
+        enableFullScreen: true
     });
+    const [showFilters, setShowFilters] = useState(false);
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -801,6 +864,95 @@ export default function TransactionsTab({
         const transaction = transactions.find(t => t.id === transactionId);
         if (transaction) {
             onEditTransaction({ ...transaction, isCleared: !currentStatus });
+        }
+    };
+
+    // Handle linked deletion for transfer transactions
+    const handleDeleteTransaction = (transaction) => {
+        console.log('🗑️ DELETE TRANSACTION CALLED:', {
+            transaction,
+            isTransfer: transaction.isTransfer,
+            transferToAccountId: transaction.transferToAccountId,
+            hasTransferData: !!(transaction.isTransfer && transaction.transferToAccountId)
+        });
+
+        // Check if this is a transfer transaction
+        if (transaction.isTransfer && transaction.transferToAccountId) {
+            console.log('🔍 SEARCHING FOR LINKED TRANSACTION:', {
+                searchCriteria: {
+                    transferToAccountId: transaction.accountId,
+                    accountId: transaction.transferToAccountId,
+                    excludeId: transaction.id
+                },
+                allTransactions: transactions.map(t => ({
+                    id: t.id,
+                    accountId: t.accountId,
+                    transferToAccountId: t.transferToAccountId,
+                    isTransfer: t.isTransfer,
+                    amount: t.amount
+                }))
+            });
+
+            // Find the linked transaction with enhanced debugging
+            const linkedTransaction = transactions.find(t => {
+                const transferToMatches = String(t.transferToAccountId) === String(transaction.accountId);
+                const accountMatches = String(t.accountId) === String(transaction.transferToAccountId);
+                const idDifferent = t.id !== transaction.id;
+                const isTransferFlag = t.isTransfer;
+
+                console.log('🔍 CHECKING TRANSACTION FOR DELETE:', {
+                    transactionId: t.id,
+                    transferToAccountId: t.transferToAccountId,
+                    accountId: t.accountId,
+                    isTransfer: t.isTransfer,
+                    checks: {
+                        transferToMatches,
+                        accountMatches,
+                        idDifferent,
+                        isTransferFlag
+                    },
+                    overallMatch: transferToMatches && accountMatches && idDifferent && isTransferFlag
+                });
+
+                return transferToMatches && accountMatches && idDifferent && isTransferFlag;
+            });
+
+            console.log('🗑️ DELETE OPERATION DETAILS:', {
+                mainTransaction: transaction,
+                linkedTransaction,
+                willDeleteBoth: !!linkedTransaction,
+                linkedTransactionFound: !!linkedTransaction
+            });
+
+            // Delete the main transaction
+            console.log('🗑️ DELETING MAIN TRANSACTION:', transaction.id);
+            onDeleteTransaction(transaction.id);
+
+            // Delete the linked transaction if found
+            if (linkedTransaction) {
+                console.log('🗑️ DELETING LINKED TRANSACTION:', linkedTransaction.id);
+                onDeleteTransaction(linkedTransaction.id);
+                console.log('✅ DELETED BOTH TRANSFER TRANSACTIONS');
+            } else {
+                console.warn('⚠️ COULD NOT FIND LINKED TRANSFER TRANSACTION TO DELETE:', {
+                    searchedFor: {
+                        transferToAccountId: transaction.accountId,
+                        accountId: transaction.transferToAccountId,
+                        excludeId: transaction.id,
+                        mustBeTransfer: true
+                    },
+                    availableTransactions: transactions.filter(t => t.isTransfer).map(t => ({
+                        id: t.id,
+                        accountId: t.accountId,
+                        transferToAccountId: t.transferToAccountId,
+                        isTransfer: t.isTransfer
+                    }))
+                });
+            }
+        } else {
+            // Regular transaction deletion
+            console.log('🗑️ DELETING REGULAR TRANSACTION:', transaction.id);
+            onDeleteTransaction(transaction.id);
         }
     };
 
@@ -842,18 +994,22 @@ export default function TransactionsTab({
                 header: 'Date',
                 label: 'Date',
                 filter: 'dateRange',
-                cell: ({ getValue }) => new Date(getValue()).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: '2-digit',
-                    year: 'numeric'
-                }),
+                cell: ({ getValue }) => {
+                    // Use local date formatting to avoid timezone issues
+                    const date = new Date(getValue() + 'T00:00:00'); // Force local timezone
+                    return date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: '2-digit',
+                        year: 'numeric'
+                    });
+                },
             },
             {
                 accessorKey: 'payee',
                 header: 'Payee',
                 label: 'Payee',
                 cell: ({ getValue }) => (
-                    <div className="font-mediumxs">{getValue()}</div>
+                    <div className="font-medium">{getValue() || '—'}</div>
                 ),
             },
             {
@@ -863,8 +1019,18 @@ export default function TransactionsTab({
                 filter: 'select',
                 options: categories.map(cat => ({ value: cat.id, label: cat.name })),
                 cell: ({ getValue, row }) => {
+                    // Check if this is a transfer
+                    const isTransfer = row.original.isTransfer || row.original.transferToAccountId;
                     // Check if this is a split transaction
                     const isSplit = row.original.isSplit || (row.original.splits && row.original.splits.length > 0);
+
+                    if (isTransfer) {
+                        return (
+                            <Badge variant="soft" color="info" className="text-xs">
+                                Transfer
+                            </Badge>
+                        );
+                    }
 
                     return (
                         <Badge variant="soft" className="text-xs">
@@ -941,7 +1107,7 @@ export default function TransactionsTab({
                             <TbEdit className="size-4" />
                         </Button>
                         <Button
-                            onClick={() => onDeleteTransaction(row.original.id)}
+                            onClick={() => handleDeleteTransaction(row.original)}
                             variant="flat"
                             size="sm"
                             isIcon
@@ -987,9 +1153,127 @@ export default function TransactionsTab({
     // Handle form submission
     const handleSaveTransaction = (transactionData) => {
         if (editingTransaction) {
-            onEditTransaction({ ...transactionData, id: editingTransaction.id });
+            // Check if this is editing a transfer transaction
+            if (editingTransaction.isTransfer && editingTransaction.transferToAccountId) {
+                // Update the main transaction
+                const updatedTransaction = { ...transactionData, id: editingTransaction.id };
+                onEditTransaction(updatedTransaction);
+
+                // Enhanced linked transaction finding with debugging
+                console.log('🔍 Looking for linked transaction:', {
+                    editingTransaction,
+                    searchCriteria: {
+                        transferToAccountId: editingTransaction.accountId,
+                        accountId: editingTransaction.transferToAccountId,
+                        excludeId: editingTransaction.id
+                    },
+                    allTransactions: transactions.map(t => ({
+                        id: t.id,
+                        accountId: t.accountId,
+                        transferToAccountId: t.transferToAccountId,
+                        isTransfer: t.isTransfer,
+                        amount: t.amount
+                    }))
+                });
+
+                const linkedTransaction = transactions.find(t => {
+                    const matches = String(t.transferToAccountId) === String(editingTransaction.accountId) &&
+                        String(t.accountId) === String(editingTransaction.transferToAccountId) &&
+                        t.id !== editingTransaction.id &&
+                        t.isTransfer;
+
+                    console.log('🔍 Checking transaction:', {
+                        transactionId: t.id,
+                        transferToAccountId: t.transferToAccountId,
+                        accountId: t.accountId,
+                        isTransfer: t.isTransfer,
+                        matches
+                    });
+
+                    return matches;
+                });
+
+                if (linkedTransaction) {
+                    // Enhanced account lookup for proper payee names
+                    const sourceAccount = accounts.find(acc => String(acc.id) === String(transactionData.accountId));
+
+                    // Parse the amount to ensure it's a number
+                    const parsedAmount = parseFloat(transactionData.amount) || 0;
+
+                    // Update the linked transaction with opposite amount and proper payee
+                    const updatedLinkedTransaction = {
+                        ...linkedTransaction,
+                        amount: -parsedAmount, // Opposite sign with parsed amount
+                        date: transactionData.date, // Keep dates in sync
+                        memo: transactionData.memo, // Keep memos in sync
+                        isCleared: transactionData.isCleared, // Keep status in sync
+                        payee: sourceAccount?.name || sourceAccount?.accountName || `Account ${transactionData.accountId}`,
+                        // Maintain the transfer relationship
+                        transferToAccountId: transactionData.accountId,
+                        isTransfer: true,
+                        categoryId: 'transfer'
+                    };
+
+                    console.log('🔗 Updating linked transfer transaction:', {
+                        originalTransaction: editingTransaction,
+                        updatedTransaction,
+                        linkedTransaction,
+                        updatedLinkedTransaction,
+                        parsedAmount,
+                        oppositeAmount: -parsedAmount
+                    });
+
+                    onEditTransaction(updatedLinkedTransaction);
+                } else {
+                    console.warn('⚠️ Could not find linked transfer transaction for:', editingTransaction);
+                }
+            } else {
+                // Regular transaction edit
+                onEditTransaction({ ...transactionData, id: editingTransaction.id });
+            }
         } else {
-            onAddTransaction(transactionData);
+            // Check if this is a transfer and create inverse transaction
+            if (transactionData.isTransfer && transactionData.transferToAccountId) {
+                // Enhanced account lookup with type coercion
+                const sourceAccount = accounts.find(acc => String(acc.id) === String(transactionData.accountId));
+                const destinationAccount = accounts.find(acc => String(acc.id) === String(transactionData.transferToAccountId));
+
+                // Debug account lookup
+                console.log('🔍 Transfer Debug:', {
+                    sourceAccountId: transactionData.accountId,
+                    destinationAccountId: transactionData.transferToAccountId,
+                    sourceAccount,
+                    destinationAccount,
+                    allAccounts: accounts,
+                    accountsStructure: accounts.map(acc => ({ id: acc.id, name: acc.name, type: typeof acc.id }))
+                });
+
+                // Update main transaction to have destination account as payee
+                const mainTransaction = {
+                    ...transactionData,
+                    payee: destinationAccount?.name || destinationAccount?.accountName || `Account ${transactionData.transferToAccountId}`,
+                    categoryId: 'transfer' // Use 'transfer' as category identifier
+                };
+                onAddTransaction(mainTransaction);
+
+                // Create the inverse transaction for the destination account
+                const inverseTransaction = {
+                    ...transactionData,
+                    id: `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique ID
+                    accountId: transactionData.transferToAccountId,
+                    transferToAccountId: transactionData.accountId,
+                    amount: -transactionData.amount, // Opposite sign
+                    payee: sourceAccount?.name || sourceAccount?.accountName || `Account ${transactionData.accountId}`, // Source account as payee
+                    categoryId: 'transfer', // Use 'transfer' as category identifier
+                    isTransfer: true
+                };
+
+                // Add the inverse transaction
+                onAddTransaction(inverseTransaction);
+            } else {
+                // Regular transaction
+                onAddTransaction(transactionData);
+            }
         }
         setEditingTransaction(null);
     };
@@ -1014,6 +1298,17 @@ export default function TransactionsTab({
 
                 <div className="flex items-center space-x-2">
                     <Button
+                        onClick={() => setShowFilters(!showFilters)}
+                        variant="outlined"
+                        size="sm"
+                        className="flex items-center space-x-2"
+                    >
+                        <svg className={`size-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
+                    </Button>
+                    <Button
                         onClick={() => setShowModal(true)}
                         variant="filled"
                         size="sm"
@@ -1030,6 +1325,7 @@ export default function TransactionsTab({
                 <div className="overflow-x-auto">
                     <Table
                         hoverable
+                        zebra
                         dense={tableSettings.enableRowDense}
                         className="min-w-full"
                     >
@@ -1062,7 +1358,8 @@ export default function TransactionsTab({
 
                                             {/* Column Filter */}
                                             {header.column.getCanFilter() &&
-                                                tableSettings.enableColumnFilters && (
+                                                tableSettings.enableColumnFilters &&
+                                                showFilters && (
                                                     <div className="mt-2">
                                                         <ColumnFilter column={header.column} />
                                                     </div>
