@@ -374,6 +374,29 @@ export const usePaycheckManagement = (accounts = []) => {
   }, [paychecks, generatePaycheckDates, getPaychecksPerYear]);
 
   /**
+   * Get upcoming paycheck dates for a specific account
+   * Returns only paychecks that distribute money to the specified account
+   * @param {number|string} accountId - The account ID to filter by
+   * @param {number} numberOfMonths - Number of months to look ahead
+   * @returns {Array} Array of paycheck dates for the specified account
+   */
+  const getUpcomingPaycheckDatesForAccount = useCallback((accountId, numberOfMonths = 3) => {
+    if (!accountId) return [];
+
+    const allPaychecks = getAllUpcomingPaycheckDates(numberOfMonths);
+
+    return allPaychecks.filter(paycheckEntry => {
+      // Check if this paycheck distributes money to the specified account
+      if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
+        return paycheckEntry.paycheck.accountDistribution.some(dist =>
+          String(dist.accountId) === String(accountId)
+        );
+      }
+      return false;
+    });
+  }, [getAllUpcomingPaycheckDates]);
+
+  /**
    * Get the next paycheck date across all active paychecks
    * Returns the soonest upcoming paycheck
    */
@@ -450,6 +473,7 @@ export const usePaycheckManagement = (accounts = []) => {
     generatePaycheckDates,
     calculateTotalMonthlyIncome,
     getAllUpcomingPaycheckDates,
+    getUpcomingPaycheckDatesForAccount,
     getNextPaycheckDate,
     getPaychecksInDateRange,
     calculateMonthlyExpectedIncome,

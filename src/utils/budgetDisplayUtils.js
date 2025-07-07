@@ -45,9 +45,10 @@ export const calculateMonthlyAmount = (amount, frequency) => {
  * Calculate paychecks remaining until due date
  * @param {string} dueDate - The due date in YYYY-MM-DD format
  * @param {Array} upcomingPaychecks - Array of upcoming paycheck dates
+ * @param {number|string} accountId - Optional account ID to filter paychecks
  * @returns {number} Number of paychecks remaining until due date
  */
-export const calculatePaychecksUntilDue = (dueDate, upcomingPaychecks = []) => {
+export const calculatePaychecksUntilDue = (dueDate, upcomingPaychecks = [], accountId = null) => {
     if (!dueDate || !upcomingPaychecks.length) return 0;
 
     // Parse due date safely
@@ -59,8 +60,22 @@ export const calculatePaychecksUntilDue = (dueDate, upcomingPaychecks = []) => {
         dueDateObj = new Date(dueDate);
     }
 
+    // Filter paychecks by account if specified
+    let relevantPaychecks = upcomingPaychecks;
+    if (accountId !== null) {
+        relevantPaychecks = upcomingPaychecks.filter(paycheckEntry => {
+            // Check if this paycheck distributes money to the specified account
+            if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
+                return paycheckEntry.paycheck.accountDistribution.some(dist =>
+                    String(dist.accountId) === String(accountId)
+                );
+            }
+            return false;
+        });
+    }
+
     // Count paychecks that occur before or on the due date
-    return upcomingPaychecks.filter(paycheck => {
+    return relevantPaychecks.filter(paycheck => {
         const paycheckDate = new Date(paycheck.date);
         return paycheckDate <= dueDateObj;
     }).length;

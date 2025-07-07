@@ -45,7 +45,7 @@ const BudgetCategoriesTable = ({
     const [rowSelection, setRowSelection] = useState({});
 
     // Get paycheck management hook
-    const { getAllUpcomingPaycheckDates } = usePaycheckManagement();
+    const { getAllUpcomingPaycheckDates, getUpcomingPaycheckDatesForAccount } = usePaycheckManagement();
 
     // Get upcoming paychecks for countdown calculations
     const upcomingPaychecks = getAllUpcomingPaycheckDates(3); // Get 3 months of paychecks
@@ -198,6 +198,21 @@ const BudgetCategoriesTable = ({
                         daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
                     }
 
+                    // Calculate required per-paycheck contribution
+                    let calculatedPerPaycheck = category.perPaycheckContribution || 0;
+
+                    // If no manual per-paycheck amount is set, calculate it based on remaining amount and time
+                    if (!calculatedPerPaycheck && category.targetDate && daysUntilTarget > 0) {
+                        const remainingAmount = targetAmount - currentAmount;
+                        if (remainingAmount > 0) {
+                            // Calculate number of paychecks until target date using account-specific filtering
+                            const paychecksUntilTarget = calculatePaychecksUntilDue(category.targetDate, upcomingPaychecks, category.accountId);
+                            if (paychecksUntilTarget > 0) {
+                                calculatedPerPaycheck = remainingAmount / paychecksUntilTarget;
+                            }
+                        }
+                    }
+
                     result.push({
                         id: `goal-progress-${category.id}`,
                         uniqueId: `goal-progress-${category.id}`,
@@ -212,16 +227,16 @@ const BudgetCategoriesTable = ({
                         targetAmount,
                         daysUntilTarget,
                         targetDate: category.targetDate,
-                        perPaycheckContribution: category.perPaycheckContribution || 0,
+                        perPaycheckContribution: calculatedPerPaycheck,
                     });
                 }
 
                 // For single expense categories, add an expense details row
                 if (category.type === 'single' && category.planningType === 'expense') {
-                    // Calculate paycheck countdown if there's a due date
+                    // Calculate paycheck countdown if there's a due date using account-specific filtering
                     let paychecksLeft = null;
                     if (category.dueDate) {
-                        paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks);
+                        paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks, category.accountId);
                     }
 
                     result.push({
@@ -380,96 +395,8 @@ const BudgetCategoriesTable = ({
                     }
 
                     if (item.isGoalProgress) {
-                        // Goal progress row with progress bar and details
-                        const progressColor = item.progressPercentage >= 100 ? 'success' :
-                            item.progressPercentage >= 75 ? 'primary' :
-                                item.progressPercentage >= 50 ? 'warning' : 'neutral';
-
-                        return (
-                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-green-200 dark:border-green-800 pl-4 py-2">
-                                <div className="space-y-3">
-                                    {/* Progress header */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-lg">🎯</span>
-                                            <span className="font-medium text-green-800 dark:text-green-200">Goal Progress</span>
-                                        </div>
-                                        <div className="text-sm font-medium text-green-700 dark:text-green-300">
-                                            {item.progressPercentage.toFixed(1)}%
-                                        </div>
-                                    </div>
-
-                                    {/* Progress bar */}
-                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                                        <div
-                                            className={`h-3 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-green-500' :
-                                                progressColor === 'primary' ? 'bg-blue-500' :
-                                                    progressColor === 'warning' ? 'bg-yellow-500' :
-                                                        'bg-gray-400'
-                                                }`}
-                                            style={{ width: `${Math.min(100, item.progressPercentage)}%` }}
-                                        />
-                                    </div>
-
-                                    {/* Goal details */}
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <div className="text-gray-600 dark:text-gray-400">Saved</div>
-                                            <div className="font-medium text-green-600 dark:text-green-400">
-                                                ${(parseFloat(item.currentAmount) || 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="text-gray-600 dark:text-gray-400">Target</div>
-                                            <div className="font-medium text-gray-900 dark:text-gray-100">
-                                                ${(parseFloat(item.targetAmount) || 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="text-gray-600 dark:text-gray-400">Per Paycheck</div>
-                                            <div className="font-medium text-blue-600 dark:text-blue-400">
-                                                ${(parseFloat(item.perPaycheckContribution) || 0).toFixed(2)}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div className="text-gray-600 dark:text-gray-400">
-                                                {item.daysUntilTarget !== null ? (
-                                                    item.daysUntilTarget > 0 ? 'Days Left' :
-                                                        item.daysUntilTarget === 0 ? 'Due Today' : 'Overdue'
-                                                ) : 'Target Date'}
-                                            </div>
-                                            <div className={`font-medium ${item.daysUntilTarget !== null ? (
-                                                item.daysUntilTarget > 30 ? 'text-gray-600 dark:text-gray-400' :
-                                                    item.daysUntilTarget > 7 ? 'text-yellow-600 dark:text-yellow-400' :
-                                                        item.daysUntilTarget >= 0 ? 'text-red-600 dark:text-red-400' :
-                                                            'text-red-700 dark:text-red-300'
-                                            ) : 'text-gray-600 dark:text-gray-400'
-                                                }`}>
-                                                {item.daysUntilTarget !== null ? (
-                                                    item.daysUntilTarget > 0 ? `${item.daysUntilTarget} days` :
-                                                        item.daysUntilTarget === 0 ? 'Today!' :
-                                                            `${Math.abs(item.daysUntilTarget)} days ago`
-                                                ) : (
-                                                    item.targetDate ? new Date(item.targetDate).toLocaleDateString() : 'Not set'
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Remaining amount */}
-                                    {item.progressPercentage < 100 && (
-                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                                            <div className="text-sm">
-                                                <span className="text-gray-600 dark:text-gray-400">Still need: </span>
-                                                <span className="font-medium text-orange-600 dark:text-orange-400">
-                                                    ${(item.targetAmount - item.currentAmount).toFixed(2)}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
+                        // Goal progress row - this will span all columns
+                        return null; // We'll handle this in a special way
                     } else if (item.isExpenseDetails) {
                         // Expense details row with paycheck countdown and details
                         return (
@@ -601,8 +528,8 @@ const BudgetCategoriesTable = ({
 
                     if (isSubItem) {
                         if (row.original.dueDate) {
-                            // For sub-items with due dates, show paycheck amount and countdown
-                            const paychecksLeft = calculatePaychecksUntilDue(row.original.dueDate, upcomingPaychecks);
+                            // For sub-items with due dates, show paycheck amount and countdown using account-specific filtering
+                            const paychecksLeft = calculatePaychecksUntilDue(row.original.dueDate, upcomingPaychecks, row.original.parentCategory?.accountId);
                             return (
                                 <div className="text-right">
                                     <div className="flex items-center justify-end gap-1 font-medium text-blue-500">
@@ -960,6 +887,168 @@ const BudgetCategoriesTable = ({
                                 const isSubItem = !row.original.isParent && !row.original.isAddRow;
                                 const isAddRow = row.original.isAddRow;
                                 const isInactive = row.original.isParent && !row.original.isActive;
+                                const isGoalProgress = row.original.isGoalProgress;
+                                const isExpenseDetails = row.original.isExpenseDetails;
+
+                                // Special handling for goal progress and expense details rows
+                                if (isGoalProgress) {
+                                    const item = row.original;
+                                    const progressColor = item.progressPercentage >= 100 ? 'success' :
+                                        item.progressPercentage >= 75 ? 'primary' :
+                                            item.progressPercentage >= 50 ? 'warning' : 'neutral';
+
+                                    return (
+                                        <tr key={row.id} className="bg-green-25 dark:bg-green-900/10">
+                                            <td colSpan={columns.length} className="px-4 py-2">
+                                                <div className="bg-green-50 dark:bg-green-900/20 rounded p-3 border border-green-200 dark:border-green-800">
+                                                    <div className="space-y-2">
+                                                        {/* Progress header */}
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-lg">🎯</span>
+                                                                <span className="text-sm font-semibold text-green-800 dark:text-green-200">Goal Progress</span>
+                                                            </div>
+                                                            <div className="text-sm font-bold text-green-700 dark:text-green-300">
+                                                                {item.progressPercentage.toFixed(1)}%
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Progress bar */}
+                                                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                                            <div
+                                                                className={`h-2 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-green-500' :
+                                                                    progressColor === 'primary' ? 'bg-blue-500' :
+                                                                        progressColor === 'warning' ? 'bg-yellow-500' :
+                                                                            'bg-gray-400'
+                                                                    }`}
+                                                                style={{ width: `${Math.min(100, item.progressPercentage)}%` }}
+                                                            />
+                                                        </div>
+
+                                                        {/* Goal details grid */}
+                                                        <div className="grid grid-cols-4 gap-4 text-xs">
+                                                            <div className="text-center">
+                                                                <div className="text-gray-600 dark:text-gray-400">Saved</div>
+                                                                <div className="font-bold text-green-600 dark:text-green-400">
+                                                                    ${(parseFloat(item.currentAmount) || 0).toFixed(2)}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-600 dark:text-gray-400">Target</div>
+                                                                <div className="font-bold text-gray-900 dark:text-gray-100">
+                                                                    ${(parseFloat(item.targetAmount) || 0).toFixed(2)}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-600 dark:text-gray-400">Per Paycheck</div>
+                                                                <div className="font-bold text-blue-600 dark:text-blue-400">
+                                                                    ${(parseFloat(item.perPaycheckContribution) || 0).toFixed(2)}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-600 dark:text-gray-400">
+                                                                    {item.daysUntilTarget !== null ? (
+                                                                        item.daysUntilTarget > 0 ? 'Days Left' :
+                                                                            item.daysUntilTarget === 0 ? 'Due Today' : 'Overdue'
+                                                                    ) : 'Target Date'}
+                                                                </div>
+                                                                <div className={`font-bold ${item.daysUntilTarget !== null ? (
+                                                                    item.daysUntilTarget > 30 ? 'text-gray-600 dark:text-gray-400' :
+                                                                        item.daysUntilTarget > 7 ? 'text-yellow-600 dark:text-yellow-400' :
+                                                                            item.daysUntilTarget >= 0 ? 'text-red-600 dark:text-red-400' :
+                                                                                'text-red-700 dark:text-red-300'
+                                                                ) : 'text-gray-600 dark:text-gray-400'
+                                                                    }`}>
+                                                                    {item.daysUntilTarget !== null ? (
+                                                                        item.daysUntilTarget > 0 ? `${item.daysUntilTarget} days` :
+                                                                            item.daysUntilTarget === 0 ? 'Today!' :
+                                                                                `${Math.abs(item.daysUntilTarget)} days ago`
+                                                                    ) : (
+                                                                        item.targetDate ? new Date(item.targetDate).toLocaleDateString() : 'Not set'
+                                                                    )}
+                                                                </div>
+                                                                {item.targetDate && (
+                                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                        ({new Date(item.targetDate).toLocaleDateString()})
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Remaining amount - inline */}
+                                                        {item.progressPercentage < 100 && (
+                                                            <div className="text-center text-xs pt-1 border-t border-green-200 dark:border-green-700">
+                                                                <span className="text-gray-600 dark:text-gray-400">Still need: </span>
+                                                                <span className="font-bold text-orange-600 dark:text-orange-400">
+                                                                    ${(item.targetAmount - item.currentAmount).toFixed(2)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                }
+
+                                if (isExpenseDetails) {
+                                    const item = row.original;
+                                    return (
+                                        <tr key={row.id} className="bg-blue-25 dark:bg-blue-900/10">
+                                            <td colSpan={columns.length} className="px-4 py-2">
+                                                <div className="bg-blue-50 dark:bg-blue-900/20 rounded p-3 border border-blue-200 dark:border-blue-800">
+                                                    <div className="space-y-2">
+                                                        {/* Expense header */}
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-lg">💸</span>
+                                                                <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">Expense Details</span>
+                                                            </div>
+                                                            {item.paychecksLeft !== null && (
+                                                                <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                                                                    {item.paychecksLeft === 0 ? 'Due Now!' :
+                                                                        item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Expense details grid */}
+                                                        <div className="grid grid-cols-3 gap-4 text-xs">
+                                                            <div className="text-center">
+                                                                <div className="text-gray-600 dark:text-gray-400">Amount</div>
+                                                                <div className="font-bold text-blue-600 dark:text-blue-400">
+                                                                    ${(parseFloat(item.amount) || 0).toFixed(2)}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-600 dark:text-gray-400">Frequency</div>
+                                                                <div className="font-bold text-gray-900 dark:text-gray-100 capitalize">
+                                                                    {(item.frequency || 'monthly').replace('-', ' ')}
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-center">
+                                                                <div className="text-gray-600 dark:text-gray-400">Type</div>
+                                                                <div className="font-bold text-gray-900 dark:text-gray-100">
+                                                                    {item.isRecurring ? 'Recurring' : 'One-time'}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Due date info - inline */}
+                                                        {item.dueDate && (
+                                                            <div className="text-center text-xs pt-1 border-t border-blue-200 dark:border-blue-700">
+                                                                <div className="text-gray-600 dark:text-gray-400">Due Date</div>
+                                                                <div className="font-bold text-orange-600 dark:text-orange-400">
+                                                                    {new Date(item.dueDate).toLocaleDateString()}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                }
 
                                 return (
                                     <tr
