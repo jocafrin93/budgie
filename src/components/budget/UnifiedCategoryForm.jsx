@@ -49,18 +49,24 @@ const UnifiedCategoryForm = ({
     const initialType = isGoal ? 'goal' : 'expense';
 
     // Initialize form with useForm hook
+    console.log('=== FORM INITIALIZATION DEBUG ===');
+    console.log('Category prop:', category);
+    console.log('Category amount:', category?.amount);
+    console.log('Category settings:', category?.settings);
+    console.log('Category settings amount:', category?.settings?.amount);
+
     const initialValues = {
         // Basic category info
         name: category?.name || '',
         type: category?.type || 'single', // single or multiple
-        planningType: initialType, // expense or goal
+        planningType: category?.planningType || initialType, // expense or goal
 
-        // Amount configuration
-        amount: category?.amount || 0,
+        // Amount configuration - handle both direct fields and nested settings
+        amount: category?.amount ? category.amount.toString() : (category?.settings?.amount ? category.settings.amount.toString() : ''),
         usePercentage: category?.usePercentage || false,
-        percentageAmount: category?.percentageAmount || 0,
-        frequency: category?.frequency || 'monthly',
-        dueDate: category?.dueDate || '',
+        percentageAmount: category?.percentageAmount ? category.percentageAmount.toString() : '',
+        frequency: category?.frequency || category?.settings?.frequency || 'monthly',
+        dueDate: category?.dueDate || category?.settings?.dueDate || '',
 
         // Timing configuration
         isRecurring: category?.isRecurring || false,
@@ -72,7 +78,7 @@ const UnifiedCategoryForm = ({
 
         // Visual and advanced
         color: category?.color || 'bg-blue-500',
-        autoFunding: category?.autoFunding || false,
+        autoFunding: category?.autoFunding?.enabled || category?.autoFunding || false,
         description: category?.description || '',
 
         // Goal-specific fields
@@ -81,6 +87,10 @@ const UnifiedCategoryForm = ({
         monthlyContribution: category?.monthlyContribution || 0,
         alreadySaved: category?.alreadySaved || 0,
     };
+
+    console.log('Initial values calculated:', initialValues);
+    console.log('Initial amount value:', initialValues.amount);
+    console.log('=== FORM INITIALIZATION COMPLETE ===');
 
     const form = useForm({
         initialValues,
@@ -187,7 +197,13 @@ const UnifiedCategoryForm = ({
 
     // Handle form submission
     const handleSubmit = () => {
+        console.log('=== FORM SUBMIT DEBUG ===');
+        console.log('Form is valid:', form.isValid);
+        console.log('Form values:', form.values);
+        console.log('Form errors:', form.errors);
+
         if (!form.isValid) {
+            console.log('Form is not valid, returning early');
             return;
         }
 
@@ -209,12 +225,20 @@ const UnifiedCategoryForm = ({
 
         let categoryData;
         if (form.values.planningType === 'expense') {
+            const amountValue = form.values.usePercentage
+                ? percentageToDollar(form.values.percentageAmount || 0, currentPay)
+                : form.values.amount || 0;
+
+            console.log('Processing expense category');
+            console.log('Use percentage:', form.values.usePercentage);
+            console.log('Raw amount value:', form.values.amount);
+            console.log('Raw percentage value:', form.values.percentageAmount);
+            console.log('Calculated amount value:', amountValue);
+
             categoryData = {
                 ...commonData,
                 planningType: 'expense',
-                amount: form.values.usePercentage
-                    ? percentageToDollar(form.values.percentageAmount || 0, currentPay)
-                    : form.values.amount || 0,
+                amount: amountValue,
                 usePercentage: form.values.usePercentage,
                 percentageAmount: form.values.percentageAmount || 0,
                 frequency: form.values.frequency,
@@ -232,8 +256,13 @@ const UnifiedCategoryForm = ({
             };
         }
 
+        console.log('Final category data to save:', categoryData);
+        console.log('Calling onSave with data');
+
         // Call onSave with the prepared data
         onSave(categoryData, false); // false = not "add another"
+
+        console.log('=== FORM SUBMIT COMPLETE ===');
     };
 
     // Handle "Save & Add Another" button
@@ -513,14 +542,13 @@ const UnifiedCategoryForm = ({
                                     <CurrencyField
                                         name="amount"
                                         label="Amount"
-                                        value={form.values.amount ? form.values.amount.toString() : ''}
+                                        value={form.values.amount}
                                         onChange={(e) => {
-                                            const numericValue = parseFloat(e.target.value) || 0;
-                                            form.setFieldValue('amount', numericValue);
+                                            form.setFieldValue('amount', e.target.value);
                                         }}
                                         placeholder="0.00"
                                         error={form.errors.amount}
-                                        description={currentPay > 0 ? `Approx. ${dollarToPercentage(form.values.amount || 0, currentPay).toFixed(1)}% of income` : ''}
+                                        description={currentPay > 0 ? `Approx. ${dollarToPercentage(parseFloat(form.values.amount) || 0, currentPay).toFixed(1)}% of income` : ''}
                                     />
                                 )}
 

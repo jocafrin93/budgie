@@ -132,62 +132,79 @@ export const useCategoryManagement = () => {
    * Update an existing category - ENHANCED to handle type changes
    */
   const updateCategory = useCallback((categoryId, categoryData) => {
-    setCategories(prev => prev.map(cat => {
-      if (cat.id === categoryId) {
-        // If changing type, preserve important fields but update structure
-        if (categoryData.type && categoryData.type !== cat.type) {
+    console.log('=== UPDATE CATEGORY HOOK DEBUG ===');
+    console.log('Category ID:', categoryId, 'type:', typeof categoryId);
+    console.log('Category data to update:', categoryData);
+
+    setCategories(prev => {
+      console.log('Current categories before update:', prev);
+
+      const updated = prev.map(cat => {
+        if (cat.id === categoryId) {
+          console.log('Found category to update:', cat);
+
+          // If changing type, preserve important fields but update structure
+          if (categoryData.type && categoryData.type !== cat.type) {
+            console.log('Type change detected:', cat.type, '->', categoryData.type);
+            const updatedCategory = {
+              ...cat,
+              ...categoryData,
+              // Store planning data directly on category for single categories
+              ...(categoryData.type === 'single' && {
+                planningType: categoryData.planningType,
+                amount: categoryData.amount || 0,
+                frequency: categoryData.frequency || 'monthly',
+                dueDate: categoryData.dueDate || null,
+                isRecurring: categoryData.isRecurring || false,
+                targetAmount: categoryData.targetAmount || 0,
+                targetDate: categoryData.targetDate,
+                monthlyContribution: categoryData.monthlyContribution || 0,
+                alreadySaved: categoryData.alreadySaved || 0
+              }),
+              // Reset type-specific settings when changing type
+              settings: {
+                ...(categoryData.type === 'single' && {
+                  amount: categoryData.amount || 0,
+                  frequency: categoryData.frequency || 'monthly',
+                  dueDate: categoryData.dueDate || null
+                }),
+                ...(categoryData.type === 'multiple' && {
+                  allowInactiveItems: true,
+                  autoDistribution: false
+                })
+              }
+            };
+            console.log('Updated category (type change):', updatedCategory);
+            return updatedCategory;
+          }
+
+          // Normal update - include planning data for single categories
           const updatedCategory = {
             ...cat,
             ...categoryData,
             // Store planning data directly on category for single categories
-            ...(categoryData.type === 'single' && {
-              planningType: categoryData.planningType,
-              amount: categoryData.amount || 0,
-              frequency: categoryData.frequency || 'monthly',
-              dueDate: categoryData.dueDate || null,
-              isRecurring: categoryData.isRecurring || false,
-              targetAmount: categoryData.targetAmount || 0,
-              targetDate: categoryData.targetDate,
-              monthlyContribution: categoryData.monthlyContribution || 0,
-              alreadySaved: categoryData.alreadySaved || 0
-            }),
-            // Reset type-specific settings when changing type
-            settings: {
-              ...(categoryData.type === 'single' && {
-                amount: categoryData.amount || 0,
-                frequency: categoryData.frequency || 'monthly',
-                dueDate: categoryData.dueDate || null
-              }),
-              ...(categoryData.type === 'multiple' && {
-                allowInactiveItems: true,
-                autoDistribution: false
-              })
-            }
+            ...(cat.type === 'single' && {
+              planningType: categoryData.planningType !== undefined ? categoryData.planningType : cat.planningType,
+              amount: categoryData.amount !== undefined ? categoryData.amount : cat.amount,
+              frequency: categoryData.frequency !== undefined ? categoryData.frequency : cat.frequency,
+              dueDate: categoryData.dueDate !== undefined ? categoryData.dueDate : cat.dueDate,
+              isRecurring: categoryData.isRecurring !== undefined ? categoryData.isRecurring : cat.isRecurring,
+              targetAmount: categoryData.targetAmount !== undefined ? categoryData.targetAmount : cat.targetAmount,
+              targetDate: categoryData.targetDate !== undefined ? categoryData.targetDate : cat.targetDate,
+              monthlyContribution: categoryData.monthlyContribution !== undefined ? categoryData.monthlyContribution : cat.monthlyContribution,
+              alreadySaved: categoryData.alreadySaved !== undefined ? categoryData.alreadySaved : cat.alreadySaved
+            })
           };
+          console.log('Updated category (normal update):', updatedCategory);
           return updatedCategory;
         }
+        return cat;
+      });
 
-        // Normal update - include planning data for single categories
-        const updatedCategory = {
-          ...cat,
-          ...categoryData,
-          // Store planning data directly on category for single categories
-          ...(cat.type === 'single' && {
-            planningType: categoryData.planningType !== undefined ? categoryData.planningType : cat.planningType,
-            amount: categoryData.amount !== undefined ? categoryData.amount : cat.amount,
-            frequency: categoryData.frequency !== undefined ? categoryData.frequency : cat.frequency,
-            dueDate: categoryData.dueDate !== undefined ? categoryData.dueDate : cat.dueDate,
-            isRecurring: categoryData.isRecurring !== undefined ? categoryData.isRecurring : cat.isRecurring,
-            targetAmount: categoryData.targetAmount !== undefined ? categoryData.targetAmount : cat.targetAmount,
-            targetDate: categoryData.targetDate !== undefined ? categoryData.targetDate : cat.targetDate,
-            monthlyContribution: categoryData.monthlyContribution !== undefined ? categoryData.monthlyContribution : cat.monthlyContribution,
-            alreadySaved: categoryData.alreadySaved !== undefined ? categoryData.alreadySaved : cat.alreadySaved
-          })
-        };
-        return updatedCategory;
-      }
-      return cat;
-    }));
+      console.log('Categories after update:', updated);
+      console.log('=== UPDATE CATEGORY HOOK COMPLETE ===');
+      return updated;
+    });
   }, [setCategories]);
 
   /**
