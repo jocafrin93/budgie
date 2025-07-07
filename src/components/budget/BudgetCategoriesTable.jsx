@@ -27,6 +27,7 @@ import {
     calculatePaychecksUntilDue,
     formatAmountWithFrequency
 } from '../../utils/budgetDisplayUtils';
+import TransferModal from './TransferModal';
 
 const BudgetCategoriesTable = ({
     data = [],
@@ -36,6 +37,7 @@ const BudgetCategoriesTable = ({
     onAddItem,
     onEditItem,
     onDeleteItem,
+    onDataUpdate, // New callback to update parent component's data
     // onToggleItemActive,
     // onToggleCategoryActive
 }) => {
@@ -43,6 +45,16 @@ const BudgetCategoriesTable = ({
     const [globalFilter, setGlobalFilter] = useState('');
     const [expanded, setExpanded] = useState({}); // Track expanded state by category ID
     const [rowSelection, setRowSelection] = useState({});
+    const [transferModal, setTransferModal] = useState({ isOpen: false, targetCategory: null });
+
+    // Handle transfer button click
+    const handleTransferClick = (category) => {
+        setTransferModal({
+            isOpen: true,
+            targetCategory: category,
+            mode: 'transfer-into'
+        });
+    };
 
     // Get paycheck management hook
     const { getAllUpcomingPaycheckDates } = usePaycheckManagement();
@@ -624,16 +636,27 @@ const BudgetCategoriesTable = ({
 
                     return (
                         <div className="text-right">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
-                                ? 'bg-red-100 text-red-800 border border-red-200'
-                                : value > 0
-                                    ? 'bg-green-100 text-green-800 border border-green-200'
+                            {value > 0 ? (
+                                <button
+                                    onClick={() => handleTransferClick(row.original)}
+                                    className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-blue-500 focus:outline-none ${isOverspent ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
+                                        : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
+                                        }`}
+                                    title="Click to transfer money"
+                                >
+                                    {isOverspent && <span className="mr-1">⚠️</span>}
+                                    <span className="mr-1">💰</span>
+                                    {formatCurrency(value)}
+                                </button>
+                            ) : (
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
+                                    ? 'bg-red-100 text-red-800 border border-red-200'
                                     : 'bg-gray-100 text-gray-600 border border-gray-200'
-                                }`}>
-                                {isOverspent && <span className="mr-1">⚠️</span>}
-                                {value > 0 && <span className="mr-1">💰</span>}
-                                {formatCurrency(value || 0)}
-                            </span>
+                                    }`}>
+                                    {isOverspent && <span className="mr-1">⚠️</span>}
+                                    {formatCurrency(value || 0)}
+                                </span>
+                            )}
                         </div>
                     );
                 },
@@ -1114,6 +1137,88 @@ const BudgetCategoriesTable = ({
                     </div>
                 </div>
             </div>
+
+            {/* Transfer Modal */}
+            <TransferModal
+                isOpen={transferModal.isOpen}
+                onClose={() => setTransferModal({ isOpen: false, targetCategory: null })}
+                targetCategory={transferModal.targetCategory}
+                categories={data}
+                activeBudgetAllocations={[]} // This would come from props
+                onTransferComplete={(transferData) => {
+                    console.log('🎯 BudgetCategoriesTable: Transfer completed callback received');
+                    console.log('📊 Transfer data received:', transferData);
+                    console.log('📋 Current categories data before update:', data);
+
+                    // Handle the transfer completion here
+                    if (transferData.type === 'allocation') {
+                        // Allocation from "to be allocated" to a category
+                        console.log('💰 Processing allocation from unallocated funds');
+                        console.log(`📤 Adding $${transferData.amount} to category ${transferData.toCategory}`);
+
+                        // Find and update the target category
+                        const updatedData = data.map(category => {
+                            if (category.id === transferData.toCategory) {
+                                const newAvailable = (category.available || 0) + transferData.amount;
+                                const newAllocated = (category.allocated || 0) + transferData.amount;
+                                console.log(`✅ Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
+                                return {
+                                    ...category,
+                                    available: newAvailable,
+                                    allocated: newAllocated
+                                };
+                            }
+                            return category;
+                        });
+
+                        console.log('📋 Updated categories data:', updatedData);
+
+                        // Notify parent component to update its data and re-render
+                        if (onDataUpdate) {
+                            console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                            onDataUpdate(updatedData);
+                        } else {
+                            console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                        }
+
+                    } else if (transferData.type === 'transfer') {
+                        // Category-to-category transfer
+                        console.log('🔄 Processing category-to-category transfer');
+                        console.log(`📤 Moving $${transferData.amount} from category ${transferData.fromCategory} to category ${transferData.toCategory}`);
+
+                        const updatedData = data.map(category => {
+                            if (category.id === transferData.fromCategory) {
+                                const newAvailable = (category.available || 0) - transferData.amount;
+                                console.log(`📉 Source category ${category.name}: available ${category.available} → ${newAvailable}`);
+                                return {
+                                    ...category,
+                                    available: newAvailable
+                                };
+                            } else if (category.id === transferData.toCategory) {
+                                const newAvailable = (category.available || 0) + transferData.amount;
+                                console.log(`📈 Target category ${category.name}: available ${category.available} → ${newAvailable}`);
+                                return {
+                                    ...category,
+                                    available: newAvailable
+                                };
+                            }
+                            return category;
+                        });
+
+                        console.log('📋 Updated categories data:', updatedData);
+
+                        // Notify parent component to update its data and re-render
+                        if (onDataUpdate) {
+                            console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                            onDataUpdate(updatedData);
+                        } else {
+                            console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                        }
+                    }
+
+                    setTransferModal({ isOpen: false, targetCategory: null });
+                }}
+            />
         </div>
     );
 };

@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account-Aware Transfer Modal Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-dark-800 {
+            background-color: #1f2937;
+        }
+
+        .bg-dark-700 {
+            background-color: #374151;
+        }
+
+        .bg-dark-600 {
+            background-color: #4b5563;
+        }
+
+        .text-dark-100 {
+            color: #f9fafb;
+        }
+
+        .text-dark-300 {
+            color: #d1d5db;
+        }
+
+        .text-dark-400 {
+            color: #9ca3af;
+        }
+
+        .border-dark-600 {
+            border-color: #4b5563;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        const { X, ArrowRight, AlertTriangle, CheckCircle, Info, DollarSign, Plus, Search, Edit, Trash2, ChevronDown, ChevronRight, Calendar, ArrowUp, ArrowDown, ArrowUpDown, Box } = lucide;
+
+        // Mock data
+        const mockAccounts = [
+            { id: 1, name: 'Checking', balance: 2500, type: 'checking' },
+            { id: 2, name: 'Savings', balance: 10000, type: 'savings' }
+        ];
+
+        const mockCategories = [
+            { id: 1, name: 'Groceries', available: 150, allocated: 400, spent: 250 },
+            { id: 2, name: 'Emergency Fund', available: 500, allocated: 1000, spent: 500 },
+            { id: 3, name: 'Vacation', available: 75, allocated: 300, spent: 225 },
+            { id: 4, name: 'Car Maintenance', available: 200, allocated: 200, spent: 0 }
+        ];
+
+        const mockActiveBudgetAllocations = [
+            { categoryId: 1, sourceAccountId: 1 }, // Groceries funded by Checking
+            { categoryId: 2, sourceAccountId: 2 }, // Emergency Fund funded by Savings
+            { categoryId: 3, sourceAccountId: 2 }, // Vacation funded by Savings
+            { categoryId: 4, sourceAccountId: 1 }  // Car Maintenance funded by Checking
+        ];
+
+        // Mock hooks
+        const useAccountManagement = () => ({
+            accounts: mockAccounts,
+            getTotalBalance: () => mockAccounts.reduce((sum, acc) => sum + acc.balance, 0)
+        });
+
+        const useEnvelopeBudgeting = () => ({
+            createMoveMoneyUpdates: (fromId, toId, amount) => ({
+                updates: [
+                    { categoryId: fromId, update: (cat) => ({ ...cat, available: cat.available - amount }) },
+                    { categoryId: toId, update: (cat) => ({ ...cat, available: cat.available + amount }) }
+                ]
+            }),
+            calculateToBeAllocated: () => 925 // Mock unallocated amount
+        });
+
+        // TransferModal Component
+        const TransferModal = ({
+            isOpen,
+            onClose,
+            targetCategory,
+            categories = [],
+            activeBudgetAllocations = [],
+            onTransferComplete
+        }) => {
+            const [fromSource, setFromSource] = useState('');
+            const [toCategory, setToCategory] = useState('');
+            const [amount, setAmount] = useState('');
+            const [alerts, setAlerts] = useState([]);
+
+            const { accounts } = useAccountManagement();
+            const { createMoveMoneyUpdates, calculateToBeAllocated } = useEnvelopeBudgeting();
+
+            const toBeAllocated = useMemo(() => calculateToBeAllocated(), []);
+
+            const getCategoryFundingAccount = (categoryId) => {
+                const allocation = activeBudgetAllocations.find(a => a.categoryId === categoryId);
+                const accountId = allocation?.sourceAccountId;
+                return accounts.find(acc => acc.id === accountId);
+            };
+
+            useEffect(() => {
+                if (isOpen && targetCategory) {
+                    setToCategory(targetCategory.id);
+                    if (toBeAllocated > 0) {
+                        setFromSource('to-be-allocated');
+                    } else {
+                        setFromSource('');
+                    }
+                    setAmount('');
+                    setAlerts([]);
+                } else if (!isOpen) {
+                    setFromSource('');
+                    setToCategory('');
+                    setAmount('');
+                    setAlerts([]);
+                }
+            }, [isOpen, targetCategory, toBeAllocated]);
+
+            useEffect(() => {
+                if (!fromSource || !toCategory || !amount || parseFloat(amount) <= 0) {
+                    setAlerts([]);
+                    return;
+                }
+
+                const transferAmount = parseFloat(amount);
+                const newAlerts = [];
+
+                if (fromSource === 'to-be-allocated') {
+                    if (transferAmount > toBeAllocated) {
+                        newAlerts.push({
+                            type: 'error',
+                            message: `Not enough unallocated funds. Available: $${toBeAllocated.toFixed(2)}`
+                        });
+                    } else {
+                        newAlerts.push({
+                            type: 'success',
+                            message: `Allocating $${transferAmount.toFixed(2)} from unassigned funds`
+                        });
+                    }
+                } else {
+                    const fromCategoryId = parseInt(fromSource, 10);
+                    const toCategoryId = parseInt(toCategory, 10);
+
+                    const fromCategory = categories.find(c => c.id === fromCategoryId);
+                    const toCategoryObj = categories.find(c => c.id === toCategoryId);
+
+                    if (fromCategory && toCategoryObj) {
+                        const fromAvailable = fromCategory.available || 0;
+                        if (transferAmount > fromAvailable) {
+                            newAlerts.push({
+                                type: 'error',
+                                message: `${fromCategory.name} only has $${fromAvailable.toFixed(2)} available`
+                            });
+                        } else {
+                            const fromAccount = getCategoryFundingAccount(fromCategoryId);
+                            const toAccount = getCategoryFundingAccount(toCategoryId);
+
+                            if (fromAccount && toAccount) {
+                                if (fromAccount.id === toAccount.id) {
+                                    newAlerts.push({
+                                        type: 'success',
+                                        message: `Moving money within ${fromAccount.name} - no account transfer needed`
+                                    });
+                                } else {
+                                    newAlerts.push({
+                                        type: 'warning',
+                                        message: `Remember to transfer $${transferAmount.toFixed(2)} from ${fromAccount.name} to ${toAccount.name} to keep accounts balanced`
+                                    });
+
+                                    if (fromAccount.balance < transferAmount) {
+                                        newAlerts.push({
+                                            type: 'info',
+                                            message: `Note: ${fromAccount.name} balance ($${fromAccount.balance.toFixed(2)}) is less than transfer amount`
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                setAlerts(newAlerts);
+            }, [fromSource, toCategory, amount, categories, toBeAllocated, accounts, activeBudgetAllocations]);
+
+            const sourceOptions = useMemo(() => {
+                const options = [];
+
+                if (toBeAllocated > 0) {
+                    options.push({
+                        value: 'to-be-allocated',
+                        label: `To be allocated ($${toBeAllocated.toFixed(2)} available)`,
+                        available: toBeAllocated,
+                        account: null
+                    });
+                }
+
+                categories.forEach(category => {
+                    if (category.available > 0 && category.id !== parseInt(toCategory, 10)) {
+                        const account = getCategoryFundingAccount(category.id);
+                        options.push({
+                            value: category.id.toString(),
+                            label: `${category.name} ($${category.available.toFixed(2)} available)${account ? ` - ${account.name}` : ''}`,
+                            available: category.available,
+                            account
+                        });
+                    }
+                });
+
+                return options;
+            }, [categories, toBeAllocated, toCategory]);
+
+            const destinationOptions = useMemo(() => {
+                return categories.map(category => {
+                    const account = getCategoryFundingAccount(category.id);
+                    return {
+                        value: category.id.toString(),
+                        label: `${category.name}${account ? ` - ${account.name}` : ''}`,
+                        account
+                    };
+                });
+            }, [categories]);
+
+            const handleTransfer = () => {
+                if (!fromSource || !toCategory || !amount) return;
+
+                const transferAmount = parseFloat(amount);
+                if (transferAmount <= 0) return;
+
+                const hasErrors = alerts.some(alert => alert.type === 'error');
+                if (hasErrors) return;
+
+                onTransferComplete?.({
+                    type: fromSource === 'to-be-allocated' ? 'allocation' : 'transfer',
+                    fromSource: fromSource === 'to-be-allocated' ? 'unallocated' : parseInt(fromSource, 10),
+                    toCategory: parseInt(toCategory, 10),
+                    amount: transferAmount,
+                    alerts: alerts.filter(alert => alert.type !== 'error')
+                });
+
+                onClose();
+            };
+
+            const getAlertIcon = (type) => {
+                switch (type) {
+                    case 'success':
+                        return React.createElement(CheckCircle, { className: "w-4 h-4 text-green-600" });
+                    case 'warning':
+                        return React.createElement(AlertTriangle, { className: "w-4 h-4 text-yellow-600" });
+                    case 'error':
+                        return React.createElement(AlertTriangle, { className: "w-4 h-4 text-red-600" });
+                    case 'info':
+                        return React.createElement(Info, { className: "w-4 h-4 text-blue-600" });
+                    default:
+                        return null;
+                }
+            };
+
+            const getAlertStyles = (type) => {
+                switch (type) {
+                    case 'success':
+                        return 'bg-green-50 border-green-200 text-green-800';
+                    case 'warning':
+                        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+                    case 'error':
+                        return 'bg-red-50 border-red-200 text-red-800';
+                    case 'info':
+                        return 'bg-blue-50 border-blue-200 text-blue-800';
+                    default:
+                        return 'bg-gray-50 border-gray-200 text-gray-800';
+                }
+            };
+
+            if (!isOpen) return null;
+
+            const maxAmount = fromSource === 'to-be-allocated'
+                ? toBeAllocated
+                : sourceOptions.find(opt => opt.value === fromSource)?.available || 0;
+
+            const canTransfer = fromSource && toCategory && amount && parseFloat(amount) > 0 &&
+                !alerts.some(alert => alert.type === 'error');
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900">Transfer Money</h3>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+                                {React.createElement(X, { className: "w-5 h-5" })}
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">FROM</label>
+                                <select
+                                    value={fromSource}
+                                    onChange={(e) => setFromSource(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <option value="">Select source...</option>
+                                    {sourceOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex justify-center">
+                                {React.createElement(ArrowRight, { className: "w-5 h-5 text-gray-400" })}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">TO</label>
+                                <select
+                                    value={toCategory}
+                                    onChange={(e) => setToCategory(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <option value="">Select destination...</option>
+                                    {destinationOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">AMOUNT</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        min="0"
+                                        max={maxAmount}
+                                        step="0.01"
+                                        className="w-full pl-8 pr-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    />
+                                </div>
+                                {maxAmount > 0 && (
+                                    <div className="mt-1 text-xs text-gray-500">
+                                        Maximum: ${maxAmount.toFixed(2)}
+                                        <button
+                                            type="button"
+                                            onClick={() => setAmount(maxAmount.toString())}
+                                            className="ml-2 text-blue-600 hover:underline"
+                                        >
+                                            Use max
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {alerts.length > 0 && (
+                                <div className="space-y-2">
+                                    {alerts.map((alert, index) => (
+                                        <div
+                                            key={index}
+                                            className={`flex items-start gap-2 p-3 rounded-lg border ${getAlertStyles(alert.type)}`}
+                                        >
+                                            {getAlertIcon(alert.type)}
+                                            <span className="text-sm">{alert.message}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+                            <button
+                                onClick={onClose}
+                                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleTransfer}
+                                disabled={!canTransfer}
+                                className={`px-4 py-2 rounded-lg transition-colors ${canTransfer
+                                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                            >
+                                Transfer Money
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Simplified BudgetCategoriesTable Component for testing
+        const BudgetCategoriesTable = ({ data = [], onDataUpdate, onAddCategory, onEditCategory, onDeleteCategory, onAddItem, onEditItem, onDeleteItem }) => {
+            const [transferModal, setTransferModal] = useState({ isOpen: false, targetCategory: null });
+
+            const handleTransferClick = (category) => {
+                setTransferModal({
+                    isOpen: true,
+                    targetCategory: category
+                });
+            };
+
+            const formatCurrency = (amount) => {
+                const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
+                return `$${numAmount.toFixed(2)}`;
+            };
+
+            return (
+                <div className="w-full bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                    <div className="p-4 border-b border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            {React.createElement(DollarSign, { className: "w-5 h-5 text-green-600" })}
+                            Budget Categories (Simplified)
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">Click on available amounts to transfer money</p>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Allocated</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spent</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Available</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {data.map(category => {
+                                    const isOverspent = category.available < 0;
+                                    return (
+                                        <tr key={category.id} className="hover:bg-gray-50">
+                                            <td className="px-4 py-3">
+                                                <div className="font-medium text-gray-900">{category.name}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-green-600 font-medium">
+                                                {formatCurrency(category.allocated)}
+                                            </td>
+                                            <td className="px-4 py-3 text-red-600 font-medium">
+                                                {formatCurrency(category.spent)}
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                {category.available > 0 ? (
+                                                    <button
+                                                        onClick={() => handleTransferClick(category)}
+                                                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-blue-500 focus:outline-none ${isOverspent ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
+                                                            : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
+                                                            }`}
+                                                        title="Click to transfer money"
+                                                    >
+                                                        {isOverspent && <span className="mr-1">⚠️</span>}
+                                                        <span className="mr-1">💰</span>
+                                                        {formatCurrency(category.available)}
+                                                    </button>
+                                                ) : (
+                                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
+                                                        ? 'bg-red-100 text-red-800 border border-red-200'
+                                                        : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                                        }`}>
+                                                        {isOverspent && <span className="mr-1">⚠️</span>}
+                                                        {formatCurrency(category.available || 0)}
+                                                    </span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Transfer Modal */}
+                    <TransferModal
+                        isOpen={transferModal.isOpen}
+                        onClose={() => setTransferModal({ isOpen: false, targetCategory: null })}
+                        targetCategory={transferModal.targetCategory}
+                        categories={data}
+                        activeBudgetAllocations={mockActiveBudgetAllocations}
+                        onTransferComplete={(transferData) => {
+                            console.log('🎯 BudgetCategoriesTable: Transfer completed callback received');
+                            console.log('📊 Transfer data received:', transferData);
+                            console.log('📋 Current categories data before update:', data);
+
+                            // Handle the transfer completion here
+                            if (transferData.type === 'allocation') {
+                                // Allocation from "to be allocated" to a category
+                                console.log('💰 Processing allocation from unallocated funds');
+                                console.log(`📤 Adding $${transferData.amount} to category ${transferData.toCategory}`);
+
+                                // Find and update the target category
+                                const updatedData = data.map(category => {
+                                    if (category.id === transferData.toCategory) {
+                                        const newAvailable = (category.available || 0) + transferData.amount;
+                                        const newAllocated = (category.allocated || 0) + transferData.amount;
+                                        console.log(`✅ Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
+                                        return {
+                                            ...category,
+                                            available: newAvailable,
+                                            allocated: newAllocated
+                                        };
+                                    }
+                                    return category;
+                                });
+
+                                console.log('📋 Updated categories data:', updatedData);
+
+                                // Notify parent component to update its data and re-render
+                                if (onDataUpdate) {
+                                    console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                                    onDataUpdate(updatedData);
+                                } else {
+                                    console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                                }
+
+                            } else if (transferData.type === 'transfer') {
+                                // Category-to-category transfer
+                                console.log('🔄 Processing category-to-category transfer');
+                                console.log(`📤 Moving $${transferData.amount} from category ${transferData.fromCategory} to category ${transferData.toCategory}`);
+
+                                const updatedData = data.map(category => {
+                                    if (category.id === transferData.fromCategory) {
+                                        const newAvailable = (category.available || 0) - transferData.amount;
+                                        console.log(`📉 Source category ${category.name}: available ${category.available} → ${newAvailable}`);
+                                        return {
+                                            ...category,
+                                            available: newAvailable
+                                        };
+                                    } else if (category.id === transferData.toCategory) {
+                                        const newAvailable = (category.available || 0) + transferData.amount;
+                                        console.log(`📈 Target category ${category.name}: available ${category.available} → ${newAvailable}`);
+                                        return {
+                                            ...category,
+                                            available: newAvailable
+                                        };
+                                    }
+                                    return category;
+                                });
+
+                                console.log('📋 Updated categories data:', updatedData);
+
+                                // Notify parent component to update its data and re-render
+                                if (onDataUpdate) {
+                                    console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                                    onDataUpdate(updatedData);
+                                } else {
+                                    console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                                }
+                            }
+
+                            setTransferModal({ isOpen: false, targetCategory: null });
+                        }}
+                    />
+                </div>
+            );
+        };
+
+        // Demo App Component
+        const DemoApp = () => {
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [selectedCategory, setSelectedCategory] = useState(null);
+            const [transferHistory, setTransferHistory] = useState([]);
+            const [categories, setCategories] = useState(mockCategories);
+            const [toBeAllocated, setToBeAllocated] = useState(925);
+
+            const handleCategoryClick = (category) => {
+                setSelectedCategory(category);
+                setIsModalOpen(true);
+            };
+
+            const handleTransferComplete = (transferData) => {
+                console.log('🎯 Demo App: Transfer completed callback received');
+                console.log('📊 Transfer data received:', transferData);
+                console.log('📋 Current categories before update:', categories);
+                console.log('💰 Current to be allocated before update:', toBeAllocated);
+
+                // Update the actual data based on transferData
+                if (transferData.type === 'allocation') {
+                    console.log('💰 Processing allocation from unallocated funds');
+
+                    // Update categories
+                    setCategories(prev => prev.map(category => {
+                        if (category.id === transferData.toCategory) {
+                            const newAvailable = (category.available || 0) + transferData.amount;
+                            const newAllocated = (category.allocated || 0) + transferData.amount;
+                            console.log(`✅ Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
+                            return {
+                                ...category,
+                                available: newAvailable,
+                                allocated: newAllocated
+                            };
+                        }
+                        return category;
+                    }));
+
+                    // Update to be allocated
+                    setToBeAllocated(prev => {
+                        const newAmount = prev - transferData.amount;
+                        console.log(`💰 To be allocated: ${prev} → ${newAmount}`);
+                        return newAmount;
+                    });
+
+                } else if (transferData.type === 'transfer') {
+                    console.log('🔄 Processing category-to-category transfer');
+
+                    setCategories(prev => prev.map(category => {
+                        if (category.id === transferData.fromCategory) {
+                            const newAvailable = (category.available || 0) - transferData.amount;
+                            console.log(`📉 Source category ${category.name}: available ${category.available} → ${newAvailable}`);
+                            return {
+                                ...category,
+                                available: newAvailable
+                            };
+                        } else if (category.id === transferData.toCategory) {
+                            const newAvailable = (category.available || 0) + transferData.amount;
+                            console.log(`📈 Target category ${category.name}: available ${category.available} → ${newAvailable}`);
+                            return {
+                                ...category,
+                                available: newAvailable
+                            };
+                        }
+                        return category;
+                    }));
+                }
+
+                setTransferHistory(prev => [...prev, {
+                    ...transferData,
+                    timestamp: new Date().toLocaleTimeString()
+                }]);
+
+                console.log('✅ Data update complete - UI should reflect changes');
+            };
+
+            return (
+                <div className="max-w-6xl mx-auto">
+                    <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-4">Transfer System Demo with Budget Table</h1>
+                        <p className="text-gray-600 mb-6">
+                            Click on any category's available amount (green badges) to test the transfer modal.
+                            The system will show different alerts based on account relationships and actually update the data.
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <h3 className="font-semibold text-gray-900 mb-2">Accounts</h3>
+                                {mockAccounts.map(account => (
+                                    <div key={account.id} className="flex justify-between p-2 bg-gray-50 rounded mb-1">
+                                        <span>{account.name}</span>
+                                        <span className="font-medium">${account.balance.toFixed(2)}</span>
+                                    </div>
+                                ))}
+                                <div className="flex justify-between p-2 bg-blue-50 rounded mt-2">
+                                    <span className="font-medium">To be allocated</span>
+                                    <span className="font-medium text-blue-600">${toBeAllocated.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            {transferHistory.length > 0 && (
+                                <div>
+                                    <h3 className="font-semibold text-gray-900 mb-2">Transfer History</h3>
+                                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                                        {transferHistory.map((transfer, index) => (
+                                            <div key={index} className="p-3 bg-gray-50 rounded text-sm">
+                                                <div className="font-medium">
+                                                    {transfer.type === 'allocation' ? 'Allocation' : 'Transfer'}: ${transfer.amount.toFixed(2)}
+                                                </div>
+                                                <div className="text-gray-600">
+                                                    {transfer.type === 'allocation'
+                                                        ? `From unallocated to ${categories.find(c => c.id === transfer.toCategory)?.name}`
+                                                        : `From ${categories.find(c => c.id === transfer.fromSource)?.name} to ${categories.find(c => c.id === transfer.toCategory)?.name}`
+                                                    }
+                                                </div>
+                                                <div className="text-xs text-gray-500">{transfer.timestamp}</div>
+                                                {transfer.alerts.map((alert, alertIndex) => (
+                                                    <div key={alertIndex} className={`text-xs mt-1 ${alert.type === 'success' ? 'text-green-600' :
+                                                        alert.type === 'warning' ? 'text-yellow-600' :
+                                                            alert.type === 'info' ? 'text-blue-600' : 'text-gray-600'
+                                                        }`}>
+                                                        {alert.message}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Budget Categories Table with Transfer Functionality */}
+                    <BudgetCategoriesTable
+                        data={categories}
+                        onDataUpdate={(updatedData) => {
+                            console.log('🔄 Demo App: Received data update from BudgetCategoriesTable');
+                            console.log('📊 Updated data:', updatedData);
+                            setCategories(updatedData);
+                        }}
+                        onAddCategory={() => console.log('Add category clicked')}
+                        onEditCategory={(category) => console.log('Edit category:', category)}
+                        onDeleteCategory={(id) => console.log('Delete category:', id)}
+                        onAddItem={(data) => console.log('Add item:', data)}
+                        onEditItem={(item) => console.log('Edit item:', item)}
+                        onDeleteItem={(id) => console.log('Delete item:', id)}
+                    />
+                </div>
+            );
+        };
+
+        // Render the app
+        ReactDOM.render(<DemoApp />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>

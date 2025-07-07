@@ -585,6 +585,25 @@ export default function BudgetOverview() {
                 {/* Main Budget View */}
                 <BudgetCategoriesTable
                     data={tableData}
+                    onDataUpdate={(updatedTableData) => {
+                        console.log('🔄 BudgetOverview: Received data update from BudgetCategoriesTable');
+                        console.log('📊 Updated table data:', updatedTableData);
+
+                        // Update the categories based on the updated table data
+                        updatedTableData.forEach(updatedCategory => {
+                            if (updatedCategory.isParent) {
+                                // Update the category in the categories state
+                                updateCategory(updatedCategory.id, {
+                                    allocated: updatedCategory.allocated,
+                                    available: updatedCategory.available,
+                                    spent: updatedCategory.spent
+                                });
+                                console.log(`✅ Updated category ${updatedCategory.name}: allocated=${updatedCategory.allocated}, available=${updatedCategory.available}`);
+                            }
+                        });
+
+                        console.log('🔄 BudgetOverview: Category updates complete');
+                    }}
                     onAddCategory={handleAddCategory}
                     onEditCategory={handleEditCategory}
                     onDeleteCategory={handleDeleteCategory}
