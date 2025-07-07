@@ -13,6 +13,7 @@ export const useAccountManagement = () => {
       id: 1,
       name: 'Checking',
       balance: 1000,
+      clearedBalance: 950, // Cleared balance is typically less than total balance
       type: 'checking',
       color: 'bg-blue-500',
       isDefault: true
@@ -21,6 +22,7 @@ export const useAccountManagement = () => {
       id: 2,
       name: 'Savings',
       balance: 5000,
+      clearedBalance: 5000, // Savings accounts typically have all funds cleared
       type: 'savings',
       color: 'bg-green-500',
       isDefault: false
@@ -35,12 +37,12 @@ export const useAccountManagement = () => {
       ...accountData,
       id: Math.max(...accounts.map(a => a.id), 0) + 1,
     };
-    
+
     // If this is the first account, make it the default
     if (accounts.length === 0) {
       newAccount.isDefault = true;
     }
-    
+
     setAccounts(prev => [...prev, newAccount]);
     return newAccount;
   }, [accounts, setAccounts]);
@@ -65,7 +67,7 @@ export const useAccountManagement = () => {
         ));
         return;
       }
-      
+
       // Normal update
       setAccounts(prev => prev.map(account =>
         account.id === accountId ? { ...account, ...accountData } : account
@@ -80,13 +82,13 @@ export const useAccountManagement = () => {
     // Check if this is the default account
     const accountToDelete = accounts.find(a => a.id === accountId);
     if (!accountToDelete) return;
-    
+
     // Don't allow deleting the only account
     if (accounts.length <= 1) {
       console.error('Cannot delete the only account');
       return;
     }
-    
+
     // If deleting the default account, make another account the default
     if (accountToDelete.isDefault) {
       const newAccounts = accounts.filter(a => a.id !== accountId);
@@ -106,29 +108,29 @@ export const useAccountManagement = () => {
       console.error('Cannot transfer to the same account');
       return;
     }
-    
+
     if (amount <= 0) {
       console.error('Transfer amount must be positive');
       return;
     }
-    
+
     const fromAccount = accounts.find(a => a.id === fromAccountId);
     if (!fromAccount) {
       console.error('From account not found');
       return;
     }
-    
+
     if (fromAccount.balance < amount) {
       console.error('Insufficient funds for transfer');
       return;
     }
-    
+
     const toAccount = accounts.find(a => a.id === toAccountId);
     if (!toAccount) {
       console.error('To account not found');
       return;
     }
-    
+
     setAccounts(prev => prev.map(account => {
       if (account.id === fromAccountId) {
         return { ...account, balance: account.balance - amount };
@@ -138,7 +140,7 @@ export const useAccountManagement = () => {
       }
       return account;
     }));
-    
+
     // Return a transaction-like object that could be used to record the transfer
     return {
       fromAccount: fromAccount.name,
@@ -162,6 +164,13 @@ export const useAccountManagement = () => {
     return accounts.reduce((total, account) => total + (account.balance || 0), 0);
   }, [accounts]);
 
+  /**
+   * Calculate total cleared balance across all accounts
+   */
+  const getTotalClearedBalance = useCallback(() => {
+    return accounts.reduce((total, account) => total + (account.clearedBalance || 0), 0);
+  }, [accounts]);
+
   return {
     accounts,
     setAccounts,
@@ -170,6 +179,7 @@ export const useAccountManagement = () => {
     deleteAccount,
     transferBetweenAccounts,
     getDefaultAccount,
-    getTotalBalance
+    getTotalBalance,
+    getTotalClearedBalance
   };
 };

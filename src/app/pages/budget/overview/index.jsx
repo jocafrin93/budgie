@@ -12,6 +12,8 @@ import { usePaycheckManagement } from "../../../../hooks/usePaycheckManagement";
 const UnifiedCategoryForm = React.lazy(() => import("../../../../components/budget/UnifiedCategoryForm"));
 const UnifiedItemForm = React.lazy(() => import("../../../../components/budget/UnifiedItemForm"));
 
+// Import MonthlyBudgetNavigator
+
 export default function BudgetOverview() {
     // Modal state for category form
     const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -21,6 +23,12 @@ export default function BudgetOverview() {
     const [showItemModal, setShowItemModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [preselectedCategory, setPreselectedCategory] = useState(null);
+
+    // Monthly budget navigator state
+    const [currentBudgetMonth, setCurrentBudgetMonth] = useState(() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    });
 
     // Get accounts data from the hook
     const { accounts } = useAccountManagement();
@@ -54,10 +62,8 @@ export default function BudgetOverview() {
         payFrequency: 'bi-weekly'
     });
 
-    // Envelope budgeting hook
-    const {
-        calculateToBeAllocated
-    } = useEnvelopeBudgeting({
+    // Envelope budgeting hook - keeping for potential future use
+    useEnvelopeBudgeting({
         categories,
         planningItems,
         transactions: [], // No transactions for now
@@ -257,13 +263,6 @@ export default function BudgetOverview() {
         [categories, planningItems, transformDataForBudgetTable]
     );
 
-    // Calculate summary data
-    const summaryData = useMemo(() => ({
-        toBeAllocated: calculateToBeAllocated(),
-        totalIncome: (accounts || []).reduce((sum, acc) => sum + (acc.balance || 0), 0),
-        totalAllocated: categories.reduce((sum, cat) => sum + (cat.allocated || 0), 0),
-        totalSpent: categories.reduce((sum, cat) => sum + (cat.spent || 0), 0)
-    }), [calculateToBeAllocated, accounts, categories]);
 
     // Modal handlers
     const handleCloseCategoryModal = useCallback(() => {
@@ -486,15 +485,101 @@ export default function BudgetOverview() {
         }
     }, [updateCategory]);
 
+    // Monthly budget navigator functions
+    const getMonthDisplayName = useCallback((monthString) => {
+        const [year, month] = monthString.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    }, []);
+
+    const navigateToNextMonth = useCallback(() => {
+        const [year, month] = currentBudgetMonth.split('-').map(Number);
+        const nextMonth = new Date(year, month, 1); // month is already 0-indexed after parsing
+        const nextMonthString = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+        setCurrentBudgetMonth(nextMonthString);
+    }, [currentBudgetMonth]);
+
+    const navigateToPrevMonth = useCallback(() => {
+        const [year, month] = currentBudgetMonth.split('-').map(Number);
+        const prevMonth = new Date(year, month - 2, 1); // month - 2 because month is 1-indexed but Date expects 0-indexed
+        const prevMonthString = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+        setCurrentBudgetMonth(prevMonthString);
+    }, [currentBudgetMonth]);
+
+    const navigateToMonth = useCallback((monthString) => {
+        setCurrentBudgetMonth(monthString);
+    }, []);
+
+    const getAvailableMonths = useCallback(() => {
+        // Generate last 6 months and next 6 months
+        const months = [];
+        const now = new Date();
+
+        for (let i = -6; i <= 6; i++) {
+            const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+            const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const label = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+            months.push({ value, label });
+        }
+
+        return months;
+    }, []);
+
+    const getMonthSummary = useCallback(() => {
+        // Calculate cleared balances the same way AccountsManagement does
+        const totalClearedBalance = (accounts || []).reduce((sum, account) => {
+            // For now, use startingBalance as cleared balance since we don't have transactions
+            // In a real implementation, this would calculate: startingBalance + clearedTransactions
+            const startingBalance = account.startingBalance || account.balance || 0;
+            return sum + startingBalance;
+        }, 0);
+
+        const allocated = categories.reduce((sum, cat) => sum + (cat.allocated || 0), 0);
+        const spent = categories.reduce((sum, cat) => sum + (cat.spent || 0), 0);
+        const remaining = totalClearedBalance - allocated; // Remaining = cleared balance - allocated
+
+        return {
+            allocated,
+            spent,
+            remaining
+        };
+    }, [accounts, categories]);
+
+    const handleCarryForward = useCallback(() => {
+        // TODO: Implement carry forward functionality
+        console.log('Carry forward clicked for month:', currentBudgetMonth);
+        alert('Carry forward functionality will be implemented soon!');
+    }, [currentBudgetMonth]);
+
     return (
         <Page title="Budget Overview">
             <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
                 {/* Summary Cards */}
                 <div className="mb-6">
                     <SimplifiedSummaryCards
-                        summaryData={summaryData}
+                        accounts={accounts || []}
                         categories={categories}
+                        planningItems={planningItems}
                     />
+                </div>
+
+                {/* Monthly Budget Navigator */}
+                <div className="mb-6">
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                        {React.createElement(
+                            React.lazy(() => import("../../../../components/budget/MonthlyBudgetNavigator")),
+                            {
+                                currentBudgetMonth,
+                                getMonthDisplayName,
+                                navigateToNextMonth,
+                                navigateToPrevMonth,
+                                navigateToMonth,
+                                getAvailableMonths,
+                                getMonthSummary,
+                                onCarryForward: handleCarryForward
+                            }
+                        )}
+                    </React.Suspense>
                 </div>
 
                 {/* Main Budget View */}

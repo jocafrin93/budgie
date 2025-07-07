@@ -14,10 +14,14 @@ const SimplifiedSummaryCards = ({
 }) => {
     // Calculate summary data
     const summaryData = useMemo(() => {
-        // Calculate available to allocate
-        const totalBalance = accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+        // Calculate available to allocate using starting balances (same as AccountsManagement)
+        const totalClearedBalance = accounts.reduce((sum, account) => {
+            // Use startingBalance as cleared balance since we don't have transactions yet
+            const startingBalance = account.startingBalance || account.balance || 0;
+            return sum + startingBalance;
+        }, 0);
         const totalAllocated = categories.reduce((sum, category) => sum + (category.allocated || 0), 0);
-        const availableToAllocate = totalBalance - totalAllocated;
+        const availableToAllocate = totalClearedBalance - totalAllocated;
 
         // Calculate budget progress
         const totalPlanned = planningItems.reduce((sum, item) => {

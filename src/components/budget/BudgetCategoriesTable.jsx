@@ -45,7 +45,7 @@ const BudgetCategoriesTable = ({
     const [rowSelection, setRowSelection] = useState({});
 
     // Get paycheck management hook
-    const { getAllUpcomingPaycheckDates, getUpcomingPaycheckDatesForAccount } = usePaycheckManagement();
+    const { getAllUpcomingPaycheckDates } = usePaycheckManagement();
 
     // Get upcoming paychecks for countdown calculations
     const upcomingPaychecks = getAllUpcomingPaycheckDates(3); // Get 3 months of paychecks
@@ -286,7 +286,7 @@ const BudgetCategoriesTable = ({
             }
         });
         return result;
-    }, [data, expanded]);
+    }, [data, expanded, upcomingPaychecks]);
 
     // Custom header component with sorting
     const SortableHeader = ({ column, children }) => {
@@ -758,6 +758,12 @@ const BudgetCategoriesTable = ({
             calculatePaychecksUntilDue,
             columnHelper,
             formatAmountWithFrequency,
+            formatCategoryDueDate,
+            getCategoryDateInfo,
+            getDueDateUrgency,
+            getUrgencyStyles,
+            formatDueDate,
+            formatCurrency,
             onAddItem,
             onDeleteCategory,
             onDeleteItem,
