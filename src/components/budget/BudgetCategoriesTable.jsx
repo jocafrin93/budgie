@@ -621,13 +621,19 @@ const BudgetCategoriesTable = ({
                     if (row.original.isAddRow) return null;
                     const value = getValue();
                     const isOverspent = value < 0;
-                    const isSubItem = !row.original.isParent;
+
                     return (
-                        <div className={`text-right font-bold ${isOverspent
-                            ? (isSubItem ? 'text-red-500' : 'text-red-600')
-                            : (isSubItem ? 'text-green-500' : 'text-green-600')
-                            }`}>
-                            {formatCurrency(value || 0)}
+                        <div className="text-right">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
+                                ? 'bg-red-100 text-red-800 border border-red-200'
+                                : value > 0
+                                    ? 'bg-green-100 text-green-800 border border-green-200'
+                                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                }`}>
+                                {isOverspent && <span className="mr-1">⚠️</span>}
+                                {value > 0 && <span className="mr-1">💰</span>}
+                                {formatCurrency(value || 0)}
+                            </span>
                         </div>
                     );
                 },
@@ -753,11 +759,6 @@ const BudgetCategoriesTable = ({
         ],
         [
             expanded,
-            data,
-            calculateMonthlyAmount,
-            calculatePaychecksUntilDue,
-            columnHelper,
-            formatAmountWithFrequency,
             formatCategoryDueDate,
             getCategoryDateInfo,
             getDueDateUrgency,
