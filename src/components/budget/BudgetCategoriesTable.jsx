@@ -31,6 +31,7 @@ import TransferModal from './TransferModal';
 
 const BudgetCategoriesTable = ({
     data = [],
+    accounts = [], // Add accounts prop to calculate available to allocate
     onAddCategory,
     onEditCategory,
     onDeleteCategory,
@@ -647,22 +648,34 @@ const BudgetCategoriesTable = ({
                     const value = getValue();
                     const isOverspent = value < 0;
 
-                    return (
-                        <div className="text-right">
-                            <button
-                                onClick={() => handleTransferClick(row.original)}
-                                className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-blue-500 focus:outline-none ${isOverspent ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
-                                    : value > 0 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
-                                        : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
-                                    }`}
-                                title="Click to transfer money"
-                            >
-                                {isOverspent && <span className="mr-1">⚠️</span>}
-                                <span className="mr-1">💰</span>
-                                {formatCurrency(value || 0)}
-                            </button>
-                        </div>
-                    );
+                    // Only make clickable if there's money to transfer out (value > 0)
+                    if (value > 0) {
+                        return (
+                            <div className="text-right">
+                                <button
+                                    onClick={() => handleTransferClick(row.original)}
+                                    className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
+                                    title="Click to move money out of this category"
+                                >
+                                    <span className="mr-1">💰</span>
+                                    {formatCurrency(value)}
+                                </button>
+                            </div>
+                        );
+                    } else {
+                        // Non-clickable display for $0 or negative amounts
+                        return (
+                            <div className="text-right">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
+                                    ? 'bg-red-100 text-red-800 border border-red-200'
+                                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                    }`}>
+                                    {isOverspent && <span className="mr-1">⚠️</span>}
+                                    {formatCurrency(value || 0)}
+                                </span>
+                            </div>
+                        );
+                    }
                 },
                 size: 120,
             }),
@@ -893,6 +906,64 @@ const BudgetCategoriesTable = ({
                     )}
                 </div>
             </div>
+
+            {/* Available to Allocate Section */}
+            {(() => {
+                // Calculate available to allocate the same way SimplifiedSummaryCards does
+                const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
+                    const accountTransactions = []; // Empty for now - will be populated when transaction management is implemented
+                    const startingBalance = account.startingBalance || account.balance || 0;
+                    const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    return sum + workingBalance;
+                }, 0);
+
+                const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
+                const availableToAllocate = totalWorkingBalance - totalAllocated;
+
+                if (availableToAllocate > 0) {
+                    return (
+                        <div className="mb-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-800 overflow-hidden shadow-sm">
+                            <button
+                                onClick={() => setTransferModal({
+                                    isOpen: true,
+                                    targetCategory: {
+                                        id: 'to-be-allocated',
+                                        name: 'Available to Allocate',
+                                        available: availableToAllocate
+                                    },
+                                    mode: 'allocate-from'
+                                })}
+                                className="w-full p-4 text-left hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors group"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl">
+                                            💰
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 group-hover:text-green-900 dark:group-hover:text-green-100">
+                                                Available to Allocate
+                                            </h3>
+                                            <p className="text-sm text-green-600 dark:text-green-400">
+                                                Click to allocate money to categories
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                                            {formatCurrency(availableToAllocate)}
+                                        </div>
+                                        <div className="text-sm text-green-600 dark:text-green-400">
+                                            Ready to allocate
+                                        </div>
+                                    </div>
+                                </div>
+                            </button>
+                        </div>
+                    );
+                }
+                return null;
+            })()}
 
             {/* Table */}
             <div className="bg-white dark:bg-dark-800 rounded-lg border border-gray-200 dark:border-dark-600 overflow-hidden shadow-sm">
@@ -1166,6 +1237,35 @@ const BudgetCategoriesTable = ({
                                 const newAvailable = (category.available || 0) + transferData.amount;
                                 const newAllocated = (category.allocated || 0) + transferData.amount;
                                 console.log(`✅ Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
+                                return {
+                                    ...category,
+                                    available: newAvailable,
+                                    allocated: newAllocated
+                                };
+                            }
+                            return category;
+                        });
+
+                        console.log('📋 Updated categories data:', updatedData);
+
+                        // Notify parent component to update its data and re-render
+                        if (onDataUpdate) {
+                            console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                            onDataUpdate(updatedData);
+                        } else {
+                            console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                        }
+
+                    } else if (transferData.type === 'deallocate') {
+                        // Transfer from category back to "to be allocated"
+                        console.log('💸 Processing deallocation back to unallocated funds');
+                        console.log(`📤 Removing $${transferData.amount} from category ${transferData.fromCategory}`);
+
+                        const updatedData = data.map(category => {
+                            if (category.id === transferData.fromCategory) {
+                                const newAvailable = (category.available || 0) - transferData.amount;
+                                const newAllocated = (category.allocated || 0) - transferData.amount;
+                                console.log(`📉 Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
                                 return {
                                     ...category,
                                     available: newAvailable,

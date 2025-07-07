@@ -1,40 +1,22 @@
 import SimplifiedSummaryCards from "components/budget/SimplifiedSummaryCards";
 import UpcomingPaychecks from "components/budget/UpcomingPaychecks";
 import { Page } from "components/shared/Page";
+import { useAccountManagement } from "../../../../hooks/useAccountManagement";
+import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
+import { useDataModel } from "../../../../hooks/useDataModel";
 
 export default function Home() {
-  // Mock data for now - this will be replaced with real data from context
-  const mockData = {
-    accounts: [
-      { id: 1, name: "Checking", balance: 2500, monthlyIncome: 4000 },
-      { id: 2, name: "Savings", balance: 5000, monthlyIncome: 0 }
-    ],
-    categories: [
-      { id: 1, name: "Housing", allocated: 1200 },
-      { id: 2, name: "Food", allocated: 400 },
-      { id: 3, name: "Transportation", allocated: 300 }
-    ],
-    planningItems: [
-      {
-        id: 1,
-        name: "Emergency Fund",
-        type: "savings-goal",
-        isActive: true,
-        targetAmount: 10000,
-        alreadySaved: 5000,
-        targetDate: "2024-12-31"
-      },
-      {
-        id: 2,
-        name: "Car Insurance",
-        type: "expense",
-        isActive: true,
-        amount: 150,
-        alreadySaved: 150,
-        dueDate: "2025-01-15"
-      }
-    ]
-  };
+  // Use real data from hooks instead of mock data
+  const { accounts } = useAccountManagement();
+  const { categories } = useCategoryManagement();
+  const { planningItems } = useDataModel({
+    initialCategories: [],
+    initialAccounts: [],
+    payFrequency: 'bi-weekly'
+  });
+
+  // For now, transactions is empty - this will be populated when transaction management is implemented
+  const transactions = [];
 
   return (
     <Page title="Dashboard">
@@ -51,15 +33,16 @@ export default function Home() {
 
           {/* Budget Summary Cards */}
           <SimplifiedSummaryCards
-            accounts={mockData.accounts}
-            categories={mockData.categories}
-            planningItems={mockData.planningItems}
+            accounts={accounts || []}
+            categories={categories || []}
+            planningItems={planningItems || []}
+            transactions={transactions}
             className="mb-6"
           />
 
           {/* Upcoming Paychecks - Payday Functionality */}
           <UpcomingPaychecks
-            accounts={mockData.accounts}
+            accounts={accounts || []}
             onStartPaydayWorkflow={(paycheck) => {
               console.log('Starting payday workflow for:', paycheck);
               // This will be implemented with the full payday workflow

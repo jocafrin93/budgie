@@ -526,17 +526,18 @@ export default function BudgetOverview() {
     }, []);
 
     const getMonthSummary = useCallback(() => {
-        // Calculate cleared balances the same way AccountsManagement does
-        const totalClearedBalance = (accounts || []).reduce((sum, account) => {
-            // For now, use startingBalance as cleared balance since we don't have transactions
-            // In a real implementation, this would calculate: startingBalance + clearedTransactions
+        // Calculate total working balance (source of truth) the same way AccountsManagement does
+        const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
+            // Calculate working balance the same way AccountsManagement does
+            const accountTransactions = []; // Empty for now - will be populated when transaction management is implemented
             const startingBalance = account.startingBalance || account.balance || 0;
-            return sum + startingBalance;
+            const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            return sum + workingBalance;
         }, 0);
 
         const allocated = categories.reduce((sum, cat) => sum + (cat.allocated || 0), 0);
         const spent = categories.reduce((sum, cat) => sum + (cat.spent || 0), 0);
-        const remaining = totalClearedBalance - allocated; // Remaining = cleared balance - allocated
+        const remaining = totalWorkingBalance - allocated; // Remaining = working balance - allocated
 
         return {
             allocated,
@@ -560,6 +561,7 @@ export default function BudgetOverview() {
                         accounts={accounts || []}
                         categories={categories}
                         planningItems={planningItems}
+                        transactions={[]} // Empty for now - will be populated when transaction management is implemented
                     />
                 </div>
 
@@ -585,6 +587,7 @@ export default function BudgetOverview() {
                 {/* Main Budget View */}
                 <BudgetCategoriesTable
                     data={tableData}
+                    accounts={accounts || []} // Pass accounts for "Available to Allocate" calculation
                     onDataUpdate={(updatedTableData) => {
                         console.log('🔄 BudgetOverview: Received data update from BudgetCategoriesTable');
                         console.log('📊 Updated table data:', updatedTableData);

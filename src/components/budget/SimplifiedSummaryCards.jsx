@@ -10,18 +10,23 @@ const SimplifiedSummaryCards = ({
     accounts = [],
     categories = [],
     planningItems = [],
+    transactions = [], // Add transactions prop
     className = '',
 }) => {
     // Calculate summary data
     const summaryData = useMemo(() => {
-        // Calculate available to allocate using starting balances (same as AccountsManagement)
-        const totalClearedBalance = accounts.reduce((sum, account) => {
-            // Use startingBalance as cleared balance since we don't have transactions yet
+        // Calculate available to allocate using totalWorkingBalance (source of truth)
+        // Use EXACT same calculation as AccountsManagement
+        const totalWorkingBalance = accounts.reduce((sum, account) => {
+            // IMPORTANT: Use the exact same logic as AccountsManagement.calculateAccountBalances
+            const accountTransactions = transactions.filter(t => t.accountId === account.id);
             const startingBalance = account.startingBalance || account.balance || 0;
-            return sum + startingBalance;
+            const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            return sum + workingBalance;
         }, 0);
+
         const totalAllocated = categories.reduce((sum, category) => sum + (category.allocated || 0), 0);
-        const availableToAllocate = totalClearedBalance - totalAllocated;
+        const availableToAllocate = totalWorkingBalance - totalAllocated;
 
         // Calculate budget progress
         const totalPlanned = planningItems.reduce((sum, item) => {

@@ -37,17 +37,19 @@ const TransferModal = ({
     // Reset form when modal opens/closes
     useEffect(() => {
         if (isOpen && targetCategory) {
-            // Default to transferring INTO the target category
-            setToCategory(targetCategory.id);
-
-            // Default source to "To be allocated" if available, otherwise blank
-            if (toBeAllocated > 0) {
+            if (targetCategory.id === 'to-be-allocated') {
+                // Special case: allocating FROM "Available to Allocate" TO categories
                 setFromSource('to-be-allocated');
+                setAmount(''); // Let user enter amount
+                setToCategory(''); // User will select destination category
             } else {
-                setFromSource('');
+                // Normal case: moving money OUT of the target category
+                setFromSource(targetCategory.id.toString());
+                // Pre-fill the amount with the full available amount
+                setAmount(targetCategory.available?.toString() || '0');
+                // Clear destination - user will select where to move it
+                setToCategory('');
             }
-
-            setAmount('');
             setAlerts([]);
         } else if (!isOpen) {
             // Reset form when closing
@@ -56,7 +58,7 @@ const TransferModal = ({
             setAmount('');
             setAlerts([]);
         }
-    }, [isOpen, targetCategory, toBeAllocated]);
+    }, [isOpen, targetCategory]);
 
     // Calculate alerts when form changes
     useEffect(() => {
@@ -164,15 +166,30 @@ const TransferModal = ({
 
     // Get destination category options
     const destinationOptions = useMemo(() => {
-        return categories.map(category => {
-            const account = getCategoryFundingAccount(category.id);
-            return {
-                value: category.id.toString(),
-                label: `${category.name}${account ? ` - ${account.name}` : ''}`,
-                account
-            };
+        const options = [];
+
+        // Add "To be allocated" as first option
+        options.push({
+            value: 'to-be-allocated',
+            label: 'To be allocated (unassigned funds)',
+            account: null
         });
-    }, [categories, getCategoryFundingAccount]);
+
+        // Add all categories except the source category
+        const sourceId = parseInt(fromSource, 10);
+        categories.forEach(category => {
+            if (category.id !== sourceId) {
+                const account = getCategoryFundingAccount(category.id);
+                options.push({
+                    value: category.id.toString(),
+                    label: `${category.name}${account ? ` - ${account.name}` : ''}`,
+                    account
+                });
+            }
+        });
+
+        return options;
+    }, [categories, getCategoryFundingAccount, fromSource]);
 
     const handleTransfer = () => {
         console.log('🔄 Transfer initiated');
@@ -199,7 +216,18 @@ const TransferModal = ({
         console.log('✅ Transfer validation passed');
 
         try {
-            if (fromSource === 'to-be-allocated') {
+            if (toCategory === 'to-be-allocated') {
+                console.log('💰 Handling transfer back to unallocated funds');
+                const transferData = {
+                    type: 'deallocate',
+                    fromCategory: parseInt(fromSource, 10),
+                    toSource: 'unallocated',
+                    amount: transferAmount,
+                    alerts: alerts.filter(alert => alert.type !== 'error')
+                };
+                console.log('📤 Calling onTransferComplete with:', transferData);
+                onTransferComplete?.(transferData);
+            } else if (fromSource === 'to-be-allocated') {
                 console.log('💰 Handling allocation from unassigned funds');
                 const transferData = {
                     type: 'allocation',
@@ -209,8 +237,6 @@ const TransferModal = ({
                     alerts: alerts.filter(alert => alert.type !== 'error')
                 };
                 console.log('📤 Calling onTransferComplete with:', transferData);
-                console.log('🔗 onTransferComplete function:', onTransferComplete);
-
                 onTransferComplete?.(transferData);
             } else {
                 console.log('🔄 Handling category-to-category transfer');
@@ -218,8 +244,6 @@ const TransferModal = ({
                 const toCategoryId = parseInt(toCategory, 10);
 
                 console.log('🏗️ Creating move money updates...');
-                console.log('📋 createMoveMoneyUpdates function:', createMoveMoneyUpdates);
-
                 const transferUpdates = createMoveMoneyUpdates(fromCategoryId, toCategoryId, transferAmount);
                 console.log('📊 Transfer updates result:', transferUpdates);
 
@@ -233,8 +257,6 @@ const TransferModal = ({
                         alerts: alerts.filter(alert => alert.type !== 'error')
                     };
                     console.log('📤 Calling onTransferComplete with:', transferData);
-                    console.log('🔗 onTransferComplete function:', onTransferComplete);
-
                     onTransferComplete?.(transferData);
                 } else {
                     console.log('❌ createMoveMoneyUpdates returned null/undefined');
@@ -309,23 +331,14 @@ const TransferModal = ({
 
                 {/* Form */}
                 <div className="p-6 space-y-4">
-                    {/* From Source */}
+                    {/* From Source - Display only */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-2">
                             FROM
                         </label>
-                        <select
-                            value={fromSource}
-                            onChange={(e) => setFromSource(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value="">Select source...</option>
-                            {sourceOptions.map(option => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                        <div className="w-full px-3 py-2 border border-gray-200 dark:border-dark-600 bg-gray-50 dark:bg-dark-750 text-gray-900 dark:text-dark-100 rounded-lg">
+                            {targetCategory?.name || 'Unknown Category'} (${(targetCategory?.available || 0).toFixed(2)} available)
+                        </div>
                     </div>
 
                     {/* Transfer Arrow */}
@@ -336,7 +349,7 @@ const TransferModal = ({
                     {/* To Category */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-dark-300 mb-2">
-                            TO
+                            MOVE TO
                         </label>
                         <select
                             value={toCategory}

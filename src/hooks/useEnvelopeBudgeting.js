@@ -236,11 +236,9 @@ export const useEnvelopeBudgeting = ({
           categoryId: toCategoryId,
           update: (category) => {
             if (category.id === toCategoryId) {
-              const currentAllocated = validateAmount(category.allocated || 0);
               const currentAvailable = validateAmount(category.available || 0);
               return {
                 ...category,
-                allocated: validateAmount(currentAllocated + validatedAmount),
                 available: validateAmount(currentAvailable + validatedAmount)
               };
             }

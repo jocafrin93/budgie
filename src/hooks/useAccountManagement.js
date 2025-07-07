@@ -171,6 +171,20 @@ export const useAccountManagement = () => {
     return accounts.reduce((total, account) => total + (account.clearedBalance || 0), 0);
   }, [accounts]);
 
+  /**
+   * Calculate total working balance across all accounts
+   * This is the source of truth for budget calculations
+   */
+  const getTotalWorkingBalance = useCallback((transactions = []) => {
+    return accounts.reduce((total, account) => {
+      // Calculate working balance the same way AccountsManagement does
+      const accountTransactions = transactions.filter(t => t.accountId === account.id);
+      const startingBalance = account.startingBalance || account.balance || 0;
+      const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+      return total + workingBalance;
+    }, 0);
+  }, [accounts]);
+
   return {
     accounts,
     setAccounts,
@@ -180,6 +194,7 @@ export const useAccountManagement = () => {
     transferBetweenAccounts,
     getDefaultAccount,
     getTotalBalance,
-    getTotalClearedBalance
+    getTotalClearedBalance,
+    getTotalWorkingBalance
   };
 };
