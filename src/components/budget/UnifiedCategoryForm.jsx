@@ -1,13 +1,12 @@
-import { X } from 'lucide-react';
-import { useEffect } from 'react';
+import { RefreshCcw, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from '../../hooks/useForm';
 import { formatDate } from '../../utils/dateUtils';
 import { dollarToPercentage, percentageToDollar } from '../../utils/moneyUtils';
 import { CurrencyField } from '../form';
+import { Checkbox, Input, Select, Textarea } from '../ui';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { Checkbox, Input, Select, Textarea } from '../ui/Form';
-
 
 // Frequency options for recurring expenses
 const frequencyOptions = [
@@ -36,6 +35,310 @@ const colorOptions = [
     { value: 'bg-teal-500', label: 'Teal', color: '#14B8A6' },
     { value: 'bg-lime-500', label: 'Lime', color: '#84CC16' },
 ];
+
+// Enhanced Goal Fields Component with paycheck-based auto-calculation
+const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) => {
+    const [modifiedFields, setModifiedFields] = useState({
+        targetAmount: false,
+        targetDate: false,
+        perPaycheckContribution: false
+    });
+
+    const [usePercentageForPaycheck, setUsePercentageForPaycheck] = useState(false);
+    const [calculatedField, setCalculatedField] = useState(null);
+    const [showRecalculationOptions, setShowRecalculationOptions] = useState(false);
+    const isCalculating = useRef(false);
+
+    // Get paycheck management functionality
+    const getPaychecksInDateRange = (startDate, endDate) => {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const paychecks = [];
+
+        // Assume bi-weekly paychecks starting from today
+        let currentDate = new Date();
+        currentDate.setDate(currentDate.getDate() + (14 - (currentDate.getDate() % 14))); // Next paycheck
+
+        while (currentDate <= end) {
+            if (currentDate >= start) {
+                paychecks.push({
+                    date: new Date(currentDate),
+                    amount: currentPay
+                });
+            }
+            currentDate.setDate(currentDate.getDate() + 14); // Add 14 days for bi-weekly
+        }
+
+        return paychecks;
+    };
+
+    // Calculate number of paychecks between now and target date
+    const calculatePaychecksUntilTarget = (targetDate) => {
+        if (!targetDate) return 0;
+
+        const today = new Date();
+        const target = new Date(targetDate);
+
+        if (target <= today) return 0;
+
+        const paychecks = getPaychecksInDateRange(today, target);
+        return paychecks.length;
+    };
+
+    const handleFieldChange = (fieldName, value) => {
+        setModifiedFields(prev => ({
+            ...prev,
+            [fieldName]: true
+        }));
+
+        setFieldValue(fieldName, value);
+    };
+
+    const handlePaycheckModeToggle = (usePercentage) => {
+        if (usePercentage && !usePercentageForPaycheck && formValues.perPaycheckContribution && currentPay > 0) {
+            const convertedPercentage = dollarToPercentage(parseFloat(formValues.perPaycheckContribution), currentPay);
+            setFieldValue('paycheckPercentage', convertedPercentage);
+        } else if (!usePercentage && usePercentageForPaycheck && formValues.paycheckPercentage && currentPay > 0) {
+            const convertedAmount = percentageToDollar(parseFloat(formValues.paycheckPercentage), currentPay);
+            setFieldValue('perPaycheckContribution', convertedAmount);
+        }
+        setUsePercentageForPaycheck(usePercentage);
+    };
+
+    const handleRecalculate = (fieldToCalculate) => {
+        setCalculatedField(fieldToCalculate);
+        setModifiedFields(prev => ({
+            ...prev,
+            [fieldToCalculate]: false
+        }));
+    };
+
+    // Auto-calculation logic - now paycheck-based
+    useEffect(() => {
+        const targetAmount = parseFloat(formValues.targetAmount) || 0;
+        const perPaycheckContribution = parseFloat(formValues.perPaycheckContribution) || 0;
+        const targetDate = formValues.targetDate ? new Date(formValues.targetDate) : null;
+
+        const hasTargetAmount = modifiedFields.targetAmount && targetAmount > 0;
+        const hasPerPaycheckContribution = modifiedFields.perPaycheckContribution && perPaycheckContribution > 0;
+        const hasTargetDate = modifiedFields.targetDate && targetDate && targetDate > new Date();
+
+        const filledFieldCount = [hasTargetAmount, hasPerPaycheckContribution, hasTargetDate].filter(Boolean).length;
+
+        if (filledFieldCount === 2 && !isCalculating.current) {
+            isCalculating.current = true;
+
+            try {
+                if (!hasPerPaycheckContribution && hasTargetAmount && hasTargetDate) {
+                    setCalculatedField('perPaycheckContribution');
+                    const paychecksUntilTarget = calculatePaychecksUntilTarget(targetDate);
+                    if (paychecksUntilTarget > 0) {
+                        const calculatedContribution = targetAmount / paychecksUntilTarget;
+                        setFieldValue('perPaycheckContribution', calculatedContribution.toFixed(2));
+                    }
+                }
+                else if (!hasTargetAmount && hasPerPaycheckContribution && hasTargetDate) {
+                    setCalculatedField('targetAmount');
+                    const paychecksUntilTarget = calculatePaychecksUntilTarget(targetDate);
+                    const calculatedAmount = perPaycheckContribution * paychecksUntilTarget;
+                    setFieldValue('targetAmount', calculatedAmount.toFixed(2));
+                }
+                else if (!hasTargetDate && hasTargetAmount && hasPerPaycheckContribution) {
+                    setCalculatedField('targetDate');
+                    const paychecksNeeded = Math.ceil(targetAmount / perPaycheckContribution);
+                    // Calculate target date based on bi-weekly paychecks
+                    const calculatedDate = new Date();
+                    calculatedDate.setDate(calculatedDate.getDate() + (paychecksNeeded * 14));
+                    const year = calculatedDate.getFullYear();
+                    const month = String(calculatedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(calculatedDate.getDate()).padStart(2, '0');
+                    setFieldValue('targetDate', `${year}-${month}-${day}`);
+                }
+            } catch (error) {
+                console.error("Error in calculation:", error);
+            } finally {
+                setTimeout(() => {
+                    isCalculating.current = false;
+                }, 100);
+            }
+        } else {
+            setCalculatedField(null);
+        }
+    }, [formValues.targetAmount, formValues.perPaycheckContribution, formValues.targetDate, modifiedFields, setFieldValue, calculatePaychecksUntilTarget]);
+
+    useEffect(() => {
+        const hasPerPaycheckValue = parseFloat(formValues.perPaycheckContribution) > 0;
+        setShowRecalculationOptions(calculatedField === 'perPaycheckContribution' || hasPerPaycheckValue);
+    }, [formValues.perPaycheckContribution, calculatedField]);
+
+    const getFieldHint = (fieldName) => {
+        if (calculatedField === fieldName) {
+            return "Auto-calculated";
+        }
+        return "";
+    };
+
+    return (
+        <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <h3 className="font-medium text-green-900 dark:text-green-100">Savings Goal Configuration</h3>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 mb-4 rounded-md text-sm text-blue-800 dark:text-blue-200">
+                <div className="mt-1 text-xs">
+                    <span className="text-red-500">*</span> Required field
+                </div>
+                <div className="mt-1">
+                    Fill in two fields to automatically calculate the third.
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                    <div className="flex items-center mb-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Target Amount <span className="text-red-500">*</span>
+                        </label>
+                        {showRecalculationOptions && (
+                            <button
+                                type="button"
+                                className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                onClick={() => handleRecalculate('targetAmount')}
+                                title="Click to recalculate target amount"
+                            >
+                                <RefreshCcw size={16} />
+                            </button>
+                        )}
+                    </div>
+                    <CurrencyField
+                        name="targetAmount"
+                        value={formValues.targetAmount}
+                        error={errors.targetAmount}
+                        hint={getFieldHint('targetAmount')}
+                        onChange={(e) => handleFieldChange('targetAmount', e.target.value)}
+                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    />
+                </div>
+
+                <div className="relative">
+                    <div className="flex items-center mb-1">
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Target Date
+                        </label>
+                        {showRecalculationOptions && (
+                            <button
+                                type="button"
+                                className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                onClick={() => handleRecalculate('targetDate')}
+                                title="Click to recalculate target date"
+                            >
+                                <RefreshCcw size={16} />
+                            </button>
+                        )}
+                    </div>
+                    <Input
+                        name="targetDate"
+                        type="date"
+                        value={formValues.targetDate}
+                        error={errors.targetDate}
+                        hint={getFieldHint('targetDate')}
+                        onChange={(e) => handleFieldChange('targetDate', e.target.value)}
+                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    />
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    How much will you save each paycheck?
+                </label>
+                <div className="flex space-x-2">
+                    <Button
+                        type="button"
+                        onClick={() => handlePaycheckModeToggle(false)}
+                        variant={!usePercentageForPaycheck ? 'filled' : 'outlined'}
+                        color={!usePercentageForPaycheck ? 'primary' : 'neutral'}
+                        className="flex-1 py-2 px-3 text-sm"
+                    >
+                        <span className="mr-1">💰</span>
+                        Dollar Amount
+                    </Button>
+                    <Button
+                        type="button"
+                        onClick={() => handlePaycheckModeToggle(true)}
+                        variant={usePercentageForPaycheck ? 'filled' : 'outlined'}
+                        color={usePercentageForPaycheck ? 'success' : 'neutral'}
+                        className="flex-1 py-2 px-3 text-sm"
+                    >
+                        <span className="mr-1">📊</span>
+                        % of Paycheck
+                    </Button>
+                </div>
+            </div>
+
+            <div className="relative">
+                <div className="flex items-center mb-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Per Paycheck Contribution
+                    </label>
+                    {showRecalculationOptions && (
+                        <button
+                            type="button"
+                            className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={() => handleRecalculate('perPaycheckContribution')}
+                            title="Click to recalculate per paycheck contribution"
+                        >
+                            <RefreshCcw size={16} />
+                        </button>
+                    )}
+                </div>
+
+                {usePercentageForPaycheck ? (
+                    <Input
+                        name="paycheckPercentage"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={formValues.paycheckPercentage || ''}
+                        error={errors.perPaycheckContribution}
+                        hint={currentPay > 0 ? `Approx. $${percentageToDollar(formValues.paycheckPercentage || 0, currentPay).toFixed(2)} per paycheck` : getFieldHint('perPaycheckContribution')}
+                        onChange={(e) => {
+                            handleFieldChange('paycheckPercentage', e.target.value);
+                            if (currentPay > 0) {
+                                const dollarAmount = percentageToDollar(e.target.value, currentPay);
+                                handleFieldChange('perPaycheckContribution', dollarAmount);
+                            }
+                        }}
+                        placeholder="5.0"
+                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    />
+                ) : (
+                    <CurrencyField
+                        name="perPaycheckContribution"
+                        value={formValues.perPaycheckContribution}
+                        error={errors.perPaycheckContribution}
+                        hint={currentPay > 0 ? `Approx. ${dollarToPercentage(formValues.perPaycheckContribution || 0, currentPay).toFixed(1)}% of paycheck` : getFieldHint('perPaycheckContribution')}
+                        onChange={(e) => {
+                            handleFieldChange('perPaycheckContribution', e.target.value);
+                            if (currentPay > 0) {
+                                const percentageAmount = dollarToPercentage(e.target.value, currentPay);
+                                handleFieldChange('paycheckPercentage', percentageAmount);
+                            }
+                        }}
+                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    />
+                )}
+            </div>
+
+            <CurrencyField
+                label="Already Saved"
+                name="alreadySaved"
+                value={formValues.alreadySaved}
+                onChange={(e) => setFieldValue('alreadySaved', e.target.value)}
+                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+        </div>
+    );
+};
 
 const UnifiedCategoryForm = ({
     category = null,
@@ -78,7 +381,7 @@ const UnifiedCategoryForm = ({
         // Goal-specific fields
         targetAmount: category?.targetAmount || 0,
         targetDate: category?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)), // 1 year from now
-        monthlyContribution: category?.monthlyContribution || 0,
+        perPaycheckContribution: category?.perPaycheckContribution || category?.monthlyContribution || 0, // Support legacy data
         alreadySaved: category?.alreadySaved || 0,
     };
 
@@ -111,6 +414,7 @@ const UnifiedCategoryForm = ({
                     percentageAmount: parseFloat(values.percentageAmount) || 0,
                     frequency: values.frequency,
                     dueDate: values.dueDate,
+                    isRecurring: values.isRecurring,
                 });
             } else if (values.type === 'single' && values.planningType === 'goal') {
                 onSave({
@@ -118,7 +422,7 @@ const UnifiedCategoryForm = ({
                     planningType: 'goal',
                     targetAmount: parseFloat(values.targetAmount) || 0,
                     targetDate: values.targetDate,
-                    monthlyContribution: parseFloat(values.monthlyContribution) || 0,
+                    perPaycheckContribution: parseFloat(values.perPaycheckContribution) || 0,
                     alreadySaved: parseFloat(values.alreadySaved) || 0,
                 });
             } else {
@@ -138,10 +442,10 @@ const UnifiedCategoryForm = ({
             }
 
             if (!values.accountId) {
-                errors.accountId = 'Funding account is required';
+                errors.accountId = 'Account is required';
             }
 
-            // Type-specific validations - only for single categories
+            // Type-specific validations
             if (values.type === 'single') {
                 if (values.planningType === 'expense') {
                     if (values.usePercentage) {
@@ -162,11 +466,12 @@ const UnifiedCategoryForm = ({
             }
 
             return errors;
-        },
+        }
     });
 
+    // Handle percentage/dollar conversion when switching modes
     useEffect(() => {
-        if (form.values.type === 'single' && form.values.planningType === 'expense' && currentPay > 0) {
+        if (currentPay > 0) {
             // Only perform automatic conversion when user manually changes a field
             if (form.values.usePercentage && form.values.amount && !form.values.percentageAmount) {
                 // Convert dollar to percentage when switching to percentage mode
@@ -195,7 +500,50 @@ const UnifiedCategoryForm = ({
 
     // Handle form submission
     const handleSubmit = () => {
-        if (!form.isValid) {
+        // Trigger validation using the validate function directly
+        const validateFunction = form.validate || ((values) => {
+            const errors = {};
+
+            // Common validations
+            if (!values.name) {
+                errors.name = 'Category name is required';
+            }
+
+            if (!values.accountId) {
+                errors.accountId = 'Account is required';
+            }
+
+            // Type-specific validations
+            if (values.type === 'single') {
+                if (values.planningType === 'expense') {
+                    if (values.usePercentage) {
+                        if (!values.percentageAmount) {
+                            errors.percentageAmount = 'Percentage is required';
+                        }
+                    } else {
+                        if (!values.amount) {
+                            errors.amount = 'Amount is required';
+                        }
+                    }
+                } else if (values.planningType === 'goal') {
+                    // Goal validation
+                    if (!values.targetAmount) {
+                        errors.targetAmount = 'Target amount is required';
+                    }
+                }
+            }
+
+            return errors;
+        });
+
+        const errors = validateFunction(form.values);
+
+        // If there are errors, don't submit
+        if (Object.keys(errors).length > 0) {
+            // Force form to show errors
+            Object.keys(errors).forEach(key => {
+                form.setFieldError(key, errors[key]);
+            });
             return;
         }
 
@@ -237,7 +585,7 @@ const UnifiedCategoryForm = ({
                 planningType: 'goal',
                 targetAmount: form.values.targetAmount || 0,
                 targetDate: form.values.targetDate,
-                monthlyContribution: form.values.monthlyContribution || 0,
+                perPaycheckContribution: form.values.perPaycheckContribution || 0,
                 alreadySaved: form.values.alreadySaved || 0,
             };
         } else {
@@ -254,6 +602,53 @@ const UnifiedCategoryForm = ({
 
     // Handle "Save & Add Another" button
     const handleSubmitAnother = () => {
+        // Trigger validation using the validate function directly
+        const validateFunction = form.validate || ((values) => {
+            const errors = {};
+
+            // Common validations
+            if (!values.name) {
+                errors.name = 'Category name is required';
+            }
+
+            if (!values.accountId) {
+                errors.accountId = 'Account is required';
+            }
+
+            // Type-specific validations
+            if (values.type === 'single') {
+                if (values.planningType === 'expense') {
+                    if (values.usePercentage) {
+                        if (!values.percentageAmount) {
+                            errors.percentageAmount = 'Percentage is required';
+                        }
+                    } else {
+                        if (!values.amount) {
+                            errors.amount = 'Amount is required';
+                        }
+                    }
+                } else if (values.planningType === 'goal') {
+                    // Goal validation
+                    if (!values.targetAmount) {
+                        errors.targetAmount = 'Target amount is required';
+                    }
+                }
+            }
+
+            return errors;
+        });
+
+        const errors = validateFunction(form.values);
+
+        // If there are errors, don't submit
+        if (Object.keys(errors).length > 0) {
+            // Force form to show errors
+            Object.keys(errors).forEach(key => {
+                form.setFieldError(key, errors[key]);
+            });
+            return;
+        }
+
         const selectedAccount = accounts.find(acc => acc.id === form.values.accountId);
         const currentAccountId = form.values.accountId;
         const currentType = form.values.type;
@@ -294,7 +689,7 @@ const UnifiedCategoryForm = ({
                 planningType: 'goal',
                 targetAmount: parseFloat(form.values.targetAmount) || 0,
                 targetDate: form.values.targetDate,
-                monthlyContribution: parseFloat(form.values.monthlyContribution) || 0,
+                perPaycheckContribution: parseFloat(form.values.perPaycheckContribution) || 0,
                 alreadySaved: parseFloat(form.values.alreadySaved) || 0,
             };
         } else {
@@ -330,7 +725,7 @@ const UnifiedCategoryForm = ({
                 // Goal fields
                 targetAmount: '',
                 targetDate: formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)),
-                monthlyContribution: '',
+                perPaycheckContribution: '',
                 alreadySaved: 0,
             };
 
@@ -338,10 +733,6 @@ const UnifiedCategoryForm = ({
             Object.keys(newInitialValues).forEach(key => {
                 form.setFieldValue(key, newInitialValues[key]);
             });
-
-            // Focus name field
-            const nameInput = document.querySelector('input[name="name"]');
-            if (nameInput) nameInput.focus();
         }, 100);
     };
 
@@ -384,6 +775,7 @@ const UnifiedCategoryForm = ({
                             label="Category Name"
                             placeholder="Enter category name"
                             autoFocus
+                            error={form.errors.name}
                             className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         />
 
@@ -527,50 +919,14 @@ const UnifiedCategoryForm = ({
                             </div>
                         )}
 
-                        {/* Goal-specific fields - Only show for single categories */}
+                        {/* Enhanced Goal-specific fields with auto-calculation */}
                         {form.values.type === 'single' && form.values.planningType === 'goal' && (
-                            <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                                <h3 className="font-medium text-green-900 dark:text-green-100">Savings Goal Configuration</h3>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <CurrencyField
-                                        label="Target Amount"
-                                        name="targetAmount"
-                                        value={form.values.targetAmount}
-                                        onChange={(e) => form.setFieldValue('targetAmount', e.target.value)}
-                                        error={form.errors.targetAmount}
-                                        required
-                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                    />
-
-                                    <Input
-                                        label="Target Date"
-                                        name="targetDate"
-                                        type="date"
-                                        value={form.values.targetDate}
-                                        onChange={form.handleChange}
-                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <CurrencyField
-                                        label="Monthly Contribution"
-                                        name="monthlyContribution"
-                                        value={form.values.monthlyContribution}
-                                        onChange={(e) => form.setFieldValue('monthlyContribution', e.target.value)}
-                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                    />
-
-                                    <CurrencyField
-                                        label="Already Saved"
-                                        name="alreadySaved"
-                                        value={form.values.alreadySaved}
-                                        onChange={(e) => form.setFieldValue('alreadySaved', e.target.value)}
-                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                    />
-                                </div>
-                            </div>
+                            <EnhancedGoalFields
+                                formValues={form.values}
+                                setFieldValue={form.setFieldValue}
+                                errors={form.errors}
+                                currentPay={currentPay}
+                            />
                         )}
 
                         {/* Account and Status */}

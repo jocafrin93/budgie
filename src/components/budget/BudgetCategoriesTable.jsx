@@ -41,7 +41,7 @@ const BudgetCategoriesTable = ({
 }) => {
     const [sorting, setSorting] = useState([]);
     const [globalFilter, setGlobalFilter] = useState('');
-    const [expanded, setExpanded] = useState({ 0: true, 2: true }); // Pre-expand Personal Care and Groceries
+    const [expanded, setExpanded] = useState({}); // Track expanded state by category ID
     const [rowSelection, setRowSelection] = useState({});
 
     // Get paycheck management hook
@@ -51,7 +51,10 @@ const BudgetCategoriesTable = ({
     const upcomingPaychecks = getAllUpcomingPaycheckDates(3); // Get 3 months of paychecks
 
     // Helper functions
-    const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
+    const formatCurrency = (amount) => {
+        const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
+        return `$${numAmount.toFixed(2)}`;
+    };
 
     const formatDueDate = (dateString) => {
         if (!dateString) return '—';
@@ -180,7 +183,64 @@ const BudgetCategoriesTable = ({
             });
 
             // Add sub-items and "Add Item" row if category is expanded
-            if (expanded[index]) {
+            if (expanded[category.id]) {
+                // For goal categories, add a progress row first
+                if (category.planningType === 'goal' && category.targetAmount) {
+                    const currentAmount = category.alreadySaved || 0;
+                    const targetAmount = category.targetAmount || 0;
+                    const progressPercentage = targetAmount > 0 ? Math.min(100, (currentAmount / targetAmount) * 100) : 0;
+
+                    // Calculate days until target date
+                    let daysUntilTarget = null;
+                    if (category.targetDate) {
+                        const today = new Date();
+                        const targetDate = new Date(category.targetDate);
+                        daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+                    }
+
+                    result.push({
+                        id: `goal-progress-${category.id}`,
+                        uniqueId: `goal-progress-${category.id}`,
+                        name: 'Goal Progress',
+                        isGoalProgress: true,
+                        originalIndex: index,
+                        isParent: false,
+                        depth: 1,
+                        parentCategory: category,
+                        progressPercentage,
+                        currentAmount,
+                        targetAmount,
+                        daysUntilTarget,
+                        targetDate: category.targetDate,
+                        perPaycheckContribution: category.perPaycheckContribution || 0,
+                    });
+                }
+
+                // For single expense categories, add an expense details row
+                if (category.type === 'single' && category.planningType === 'expense') {
+                    // Calculate paycheck countdown if there's a due date
+                    let paychecksLeft = null;
+                    if (category.dueDate) {
+                        paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks);
+                    }
+
+                    result.push({
+                        id: `expense-details-${category.id}`,
+                        uniqueId: `expense-details-${category.id}`,
+                        name: 'Expense Details',
+                        isExpenseDetails: true,
+                        originalIndex: index,
+                        isParent: false,
+                        depth: 1,
+                        parentCategory: category,
+                        paychecksLeft,
+                        dueDate: category.dueDate,
+                        frequency: category.frequency,
+                        amount: category.amount,
+                        isRecurring: category.isRecurring,
+                    });
+                }
+
                 // Add existing sub-items
                 if (category.subItems?.length > 0) {
                     category.subItems.forEach((subItem) => {
@@ -273,14 +333,17 @@ const BudgetCategoriesTable = ({
                 cell: ({ row }) => {
                     if (row.original.isAddRow || !row.original.isParent) return null;
 
-                    const isExpanded = expanded[row.original.originalIndex];
+                    // All categories should be expandable
+                    const category = row.original;
+
+                    const isExpanded = expanded[category.id];
 
                     return (
                         <button
                             onClick={() => {
                                 setExpanded(prev => ({
                                     ...prev,
-                                    [row.original.originalIndex]: !prev[row.original.originalIndex]
+                                    [category.id]: !prev[category.id]
                                 }));
                             }}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
@@ -316,7 +379,162 @@ const BudgetCategoriesTable = ({
                         );
                     }
 
-                    if (item.isParent) {
+                    if (item.isGoalProgress) {
+                        // Goal progress row with progress bar and details
+                        const progressColor = item.progressPercentage >= 100 ? 'success' :
+                            item.progressPercentage >= 75 ? 'primary' :
+                                item.progressPercentage >= 50 ? 'warning' : 'neutral';
+
+                        return (
+                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-green-200 dark:border-green-800 pl-4 py-2">
+                                <div className="space-y-3">
+                                    {/* Progress header */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">🎯</span>
+                                            <span className="font-medium text-green-800 dark:text-green-200">Goal Progress</span>
+                                        </div>
+                                        <div className="text-sm font-medium text-green-700 dark:text-green-300">
+                                            {item.progressPercentage.toFixed(1)}%
+                                        </div>
+                                    </div>
+
+                                    {/* Progress bar */}
+                                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                                        <div
+                                            className={`h-3 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-green-500' :
+                                                progressColor === 'primary' ? 'bg-blue-500' :
+                                                    progressColor === 'warning' ? 'bg-yellow-500' :
+                                                        'bg-gray-400'
+                                                }`}
+                                            style={{ width: `${Math.min(100, item.progressPercentage)}%` }}
+                                        />
+                                    </div>
+
+                                    {/* Goal details */}
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <div className="text-gray-600 dark:text-gray-400">Saved</div>
+                                            <div className="font-medium text-green-600 dark:text-green-400">
+                                                ${(parseFloat(item.currentAmount) || 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-600 dark:text-gray-400">Target</div>
+                                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                                                ${(parseFloat(item.targetAmount) || 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-600 dark:text-gray-400">Per Paycheck</div>
+                                            <div className="font-medium text-blue-600 dark:text-blue-400">
+                                                ${(parseFloat(item.perPaycheckContribution) || 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-600 dark:text-gray-400">
+                                                {item.daysUntilTarget !== null ? (
+                                                    item.daysUntilTarget > 0 ? 'Days Left' :
+                                                        item.daysUntilTarget === 0 ? 'Due Today' : 'Overdue'
+                                                ) : 'Target Date'}
+                                            </div>
+                                            <div className={`font-medium ${item.daysUntilTarget !== null ? (
+                                                item.daysUntilTarget > 30 ? 'text-gray-600 dark:text-gray-400' :
+                                                    item.daysUntilTarget > 7 ? 'text-yellow-600 dark:text-yellow-400' :
+                                                        item.daysUntilTarget >= 0 ? 'text-red-600 dark:text-red-400' :
+                                                            'text-red-700 dark:text-red-300'
+                                            ) : 'text-gray-600 dark:text-gray-400'
+                                                }`}>
+                                                {item.daysUntilTarget !== null ? (
+                                                    item.daysUntilTarget > 0 ? `${item.daysUntilTarget} days` :
+                                                        item.daysUntilTarget === 0 ? 'Today!' :
+                                                            `${Math.abs(item.daysUntilTarget)} days ago`
+                                                ) : (
+                                                    item.targetDate ? new Date(item.targetDate).toLocaleDateString() : 'Not set'
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Remaining amount */}
+                                    {item.progressPercentage < 100 && (
+                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                                            <div className="text-sm">
+                                                <span className="text-gray-600 dark:text-gray-400">Still need: </span>
+                                                <span className="font-medium text-orange-600 dark:text-orange-400">
+                                                    ${(item.targetAmount - item.currentAmount).toFixed(2)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    } else if (item.isExpenseDetails) {
+                        // Expense details row with paycheck countdown and details
+                        return (
+                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-blue-200 dark:border-blue-800 pl-4 py-2">
+                                <div className="space-y-3">
+                                    {/* Expense header */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">💸</span>
+                                            <span className="font-medium text-blue-800 dark:text-blue-200">Expense Details</span>
+                                        </div>
+                                        {item.paychecksLeft !== null && (
+                                            <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                                {item.paychecksLeft === 0 ? 'Due Now!' :
+                                                    item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Expense details grid */}
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <div className="text-gray-600 dark:text-gray-400">Amount</div>
+                                            <div className="font-medium text-blue-600 dark:text-blue-400">
+                                                ${(parseFloat(item.amount) || 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-gray-600 dark:text-gray-400">Frequency</div>
+                                            <div className="font-medium text-gray-900 dark:text-gray-100 capitalize">
+                                                {(item.frequency || 'monthly').replace('-', ' ')}
+                                            </div>
+                                        </div>
+                                        {item.dueDate && (
+                                            <>
+                                                <div>
+                                                    <div className="text-gray-600 dark:text-gray-400">Due Date</div>
+                                                    <div className="font-medium text-orange-600 dark:text-orange-400">
+                                                        {new Date(item.dueDate).toLocaleDateString()}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-gray-600 dark:text-gray-400">Paychecks Left</div>
+                                                    <div className={`font-medium ${item.paychecksLeft === 0 ? 'text-red-600 dark:text-red-400' :
+                                                        item.paychecksLeft === 1 ? 'text-yellow-600 dark:text-yellow-400' :
+                                                            item.paychecksLeft > 1 ? 'text-green-600 dark:text-green-400' :
+                                                                'text-red-700 dark:text-red-300'
+                                                        }`}>
+                                                        {item.paychecksLeft === 0 ? 'Due now!' :
+                                                            item.paychecksLeft > 0 ? `${item.paychecksLeft} left` : 'Overdue'}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                        <div>
+                                            <div className="text-gray-600 dark:text-gray-400">Type</div>
+                                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                                                {item.isRecurring ? 'Recurring' : 'One-time'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    } else if (item.isParent) {
                         return (
                             <div className="flex items-center gap-3">
                                 <div className={`w-3 h-3 rounded-full ${item.color} border border-gray-200 dark:border-dark-600`}></div>
@@ -644,13 +862,23 @@ const BudgetCategoriesTable = ({
 
     // Bulk actions handler
     const handleBulkDelete = () => {
-        const selectedIds = Object.keys(rowSelection).map(Number);
-        // Call the onDeleteCategory prop for each selected category
-        selectedIds.forEach(id => {
-            if (onDeleteCategory) {
-                onDeleteCategory(id);
+        const selectedRowIds = Object.keys(rowSelection);
+
+        selectedRowIds.forEach(rowId => {
+            // Find the actual row data from the flattened data
+            const rowData = flattenedData.find(row => row.uniqueId === rowId);
+
+            if (rowData) {
+                if (rowData.isParent) {
+                    // It's a category
+                    onDeleteCategory && onDeleteCategory(rowData.id);
+                } else if (!rowData.isAddRow) {
+                    // It's a sub-item
+                    onDeleteItem && onDeleteItem(rowData.id);
+                }
             }
         });
+
         setRowSelection({});
     };
 

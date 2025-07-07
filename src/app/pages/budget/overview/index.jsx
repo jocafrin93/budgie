@@ -227,6 +227,7 @@ export default function BudgetOverview() {
                 id: category.id,
                 name: category.name,
                 type: category.type || 'multiple',
+                planningType: category.planningType, // Pass through planning type for single categories
                 monthlyNeed,
                 perPaycheck,
                 allocated: category.allocated || 0,
@@ -236,7 +237,16 @@ export default function BudgetOverview() {
                 color: category.color || 'bg-blue-500',
                 isActive: category.isActive !== false, // Default to true if not specified
                 isParent: true,
-                subItems
+                subItems,
+                // Goal-specific properties
+                targetAmount: category.targetAmount,
+                targetDate: category.targetDate,
+                perPaycheckContribution: category.monthlyContribution, // Map monthlyContribution to perPaycheckContribution
+                alreadySaved: category.alreadySaved,
+                // Expense-specific properties
+                amount: category.amount,
+                frequency: category.frequency,
+                isRecurring: category.isRecurring
             };
         });
     }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount]);

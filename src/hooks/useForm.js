@@ -33,6 +33,14 @@ export const useForm = ({
     }));
   }, []);
 
+  // Set a specific field error
+  const setFieldError = useCallback((name, error) => {
+    setErrors(prev => ({
+      ...prev,
+      [name]: error,
+    }));
+  }, []);
+
   // Handle field change
   const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -144,6 +152,7 @@ export const useForm = ({
     handleBlur,
     handleSubmit,
     setFieldValue,
+    setFieldError,
     resetForm,
     getFieldProps,
   };
