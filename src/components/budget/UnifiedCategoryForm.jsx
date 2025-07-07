@@ -49,12 +49,6 @@ const UnifiedCategoryForm = ({
     const initialType = isGoal ? 'goal' : 'expense';
 
     // Initialize form with useForm hook
-    console.log('=== FORM INITIALIZATION DEBUG ===');
-    console.log('Category prop:', category);
-    console.log('Category amount:', category?.amount);
-    console.log('Category settings:', category?.settings);
-    console.log('Category settings amount:', category?.settings?.amount);
-
     const initialValues = {
         // Basic category info
         name: category?.name || '',
@@ -88,10 +82,6 @@ const UnifiedCategoryForm = ({
         alreadySaved: category?.alreadySaved || 0,
     };
 
-    console.log('Initial values calculated:', initialValues);
-    console.log('Initial amount value:', initialValues.amount);
-    console.log('=== FORM INITIALIZATION COMPLETE ===');
-
     const form = useForm({
         initialValues,
         onSubmit: (values) => {
@@ -110,7 +100,7 @@ const UnifiedCategoryForm = ({
                 description: values.description,
             };
 
-            if (values.planningType === 'expense') {
+            if (values.type === 'single' && values.planningType === 'expense') {
                 onSave({
                     ...commonData,
                     planningType: 'expense',
@@ -122,7 +112,7 @@ const UnifiedCategoryForm = ({
                     frequency: values.frequency,
                     dueDate: values.dueDate,
                 });
-            } else {
+            } else if (values.type === 'single' && values.planningType === 'goal') {
                 onSave({
                     ...commonData,
                     planningType: 'goal',
@@ -130,6 +120,12 @@ const UnifiedCategoryForm = ({
                     targetDate: values.targetDate,
                     monthlyContribution: parseFloat(values.monthlyContribution) || 0,
                     alreadySaved: parseFloat(values.alreadySaved) || 0,
+                });
+            } else {
+                // Multiple category - no planning data
+                onSave({
+                    ...commonData,
+                    planningType: null,
                 });
             }
         },
@@ -145,21 +141,23 @@ const UnifiedCategoryForm = ({
                 errors.accountId = 'Funding account is required';
             }
 
-            // Type-specific validations
-            if (values.planningType === 'expense') {
-                if (values.usePercentage) {
-                    if (!values.percentageAmount) {
-                        errors.percentageAmount = 'Percentage is required';
+            // Type-specific validations - only for single categories
+            if (values.type === 'single') {
+                if (values.planningType === 'expense') {
+                    if (values.usePercentage) {
+                        if (!values.percentageAmount) {
+                            errors.percentageAmount = 'Percentage is required';
+                        }
+                    } else {
+                        if (!values.amount) {
+                            errors.amount = 'Amount is required';
+                        }
                     }
-                } else {
-                    if (!values.amount) {
-                        errors.amount = 'Amount is required';
+                } else if (values.planningType === 'goal') {
+                    // Goal validation
+                    if (!values.targetAmount) {
+                        errors.targetAmount = 'Target amount is required';
                     }
-                }
-            } else {
-                // Goal validation
-                if (!values.targetAmount) {
-                    errors.targetAmount = 'Target amount is required';
                 }
             }
 
@@ -168,7 +166,7 @@ const UnifiedCategoryForm = ({
     });
 
     useEffect(() => {
-        if (form.values.planningType === 'expense' && currentPay > 0) {
+        if (form.values.type === 'single' && form.values.planningType === 'expense' && currentPay > 0) {
             // Only perform automatic conversion when user manually changes a field
             if (form.values.usePercentage && form.values.amount && !form.values.percentageAmount) {
                 // Convert dollar to percentage when switching to percentage mode
@@ -197,13 +195,7 @@ const UnifiedCategoryForm = ({
 
     // Handle form submission
     const handleSubmit = () => {
-        console.log('=== FORM SUBMIT DEBUG ===');
-        console.log('Form is valid:', form.isValid);
-        console.log('Form values:', form.values);
-        console.log('Form errors:', form.errors);
-
         if (!form.isValid) {
-            console.log('Form is not valid, returning early');
             return;
         }
 
@@ -224,16 +216,10 @@ const UnifiedCategoryForm = ({
         };
 
         let categoryData;
-        if (form.values.planningType === 'expense') {
+        if (form.values.type === 'single' && form.values.planningType === 'expense') {
             const amountValue = form.values.usePercentage
                 ? percentageToDollar(form.values.percentageAmount || 0, currentPay)
                 : form.values.amount || 0;
-
-            console.log('Processing expense category');
-            console.log('Use percentage:', form.values.usePercentage);
-            console.log('Raw amount value:', form.values.amount);
-            console.log('Raw percentage value:', form.values.percentageAmount);
-            console.log('Calculated amount value:', amountValue);
 
             categoryData = {
                 ...commonData,
@@ -245,7 +231,7 @@ const UnifiedCategoryForm = ({
                 dueDate: form.values.dueDate,
                 isRecurring: form.values.isRecurring,
             };
-        } else {
+        } else if (form.values.type === 'single' && form.values.planningType === 'goal') {
             categoryData = {
                 ...commonData,
                 planningType: 'goal',
@@ -254,15 +240,16 @@ const UnifiedCategoryForm = ({
                 monthlyContribution: form.values.monthlyContribution || 0,
                 alreadySaved: form.values.alreadySaved || 0,
             };
+        } else {
+            // Multiple category - no planning data
+            categoryData = {
+                ...commonData,
+                planningType: null,
+            };
         }
-
-        console.log('Final category data to save:', categoryData);
-        console.log('Calling onSave with data');
 
         // Call onSave with the prepared data
         onSave(categoryData, false); // false = not "add another"
-
-        console.log('=== FORM SUBMIT COMPLETE ===');
     };
 
     // Handle "Save & Add Another" button
@@ -288,7 +275,7 @@ const UnifiedCategoryForm = ({
         };
 
         let categoryData;
-        if (form.values.planningType === 'expense') {
+        if (form.values.type === 'single' && form.values.planningType === 'expense') {
             categoryData = {
                 ...commonData,
                 planningType: 'expense',
@@ -301,7 +288,7 @@ const UnifiedCategoryForm = ({
                 dueDate: form.values.dueDate,
                 isRecurring: form.values.isRecurring,
             };
-        } else {
+        } else if (form.values.type === 'single' && form.values.planningType === 'goal') {
             categoryData = {
                 ...commonData,
                 planningType: 'goal',
@@ -309,6 +296,12 @@ const UnifiedCategoryForm = ({
                 targetDate: form.values.targetDate,
                 monthlyContribution: parseFloat(form.values.monthlyContribution) || 0,
                 alreadySaved: parseFloat(form.values.alreadySaved) || 0,
+            };
+        } else {
+            // Multiple category - no planning data
+            categoryData = {
+                ...commonData,
+                planningType: null,
             };
         }
 
@@ -367,8 +360,8 @@ const UnifiedCategoryForm = ({
     }, [onCancel]);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm transition-opacity">
-            <Card skin="shadow" className="w-full max-w-lg max-h-[90vh] overflow-y-auto m-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40">
+            <Card skin="shadow" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
                 <div className="p-6">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-6">
@@ -378,18 +371,11 @@ const UnifiedCategoryForm = ({
                         <Button
                             onClick={onCancel}
                             variant="flat"
-                            color="neutral"
                             isIcon
-                            className="w-8 h-8"
                         >
-                            <X className="w-4 h-4" />
+                            <X className="w-5 h-5" />
                         </Button>
                     </div>
-
-                    {/* Description */}
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-                        Categories organize your expenses and goals for easier budgeting
-                    </p>
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
                         {/* Category Name */}
@@ -397,336 +383,293 @@ const UnifiedCategoryForm = ({
                             {...form.getFieldProps('name')}
                             label="Category Name"
                             placeholder="Enter category name"
-                            required
                             autoFocus
+                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         />
 
                         {/* Category Type Selection */}
                         <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-900 dark:text-white">
-                                Category Type <span className="text-red-500">*</span>
-                            </label>
-                            <div className="space-y-3">
-                                {/* Single Item Category */}
-                                <div className="flex items-start space-x-3 p-4 border-2 rounded-lg">
-                                    <Checkbox
-                                        checked={form.values.type === 'single'}
-                                        onChange={() => form.setFieldValue('type', 'single')}
-                                        className="mt-0.5 rounded-full"
-                                    />
-                                    <div>
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-lg">💰</span>
-                                            <span className="font-medium text-gray-900 dark:text-white">Single Item Category</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                            One specific expense or goal with detailed configuration options.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* Multiple Items Category */}
-                                <div className="flex items-start space-x-3 p-4 border-2 rounded-lg">
-                                    <Checkbox
-                                        checked={form.values.type === 'multiple'}
-                                        onChange={() => form.setFieldValue('type', 'multiple')}
-                                        className="mt-0.5 rounded-full"
-                                    />
-                                    <div>
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-lg">📦</span>
-                                            <span className="font-medium text-gray-900 dark:text-white">Multiple Items Category</span>
-                                        </div>
-                                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                            Detailed planning with individual item tracking and active/planning states.
-                                        </p>
-                                    </div>
-                                </div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category Type</label>
+                            <div className="flex space-x-3">
+                                <Button
+                                    type="button"
+                                    onClick={() => form.setFieldValue('type', 'single')}
+                                    variant={form.values.type === 'single' ? 'filled' : 'outlined'}
+                                    color={form.values.type === 'single' ? 'primary' : 'neutral'}
+                                    className="flex-1 py-3 px-4 flex items-center justify-center space-x-2"
+                                >
+                                    <span>📄</span>
+                                    <span>Single Item</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    onClick={() => form.setFieldValue('type', 'multiple')}
+                                    variant={form.values.type === 'multiple' ? 'filled' : 'outlined'}
+                                    color={form.values.type === 'multiple' ? 'success' : 'neutral'}
+                                    className="flex-1 py-3 px-4 flex items-center justify-center space-x-2"
+                                >
+                                    <span>📁</span>
+                                    <span>Multiple Items</span>
+                                </Button>
                             </div>
                         </div>
 
-                        {/* Planning Type Selection - Only show for single item categories */}
+                        {/* Planning Type Toggle - Only show for single categories */}
                         {form.values.type === 'single' && (
                             <div className="space-y-3">
-                                <label className="block text-sm font-medium text-gray-900 dark:text-white">
-                                    What are you planning for?
-                                </label>
-                                <div className="flex space-x-3">
-                                    <Button
-                                        type="button"
-                                        onClick={() => form.setFieldValue('planningType', 'expense')}
-                                        variant={form.values.planningType === 'expense' ? 'filled' : 'outlined'}
-                                        color={form.values.planningType === 'expense' ? 'primary' : 'neutral'}
-                                        className="flex-1 h-12 flex items-center justify-center space-x-2"
-                                    >
-                                        <span>💸</span>
-                                        <span>Expense</span>
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => form.setFieldValue('planningType', 'goal')}
-                                        variant={form.values.planningType === 'goal' ? 'filled' : 'outlined'}
-                                        color={form.values.planningType === 'goal' ? 'warning' : 'neutral'}
-                                        className="flex-1 h-12 flex items-center justify-center space-x-2"
-                                    >
-                                        <span>🎯</span>
-                                        <span>Goal</span>
-                                    </Button>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Planning Type</label>
+                                <div className="flex items-center space-x-4">
+                                    <label className="flex items-center">
+                                        <input
+                                            type="radio"
+                                            name="planningType"
+                                            value="expense"
+                                            checked={form.values.planningType === 'expense'}
+                                            onChange={form.handleChange}
+                                            className="mr-2"
+                                        />
+                                        <span className="text-gray-900 dark:text-gray-100">💸 Expense</span>
+                                    </label>
+                                    <label className="flex items-center">
+                                        <input
+                                            type="radio"
+                                            name="planningType"
+                                            value="goal"
+                                            checked={form.values.planningType === 'goal'}
+                                            onChange={form.handleChange}
+                                            className="mr-2"
+                                        />
+                                        <span className="text-gray-900 dark:text-gray-100">🎯 Savings Goal</span>
+                                    </label>
                                 </div>
                             </div>
                         )}
 
-                        {/* Amount Configuration - Only for single item expense categories */}
-                        {form.values.type === 'single' && form.values.planningType === 'expense' && (
-                            <>
-                                {/* Amount Type Selection */}
-                                <div className="space-y-3">
-                                    <label className="block text-sm font-medium text-gray-900 dark:text-white">
-                                        How do you want to set the amount?
-                                    </label>
-                                    <div className="flex space-x-3">
-                                        <Button
-                                            type="button"
-                                            onClick={() => {
-                                                if (form.values.usePercentage && form.values.percentageAmount && currentPay > 0) {
-                                                    const convertedAmount = percentageToDollar(form.values.percentageAmount, currentPay);
-                                                    form.setFieldValue('amount', convertedAmount);
-                                                }
-                                                form.setFieldValue('usePercentage', false);
-                                            }}
-                                            variant={!form.values.usePercentage ? 'filled' : 'outlined'}
-                                            color={!form.values.usePercentage ? 'secondary' : 'neutral'}
-                                            className="flex-1 h-12 flex items-center justify-center space-x-1 text-sm"
-                                        >
-                                            <span>💰</span>
-                                            <span>Dollar Amount</span>
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            onClick={() => {
-                                                if (!form.values.usePercentage && form.values.amount && currentPay > 0) {
-                                                    const convertedPercentage = dollarToPercentage(form.values.amount, currentPay);
-                                                    form.setFieldValue('percentageAmount', convertedPercentage);
-                                                }
-                                                form.setFieldValue('usePercentage', true);
-                                            }}
-                                            variant={form.values.usePercentage ? 'filled' : 'outlined'}
-                                            color={form.values.usePercentage ? 'warning' : 'neutral'}
-                                            className="flex-1 h-12 flex items-center justify-center space-x-1 text-sm"
-                                        >
-                                            <span>📊</span>
-                                            <span>% of Paycheck</span>
-                                        </Button>
-                                    </div>
+                        {/* Multiple Category Info */}
+                        {form.values.type === 'multiple' && (
+                            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                <div className="flex items-center space-x-2 mb-2">
+                                    <span className="text-lg">📁</span>
+                                    <h3 className="font-medium text-gray-900 dark:text-gray-100">Multiple Items Category</h3>
                                 </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                    This category will contain multiple budget items. The total amount needed per month and per paycheck will be calculated from the items you add to this category.
+                                </p>
+                            </div>
+                        )}
 
-                                {/* Amount Field */}
-                                {form.values.usePercentage ? (
+                        {/* Expense-specific fields - Only show for single categories */}
+                        {form.values.type === 'single' && form.values.planningType === 'expense' && (
+                            <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                <h3 className="font-medium text-blue-900 dark:text-blue-100">Expense Configuration</h3>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <Input
-                                            name="percentageAmount"
-                                            label="Percentage of Income"
-                                            type="number"
-                                            step="0.1"
-                                            value={form.values.percentageAmount ? form.values.percentageAmount.toString() : ''}
-                                            onChange={(e) => {
-                                                const numericValue = parseFloat(e.target.value) || 0;
-                                                form.setFieldValue('percentageAmount', numericValue);
-                                            }}
-                                            placeholder="0.0"
-                                            error={form.errors.percentageAmount}
-                                            description={currentPay > 0 ? `Approx. $${percentageToDollar(form.values.percentageAmount || 0, currentPay).toFixed(2)}` : ''}
-                                        />
-                                    </div>
-                                ) : (
-                                    <CurrencyField
-                                        name="amount"
-                                        label="Amount"
-                                        value={form.values.amount}
-                                        onChange={(e) => {
-                                            form.setFieldValue('amount', e.target.value);
-                                        }}
-                                        placeholder="0.00"
-                                        error={form.errors.amount}
-                                        description={currentPay > 0 ? `Approx. ${dollarToPercentage(parseFloat(form.values.amount) || 0, currentPay).toFixed(1)}% of income` : ''}
-                                    />
-                                )}
-
-                                {/* Due Date Field */}
-                                <Input
-                                    {...form.getFieldProps('dueDate')}
-                                    label="Due Date"
-                                    type="date"
-                                    description="Optional - leave blank if no specific due date"
-                                />
-
-                                {/* Recurring Expense Section - Only show if due date is selected */}
-                                {form.values.dueDate && (
-                                    <div className="space-y-4 p-4 border border-gray-200 dark:border-dark-500 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-lg">🔄</span>
-                                            <span className="font-medium text-gray-900 dark:text-white">Timing Options</span>
-                                        </div>
-
-                                        {/* Recurring Checkbox */}
-                                        <div className="flex items-start space-x-3">
+                                        <div className="flex items-center space-x-2 mb-2">
                                             <Checkbox
-                                                checked={form.values.isRecurring}
-                                                onChange={(e) => {
-                                                    form.setFieldValue('isRecurring', e.target.checked);
-                                                    // Reset frequency if unchecking recurring
-                                                    if (!e.target.checked) {
-                                                        form.setFieldValue('frequency', 'monthly');
-                                                    }
-                                                }}
-                                                className="mt-0.5 rounded-full"
+                                                checked={form.values.usePercentage}
+                                                onChange={(e) => form.setFieldValue('usePercentage', e.target.checked)}
                                             />
-                                            <div>
-                                                <span className="font-medium text-gray-900 dark:text-white">
-                                                    This is a recurring expense
-                                                </span>
-                                                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                                                    Check this if this expense repeats on a regular schedule
-                                                </p>
-                                            </div>
+                                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Use percentage of pay
+                                            </label>
                                         </div>
 
-                                        {/* Frequency Selection - Only show if recurring is checked */}
-                                        {form.values.isRecurring && (
-                                            <Select
-                                                label="Frequency"
-                                                value={form.values.frequency}
-                                                onChange={(e) => form.setFieldValue('frequency', e.target.value)}
-                                                required
+                                        {form.values.usePercentage ? (
+                                            <Input
+                                                label="Percentage of Pay"
+                                                name="percentageAmount"
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                max="100"
+                                                value={form.values.percentageAmount}
+                                                onChange={form.handleChange}
+                                                error={form.errors.percentageAmount}
+                                                placeholder="5.0"
                                                 className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                            >
-                                                <option value="">Select an option...</option>
-                                                {frequencyOptions.map(option => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
-                                            </Select>
+                                            />
+                                        ) : (
+                                            <CurrencyField
+                                                label="Amount"
+                                                name="amount"
+                                                value={form.values.amount}
+                                                onChange={(e) => form.setFieldValue('amount', e.target.value)}
+                                                error={form.errors.amount}
+                                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                            />
                                         )}
                                     </div>
-                                )}
-                            </>
-                        )}
 
-                        {/* Goal-specific fields - Only for single item goal categories */}
-                        {form.values.type === 'single' && form.values.planningType === 'goal' && (
-                            <>
-                                {/* Target Amount */}
-                                <CurrencyField
-                                    {...form.getFieldProps('targetAmount')}
-                                    label="Target Amount"
-                                    placeholder="0.00"
-                                />
+                                    <Select
+                                        label="Frequency"
+                                        name="frequency"
+                                        value={form.values.frequency}
+                                        onChange={form.handleChange}
+                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    >
+                                        {frequencyOptions.map(option => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </div>
 
-                                {/* Target Date */}
                                 <Input
-                                    {...form.getFieldProps('targetDate')}
-                                    label="Target Date"
+                                    label="Due Date (Optional)"
+                                    name="dueDate"
                                     type="date"
+                                    value={form.values.dueDate}
+                                    onChange={form.handleChange}
+                                    className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                                 />
-
-                                {/* Monthly Contribution */}
-                                <CurrencyField
-                                    {...form.getFieldProps('monthlyContribution')}
-                                    label="Monthly Contribution"
-                                    placeholder="0.00"
-                                />
-
-                                {/* Already Saved */}
-                                <CurrencyField
-                                    {...form.getFieldProps('alreadySaved')}
-                                    label="Already Saved"
-                                    placeholder="0.00"
-                                    description={form.values.targetAmount ? `${(((parseFloat(form.values.alreadySaved) || 0) / (parseFloat(form.values.targetAmount) || 1)) * 100).toFixed(1)}% funded` : ''}
-                                />
-                            </>
+                            </div>
                         )}
 
-                        {/* Funding Account Field */}
-                        <Select
-                            label="Funding Account"
-                            value={form.values.accountId}
-                            onChange={(e) => form.setFieldValue('accountId', e.target.value)}
-                            error={form.errors.accountId}
-                            required
-                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                        >
-                            <option value="">Select Account</option>
-                            {accounts.map(account => (
-                                <option key={account.id} value={account.id}>
-                                    {account.name}
-                                </option>
-                            ))}
-                        </Select>
+                        {/* Goal-specific fields - Only show for single categories */}
+                        {form.values.type === 'single' && form.values.planningType === 'goal' && (
+                            <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                <h3 className="font-medium text-green-900 dark:text-green-100">Savings Goal Configuration</h3>
 
-                        {/* Status Field */}
-                        <Select
-                            {...form.getFieldProps('status')}
-                            label="Status"
-                            data={statusOptions}
-                        />
-
-                        {/* Priority Field */}
-                        <Select
-                            {...form.getFieldProps('priority')}
-                            label="Priority"
-                            data={priorityOptions}
-                        />
-
-                        {/* Category Color */}
-                        <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-900 dark:text-white">
-                                Category Color
-                            </label>
-                            <div className="flex space-x-2">
-                                {colorOptions.map((color) => (
-                                    <button
-                                        key={color.value}
-                                        type="button"
-                                        onClick={() => form.setFieldValue('color', color.value)}
-                                        className={`w-8 h-8 rounded-full ${color.value} border-2 transition-all ${form.values.color === color.value
-                                            ? 'border-gray-900 dark:border-dark-50 scale-110'
-                                            : 'border-gray-300 dark:border-dark-500 hover:scale-105'
-                                            }`}
-                                        title={color.label}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <CurrencyField
+                                        label="Target Amount"
+                                        name="targetAmount"
+                                        value={form.values.targetAmount}
+                                        onChange={(e) => form.setFieldValue('targetAmount', e.target.value)}
+                                        error={form.errors.targetAmount}
+                                        required
+                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                                     />
+
+                                    <Input
+                                        label="Target Date"
+                                        name="targetDate"
+                                        type="date"
+                                        value={form.values.targetDate}
+                                        onChange={form.handleChange}
+                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <CurrencyField
+                                        label="Monthly Contribution"
+                                        name="monthlyContribution"
+                                        value={form.values.monthlyContribution}
+                                        onChange={(e) => form.setFieldValue('monthlyContribution', e.target.value)}
+                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    />
+
+                                    <CurrencyField
+                                        label="Already Saved"
+                                        name="alreadySaved"
+                                        value={form.values.alreadySaved}
+                                        onChange={(e) => form.setFieldValue('alreadySaved', e.target.value)}
+                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Account and Status */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                label="Funding Account"
+                                name="accountId"
+                                value={form.values.accountId}
+                                onChange={form.handleChange}
+                                error={form.errors.accountId}
+                                required
+                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            >
+                                <option value="">Select Account</option>
+                                {accounts.map(account => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.name}
+                                    </option>
                                 ))}
+                            </Select>
+
+                            <Select
+                                label="Status"
+                                name="status"
+                                value={form.values.status}
+                                onChange={form.handleChange}
+                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            >
+                                {statusOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
+
+                        {/* Priority and Color */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                label="Priority"
+                                name="priority"
+                                value={form.values.priority}
+                                onChange={form.handleChange}
+                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            >
+                                {priorityOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </Select>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                    Color
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {colorOptions.map(option => (
+                                        <button
+                                            key={option.value}
+                                            type="button"
+                                            onClick={() => form.setFieldValue('color', option.value)}
+                                            className={`w-8 h-8 rounded-full border-2 ${form.values.color === option.value
+                                                ? 'border-gray-900 dark:border-white'
+                                                : 'border-gray-300 dark:border-gray-600'
+                                                } ${option.value}`}
+                                            title={option.label}
+                                        />
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
-                        {/* Auto-funding Settings */}
-                        <div className="p-4 border border-gray-200 dark:border-dark-500 rounded-lg">
-                            <div className="flex items-center space-x-2 mb-2">
-                                <span className="text-lg">🎯</span>
-                                <span className="font-medium text-gray-900 dark:text-white">Auto-funding Settings</span>
+                        {/* Advanced Options */}
+                        <div className="space-y-3">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    checked={form.values.autoFunding}
+                                    onChange={(e) => form.setFieldValue('autoFunding', e.target.checked)}
+                                />
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Enable auto-funding
+                                </label>
                             </div>
-                            <Checkbox
-                                {...form.getFieldProps('autoFunding')}
-                                label="Enable auto-funding for this category"
-                            />
                         </div>
 
-                        {/* Description Field */}
+                        {/* Description */}
                         <Textarea
-                            {...form.getFieldProps('description')}
                             label="Description (Optional)"
-                            placeholder="Add notes about this category"
+                            name="description"
+                            value={form.values.description}
+                            onChange={form.handleChange}
                             rows={3}
+                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         />
 
                         {/* Form Actions */}
-                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-dark-600">
-                            <Button
-                                type="button"
-                                onClick={onCancel}
-                                variant="outlined"
-                                color="neutral"
-                            >
+                        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                            <Button type="button" onClick={onCancel} variant="filled" color="secondary">
                                 Cancel
                             </Button>
                             {!category && (
@@ -735,26 +678,13 @@ const UnifiedCategoryForm = ({
                                     onClick={handleSubmitAnother}
                                     variant="outlined"
                                     color="primary"
-                                    disabled={!form.isValid}
-                                    className="flex items-center space-x-1"
                                 >
-                                    <span>+</span>
-                                    <span>Save & Add Another</span>
+                                    Save & Add Another
                                 </Button>
                             )}
-                            <Button
-                                type="submit"
-                                variant="filled"
-                                color="primary"
-                                disabled={!form.isValid}
-                            >
-                                {category ? 'Update Category' : 'Add Category'}
+                            <Button type="submit" variant="filled" color="primary">
+                                {category ? 'Update' : 'Save'} Category
                             </Button>
-                        </div>
-
-                        {/* Keyboard shortcuts hint */}
-                        <div className="text-xs text-gray-500 dark:text-dark-400 text-center pt-2">
-                            💡 Press Enter to save • Shift+Enter to save & add another • Escape to cancel
                         </div>
                     </form>
                 </div>

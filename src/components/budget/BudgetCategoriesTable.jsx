@@ -10,6 +10,7 @@ import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
+    Box,
     Calendar,
     ChevronDown,
     ChevronRight,
@@ -20,6 +21,12 @@ import {
     Trash2
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { usePaycheckManagement } from '../../hooks/usePaycheckManagement';
+import {
+    calculateMonthlyAmount,
+    calculatePaychecksUntilDue,
+    formatAmountWithFrequency
+} from '../../utils/budgetDisplayUtils';
 
 const BudgetCategoriesTable = ({
     data = [],
@@ -36,6 +43,12 @@ const BudgetCategoriesTable = ({
     const [globalFilter, setGlobalFilter] = useState('');
     const [expanded, setExpanded] = useState({ 0: true, 2: true }); // Pre-expand Personal Care and Groceries
     const [rowSelection, setRowSelection] = useState({});
+
+    // Get paycheck management hook
+    const { getAllUpcomingPaycheckDates } = usePaycheckManagement();
+
+    // Get upcoming paychecks for countdown calculations
+    const upcomingPaychecks = getAllUpcomingPaycheckDates(3); // Get 3 months of paychecks
 
     // Helper functions
     const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
@@ -244,33 +257,24 @@ const BudgetCategoriesTable = ({
 
                     if (item.isParent) {
                         return (
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-3 h-3 rounded-full ${item.color} border border-gray-200 dark:border-dark-600`}></div>
-                                    <div>
-                                        <div className="font-medium text-gray-900 dark:text-dark-100">{item.name}</div>
-                                        <div className="text-sm text-gray-500 dark:text-dark-400">
-                                            {item.type === 'multiple'
-                                                ? `${item.subItems?.length || 0} items`
-                                                : 'Single category'
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
+                            <div className="flex items-center gap-3">
+                                <div className={`w-3 h-3 rounded-full ${item.color} border border-gray-200 dark:border-dark-600`}></div>
+                                <div className="font-medium text-gray-900 dark:text-dark-100">{item.name}</div>
+                                {item.type === 'multiple' && (
+                                    <Box className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor">
+                                    </Box>
+                                )}
                             </div>
                         );
                     } else {
-                        // Sub-item
+                        // Sub-item with enhanced display
+                        const amountWithFrequency = formatAmountWithFrequency(item.amount, item.frequency);
+
                         return (
                             <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-gray-200 dark:border-dark-600 pl-4">
                                 <div className="font-medium text-gray-700 dark:text-dark-200">{item.name}</div>
                                 <div className="text-sm text-gray-500 dark:text-dark-400">
-                                    ${item.amount} {item.frequency}
-                                    {item.paychecksUntilDue && (
-                                        <span className="ml-2 text-blue-600 dark:text-blue-400">
-                                            • {item.paychecksUntilDue} paychecks left
-                                        </span>
-                                    )}
+                                    {amountWithFrequency}
                                 </div>
                             </div>
                         );
@@ -286,6 +290,19 @@ const BudgetCategoriesTable = ({
                     if (row.original.isAddRow) return null;
                     const value = getValue();
                     const isSubItem = !row.original.isParent;
+
+                    if (isSubItem && row.original.amount && row.original.frequency) {
+                        // For sub-items, calculate and display monthly equivalent
+                        const monthlyAmount = calculateMonthlyAmount(row.original.amount, row.original.frequency);
+                        return (
+                            <div className="text-right">
+                                <div className="font-medium text-gray-600 dark:text-dark-300">
+                                    {formatCurrency(monthlyAmount)}
+                                </div>
+                            </div>
+                        );
+                    }
+
                     return (
                         <div className={`text-right font-medium ${isSubItem ? 'text-gray-600 dark:text-dark-300' : 'text-gray-900 dark:text-dark-100'}`}>
                             {formatCurrency(value || 0)}
@@ -302,6 +319,54 @@ const BudgetCategoriesTable = ({
                     if (row.original.isAddRow) return null;
                     const value = getValue();
                     const isSubItem = !row.original.isParent;
+
+                    if (isSubItem) {
+                        if (row.original.dueDate) {
+                            // For sub-items with due dates, show paycheck amount and countdown
+                            const paychecksLeft = calculatePaychecksUntilDue(row.original.dueDate, upcomingPaychecks);
+                            return (
+                                <div className="text-right">
+                                    <div className="flex items-center justify-end gap-1 font-medium text-blue-500">
+                                        <span>{formatCurrency(value || 0)}</span>
+                                        {paychecksLeft === 0 ? (
+                                            <span className="text-green-500" title="Due now">
+                                                ⚡
+                                            </span>
+                                        ) : (
+                                            <span className="text-blue-400" title={`${paychecksLeft} paychecks until due`}>
+                                                🕒
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="text-xs">
+                                        {paychecksLeft === 0 ? (
+                                            <span className="text-green-500 font-medium">due now</span>
+                                        ) : paychecksLeft > 0 ? (
+                                            <span className="text-blue-400">{paychecksLeft} left</span>
+                                        ) : (
+                                            <span className="text-red-400">overdue</span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        } else {
+                            // For sub-items without due dates, show amount with ongoing indicator
+                            return (
+                                <div className="text-right">
+                                    <div className="flex items-center justify-end gap-1 font-medium text-blue-500">
+                                        <span>{formatCurrency(value || 0)}</span>
+                                        <span className="text-gray-400" title="Ongoing expense">
+                                            ♾️
+                                        </span>
+                                    </div>
+                                    <div className="text-xs text-gray-400">
+                                        ongoing
+                                    </div>
+                                </div>
+                            );
+                        }
+                    }
+
                     return (
                         <div className={`text-right font-medium ${isSubItem ? 'text-blue-500' : 'text-blue-600'}`}>
                             {formatCurrency(value || 0)}
@@ -438,7 +503,20 @@ const BudgetCategoriesTable = ({
                 size: 100,
             }),
         ],
-        [expanded, data]
+        [
+            expanded,
+            data,
+            calculateMonthlyAmount,
+            calculatePaychecksUntilDue,
+            columnHelper,
+            formatAmountWithFrequency,
+            onAddItem,
+            onDeleteCategory,
+            onDeleteItem,
+            onEditCategory,
+            onEditItem,
+            upcomingPaychecks
+        ]
     );
 
     const table = useReactTable({
@@ -567,7 +645,7 @@ const BudgetCategoriesTable = ({
                                         {row.getVisibleCells().map(cell => (
                                             <td
                                                 key={cell.id}
-                                                className="px-4 py-4 whitespace-nowrap"
+                                                className="px-4 py-2 whitespace-nowrap"
                                                 style={{ width: cell.column.getSize() }}
                                             >
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}

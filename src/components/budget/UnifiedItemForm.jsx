@@ -37,23 +37,23 @@ const UnifiedItemForm = ({
     const initialValues = {
         type: initialType,
         name: item?.name || '',
-        amount: item?.amount || 0,
+        amount: item?.amount !== undefined ? item.amount : 0,
         usePercentage: item?.usePercentage || false,
-        percentageAmount: item?.percentageAmount || 0,
+        percentageAmount: item?.percentageAmount !== undefined ? item.percentageAmount : 0,
         frequency: item?.frequency || 'monthly',
         dueDate: item?.dueDate || '',
-        categoryId: resolvedCategoryId || '',
+        categoryId: item?.categoryId || resolvedCategoryId || '',
         accountId: item?.accountId || (accounts[0]?.id || ''),
         priorityState: item?.priorityState || 'active',
         isRecurring: item?.isRecurring || false,
         priority: item?.priority || 'medium',
 
         // Goal-specific fields
-        targetAmount: item?.targetAmount || 0,
+        targetAmount: item?.targetAmount !== undefined ? item.targetAmount : 0,
         targetDate: item?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)), // 1 year from now
-        monthlyContribution: item?.monthlyContribution || 0,
-        monthlyPercentage: item?.monthlyPercentage || 0,
-        alreadySaved: item?.alreadySaved || 0,
+        monthlyContribution: item?.monthlyContribution !== undefined ? item.monthlyContribution : 0,
+        monthlyPercentage: item?.monthlyPercentage !== undefined ? item.monthlyPercentage : 0,
+        alreadySaved: item?.alreadySaved !== undefined ? item.alreadySaved : 0,
     };
 
     console.log('DEBUG - Form initialValues:', initialValues);
@@ -323,22 +323,20 @@ const UnifiedItemForm = ({
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40">
+            <Card skin="shadow" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
                 <div className="p-6">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-dark-50">
+                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                             {item ? 'Edit Item' : 'Add New Item'}
                         </h2>
                         <Button
                             onClick={onCancel}
                             variant="flat"
-                            color="neutral"
                             isIcon
-                            className="w-8 h-8"
                         >
-                            <X className="w-4 h-4" />
+                            <X className="w-5 h-5" />
                         </Button>
                     </div>
 
@@ -400,6 +398,7 @@ const UnifiedItemForm = ({
                             label="Name"
                             placeholder={form.values.type === 'expense' ? "Expense name (e.g., 'Rent')" : "Goal name (e.g., 'New Car')"}
                             autoFocus
+                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         />
 
                         {/* Category Field */}
@@ -407,6 +406,7 @@ const UnifiedItemForm = ({
                             {...form.getFieldProps('categoryId')}
                             label="Category"
                             data={categoryOptions}
+                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         />
 
                         {/* Account Field */}
@@ -414,6 +414,7 @@ const UnifiedItemForm = ({
                             {...form.getFieldProps('accountId')}
                             label="Funding Account"
                             data={accountOptions}
+                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         />
 
                         {/* Priority State Field */}
@@ -421,6 +422,7 @@ const UnifiedItemForm = ({
                             {...form.getFieldProps('priorityState')}
                             label="Status"
                             data={priorityStateOptions}
+                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                         />
 
                         {form.values.type === 'expense' ? (
@@ -563,13 +565,8 @@ const UnifiedItemForm = ({
                         )}
 
                         {/* Form Actions */}
-                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-dark-600">
-                            <Button
-                                type="button"
-                                onClick={onCancel}
-                                variant="outlined"
-                                color="neutral"
-                            >
+                        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                            <Button type="button" onClick={onCancel} variant="filled" color="secondary">
                                 Cancel
                             </Button>
                             {!item && (
@@ -589,7 +586,7 @@ const UnifiedItemForm = ({
                                 color="primary"
                                 disabled={!form.isValid}
                             >
-                                {item ? 'Update Item' : 'Add Item'}
+                                {item ? 'Update' : 'Save'} Item
                             </Button>
                         </div>
                     </form>

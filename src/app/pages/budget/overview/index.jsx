@@ -517,12 +517,12 @@ export default function BudgetOverview() {
                 {showItemModal && (
                     <React.Suspense fallback={<div>Loading...</div>}>
                         <UnifiedItemForm
-                            isOpen={showItemModal}
-                            onClose={handleCloseItemModal}
+                            onCancel={handleCloseItemModal}
                             onSave={handleSaveItem}
-                            editingItem={editingItem}
+                            item={editingItem}
                             preselectedCategory={preselectedCategory}
                             categories={categories}
+                            accounts={accounts}
                         />
                     </React.Suspense>
                 )}
