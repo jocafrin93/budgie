@@ -69,6 +69,64 @@ const BudgetCategoriesTable = ({
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     };
 
+    // Calculate earliest due date and count for multi-item categories
+    const getCategoryDateInfo = (category) => {
+        if (!category.subItems || category.subItems.length === 0) {
+            // Single category - use its own due date
+            return {
+                earliestDate: category.dueDate,
+                additionalCount: 0,
+                sortValue: category.dueDate ? new Date(category.dueDate) : new Date('9999-12-31')
+            };
+        }
+
+        // Multi-item category - find earliest date among sub-items
+        const itemsWithDates = category.subItems
+            .filter(item => item.dueDate)
+            .map(item => ({
+                date: item.dueDate,
+                dateObj: typeof item.dueDate === 'string' && item.dueDate.match(/^\d{4}-\d{2}-\d{2}$/)
+                    ? (() => {
+                        const [year, month, day] = item.dueDate.split('-').map(Number);
+                        return new Date(year, month - 1, day);
+                    })()
+                    : new Date(item.dueDate)
+            }))
+            .sort((a, b) => a.dateObj - b.dateObj);
+
+        if (itemsWithDates.length === 0) {
+            // No items have due dates
+            return {
+                earliestDate: null,
+                additionalCount: 0,
+                sortValue: new Date('9999-12-31') // Sort to bottom
+            };
+        }
+
+        return {
+            earliestDate: itemsWithDates[0].date,
+            additionalCount: itemsWithDates.length - 1,
+            sortValue: itemsWithDates[0].dateObj
+        };
+    };
+
+    // Format category due date with count badge
+    const formatCategoryDueDate = (category) => {
+        const dateInfo = getCategoryDateInfo(category);
+
+        if (!dateInfo.earliestDate) {
+            return '—';
+        }
+
+        const formattedDate = formatDueDate(dateInfo.earliestDate);
+
+        if (dateInfo.additionalCount > 0) {
+            return `${formattedDate} +${dateInfo.additionalCount}`;
+        }
+
+        return formattedDate;
+    };
+
     const getDueDateUrgency = (dateString) => {
         if (!dateString) return 'none';
 
@@ -115,6 +173,7 @@ const BudgetCategoriesTable = ({
             // Add the main category
             result.push({
                 ...category,
+                uniqueId: `category-${category.id}`,
                 originalIndex: index,
                 isParent: true,
                 depth: 0,
@@ -127,6 +186,7 @@ const BudgetCategoriesTable = ({
                     category.subItems.forEach((subItem) => {
                         result.push({
                             ...subItem,
+                            uniqueId: `item-${subItem.id}`,
                             originalIndex: index,
                             isParent: false,
                             depth: 1,
@@ -139,6 +199,7 @@ const BudgetCategoriesTable = ({
                 if (category.type === 'multiple') {
                     result.push({
                         id: `add-item-${category.id}`,
+                        uniqueId: `add-item-${category.id}`,
                         name: `Add Item to ${category.name}`,
                         isAddRow: true,
                         originalIndex: index,
@@ -438,17 +499,59 @@ const BudgetCategoriesTable = ({
                 ),
                 cell: ({ getValue, row }) => {
                     if (row.original.isAddRow) return null;
-                    const dueDate = getValue();
-                    if (!dueDate) return <span className="text-gray-400">—</span>;
+                    const item = row.original;
+                    const isSubItem = !item.isParent;
 
-                    const urgency = getDueDateUrgency(dueDate);
-                    return (
-                        <div className="text-center">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyStyles(urgency)}`}>
-                                {formatDueDate(dueDate)}
-                            </span>
-                        </div>
-                    );
+                    if (isSubItem) {
+                        // Sub-item: show its own due date
+                        const dueDate = getValue();
+                        if (!dueDate) return <span className="text-gray-400">—</span>;
+
+                        const urgency = getDueDateUrgency(dueDate);
+                        return (
+                            <div className="text-center">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyStyles(urgency)}`}>
+                                    {formatDueDate(dueDate)}
+                                </span>
+                            </div>
+                        );
+                    } else {
+                        // Parent category: show earliest date with count badge
+                        const categoryDateText = formatCategoryDueDate(item);
+                        const dateInfo = getCategoryDateInfo(item);
+
+                        if (!dateInfo.earliestDate) {
+                            return <span className="text-gray-400">—</span>;
+                        }
+
+                        const urgency = getDueDateUrgency(dateInfo.earliestDate);
+                        const parts = categoryDateText.split(' +');
+                        const mainDate = parts[0];
+                        const countBadge = parts[1];
+
+                        return (
+                            <div className="text-center">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyStyles(urgency)}`}>
+                                    {mainDate}
+                                    {countBadge && (
+                                        <span className="ml-1 text-xs opacity-75">
+                                            +{countBadge}
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                        );
+                    }
+                },
+                sortingFn: (rowA, rowB) => {
+                    const itemA = rowA.original;
+                    const itemB = rowB.original;
+
+                    // Get sort values
+                    const dateA = itemA.isParent ? getCategoryDateInfo(itemA).sortValue : (itemA.dueDate ? new Date(itemA.dueDate) : new Date('9999-12-31'));
+                    const dateB = itemB.isParent ? getCategoryDateInfo(itemB).sortValue : (itemB.dueDate ? new Date(itemB.dueDate) : new Date('9999-12-31'));
+
+                    return dateA.getTime() - dateB.getTime();
                 },
                 size: 140,
             }),
@@ -534,7 +637,7 @@ const BudgetCategoriesTable = ({
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         enableRowSelection: (row) => !row.original.isAddRow,
-        getRowId: (row) => row.id.toString(),
+        getRowId: (row) => row.uniqueId || row.id.toString(),
     });
 
     const selectedRowCount = Object.keys(rowSelection).length;
