@@ -86,16 +86,16 @@ const TransferModal = ({
             const fromCategoryId = parseInt(fromSource, 10);
             const toCategoryId = parseInt(toCategory, 10);
 
-            const fromCategory = categories.find(c => c.id === fromCategoryId);
-            const toCategory = categories.find(c => c.id === toCategoryId);
+            const fromCategoryData = categories.find(c => c.id === fromCategoryId);
+            const toCategoryData = categories.find(c => c.id === toCategoryId);
 
-            if (fromCategory && toCategory) {
+            if (fromCategoryData && toCategoryData) {
                 // Check if source category has enough funds
-                const fromAvailable = fromCategory.available || 0;
+                const fromAvailable = fromCategoryData.available || 0;
                 if (transferAmount > fromAvailable) {
                     newAlerts.push({
                         type: 'error',
-                        message: `${fromCategory.name} only has $${fromAvailable.toFixed(2)} available`
+                        message: `${fromCategoryData.name} only has $${fromAvailable.toFixed(2)} available`
                     });
                 } else {
                     // Check account implications

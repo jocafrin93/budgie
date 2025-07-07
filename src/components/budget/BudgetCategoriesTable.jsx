@@ -599,10 +599,14 @@ const BudgetCategoriesTable = ({
                 header: ({ column }) => <SortableHeader column={column}>Allocated</SortableHeader>,
                 cell: ({ getValue, row }) => {
                     if (row.original.isAddRow) return null;
-                    const value = getValue();
                     const isSubItem = !row.original.isParent;
+
+                    // Don't show allocated amounts for sub-items - funds are allocated to categories, not individual items
+                    if (isSubItem) return <div className="text-right text-gray-400">—</div>;
+
+                    const value = getValue();
                     return (
-                        <div className={`text-right font-medium ${isSubItem ? 'text-green-500' : 'text-green-600'}`}>
+                        <div className="text-right font-medium text-green-600">
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -615,10 +619,14 @@ const BudgetCategoriesTable = ({
                 header: ({ column }) => <SortableHeader column={column}>Spent</SortableHeader>,
                 cell: ({ getValue, row }) => {
                     if (row.original.isAddRow) return null;
-                    const value = getValue();
                     const isSubItem = !row.original.isParent;
+
+                    // Don't show spent amounts for sub-items - spending is tracked at category level
+                    if (isSubItem) return <div className="text-right text-gray-400">—</div>;
+
+                    const value = getValue();
                     return (
-                        <div className={`text-right font-medium ${isSubItem ? 'text-red-500' : 'text-red-600'}`}>
+                        <div className="text-right font-medium text-red-600">
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -631,32 +639,28 @@ const BudgetCategoriesTable = ({
                 header: ({ column }) => <SortableHeader column={column}>Available</SortableHeader>,
                 cell: ({ getValue, row }) => {
                     if (row.original.isAddRow) return null;
+                    const isSubItem = !row.original.isParent;
+
+                    // Don't show available amounts for sub-items - only categories have available funds
+                    if (isSubItem) return <div className="text-right text-gray-400">—</div>;
+
                     const value = getValue();
                     const isOverspent = value < 0;
 
                     return (
                         <div className="text-right">
-                            {value > 0 ? (
-                                <button
-                                    onClick={() => handleTransferClick(row.original)}
-                                    className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-blue-500 focus:outline-none ${isOverspent ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
-                                        : 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
-                                        }`}
-                                    title="Click to transfer money"
-                                >
-                                    {isOverspent && <span className="mr-1">⚠️</span>}
-                                    <span className="mr-1">💰</span>
-                                    {formatCurrency(value)}
-                                </button>
-                            ) : (
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
-                                    ? 'bg-red-100 text-red-800 border border-red-200'
-                                    : 'bg-gray-100 text-gray-600 border border-gray-200'
-                                    }`}>
-                                    {isOverspent && <span className="mr-1">⚠️</span>}
-                                    {formatCurrency(value || 0)}
-                                </span>
-                            )}
+                            <button
+                                onClick={() => handleTransferClick(row.original)}
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-blue-500 focus:outline-none ${isOverspent ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
+                                    : value > 0 ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200'
+                                        : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+                                    }`}
+                                title="Click to transfer money"
+                            >
+                                {isOverspent && <span className="mr-1">⚠️</span>}
+                                <span className="mr-1">💰</span>
+                                {formatCurrency(value || 0)}
+                            </button>
                         </div>
                     );
                 },
