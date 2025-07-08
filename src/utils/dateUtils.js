@@ -195,3 +195,37 @@ export const getTodayLocalDate = () => {
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 };
+
+/**
+ * Parse a date string safely to avoid timezone issues
+ * @param {string|Date} dateInput - The date to parse
+ * @returns {Date} Parsed date object set to start of day in local timezone
+ */
+export const parseDateSafely = (dateInput) => {
+    if (!dateInput) return null;
+
+    // If already a Date object, clone it and set to start of day
+    if (dateInput instanceof Date) {
+        const date = new Date(dateInput);
+        date.setHours(0, 0, 0, 0);
+        return date;
+    }
+
+    let dateObj;
+    if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Handle YYYY-MM-DD format
+        const [year, month, day] = dateInput.split('-').map(Number);
+        dateObj = new Date(year, month - 1, day); // month is 0-indexed
+    } else if (typeof dateInput === 'string' && dateInput.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+        // Handle MM/DD/YYYY format
+        const [month, day, year] = dateInput.split('/').map(Number);
+        dateObj = new Date(year, month - 1, day); // month is 0-indexed
+    } else {
+        // Fallback to regular Date constructor
+        dateObj = new Date(dateInput);
+    }
+
+    // Set to start of day to avoid time comparison issues
+    dateObj.setHours(0, 0, 0, 0);
+    return dateObj;
+};

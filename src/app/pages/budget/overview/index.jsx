@@ -38,7 +38,8 @@ export default function BudgetOverview() {
     const paycheckHookResult = usePaycheckManagement(accounts || []);
     const {
         getPaychecksInDateRange,
-        getTodayLocal
+        getTodayLocal,
+        getAllUpcomingPaycheckDates
     } = paycheckHookResult || {};
 
     // Category management hook
@@ -274,6 +275,7 @@ export default function BudgetOverview() {
                 name: category.name,
                 type: category.type || 'multiple',
                 planningType: category.planningType, // Pass through planning type for single categories
+                accountId: category.accountId, // Pass through account ID for paycheck calculations
                 monthlyNeed,
                 perPaycheck,
                 allocated: category.allocated || 0,
@@ -615,6 +617,7 @@ export default function BudgetOverview() {
                 <BudgetCategoriesTable
                     data={tableData}
                     accounts={accounts || []} // Pass accounts for "Available to Allocate" calculation
+                    getAllUpcomingPaycheckDates={getAllUpcomingPaycheckDates} // Pass paycheck function for account-specific countdown
                     currentBudgetMonth={currentBudgetMonth}
                     monthlyBudgetingHook={monthlyBudgetingHook}
                     onDataUpdate={(updatedTableData) => {

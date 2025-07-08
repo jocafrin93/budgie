@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paycheck Logic Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .debug {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Paycheck Logic Debug Test</h1>
+    <p>Testing the specific scenario: Item due July 9th assigned to Account 2 (funded July 10th)</p>
+
+    <div class="test-section">
+        <h2>Scenario Setup</h2>
+        <div class="info result">
+            <strong>Today:</strong> July 7, 2025<br>
+            <strong>Item Due Date:</strong> July 9, 2025<br>
+            <strong>Assigned Account:</strong> Account 2
+        </div>
+
+        <h3>Paycheck Schedule</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Account 1</th>
+                    <th>Account 2</th>
+                    <th>Before Due Date?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>July 9, 2025</td>
+                    <td>$1500</td>
+                    <td>$500</td>
+                    <td>✅ Yes (same day)</td>
+                </tr>
+                <tr>
+                    <td>July 10, 2025</td>
+                    <td>-</td>
+                    <td>$1000</td>
+                    <td>❌ No (after due date)</td>
+                </tr>
+                <tr>
+                    <td>July 23, 2025</td>
+                    <td>$1500</td>
+                    <td>$500</td>
+                    <td>❌ No (after due date)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected vs Actual Results</h2>
+        <div class="info result">
+            <strong>Expected for Account 2:</strong> 1 paycheck (July 9th paycheck goes to Account 2)<br>
+            <strong>User's Expected Behavior:</strong> Should show "Due Now" if no paychecks to that account before due
+            date
+        </div>
+
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Analysis</h2>
+        <div id="debug-analysis"></div>
+    </div>
+
+    <script>
+        // Mock paycheck data
+        const upcomingPaychecks = [
+            {
+                date: "2025-07-09T00:00:00.000Z",
+                formattedDate: "2025-07-09",
+                paycheck: {
+                    id: 1,
+                    name: "Main Paycheck",
+                    accountDistribution: [
+                        { accountId: 1, amount: 1500 },
+                        { accountId: 2, amount: 500 }
+                    ]
+                }
+            },
+            {
+                date: "2025-07-10T00:00:00.000Z",
+                formattedDate: "2025-07-10",
+                paycheck: {
+                    id: 2,
+                    name: "Side Paycheck",
+                    accountDistribution: [
+                        { accountId: 2, amount: 1000 }
+                    ]
+                }
+            },
+            {
+                date: "2025-07-23T00:00:00.000Z",
+                formattedDate: "2025-07-23",
+                paycheck: {
+                    id: 3,
+                    name: "Main Paycheck",
+                    accountDistribution: [
+                        { accountId: 1, amount: 1500 },
+                        { accountId: 2, amount: 500 }
+                    ]
+                }
+            }
+        ];
+
+        // Current implementation (from budgetDisplayUtils.js)
+        function calculatePaychecksUntilDue_Current(dueDate, upcomingPaychecks = [], accountId = null) {
+            if (!dueDate || !upcomingPaychecks.length) return 0;
+
+            // Parse due date safely
+            let dueDateObj;
+            if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                const [year, month, day] = dueDate.split('-').map(Number);
+                dueDateObj = new Date(year, month - 1, day); // month is 0-indexed
+            } else {
+                dueDateObj = new Date(dueDate);
+            }
+
+            console.log('=== CURRENT IMPLEMENTATION DEBUG ===');
+            console.log('Due date:', dueDate, '-> parsed as:', dueDateObj);
+            console.log('Account ID filter:', accountId);
+
+            // Filter paychecks by account if specified
+            let relevantPaychecks = upcomingPaychecks;
+            if (accountId !== null) {
+                relevantPaychecks = upcomingPaychecks.filter(paycheckEntry => {
+                    // Check if this paycheck distributes money to the specified account
+                    if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
+                        const hasAccount = paycheckEntry.paycheck.accountDistribution.some(dist =>
+                            String(dist.accountId) === String(accountId)
+                        );
+                        console.log(`Paycheck ${paycheckEntry.formattedDate}: has account ${accountId}? ${hasAccount}`);
+                        return hasAccount;
+                    }
+                    return false;
+                });
+            }
+
+            console.log('Relevant paychecks after account filtering:', relevantPaychecks.map(p => p.formattedDate));
+
+            // Count paychecks that occur before or on the due date
+            const result = relevantPaychecks.filter(paycheck => {
+                const paycheckDate = new Date(paycheck.date);
+                const isBeforeOrOnDue = paycheckDate <= dueDateObj;
+                console.log(`Paycheck ${paycheck.formattedDate} (${paycheckDate}) <= ${dueDateObj}? ${isBeforeOrOnDue}`);
+                return isBeforeOrOnDue;
+            }).length;
+
+            console.log('Final result:', result);
+            console.log('=== END DEBUG ===');
+            return result;
+        }
+
+        // Test different scenarios
+        function runTests() {
+            const scenarios = [
+                {
+                    name: "Item due July 9th - Account 1",
+                    dueDate: "2025-07-09",
+                    accountId: 1,
+                    expected: 1,
+                    description: "Account 1 gets funded on July 9th, so 1 paycheck available"
+                },
+                {
+                    name: "Item due July 9th - Account 2",
+                    dueDate: "2025-07-09",
+                    accountId: 2,
+                    expected: 1,
+                    description: "Account 2 gets $500 on July 9th, so 1 paycheck available"
+                },
+                {
+                    name: "Item due July 8th - Account 2",
+                    dueDate: "2025-07-08",
+                    accountId: 2,
+                    expected: 0,
+                    description: "No paychecks to Account 2 before July 8th - should be 'Due Now'"
+                },
+                {
+                    name: "Item due July 10th - Account 2",
+                    dueDate: "2025-07-10",
+                    accountId: 2,
+                    expected: 2,
+                    description: "Account 2 gets funded on July 9th ($500) and July 10th ($1000)"
+                }
+            ];
+
+            const resultsDiv = document.getElementById('test-results');
+            const debugDiv = document.getElementById('debug-analysis');
+
+            scenarios.forEach((scenario, index) => {
+                console.log(`\n--- SCENARIO ${index + 1}: ${scenario.name} ---`);
+
+                const actual = calculatePaychecksUntilDue_Current(scenario.dueDate, upcomingPaychecks, scenario.accountId);
+                const passed = actual === scenario.expected;
+
+                const div = document.createElement('div');
+                div.className = `result ${passed ? 'success' : 'error'}`;
+                div.innerHTML = `
+                    <strong>${scenario.name}:</strong><br>
+                    ${scenario.description}<br>
+                    Expected: ${scenario.expected} paychecks<br>
+                    Actual: ${actual} paychecks<br>
+                    ${passed ? '✅ PASSED' : '❌ FAILED'}
+                `;
+                resultsDiv.appendChild(div);
+            });
+
+            // Add debug analysis
+            debugDiv.innerHTML = `
+                <h3>Key Insights</h3>
+                <div class="debug">
+                    <strong>Current Logic:</strong><br>
+                    1. Filter paychecks that go to the specified account<br>
+                    2. Count how many of those occur before or on the due date<br><br>
+                    
+                    <strong>Issue Identified:</strong><br>
+                    The logic is working correctly! The user's expectation might be different.<br><br>
+                    
+                    <strong>User's Scenario:</strong><br>
+                    - Item due July 9th, assigned to Account 2<br>
+                    - Account 2 gets $500 on July 9th (same day as due date)<br>
+                    - Current result: 1 paycheck (correct)<br>
+                    - User expects: "Due Now" (0 paychecks)<br><br>
+                    
+                    <strong>Possible User Intent:</strong><br>
+                    User might want paychecks to be counted only if they occur BEFORE the due date (not on the same day).
+                </div>
+            `;
+        }
+
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+
+</html>

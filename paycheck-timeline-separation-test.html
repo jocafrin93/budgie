@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paycheck Timeline Separation Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .timeline {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Paycheck Timeline Separation Test</h1>
+    <p>Testing the corrected logic: separate timelines for Bank A and Bank B</p>
+
+    <div class="test-section">
+        <h2>Scenario Setup</h2>
+        <div class="info result">
+            <strong>Today:</strong> July 7, 2025<br>
+            <strong>Expense Due Date:</strong> July 9, 2025 (evening)<br>
+            <strong>Two Independent Timelines:</strong> Bank A and Bank B
+        </div>
+
+        <h3>Paycheck Schedule</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Check</th>
+                    <th>Bank A</th>
+                    <th>Bank B</th>
+                    <th>Before Due Date?</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>July 9, 2025</td>
+                    <td>Check 1</td>
+                    <td>$1500</td>
+                    <td>$500</td>
+                    <td>✅ Yes (same day, but before evening)</td>
+                </tr>
+                <tr>
+                    <td>July 10, 2025</td>
+                    <td>Check 2</td>
+                    <td>-</td>
+                    <td>$1000</td>
+                    <td>❌ No (after due date)</td>
+                </tr>
+                <tr>
+                    <td>July 23, 2025</td>
+                    <td>Check 3</td>
+                    <td>$1500</td>
+                    <td>$500</td>
+                    <td>❌ No (after due date)</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="test-section">
+        <h2>Timeline Analysis</h2>
+
+        <div class="timeline">
+            <h4>Bank A Timeline:</h4>
+            <ul>
+                <li>July 9: Gets $1500 (Check 1) - BEFORE due date</li>
+                <li>July 23: Gets $1500 (Check 3) - AFTER due date</li>
+            </ul>
+            <strong>Result for Bank A:</strong> 1 paycheck before due date
+        </div>
+
+        <div class="timeline">
+            <h4>Bank B Timeline:</h4>
+            <ul>
+                <li>July 9: Gets $500 (Check 1) - BEFORE due date</li>
+                <li>July 10: Gets $1000 (Check 2) - AFTER due date</li>
+                <li>July 23: Gets $500 (Check 3) - AFTER due date</li>
+            </ul>
+            <strong>Result for Bank B:</strong> 1 paycheck before due date
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected vs Actual Results</h2>
+        <div class="info result">
+            <strong>User's Desired Behavior:</strong><br>
+            • Expense funded by Bank A: "1 check left"<br>
+            • Expense funded by Bank B: "Due Now" (0 checks left)<br><br>
+            <strong>But wait...</strong> Both banks get money on July 9th, so both should show 1 check left with current
+            logic.
+        </div>
+
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Analysis & Next Steps</h2>
+        <div id="analysis"></div>
+    </div>
+
+    <script>
+        // Mock paycheck data - exactly as described by user
+        const upcomingPaychecks = [
+            {
+                date: "2025-07-09T00:00:00.000Z",
+                formattedDate: "2025-07-09",
+                paycheck: {
+                    id: 1,
+                    name: "Check 1",
+                    accountDistribution: [
+                        { accountId: 1, amount: 1500 }, // Bank A
+                        { accountId: 2, amount: 500 }   // Bank B
+                    ]
+                }
+            },
+            {
+                date: "2025-07-10T00:00:00.000Z",
+                formattedDate: "2025-07-10",
+                paycheck: {
+                    id: 2,
+                    name: "Check 2",
+                    accountDistribution: [
+                        { accountId: 2, amount: 1000 }  // Bank B only
+                    ]
+                }
+            },
+            {
+                date: "2025-07-23T00:00:00.000Z",
+                formattedDate: "2025-07-23",
+                paycheck: {
+                    id: 3,
+                    name: "Check 3",
+                    accountDistribution: [
+                        { accountId: 1, amount: 1500 }, // Bank A
+                        { accountId: 2, amount: 500 }   // Bank B
+                    ]
+                }
+            }
+        ];
+
+        // Updated implementation (simplified logic)
+        function calculatePaychecksUntilDue_Fixed(dueDate, upcomingPaychecks = [], accountId = null) {
+            if (!dueDate || !upcomingPaychecks.length) return 0;
+
+            // Parse due date safely
+            let dueDateObj;
+            if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                const [year, month, day] = dueDate.split('-').map(Number);
+                dueDateObj = new Date(year, month - 1, day); // month is 0-indexed
+            } else {
+                dueDateObj = new Date(dueDate);
+            }
+
+            console.log('=== FIXED IMPLEMENTATION DEBUG ===');
+            console.log('Due date:', dueDate, '-> parsed as:', dueDateObj);
+            console.log('Account ID filter:', accountId);
+
+            // Filter paychecks by account if specified - SIMPLIFIED LOGIC
+            let relevantPaychecks = upcomingPaychecks;
+            if (accountId !== null) {
+                relevantPaychecks = upcomingPaychecks.filter(paycheckEntry => {
+                    // Simple check: does this paycheck distribute ANY money to the specified account?
+                    if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
+                        const hasAccount = paycheckEntry.paycheck.accountDistribution.some(dist =>
+                            String(dist.accountId) === String(accountId)
+                        );
+                        console.log(`${paycheckEntry.formattedDate}: has account ${accountId}? ${hasAccount}`);
+                        return hasAccount;
+                    }
+                    return false;
+                });
+            }
+
+            console.log('Relevant paychecks after account filtering:', relevantPaychecks.map(p => p.formattedDate));
+
+            // Count paychecks that occur before the due date (not including the due date)
+            const result = relevantPaychecks.filter(paycheck => {
+                const paycheckDate = new Date(paycheck.date);
+                const isBeforeDue = paycheckDate < dueDateObj;
+                console.log(`${paycheck.formattedDate} (${paycheckDate}) < ${dueDateObj}? ${isBeforeDue}`);
+                return isBeforeDue;
+            }).length;
+
+            console.log('Final result:', result);
+            console.log('=== END DEBUG ===');
+            return result;
+        }
+
+        // Test scenarios
+        function runTests() {
+            const scenarios = [
+                {
+                    name: "Expense funded by Bank A (due July 9th)",
+                    dueDate: "2025-07-09",
+                    accountId: 1,
+                    expected: 0, // No paychecks to Bank A BEFORE July 9th
+                    userExpected: 1,
+                    description: "Bank A gets Check 1 on July 9th, but that's same day as due date"
+                },
+                {
+                    name: "Expense funded by Bank B (due July 9th)",
+                    dueDate: "2025-07-09",
+                    accountId: 2,
+                    expected: 0, // No paychecks to Bank B BEFORE July 9th
+                    userExpected: 0,
+                    description: "Bank B gets Check 1 on July 9th, but that's same day as due date"
+                },
+                {
+                    name: "Expense funded by Bank A (due July 10th)",
+                    dueDate: "2025-07-10",
+                    accountId: 1,
+                    expected: 1, // Check 1 on July 9th is before July 10th
+                    userExpected: 1,
+                    description: "Bank A gets Check 1 on July 9th, which is before July 10th due date"
+                },
+                {
+                    name: "Expense funded by Bank B (due July 10th)",
+                    dueDate: "2025-07-10",
+                    accountId: 2,
+                    expected: 1, // Check 1 on July 9th is before July 10th
+                    userExpected: 0,
+                    description: "Bank B gets Check 1 on July 9th, but user wants to ignore this"
+                }
+            ];
+
+            const resultsDiv = document.getElementById('test-results');
+            const analysisDiv = document.getElementById('analysis');
+
+            scenarios.forEach((scenario, index) => {
+                console.log(`\n--- SCENARIO ${index + 1}: ${scenario.name} ---`);
+
+                const actual = calculatePaychecksUntilDue_Fixed(scenario.dueDate, upcomingPaychecks, scenario.accountId);
+                const matchesExpected = actual === scenario.expected;
+                const matchesUserExpected = actual === scenario.userExpected;
+
+                const div = document.createElement('div');
+                div.className = `result ${matchesUserExpected ? 'success' : 'warning'}`;
+                div.innerHTML = `
+                    <strong>${scenario.name}:</strong><br>
+                    ${scenario.description}<br>
+                    Current Logic Result: ${actual} paychecks<br>
+                    User Wants: ${scenario.userExpected} paychecks<br>
+                    ${matchesUserExpected ? '✅ MATCHES USER EXPECTATION' : '❌ DOES NOT MATCH USER EXPECTATION'}
+                `;
+                resultsDiv.appendChild(div);
+            });
+
+            // Analysis
+            analysisDiv.innerHTML = `
+                <h3>Key Findings</h3>
+                <div class="warning result">
+                    <strong>Issue Identified:</strong><br>
+                    The current logic counts ANY paycheck that goes to an account, but the user wants different behavior:<br><br>
+                    
+                    <strong>User's Mental Model:</strong><br>
+                    • Bank A = "Primary account" that gets Check 1<br>
+                    • Bank B = "Secondary account" that gets Check 2<br>
+                    • The $500 that Bank B gets on July 9th should be ignored<br><br>
+                    
+                    <strong>Possible Solutions:</strong><br>
+                    1. <strong>Account-Primary Paycheck Mapping:</strong> Each account has designated "primary" paychecks<br>
+                    2. <strong>Minimum Amount Threshold:</strong> Only count paychecks above a certain amount<br>
+                    3. <strong>User Configuration:</strong> Let user specify which paychecks fund which accounts<br><br>
+                    
+                    <strong>Recommendation:</strong><br>
+                    We need to understand how the user wants to define which paychecks "belong" to which accounts.
+                </div>
+            `;
+        }
+
+        // Run tests when page loads
+        runTests();
+    </script>
+</body>
+
+</html>

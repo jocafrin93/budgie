@@ -102,8 +102,26 @@ const calculateMonthlyAmount = (amount, frequency) => {
 const calculatePaychecksUntilDue = (dueDate) => {
     if (!dueDate) return null;
 
-    const due = new Date(dueDate);
+    // Parse dates safely to avoid timezone issues
+    const parseDateSafely = (dateInput) => {
+        if (!dateInput) return null;
+        let dateObj;
+        if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = dateInput.split('-').map(Number);
+            dateObj = new Date(year, month - 1, day);
+        } else if (typeof dateInput === 'string' && dateInput.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+            const [month, day, year] = dateInput.split('/').map(Number);
+            dateObj = new Date(year, month - 1, day);
+        } else {
+            dateObj = new Date(dateInput);
+        }
+        dateObj.setHours(0, 0, 0, 0);
+        return dateObj;
+    };
+
+    const due = parseDateSafely(dueDate);
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const daysUntilDue = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
 
     if (daysUntilDue <= 0) return 0;

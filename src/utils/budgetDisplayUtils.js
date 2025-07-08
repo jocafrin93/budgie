@@ -51,20 +51,37 @@ export const calculateMonthlyAmount = (amount, frequency) => {
 export const calculatePaychecksUntilDue = (dueDate, upcomingPaychecks = [], accountId = null) => {
     if (!dueDate || !upcomingPaychecks.length) return 0;
 
-    // Parse due date safely
-    let dueDateObj;
-    if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        const [year, month, day] = dueDate.split('-').map(Number);
-        dueDateObj = new Date(year, month - 1, day); // month is 0-indexed
-    } else {
-        dueDateObj = new Date(dueDate);
-    }
+    // Parse due date safely to avoid timezone issues - FIXED VERSION
+    const parseDateSafely = (dateInput) => {
+        if (!dateInput) return null;
 
-    // Filter paychecks by account if specified
+        let dateObj;
+        if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            // Handle YYYY-MM-DD format
+            const [year, month, day] = dateInput.split('-').map(Number);
+            dateObj = new Date(year, month - 1, day); // month is 0-indexed
+        } else if (typeof dateInput === 'string' && dateInput.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+            // Handle MM/DD/YYYY format
+            const [month, day, year] = dateInput.split('/').map(Number);
+            dateObj = new Date(year, month - 1, day); // month is 0-indexed
+        } else {
+            // Fallback to regular Date constructor
+            dateObj = new Date(dateInput);
+        }
+
+        // Set to start of day to avoid time comparison issues
+        dateObj.setHours(0, 0, 0, 0);
+        return dateObj;
+    };
+
+    const dueDateObj = parseDateSafely(dueDate);
+    if (!dueDateObj) return 0;
+
+    // Filter paychecks by account if specified - SIMPLIFIED LOGIC
     let relevantPaychecks = upcomingPaychecks;
     if (accountId !== null) {
         relevantPaychecks = upcomingPaychecks.filter(paycheckEntry => {
-            // Check if this paycheck distributes money to the specified account
+            // Simple check: does this paycheck distribute ANY money to the specified account?
             if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
                 return paycheckEntry.paycheck.accountDistribution.some(dist =>
                     String(dist.accountId) === String(accountId)
@@ -74,10 +91,10 @@ export const calculatePaychecksUntilDue = (dueDate, upcomingPaychecks = [], acco
         });
     }
 
-    // Count paychecks that occur before or on the due date
+    // Count paychecks that occur before the due date (not including the due date)
     return relevantPaychecks.filter(paycheck => {
-        const paycheckDate = new Date(paycheck.date);
-        return paycheckDate <= dueDateObj;
+        const paycheckDate = parseDateSafely(paycheck.date);
+        return paycheckDate && paycheckDate < dueDateObj; // Only count paychecks BEFORE the due date
     }).length;
 };
 

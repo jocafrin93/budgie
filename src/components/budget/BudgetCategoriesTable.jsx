@@ -21,7 +21,6 @@ import {
     Trash2
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { usePaycheckManagement } from '../../hooks/usePaycheckManagement';
 import {
     calculateMonthlyAmount,
     calculatePaychecksUntilDue,
@@ -33,6 +32,7 @@ import TransferModal from './TransferModal';
 const BudgetCategoriesTable = ({
     data = [],
     accounts = [], // Add accounts prop to calculate available to allocate
+    getAllUpcomingPaycheckDates, // Add paycheck management function as prop
     onAddCategory,
     onEditCategory,
     onDeleteCategory,
@@ -59,16 +59,13 @@ const BudgetCategoriesTable = ({
         });
     };
 
-    // Get paycheck management hook
-    const { getAllUpcomingPaycheckDates } = usePaycheckManagement();
-
     // Get upcoming paychecks for countdown calculations - memoize to prevent infinite re-renders
     const upcomingPaychecks = useMemo(() => {
         if (typeof getAllUpcomingPaycheckDates === 'function') {
             return getAllUpcomingPaycheckDates(3);
         }
         return [];
-    }, []); // Empty dependency array since paycheck dates are relatively static
+    }, [getAllUpcomingPaycheckDates]); // Depend on the passed function
 
     // Helper functions
     const formatCurrency = (amount) => {
@@ -83,6 +80,13 @@ const BudgetCategoriesTable = ({
         // If it's in YYYY-MM-DD format, parse it as local date
         if (typeof dateString === 'string' && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
             const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day); // month is 0-indexed
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Handle MM/DD/YYYY format
+        if (typeof dateString === 'string' && dateString.match(/^\d{1,2}\/\d{1,2}\/\d{4}$/)) {
+            const [month, day, year] = dateString.split('/').map(Number);
             const date = new Date(year, month - 1, day); // month is 0-indexed
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
@@ -370,7 +374,6 @@ const BudgetCategoriesTable = ({
 
                     // All categories should be expandable
                     const category = row.original;
-
                     const isExpanded = expanded[category.id];
 
                     return (
@@ -414,10 +417,7 @@ const BudgetCategoriesTable = ({
                         );
                     }
 
-                    if (item.isGoalProgress) {
-                        // Goal progress row - this will span all columns
-                        return null; // We'll handle this in a special way
-                    } else if (item.isExpenseDetails) {
+                    if (item.isExpenseDetails) {
                         // Expense details row with paycheck countdown and details
                         return (
                             <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-blue-200 dark:border-blue-800 pl-4 py-2">
@@ -455,7 +455,7 @@ const BudgetCategoriesTable = ({
                                                 <div>
                                                     <div className="text-gray-600 dark:text-gray-400">Due Date</div>
                                                     <div className="font-medium text-orange-600 dark:text-orange-400">
-                                                        {new Date(item.dueDate).toLocaleDateString()}
+                                                        {formatDueDate(item.dueDate)}
                                                     </div>
                                                 </div>
                                                 <div>
@@ -766,17 +766,9 @@ const BudgetCategoriesTable = ({
                         <div className="flex items-center justify-center gap-1">
                             <button
                                 onClick={() => {
-                                    console.log('Edit button clicked!');
-                                    console.log('Row data:', row.original);
-                                    console.log('Is sub item:', isSubItem);
-                                    console.log('onEditItem function:', onEditItem);
-                                    console.log('onEditCategory function:', onEditCategory);
-
                                     if (isSubItem) {
-                                        console.log('Calling onEditItem with:', row.original);
                                         onEditItem && onEditItem(row.original);
                                     } else {
-                                        console.log('Calling onEditCategory with:', row.original);
                                         onEditCategory && onEditCategory(row.original);
                                     }
                                 }}
@@ -817,7 +809,8 @@ const BudgetCategoriesTable = ({
             onDeleteItem,
             onEditCategory,
             onEditItem,
-            upcomingPaychecks
+            upcomingPaychecks,
+            handleTransferClick
         ]
     );
 
@@ -1166,7 +1159,7 @@ const BudgetCategoriesTable = ({
                                                             <div className="text-center text-xs pt-1 border-t border-blue-200 dark:border-blue-700">
                                                                 <div className="text-gray-600 dark:text-gray-400">Due Date</div>
                                                                 <div className="font-bold text-orange-600 dark:text-orange-400">
-                                                                    {new Date(item.dueDate).toLocaleDateString()}
+                                                                    {formatDueDate(item.dueDate)}
                                                                 </div>
                                                             </div>
                                                         )}
