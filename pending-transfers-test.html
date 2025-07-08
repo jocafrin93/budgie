@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Transfers Alert Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback } = React;
+
+        // Mock hooks for testing
+        const useAccountManagement = () => ({
+            accounts: [
+                { id: 1, name: 'Checking Account', balance: 1500 },
+                { id: 2, name: 'Savings Account', balance: 5000 },
+                { id: 3, name: 'Investment Account', balance: 2500 }
+            ]
+        });
+
+        const useEnvelopeBudgeting = ({ accounts }) => {
+            const [pendingTransfers, setPendingTransfers] = useState([
+                {
+                    id: 'transfer-1',
+                    fromAccountId: 2,
+                    toAccountId: 1,
+                    amount: 300,
+                    reason: 'Allocation to Groceries category',
+                    categoryId: 'groceries',
+                    createdAt: '2025-01-07T19:50:00Z',
+                    status: 'pending'
+                },
+                {
+                    id: 'transfer-2',
+                    fromAccountId: 3,
+                    toAccountId: 1,
+                    amount: 150,
+                    reason: 'Allocation to Gas category',
+                    categoryId: 'gas',
+                    createdAt: '2025-01-07T20:00:00Z',
+                    status: 'pending'
+                }
+            ]);
+
+            const getPendingTransfers = useCallback(() => {
+                return pendingTransfers.filter(transfer => transfer.status === 'pending');
+            }, [pendingTransfers]);
+
+            const getTotalPendingTransferAmount = useCallback(() => {
+                return getPendingTransfers().reduce((sum, transfer) => sum + transfer.amount, 0);
+            }, [getPendingTransfers]);
+
+            const cancelPendingTransfer = useCallback((transferId) => {
+                setPendingTransfers(prev =>
+                    prev.map(transfer =>
+                        transfer.id === transferId
+                            ? { ...transfer, status: 'cancelled', cancelledAt: new Date().toISOString() }
+                            : transfer
+                    )
+                );
+            }, [setPendingTransfers]);
+
+            return {
+                getPendingTransfers,
+                getTotalPendingTransferAmount,
+                cancelPendingTransfer
+            };
+        };
+
+        // PendingTransfersAlert Component
+        const PendingTransfersAlert = ({
+            onCreateTransfers,
+            onReviewDetails,
+            className = ""
+        }) => {
+            const { accounts } = useAccountManagement();
+            const {
+                getPendingTransfers,
+                getTotalPendingTransferAmount,
+                cancelPendingTransfer
+            } = useEnvelopeBudgeting({ accounts });
+
+            const [showDetails, setShowDetails] = useState(false);
+            const pendingTransfers = getPendingTransfers();
+            const totalAmount = getTotalPendingTransferAmount();
+
+            // Don't show if no pending transfers
+            if (pendingTransfers.length === 0) {
+                return (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">✅</span>
+                            <div>
+                                <h3 className="font-semibold text-green-800">No Pending Transfers</h3>
+                                <p className="text-green-700 text-sm">All account transfers are up to date!</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            const formatCurrency = (amount) => {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD'
+                }).format(amount);
+            };
+
+            const getAccountName = (accountId) => {
+                const account = accounts.find(acc => acc.id === accountId);
+                return account?.name || `Account ${accountId}`;
+            };
+
+            const handleCreateAllTransfers = () => {
+                alert(`Creating ${pendingTransfers.length} transfers totaling ${formatCurrency(totalAmount)}`);
+                if (onCreateTransfers) {
+                    onCreateTransfers(pendingTransfers);
+                }
+            };
+
+            const handleReviewDetails = () => {
+                setShowDetails(!showDetails);
+                if (onReviewDetails) {
+                    onReviewDetails(pendingTransfers);
+                }
+            };
+
+            const handleCancelTransfer = (transferId) => {
+                cancelPendingTransfer(transferId);
+            };
+
+            return (
+                <div className={`bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6 ${className}`}>
+                    {/* Main Alert Header */}
+                    <div className="flex items-center gap-3 mb-3">
+                        <span className="text-2xl">🔄</span>
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-yellow-800">
+                                Pending Account Transfers
+                            </h3>
+                            <p className="text-yellow-700 text-sm">
+                                You have allocated funds that require {pendingTransfers.length} account transfer{pendingTransfers.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-lg font-bold text-yellow-800">
+                                {formatCurrency(totalAmount)}
+                            </div>
+                            <div className="text-sm text-yellow-600">
+                                Total transfer amount
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-3 mb-3">
+                        <button
+                            onClick={handleCreateAllTransfers}
+                            className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            <span>💸</span>
+                            Create All Transfers
+                        </button>
+                        <button
+                            onClick={handleReviewDetails}
+                            className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            <span>📋</span>
+                            {showDetails ? 'Hide Details' : 'Review Details'}
+                        </button>
+                    </div>
+
+                    {/* Transfer Details (Expandable) */}
+                    {showDetails && (
+                        <div className="border-t border-yellow-200 pt-3">
+                            <h4 className="font-medium text-yellow-800 mb-3">
+                                Transfer Details:
+                            </h4>
+                            <div className="space-y-2">
+                                {pendingTransfers.map((transfer) => (
+                                    <div
+                                        key={transfer.id}
+                                        className="flex items-center justify-between bg-yellow-100 rounded-lg p-3"
+                                    >
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <span className="font-medium text-yellow-800">
+                                                    {getAccountName(transfer.fromAccountId)}
+                                                </span>
+                                                <span className="text-yellow-600">→</span>
+                                                <span className="font-medium text-yellow-800">
+                                                    {getAccountName(transfer.toAccountId)}
+                                                </span>
+                                            </div>
+                                            <div className="text-xs text-yellow-600 mt-1">
+                                                {transfer.reason}
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-bold text-yellow-800">
+                                                {formatCurrency(transfer.amount)}
+                                            </span>
+                                            <button
+                                                onClick={() => handleCancelTransfer(transfer.id)}
+                                                className="text-red-600 hover:text-red-800 text-sm"
+                                                title="Cancel this transfer"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Help Text */}
+                    <div className="text-xs text-yellow-600 mt-3 border-t border-yellow-200 pt-2">
+                        💡 <strong>Tip:</strong> These transfers were created when you allocated money to categories funded by accounts with insufficient funds.
+                        Creating the transfers will move money between your accounts to support the allocations.
+                    </div>
+                </div>
+            );
+        };
+
+        // Test App
+        const App = () => {
+            const handleCreateTransfers = (transfers) => {
+                console.log('Creating transfers:', transfers);
+                alert(`Would create ${transfers.length} transfers`);
+            };
+
+            const handleReviewDetails = (transfers) => {
+                console.log('Reviewing transfers:', transfers);
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-8">Pending Transfers Alert Test</h1>
+
+                    <PendingTransfersAlert
+                        onCreateTransfers={handleCreateTransfers}
+                        onReviewDetails={handleReviewDetails}
+                    />
+
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h2 className="text-xl font-semibold mb-4">Transaction Management</h2>
+                        <p className="text-gray-600">
+                            This is where your transaction management interface would be.
+                            The pending transfers alert appears above this content.
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>

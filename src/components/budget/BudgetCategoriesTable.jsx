@@ -27,6 +27,7 @@ import {
     calculatePaychecksUntilDue,
     formatAmountWithFrequency
 } from '../../utils/budgetDisplayUtils';
+import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
 
 const BudgetCategoriesTable = ({
@@ -47,6 +48,7 @@ const BudgetCategoriesTable = ({
     const [expanded, setExpanded] = useState({}); // Track expanded state by category ID
     const [rowSelection, setRowSelection] = useState({});
     const [transferModal, setTransferModal] = useState({ isOpen: false, targetCategory: null });
+    const [quickAllocateModal, setQuickAllocateModal] = useState({ isOpen: false });
 
     // Handle transfer button click
     const handleTransferClick = (category) => {
@@ -923,29 +925,18 @@ const BudgetCategoriesTable = ({
                 if (availableToAllocate > 0) {
                     return (
                         <div className="mb-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-800 overflow-hidden shadow-sm">
-                            <button
-                                onClick={() => setTransferModal({
-                                    isOpen: true,
-                                    targetCategory: {
-                                        id: 'to-be-allocated',
-                                        name: 'Available to Allocate',
-                                        available: availableToAllocate
-                                    },
-                                    mode: 'allocate-from'
-                                })}
-                                className="w-full p-4 text-left hover:bg-green-100/50 dark:hover:bg-green-900/30 transition-colors group"
-                            >
+                            <div className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl">
                                             💰
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 group-hover:text-green-900 dark:group-hover:text-green-100">
+                                            <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
                                                 Available to Allocate
                                             </h3>
                                             <p className="text-sm text-green-600 dark:text-green-400">
-                                                Click to allocate money to categories
+                                                Choose how to allocate your money
                                             </p>
                                         </div>
                                     </div>
@@ -958,7 +949,33 @@ const BudgetCategoriesTable = ({
                                         </div>
                                     </div>
                                 </div>
-                            </button>
+
+                                {/* Action Buttons */}
+                                <div className="flex items-center gap-3 mt-4">
+                                    <button
+                                        onClick={() => setQuickAllocateModal({ isOpen: true })}
+                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                                    >
+                                        <span>⚡</span>
+                                        Quick Allocate
+                                    </button>
+                                    <button
+                                        onClick={() => setTransferModal({
+                                            isOpen: true,
+                                            targetCategory: {
+                                                id: 'to-be-allocated',
+                                                name: 'Available to Allocate',
+                                                available: availableToAllocate
+                                            },
+                                            mode: 'allocate-from'
+                                        })}
+                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                    >
+                                        <span>🎯</span>
+                                        Single Category
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     );
                 }
@@ -1321,6 +1338,56 @@ const BudgetCategoriesTable = ({
                     }
 
                     setTransferModal({ isOpen: false, targetCategory: null });
+                }}
+            />
+
+            {/* Quick Allocate Modal */}
+            <QuickAllocateModal
+                isOpen={quickAllocateModal.isOpen}
+                onClose={() => setQuickAllocateModal({ isOpen: false })}
+                availableToAllocate={(() => {
+                    const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
+                        const accountTransactions = [];
+                        const startingBalance = account.startingBalance || account.balance || 0;
+                        const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+                        return sum + workingBalance;
+                    }, 0);
+                    const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
+                    return totalWorkingBalance - totalAllocated;
+                })()}
+                categories={data}
+                accounts={accounts}
+                onBulkAllocate={(allocations) => {
+                    console.log('🚀 BudgetCategoriesTable: Bulk allocation received');
+                    console.log('📊 Allocations:', allocations);
+
+                    // Apply all allocations to the categories
+                    const updatedData = data.map(category => {
+                        const allocation = allocations.find(a => a.categoryId === category.id);
+                        if (allocation) {
+                            const newAvailable = (category.available || 0) + allocation.amount;
+                            const newAllocated = (category.allocated || 0) + allocation.amount;
+                            console.log(`✅ Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
+                            return {
+                                ...category,
+                                available: newAvailable,
+                                allocated: newAllocated
+                            };
+                        }
+                        return category;
+                    });
+
+                    console.log('📋 Updated categories data:', updatedData);
+
+                    // Notify parent component to update its data and re-render
+                    if (onDataUpdate) {
+                        console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                        onDataUpdate(updatedData);
+                    } else {
+                        console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                    }
+
+                    setQuickAllocateModal({ isOpen: false });
                 }}
             />
         </div>

@@ -13,10 +13,12 @@ export const useCategoryManagement = () => {
       id: 1,
       name: 'Personal Care',
       type: 'multiple', // NEW: Added type field
+      accountId: 1, // NEW: Account assignment
       color: 'bg-gradient-to-r from-purple-500 to-pink-500',
       collapsed: false,
       allocated: 0,
       spent: 0,
+      available: 0, // NEW: Available balance for envelope budgeting
       lastFunded: null,
       targetBalance: 0,
       autoFunding: {
@@ -29,10 +31,12 @@ export const useCategoryManagement = () => {
       id: 2,
       name: 'Pet Care',
       type: 'multiple', // NEW: Added type field
+      accountId: 1, // NEW: Account assignment
       color: 'bg-gradient-to-r from-green-500 to-blue-500',
       collapsed: false,
       allocated: 0,
       spent: 0,
+      available: 0, // NEW: Available balance for envelope budgeting
       lastFunded: null,
       targetBalance: 0,
       autoFunding: {
@@ -45,10 +49,12 @@ export const useCategoryManagement = () => {
       id: 3,
       name: 'Savings Goals',
       type: 'multiple', // NEW: Added type field
+      accountId: 2, // NEW: Account assignment (Savings account)
       color: 'bg-gradient-to-r from-purple-600 to-indigo-600',
       collapsed: false,
       allocated: 0,
       spent: 0,
+      available: 0, // NEW: Available balance for envelope budgeting
       lastFunded: null,
       targetBalance: 0,
       autoFunding: {

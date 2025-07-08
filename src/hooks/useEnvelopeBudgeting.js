@@ -30,8 +30,11 @@ export const useEnvelopeBudgeting = ({
   // Monthly budget settings - to store the amount allocated per month to each category
   const [monthlyBudget, setMonthlyBudget] = useLocalStorage('budgetCalc_monthlyBudget', {});
 
+  // State for tracking pending account transfers (NEW - for cross-account allocation)
+  const [pendingTransfers, setPendingTransfers] = useLocalStorage('budgetCalc_pendingTransfers', []);
+
   /**
-   * Calculate the total amount available to be allocated
+   * Calculate the total amount available to be allocated (legacy - global)
    * Available to allocate = Sum of account balances - Sum of category available balances
    */
   const calculateToBeAllocated = useCallback(() => {
@@ -48,6 +51,199 @@ export const useEnvelopeBudgeting = ({
     // Money available to allocate = Account balances - Already in envelopes
     return validateAmount(totalAccountBalance - totalInEnvelopes);
   }, [accounts, categories]);
+
+  /**
+   * Calculate available to allocate per account (NEW - account-based allocation)
+   * This is the proper way to handle envelope budgeting with multiple accounts
+   */
+  const calculateAccountBasedToBeAllocated = useCallback((activeBudgetAllocations = []) => {
+    const accountAllocations = {};
+
+    // Initialize with account balances
+    accounts.forEach(account => {
+      accountAllocations[account.id] = {
+        accountId: account.id,
+        accountName: account.name,
+        accountBalance: validateAmount(account.balance || 0),
+        totalAllocated: 0,
+        availableToAllocate: 0,
+        categories: []
+      };
+    });
+
+    // Calculate allocated amounts per account based on active budget allocations
+    activeBudgetAllocations.forEach(allocation => {
+      const accountId = allocation.sourceAccountId;
+      if (accountAllocations[accountId]) {
+        const category = categories.find(c => c.id === allocation.categoryId);
+        if (category) {
+          const allocatedAmount = validateAmount(category.available || 0);
+          accountAllocations[accountId].totalAllocated += allocatedAmount;
+          accountAllocations[accountId].categories.push({
+            categoryId: category.id,
+            categoryName: category.name,
+            allocated: allocatedAmount
+          });
+        }
+      }
+    });
+
+    // Calculate available to allocate for each account
+    Object.values(accountAllocations).forEach(account => {
+      account.availableToAllocate = validateAmount(account.accountBalance - account.totalAllocated);
+    });
+
+    return accountAllocations;
+  }, [accounts, categories]);
+
+  /**
+   * Get available to allocate for a specific account
+   */
+  const getAccountAvailableToAllocate = useCallback((accountId, activeBudgetAllocations = []) => {
+    const accountAllocations = calculateAccountBasedToBeAllocated(activeBudgetAllocations);
+    return accountAllocations[accountId]?.availableToAllocate || 0;
+  }, [calculateAccountBasedToBeAllocated]);
+
+  /**
+   * Validate cross-account allocation (NEW - Smart Cross-Account Allocation)
+   * Determines if allocation is possible and what transfers are needed
+   */
+  const validateCrossAccountAllocation = useCallback((categoryId, amount, activeBudgetAllocations = []) => {
+    const validatedAmount = validateAmount(amount);
+    if (validatedAmount <= 0) {
+      return { isValid: false, reason: 'Invalid amount' };
+    }
+
+    // Find the category and its funding account
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) {
+      return { isValid: false, reason: 'Category not found' };
+    }
+
+    // Find the category's funding account from active budget allocations
+    const allocation = activeBudgetAllocations.find(a => a.categoryId === categoryId);
+    const targetAccountId = allocation?.sourceAccountId;
+
+    if (!targetAccountId) {
+      return { isValid: false, reason: 'No funding account assigned to category' };
+    }
+
+    const targetAccount = accounts.find(a => a.id === targetAccountId);
+    if (!targetAccount) {
+      return { isValid: false, reason: 'Target account not found' };
+    }
+
+    // Check if target account has sufficient funds
+    const targetAccountAvailable = getAccountAvailableToAllocate(targetAccountId, activeBudgetAllocations);
+
+    if (targetAccountAvailable >= validatedAmount) {
+      // Simple case: target account has enough funds
+      return {
+        isValid: true,
+        requiresTransfer: false,
+        targetAccount,
+        amount: validatedAmount
+      };
+    }
+
+    // Calculate shortfall and find potential source accounts
+    const shortfall = validatedAmount - targetAccountAvailable;
+    const availableSourceAccounts = accounts
+      .filter(acc => acc.id !== targetAccountId)
+      .map(acc => ({
+        id: acc.id,
+        name: acc.name,
+        available: getAccountAvailableToAllocate(acc.id, activeBudgetAllocations)
+      }))
+      .filter(acc => acc.available >= shortfall)
+      .sort((a, b) => b.available - a.available); // Sort by available amount descending
+
+    if (availableSourceAccounts.length === 0) {
+      // Check total funds across all accounts
+      const totalAvailable = accounts.reduce((sum, acc) => {
+        return sum + getAccountAvailableToAllocate(acc.id, activeBudgetAllocations);
+      }, 0);
+
+      return {
+        isValid: false,
+        reason: totalAvailable < validatedAmount
+          ? 'Insufficient funds across all accounts'
+          : 'No single account has enough funds for transfer'
+      };
+    }
+
+    return {
+      isValid: true,
+      requiresTransfer: true,
+      targetAccount,
+      amount: validatedAmount,
+      shortfall,
+      availableSourceAccounts,
+      transferAmount: shortfall
+    };
+  }, [categories, accounts, getAccountAvailableToAllocate]);
+
+  /**
+   * Create a pending transfer record (NEW)
+   */
+  const createPendingTransfer = useCallback((fromAccountId, toAccountId, amount, reason, categoryId = null) => {
+    const validatedAmount = validateAmount(amount);
+    if (validatedAmount <= 0) return null;
+
+    const newTransfer = {
+      id: `transfer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      fromAccountId,
+      toAccountId,
+      amount: validatedAmount,
+      reason,
+      categoryId,
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    setPendingTransfers(prev => [...prev, newTransfer]);
+    return newTransfer;
+  }, [setPendingTransfers]);
+
+  /**
+   * Get all pending transfers (NEW)
+   */
+  const getPendingTransfers = useCallback(() => {
+    return pendingTransfers.filter(transfer => transfer.status === 'pending');
+  }, [pendingTransfers]);
+
+  /**
+   * Calculate total pending transfer amount (NEW)
+   */
+  const getTotalPendingTransferAmount = useCallback(() => {
+    return getPendingTransfers().reduce((sum, transfer) => sum + validateAmount(transfer.amount), 0);
+  }, [getPendingTransfers]);
+
+  /**
+   * Mark pending transfer as completed (NEW)
+   */
+  const completePendingTransfer = useCallback((transferId) => {
+    setPendingTransfers(prev =>
+      prev.map(transfer =>
+        transfer.id === transferId
+          ? { ...transfer, status: 'completed', completedAt: new Date().toISOString() }
+          : transfer
+      )
+    );
+  }, [setPendingTransfers]);
+
+  /**
+   * Cancel a pending transfer (NEW)
+   */
+  const cancelPendingTransfer = useCallback((transferId) => {
+    setPendingTransfers(prev =>
+      prev.map(transfer =>
+        transfer.id === transferId
+          ? { ...transfer, status: 'cancelled', cancelledAt: new Date().toISOString() }
+          : transfer
+      )
+    );
+  }, [setPendingTransfers]);
 
   /**
    * Calculate needed funding for each category based on active planning items
@@ -412,6 +608,19 @@ export const useEnvelopeBudgeting = ({
     createFundingUpdate,
     createMoveMoneyUpdates,
     createTransactionUpdates,
+
+    // Account-based allocation (NEW)
+    calculateAccountBasedToBeAllocated,
+    getAccountAvailableToAllocate,
+
+    // Cross-account allocation (NEW - Smart Cross-Account Allocation)
+    validateCrossAccountAllocation,
+    createPendingTransfer,
+    getPendingTransfers,
+    getTotalPendingTransferAmount,
+    completePendingTransfer,
+    cancelPendingTransfer,
+    pendingTransfers,
 
     // Monthly budgeting
     monthlyBudget,
