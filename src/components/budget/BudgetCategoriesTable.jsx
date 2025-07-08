@@ -62,8 +62,13 @@ const BudgetCategoriesTable = ({
     // Get paycheck management hook
     const { getAllUpcomingPaycheckDates } = usePaycheckManagement();
 
-    // Get upcoming paychecks for countdown calculations
-    const upcomingPaychecks = getAllUpcomingPaycheckDates(3); // Get 3 months of paychecks
+    // Get upcoming paychecks for countdown calculations - memoize to prevent infinite re-renders
+    const upcomingPaychecks = useMemo(() => {
+        if (typeof getAllUpcomingPaycheckDates === 'function') {
+            return getAllUpcomingPaycheckDates(3);
+        }
+        return [];
+    }, []); // Empty dependency array since paycheck dates are relatively static
 
     // Helper functions
     const formatCurrency = (amount) => {

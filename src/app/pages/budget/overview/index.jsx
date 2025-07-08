@@ -6,6 +6,7 @@ import { useAccountManagement } from "../../../../hooks/useAccountManagement";
 import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
 import { useDataModel } from "../../../../hooks/useDataModel";
 import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
+import { useMonthlyBudgeting } from "../../../../hooks/useMonthlyBudgeting";
 import { usePaycheckManagement } from "../../../../hooks/usePaycheckManagement";
 
 // Dynamic imports for forms
@@ -94,6 +95,20 @@ export default function BudgetOverview() {
         transactions: transactions || [],
         accounts: accounts || []
     });
+
+    // Monthly budgeting hook - use direct import
+    const monthlyBudgetingHook = useMonthlyBudgeting(categories, transactions);
+    const {
+        getMonthData,
+        getAvailableMonths: getMonthlyAvailableMonths,
+        carryForwardFromPreviousMonth,
+        initializeMonth
+    } = monthlyBudgetingHook;
+
+    // Initialize current month on component mount
+    useEffect(() => {
+        initializeMonth(currentBudgetMonth);
+    }, [currentBudgetMonth]); // Remove initializeMonth from dependencies to prevent infinite loop
 
     // Migrate categories to include type field if needed
     useEffect(() => {
@@ -536,46 +551,33 @@ export default function BudgetOverview() {
     }, []);
 
     const getAvailableMonths = useCallback(() => {
-        // Generate last 6 months and next 6 months
-        const months = [];
-        const now = new Date();
-
-        for (let i = -6; i <= 6; i++) {
-            const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
-            const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-            const label = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-            months.push({ value, label });
-        }
-
-        return months;
-    }, []);
+        // Use the monthly budgeting hook's available months function
+        return getMonthlyAvailableMonths();
+    }, [getMonthlyAvailableMonths]);
 
     const getMonthSummary = useCallback(() => {
-        // Calculate total working balance (source of truth) the same way AccountsManagement does
-        const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
-            // Calculate working balance the same way AccountsManagement does
-            const accountTransactions = []; // Empty for now - will be populated when transaction management is implemented
-            const startingBalance = account.startingBalance || account.balance || 0;
-            const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-            return sum + workingBalance;
-        }, 0);
-
-        const allocated = categories.reduce((sum, cat) => sum + (cat.allocated || 0), 0);
-        const spent = categories.reduce((sum, cat) => sum + (cat.spent || 0), 0);
-        const remaining = totalWorkingBalance - allocated; // Remaining = working balance - allocated
+        // Get month-specific data from the monthly budgeting hook
+        const monthData = getMonthData(currentBudgetMonth);
 
         return {
-            allocated,
-            spent,
-            remaining
+            allocated: monthData.summary.allocated,
+            spent: monthData.summary.spent,
+            remaining: monthData.summary.toBeBudgeted
         };
-    }, [accounts, categories]);
+    }, [getMonthData, currentBudgetMonth]);
 
     const handleCarryForward = useCallback(() => {
-        // TODO: Implement carry forward functionality
-        console.log('Carry forward clicked for month:', currentBudgetMonth);
-        alert('Carry forward functionality will be implemented soon!');
-    }, [currentBudgetMonth]);
+        try {
+            console.log('Carrying forward unspent amounts to month:', currentBudgetMonth);
+            carryForwardFromPreviousMonth(currentBudgetMonth);
+
+            // Show success message
+            alert(`Successfully carried forward unspent amounts from previous month to ${getMonthDisplayName(currentBudgetMonth)}!`);
+        } catch (error) {
+            console.error('Error carrying forward:', error);
+            alert('Failed to carry forward amounts. Please try again.');
+        }
+    }, [currentBudgetMonth, carryForwardFromPreviousMonth, getMonthDisplayName]);
 
     return (
         <Page title="Budget Overview">
@@ -613,6 +615,8 @@ export default function BudgetOverview() {
                 <BudgetCategoriesTable
                     data={tableData}
                     accounts={accounts || []} // Pass accounts for "Available to Allocate" calculation
+                    currentBudgetMonth={currentBudgetMonth}
+                    monthlyBudgetingHook={monthlyBudgetingHook}
                     onDataUpdate={(updatedTableData) => {
                         console.log('🔄 BudgetOverview: Received data update from BudgetCategoriesTable');
                         console.log('📊 Updated table data:', updatedTableData);
