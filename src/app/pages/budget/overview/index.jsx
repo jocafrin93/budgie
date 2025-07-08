@@ -46,8 +46,33 @@ export default function BudgetOverview() {
         addCategory,
         updateCategory,
         deleteCategory,
-        migrateCategoriesWithTypes
+        migrateCategoriesWithTypes,
+        setCategories
     } = useCategoryManagement();
+
+    // Import transaction management hook dynamically to avoid circular dependencies
+    const [transactions, setTransactions] = useState([]);
+
+    // Load transactions from localStorage to sync with transaction management
+    useEffect(() => {
+        const storedTransactions = JSON.parse(localStorage.getItem('budgetCalc_transactions') || '[]');
+        setTransactions(storedTransactions);
+
+        // Listen for localStorage changes to keep transactions in sync
+        const handleStorageChange = (e) => {
+            if (e.key === 'budgetCalc_transactions') {
+                const updatedTransactions = JSON.parse(e.newValue || '[]');
+                setTransactions(updatedTransactions);
+            } else if (e.key === 'budgetCalc_categories') {
+                // Also listen for category changes to stay in sync with transaction updates
+                const updatedCategories = JSON.parse(e.newValue || '[]');
+                setCategories(updatedCategories);
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, [setCategories]);
 
     // Data model hook for planning items - simplified to prevent infinite loops
     const {
@@ -62,11 +87,11 @@ export default function BudgetOverview() {
         payFrequency: 'bi-weekly'
     });
 
-    // Envelope budgeting hook - keeping for potential future use
+    // Envelope budgeting hook - now using real transactions
     useEnvelopeBudgeting({
         categories,
         planningItems,
-        transactions: [], // No transactions for now
+        transactions: transactions || [],
         accounts: accounts || []
     });
 
@@ -561,7 +586,7 @@ export default function BudgetOverview() {
                         accounts={accounts || []}
                         categories={categories}
                         planningItems={planningItems}
-                        transactions={[]} // Empty for now - will be populated when transaction management is implemented
+                        transactions={transactions || []}
                     />
                 </div>
 

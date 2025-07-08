@@ -62,7 +62,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
             category.id === split.categoryId
               ? {
                 ...category,
-                spent: (category.spent || 0) + Math.abs(split.amount)
+                spent: (category.spent || 0) + Math.abs(split.amount),
+                available: (category.allocated || 0) - ((category.spent || 0) + Math.abs(split.amount))
               }
               : category
           ));
@@ -75,7 +76,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
         category.id === createdTransaction.categoryId
           ? {
             ...category,
-            spent: (category.spent || 0) + Math.abs(createdTransaction.amount)
+            spent: (category.spent || 0) + Math.abs(createdTransaction.amount),
+            available: (category.allocated || 0) - ((category.spent || 0) + Math.abs(createdTransaction.amount))
           }
           : category
       ));
@@ -121,7 +123,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
             category.id === split.categoryId
               ? {
                 ...category,
-                spent: Math.max(0, (category.spent || 0) - Math.abs(split.amount))
+                spent: Math.max(0, (category.spent || 0) - Math.abs(split.amount)),
+                available: (category.allocated || 0) - Math.max(0, (category.spent || 0) - Math.abs(split.amount))
               }
               : category
           ));
@@ -134,7 +137,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
         category.id === oldTransaction.categoryId
           ? {
             ...category,
-            spent: Math.max(0, (category.spent || 0) - Math.abs(oldTransaction.amount))
+            spent: Math.max(0, (category.spent || 0) - Math.abs(oldTransaction.amount)),
+            available: (category.allocated || 0) - Math.max(0, (category.spent || 0) - Math.abs(oldTransaction.amount))
           }
           : category
       ));
@@ -178,7 +182,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
             category.id === split.categoryId
               ? {
                 ...category,
-                spent: (category.spent || 0) + Math.abs(split.amount)
+                spent: (category.spent || 0) + Math.abs(split.amount),
+                available: (category.allocated || 0) - ((category.spent || 0) + Math.abs(split.amount))
               }
               : category
           ));
@@ -191,7 +196,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
         category.id === updatedTransaction.categoryId
           ? {
             ...category,
-            spent: (category.spent || 0) + Math.abs(updatedTransaction.amount)
+            spent: (category.spent || 0) + Math.abs(updatedTransaction.amount),
+            available: (category.allocated || 0) - ((category.spent || 0) + Math.abs(updatedTransaction.amount))
           }
           : category
       ));
@@ -237,7 +243,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
             category.id === split.categoryId
               ? {
                 ...category,
-                spent: Math.max(0, (category.spent || 0) - Math.abs(split.amount))
+                spent: Math.max(0, (category.spent || 0) - Math.abs(split.amount)),
+                available: (category.allocated || 0) - Math.max(0, (category.spent || 0) - Math.abs(split.amount))
               }
               : category
           ));
@@ -250,7 +257,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
         category.id === transactionToDelete.categoryId
           ? {
             ...category,
-            spent: Math.max(0, (category.spent || 0) - Math.abs(transactionToDelete.amount))
+            spent: Math.max(0, (category.spent || 0) - Math.abs(transactionToDelete.amount)),
+            available: (category.allocated || 0) - Math.max(0, (category.spent || 0) - Math.abs(transactionToDelete.amount))
           }
           : category
       ));
