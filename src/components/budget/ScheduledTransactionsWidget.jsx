@@ -1,0 +1,266 @@
+import { Calendar, ChevronRight, Clock } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { formatDate } from '../../utils/dateUtils';
+import { formatCurrency } from '../../utils/formatUtils';
+
+const ScheduledTransactionsWidget = ({
+    scheduledTransactions = [],
+    selectedAccountId = 'all',
+    accounts = [],
+    onEditScheduledTransaction,
+    onSkipScheduledTransaction,
+    onActivateScheduledTransactionEarly
+}) => {
+    const navigate = useNavigate();
+
+    // Filter transactions based on selected account
+    const filteredTransactions = selectedAccountId === 'all'
+        ? scheduledTransactions
+        : scheduledTransactions.filter(txn => txn.accountId === selectedAccountId);
+
+    if (filteredTransactions.length === 0) {
+        return null;
+    }
+
+    const getAccountName = (accountId) => {
+        const account = accounts.find(acc => acc.id === accountId);
+        return account?.name || `Account ${accountId}`;
+    };
+
+    const formatScheduledDate = (dateString) => {
+        if (!dateString) return 'No date';
+
+        try {
+            const date = new Date(dateString);
+
+            if (isNaN(date.getTime())) {
+                return 'Invalid date';
+            }
+
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            if (date.toDateString() === today.toDateString()) {
+                return 'Today';
+            } else if (date.toDateString() === tomorrow.toDateString()) {
+                return 'Tomorrow';
+            } else {
+                return formatDate(date);
+            }
+        } catch {
+            return 'Invalid date';
+        }
+    };
+
+    const getUrgencyColor = (dateString) => {
+        if (!dateString) return 'text-gray-500';
+
+        const date = new Date(dateString);
+        const today = new Date();
+        const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return 'text-red-600 dark:text-red-400'; // Overdue
+        if (diffDays === 0) return 'text-orange-600 dark:text-orange-400'; // Due today
+        if (diffDays <= 3) return 'text-yellow-600 dark:text-yellow-400'; // Due soon
+        return 'text-blue-600 dark:text-blue-400'; // Future
+    };
+
+    const getUrgencyStats = () => {
+        const today = new Date();
+        const stats = {
+            overdue: 0,
+            dueToday: 0,
+            dueThisWeek: 0,
+            total: filteredTransactions.length
+        };
+
+        filteredTransactions.forEach(txn => {
+            const date = new Date(txn.nextDueDate || txn.dueDate);
+            const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) stats.overdue++;
+            else if (diffDays === 0) stats.dueToday++;
+            else if (diffDays <= 7) stats.dueThisWeek++;
+        });
+
+        return stats;
+    };
+
+    const getTotalAmount = () => {
+        return filteredTransactions.reduce((sum, txn) => sum + Math.abs(txn.amount), 0);
+    };
+
+    // Sort transactions by due date and take the first 5
+    const sortedTransactions = [...filteredTransactions]
+        .sort((a, b) => new Date(a.nextDueDate || a.dueDate) - new Date(b.nextDueDate || b.dueDate))
+        .slice(0, 5);
+
+    const stats = getUrgencyStats();
+    const totalAmount = getTotalAmount();
+
+    const handleNavigateToCalendar = () => {
+        navigate('/budget/calendar', {
+            state: { selectedAccountId }
+        });
+    };
+
+    const handleQuickAction = (action, txn, e) => {
+        e.stopPropagation();
+
+        switch (action) {
+            case 'skip':
+                onSkipScheduledTransaction(txn.id);
+                break;
+            case 'payNow':
+                onActivateScheduledTransactionEarly(txn.id);
+                break;
+            case 'edit':
+                onEditScheduledTransaction(txn.id, {}, 'this_only');
+                break;
+            default:
+                break;
+        }
+    };
+
+    const getSelectedAccountName = () => {
+        if (selectedAccountId === 'all') return 'All Accounts';
+        return getAccountName(selectedAccountId);
+    };
+
+    return (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-6">
+            {/* Header */}
+            <div className="p-4 border-b border-blue-200 dark:border-blue-700">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <Calendar className="text-blue-600 dark:text-blue-400" size={24} />
+                        <div>
+                            <h3 className="font-semibold text-blue-800 dark:text-blue-200">
+                                Upcoming Scheduled Transactions
+                                {selectedAccountId !== 'all' && (
+                                    <span className="text-sm font-normal text-blue-600 dark:text-blue-400 ml-2">
+                                        for {getSelectedAccountName()}
+                                    </span>
+                                )}
+                            </h3>
+                            <div className="flex items-center space-x-4 text-xs text-blue-600 dark:text-blue-400 mt-1">
+                                {stats.overdue > 0 && (
+                                    <span className="text-red-600 dark:text-red-400">
+                                        {stats.overdue} overdue
+                                    </span>
+                                )}
+                                {stats.dueToday > 0 && (
+                                    <span className="text-orange-600 dark:text-orange-400">
+                                        {stats.dueToday} due today
+                                    </span>
+                                )}
+                                {stats.dueThisWeek > 0 && (
+                                    <span>{stats.dueThisWeek} due this week</span>
+                                )}
+                                <span>{stats.total} total</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="text-right">
+                        <div className="text-lg font-bold text-blue-800 dark:text-blue-200">
+                            {formatCurrency(totalAmount)}
+                        </div>
+                        <div className="text-sm text-blue-600 dark:text-blue-400">
+                            Total upcoming
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Transaction List */}
+            <div className="p-4">
+                <div className="space-y-3">
+                    {sortedTransactions.map((txn) => (
+                        <div
+                            key={txn.id}
+                            className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700 hover:bg-blue-25 dark:hover:bg-blue-900/10 transition-colors"
+                        >
+                            {/* Transaction Info */}
+                            <div className="flex items-center space-x-3 flex-1">
+                                <div className="flex-shrink-0">
+                                    <Clock
+                                        size={16}
+                                        className={getUrgencyColor(txn.nextDueDate || txn.dueDate)}
+                                    />
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center space-x-2">
+                                        <span className={`font-medium ${getUrgencyColor(txn.nextDueDate || txn.dueDate)}`}>
+                                            {formatScheduledDate(txn.nextDueDate || txn.dueDate)}
+                                        </span>
+                                        <span className="text-gray-400">•</span>
+                                        <span className="text-gray-700 dark:text-gray-300 truncate">
+                                            {txn.payee}
+                                        </span>
+                                    </div>
+
+                                    {selectedAccountId === 'all' && (
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            {getAccountName(txn.accountId)}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Amount */}
+                                <div className="flex-shrink-0">
+                                    <span className={`font-bold ${txn.amount >= 0
+                                        ? 'text-green-600 dark:text-green-400'
+                                        : 'text-red-600 dark:text-red-400'
+                                        }`}>
+                                        {formatCurrency(txn.amount)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Quick Actions */}
+                            <div className="flex items-center space-x-1 ml-3">
+                                <button
+                                    onClick={(e) => handleQuickAction('skip', txn, e)}
+                                    className="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors"
+                                    title="Skip this occurrence"
+                                >
+                                    <span className="text-xs">Skip</span>
+                                </button>
+
+                                <button
+                                    onClick={(e) => handleQuickAction('payNow', txn, e)}
+                                    className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                                    title="Pay now"
+                                >
+                                    <span className="text-xs">Pay</span>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* View All Button */}
+                <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-700">
+                    <button
+                        onClick={handleNavigateToCalendar}
+                        className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        <Calendar size={16} />
+                        <span>View All on Calendar</span>
+                        <ChevronRight size={16} />
+                    </button>
+                </div>
+
+                {/* Help Text */}
+                <div className="text-xs text-blue-600 dark:text-blue-400 mt-3 text-center">
+                    💡 <strong>Tip:</strong> Click &ldquo;View All on Calendar&rdquo; to see your complete scheduled transaction timeline
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default ScheduledTransactionsWidget;

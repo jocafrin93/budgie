@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduled Transactions Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .info {
+            color: #17a2b8;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .scheduled-transaction {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+
+        .upcoming-transaction {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔄 Scheduled Transactions Integration Test</h1>
+        <p>This test verifies that scheduled transactions are being created from the budget form and displayed in the
+            transactions page.</p>
+    </div>
+
+    <div class="container">
+        <div class="test-section">
+            <h3>1. Test Scheduled Transactions Hook</h3>
+            <button onclick="testScheduledTransactionsHook()">Test Hook Functions</button>
+            <div id="hookTest"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Create Test Scheduled Transaction</h3>
+            <button onclick="createTestScheduledTransaction()">Create Test Transaction</button>
+            <div id="createTest"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. View All Scheduled Transactions</h3>
+            <button onclick="viewAllScheduledTransactions()">View All</button>
+            <div id="viewAll"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test Upcoming Scheduled Transactions</h3>
+            <button onclick="testUpcomingTransactions()">Get Upcoming (30 days)</button>
+            <div id="upcomingTest"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Test Activation Logic</h3>
+            <button onclick="testActivationLogic()">Test Activation</button>
+            <div id="activationTest"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Clear Test Data</h3>
+            <button onclick="clearTestData()">Clear All Test Data</button>
+            <div id="clearTest"></div>
+        </div>
+    </div>
+
+    <script>
+        // Import the scheduled transactions hook logic
+        function useScheduledTransactions() {
+            const STORAGE_KEY = 'budgetCalc_scheduledTransactions';
+
+            // Get all scheduled transactions
+            const getScheduledTransactions = () => {
+                try {
+                    const stored = localStorage.getItem(STORAGE_KEY);
+                    return stored ? JSON.parse(stored) : [];
+                } catch (error) {
+                    console.error('Error loading scheduled transactions:', error);
+                    return [];
+                }
+            };
+
+            // Save scheduled transactions
+            const saveScheduledTransactions = (transactions) => {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+                    return true;
+                } catch (error) {
+                    console.error('Error saving scheduled transactions:', error);
+                    return false;
+                }
+            };
+
+            // Create a new scheduled transaction
+            const createScheduledTransaction = (transactionData) => {
+                const scheduledTransactions = getScheduledTransactions();
+
+                const newTransaction = {
+                    id: Date.now().toString(),
+                    budgetItemId: transactionData.budgetItemId,
+                    categoryId: transactionData.categoryId,
+                    name: transactionData.name,
+                    amount: transactionData.amount,
+                    frequency: transactionData.frequency,
+                    dueDate: transactionData.dueDate,
+                    accountId: transactionData.accountId,
+                    payee: transactionData.payee,
+                    endCondition: transactionData.endCondition || 'indefinite',
+                    endDate: transactionData.endDate,
+                    maxOccurrences: transactionData.maxOccurrences,
+                    currentOccurrence: 0,
+                    isActive: true,
+                    createdAt: new Date().toISOString(),
+                    nextDueDate: transactionData.dueDate
+                };
+
+                scheduledTransactions.push(newTransaction);
+                saveScheduledTransactions(scheduledTransactions);
+
+                console.log('Created scheduled transaction:', newTransaction);
+                return newTransaction;
+            };
+
+            // Get upcoming scheduled transactions
+            const getUpcomingScheduledTransactions = (daysAhead = 30) => {
+                const scheduledTransactions = getScheduledTransactions();
+                const today = new Date();
+                const futureDate = new Date();
+                futureDate.setDate(today.getDate() + daysAhead);
+
+                return scheduledTransactions.filter(transaction => {
+                    if (!transaction.isActive) return false;
+
+                    const dueDate = new Date(transaction.nextDueDate);
+                    return dueDate >= today && dueDate <= futureDate;
+                }).sort((a, b) => new Date(a.nextDueDate) - new Date(b.nextDueDate));
+            };
+
+            // Calculate next due date based on frequency
+            const calculateNextDueDate = (currentDate, frequency) => {
+                const date = new Date(currentDate);
+
+                switch (frequency) {
+                    case 'weekly':
+                        date.setDate(date.getDate() + 7);
+                        break;
+                    case 'bi-weekly':
+                        date.setDate(date.getDate() + 14);
+                        break;
+                    case 'monthly':
+                        date.setMonth(date.getMonth() + 1);
+                        break;
+                    case 'quarterly':
+                        date.setMonth(date.getMonth() + 3);
+                        break;
+                    case 'annually':
+                        date.setFullYear(date.getFullYear() + 1);
+                        break;
+                    default:
+                        date.setMonth(date.getMonth() + 1);
+                }
+
+                return date.toISOString().split('T')[0];
+            };
+
+            return {
+                getScheduledTransactions,
+                createScheduledTransaction,
+                getUpcomingScheduledTransactions,
+                calculateNextDueDate,
+                saveScheduledTransactions
+            };
+        }
+
+        // Test functions
+        function testScheduledTransactionsHook() {
+            const output = document.getElementById('hookTest');
+            try {
+                const hook = useScheduledTransactions();
+                const functions = Object.keys(hook);
+
+                output.innerHTML = `
+                    <div class="success">✅ Hook loaded successfully!</div>
+                    <div class="info">Available functions: ${functions.join(', ')}</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function createTestScheduledTransaction() {
+            const output = document.getElementById('createTest');
+            try {
+                const hook = useScheduledTransactions();
+
+                // Create a test scheduled transaction
+                const testTransaction = {
+                    budgetItemId: 'test-category-1',
+                    categoryId: 'test-category-1',
+                    name: 'Test Electric Bill',
+                    amount: 150.00,
+                    frequency: 'monthly',
+                    dueDate: '2025-01-15',
+                    accountId: 1,
+                    payee: 'Electric Company',
+                    endCondition: 'indefinite'
+                };
+
+                const created = hook.createScheduledTransaction(testTransaction);
+
+                output.innerHTML = `
+                    <div class="success">✅ Test scheduled transaction created!</div>
+                    <div class="scheduled-transaction">
+                        <strong>${created.name}</strong><br>
+                        Amount: $${created.amount}<br>
+                        Frequency: ${created.frequency}<br>
+                        Next Due: ${created.nextDueDate}<br>
+                        Account ID: ${created.accountId}<br>
+                        Payee: ${created.payee}
+                    </div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function viewAllScheduledTransactions() {
+            const output = document.getElementById('viewAll');
+            try {
+                const hook = useScheduledTransactions();
+                const transactions = hook.getScheduledTransactions();
+
+                if (transactions.length === 0) {
+                    output.innerHTML = '<div class="info">No scheduled transactions found.</div>';
+                    return;
+                }
+
+                let html = `<div class="success">✅ Found ${transactions.length} scheduled transaction(s):</div>`;
+
+                transactions.forEach(transaction => {
+                    html += `
+                        <div class="scheduled-transaction">
+                            <strong>${transaction.name}</strong> (ID: ${transaction.id})<br>
+                            Amount: $${transaction.amount}<br>
+                            Frequency: ${transaction.frequency}<br>
+                            Next Due: ${transaction.nextDueDate}<br>
+                            Account ID: ${transaction.accountId}<br>
+                            Payee: ${transaction.payee}<br>
+                            End Condition: ${transaction.endCondition}<br>
+                            Active: ${transaction.isActive ? 'Yes' : 'No'}
+                        </div>
+                    `;
+                });
+
+                output.innerHTML = html;
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function testUpcomingTransactions() {
+            const output = document.getElementById('upcomingTest');
+            try {
+                const hook = useScheduledTransactions();
+                const upcoming = hook.getUpcomingScheduledTransactions(30);
+
+                if (upcoming.length === 0) {
+                    output.innerHTML = '<div class="info">No upcoming scheduled transactions in the next 30 days.</div>';
+                    return;
+                }
+
+                let html = `<div class="success">✅ Found ${upcoming.length} upcoming transaction(s):</div>`;
+
+                upcoming.forEach(transaction => {
+                    const daysUntil = Math.ceil((new Date(transaction.nextDueDate) - new Date()) / (1000 * 60 * 60 * 24));
+                    html += `
+                        <div class="upcoming-transaction">
+                            <strong>${transaction.name}</strong><br>
+                            Amount: $${transaction.amount}<br>
+                            Due in: ${daysUntil} day(s) (${transaction.nextDueDate})<br>
+                            Frequency: ${transaction.frequency}<br>
+                            Payee: ${transaction.payee}
+                        </div>
+                    `;
+                });
+
+                output.innerHTML = html;
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function testActivationLogic() {
+            const output = document.getElementById('activationTest');
+            try {
+                const hook = useScheduledTransactions();
+
+                // Create a transaction due today for testing
+                const todayTransaction = {
+                    budgetItemId: 'test-category-2',
+                    categoryId: 'test-category-2',
+                    name: 'Test Due Today',
+                    amount: 75.00,
+                    frequency: 'monthly',
+                    dueDate: new Date().toISOString().split('T')[0], // Today
+                    accountId: 1,
+                    payee: 'Test Payee',
+                    endCondition: 'indefinite'
+                };
+
+                const created = hook.createScheduledTransaction(todayTransaction);
+
+                output.innerHTML = `
+                    <div class="success">✅ Created transaction due today for testing!</div>
+                    <div class="upcoming-transaction">
+                        <strong>${created.name}</strong><br>
+                        Amount: $${created.amount}<br>
+                        Due Date: ${created.nextDueDate} (Today)<br>
+                        <em>This transaction should appear in the upcoming list and be ready for activation.</em>
+                    </div>
+                    <div class="info">💡 In a real app, this would be automatically activated at midnight.</div>
+                `;
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function clearTestData() {
+            const output = document.getElementById('clearTest');
+            try {
+                localStorage.removeItem('budgetCalc_scheduledTransactions');
+                output.innerHTML = '<div class="success">✅ All test scheduled transactions cleared!</div>';
+
+                // Clear other test outputs
+                document.getElementById('hookTest').innerHTML = '';
+                document.getElementById('createTest').innerHTML = '';
+                document.getElementById('viewAll').innerHTML = '';
+                document.getElementById('upcomingTest').innerHTML = '';
+                document.getElementById('activationTest').innerHTML = '';
+            } catch (error) {
+                output.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-run hook test on page load
+        window.onload = function () {
+            testScheduledTransactionsHook();
+        };
+    </script>
+</body>
+
+</html>

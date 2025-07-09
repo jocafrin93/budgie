@@ -109,7 +109,7 @@ export default function BudgetOverview() {
     // Initialize current month on component mount
     useEffect(() => {
         initializeMonth(currentBudgetMonth);
-    }, [currentBudgetMonth]); // Remove initializeMonth from dependencies to prevent infinite loop
+    }, [currentBudgetMonth, initializeMonth]);
 
     // Migrate categories to include type field if needed
     useEffect(() => {
@@ -318,6 +318,56 @@ export default function BudgetOverview() {
         setPreselectedCategory(null);
     }, []);
 
+    // Use scheduled transactions hook directly (no dynamic loading needed)
+    const [scheduledTransactionsFunctions, setScheduledTransactionsFunctions] = useState(null);
+
+    // Load scheduled transactions functions using a different approach
+    useEffect(() => {
+        const loadScheduledTransactionsFunctions = async () => {
+            try {
+                // Create a simple wrapper that provides the functions we need
+                const createScheduledTransactionWrapper = (transactionData) => {
+                    // Get stored transactions
+                    const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+                    const scheduledTransactions = stored ? JSON.parse(stored) : [];
+
+                    // Create new transaction
+                    const newTransaction = {
+                        id: Date.now().toString(),
+                        budgetItemId: transactionData.budgetItemId,
+                        categoryId: transactionData.categoryId,
+                        name: transactionData.name,
+                        amount: transactionData.amount,
+                        frequency: transactionData.frequency,
+                        dueDate: transactionData.dueDate,
+                        accountId: transactionData.accountId,
+                        payee: transactionData.payee,
+                        endCondition: transactionData.endCondition || 'indefinite',
+                        endDate: transactionData.endDate,
+                        maxOccurrences: transactionData.maxOccurrences,
+                        currentOccurrence: 0,
+                        isActive: true,
+                        createdAt: new Date().toISOString(),
+                        nextDueDate: transactionData.dueDate
+                    };
+
+                    scheduledTransactions.push(newTransaction);
+                    localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(scheduledTransactions));
+
+                    console.log('Created scheduled transaction:', newTransaction);
+                    return newTransaction;
+                };
+
+                setScheduledTransactionsFunctions({
+                    createScheduledTransaction: createScheduledTransactionWrapper
+                });
+            } catch (error) {
+                console.error('Failed to load scheduled transactions functions:', error);
+            }
+        };
+        loadScheduledTransactionsFunctions();
+    }, []);
+
     // Handler functions for the table
     const handleAddCategory = useCallback(() => {
         setEditingCategory(null);
@@ -326,8 +376,24 @@ export default function BudgetOverview() {
 
     const handleSaveCategory = useCallback((categoryData, addAnother = false) => {
         try {
+            console.log('🔥 BUDGET OVERVIEW - handleSaveCategory called');
+            console.log('🔥 RECEIVED CATEGORY DATA:', categoryData);
+            console.log('🔥 SCHEDULED TRANSACTION FIELDS RECEIVED:');
+            console.log('  - createScheduledTransactions:', categoryData.createScheduledTransactions);
+            console.log('  - endCondition:', categoryData.endCondition);
+            console.log('  - endDate:', categoryData.endDate);
+            console.log('  - maxOccurrences:', categoryData.maxOccurrences);
+            console.log('  - payee:', categoryData.payee);
+            console.log('  - dueDate:', categoryData.dueDate);
+            console.log('  - frequency:', categoryData.frequency);
+            console.log('  - amount:', categoryData.amount);
+            console.log('  - accountId:', categoryData.accountId);
+
+            let categoryId;
+
             if (editingCategory) {
                 // Update existing category
+                categoryId = editingCategory.id;
                 updateCategory(editingCategory.id, {
                     name: categoryData.name,
                     type: categoryData.type,
@@ -359,7 +425,7 @@ export default function BudgetOverview() {
                 }
             } else {
                 // Add new category
-                const categoryId = Date.now().toString();
+                categoryId = Date.now().toString();
                 addCategory({
                     id: categoryId,
                     name: categoryData.name,
@@ -384,6 +450,63 @@ export default function BudgetOverview() {
                 });
             }
 
+            // Create scheduled transactions if enabled for expense categories
+            console.log('🔥 CHECKING SCHEDULED TRANSACTION CONDITIONS:');
+            console.log('  - createScheduledTransactions:', categoryData.createScheduledTransactions);
+            console.log('  - planningType:', categoryData.planningType);
+            console.log('  - type:', categoryData.type);
+            console.log('  - dueDate:', categoryData.dueDate);
+            console.log('  - frequency:', categoryData.frequency);
+            console.log('  - amount:', categoryData.amount);
+            console.log('  - accountId:', categoryData.accountId);
+            console.log('  - scheduledTransactionsFunctions available:', !!scheduledTransactionsFunctions);
+
+            if (categoryData.createScheduledTransactions &&
+                categoryData.planningType === 'expense' &&
+                categoryData.type === 'single' &&
+                categoryData.dueDate &&
+                categoryData.frequency &&
+                categoryData.amount &&
+                categoryData.accountId &&
+                scheduledTransactionsFunctions) {
+
+                console.log('🔥 ALL CONDITIONS MET - Creating scheduled transactions for category:', categoryData.name);
+
+                const scheduledTransactionData = {
+                    budgetItemId: categoryId,
+                    categoryId: categoryId,
+                    name: categoryData.name,
+                    amount: -Math.abs(categoryData.amount), // Make expenses negative (debits)
+                    frequency: categoryData.frequency,
+                    dueDate: categoryData.dueDate,
+                    accountId: categoryData.accountId,
+                    payee: categoryData.payee || categoryData.name,
+                    endCondition: categoryData.endCondition || 'indefinite',
+                    endDate: categoryData.endDate,
+                    maxOccurrences: categoryData.maxOccurrences
+                };
+
+                console.log('🔥 SCHEDULED TRANSACTION DATA TO CREATE:', scheduledTransactionData);
+
+                try {
+                    const result = scheduledTransactionsFunctions.createScheduledTransaction(scheduledTransactionData);
+                    console.log('🔥 SCHEDULED TRANSACTION CREATION RESULT:', result);
+                    console.log('🔥 Scheduled transactions created successfully');
+                } catch (error) {
+                    console.error('🔥 ERROR CREATING SCHEDULED TRANSACTION:', error);
+                }
+            } else {
+                console.log('🔥 CONDITIONS NOT MET - Scheduled transactions will NOT be created');
+                if (!categoryData.createScheduledTransactions) console.log('  ❌ createScheduledTransactions is false');
+                if (categoryData.planningType !== 'expense') console.log('  ❌ planningType is not expense');
+                if (categoryData.type !== 'single') console.log('  ❌ type is not single');
+                if (!categoryData.dueDate) console.log('  ❌ dueDate is missing');
+                if (!categoryData.frequency) console.log('  ❌ frequency is missing');
+                if (!categoryData.amount) console.log('  ❌ amount is missing');
+                if (!categoryData.accountId) console.log('  ❌ accountId is missing');
+                if (!scheduledTransactionsFunctions) console.log('  ❌ scheduledTransactionsFunctions is not available');
+            }
+
             // Close modal if not adding another
             if (!addAnother) {
                 handleCloseCategoryModal();
@@ -391,7 +514,7 @@ export default function BudgetOverview() {
         } catch (error) {
             console.error("Error saving category:", error);
         }
-    }, [editingCategory, addCategory, updateCategory, planningItems, handleCloseCategoryModal, removeItem]);
+    }, [editingCategory, addCategory, updateCategory, planningItems, handleCloseCategoryModal, removeItem, scheduledTransactionsFunctions]);
 
     const handleEditCategory = useCallback((categoryData) => {
         try {

@@ -638,9 +638,9 @@ export default function AccountsManagement({
                                                                 <span className="text-xs text-gray-500">Cleared</span>
                                                             </div>
                                                             <div className={`text-xs px-2 py-1 rounded ${reconcileStatus.bgColor} ${reconcileStatus.borderColor} border`}>
-                                                                <Badge isGlow color="warning">
+                                                                <span className={reconcileStatus.color}>
                                                                     {reconcileStatus.message}
-                                                                </Badge>
+                                                                </span>
                                                             </div>
                                                         </>
                                                     );

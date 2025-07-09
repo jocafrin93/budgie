@@ -362,7 +362,7 @@ const BudgetCategoriesTable = ({
                         />
                     );
                 },
-                size: 60,
+                size: 24,
             }),
 
             // Expand/Collapse button
@@ -384,7 +384,7 @@ const BudgetCategoriesTable = ({
                                     [category.id]: !prev[category.id]
                                 }));
                             }}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
+                            className="p-0.5 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
                         >
                             {isExpanded ? (
                                 <ChevronDown className="w-4 h-4 text-gray-600 dark:text-dark-300" />
@@ -394,7 +394,7 @@ const BudgetCategoriesTable = ({
                         </button>
                     );
                 },
-                size: 40,
+                size: 10,
             }),
 
             // Category/Item name
@@ -485,11 +485,13 @@ const BudgetCategoriesTable = ({
                         return (
                             <div className="flex items-center gap-3">
                                 <div className={`w-3 h-3 rounded-full ${item.color} border border-gray-200 dark:border-dark-600`}></div>
-                                <div className="font-medium text-gray-900 dark:text-dark-100">{item.name}</div>
                                 {item.type === 'multiple' && (
                                     <Box className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor">
                                     </Box>
+
                                 )}
+                                <div className="font-medium text-gray-900 dark:text-dark-100">{item.name}</div>
+
                             </div>
                         );
                     } else {

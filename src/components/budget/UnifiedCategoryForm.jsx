@@ -4,6 +4,7 @@ import { useForm } from '../../hooks/useForm';
 import { formatDate } from '../../utils/dateUtils';
 import { dollarToPercentage, percentageToDollar } from '../../utils/moneyUtils';
 import { CurrencyField } from '../form';
+import PayeeAutocomplete from '../form/PayeeAutocomplete';
 import { Checkbox, Input, Select, Textarea } from '../ui';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -347,6 +348,35 @@ const UnifiedCategoryForm = ({
     accounts = [],
     currentPay = 0,
 }) => {
+    // Payee management - use localStorage directly since imports are being removed
+    const [payees, setPayees] = useState(() => {
+        try {
+            const stored = localStorage.getItem('budgetCalc_payees');
+            return stored ? JSON.parse(stored) : [
+                'Amazon',
+                'Walmart',
+                'Target',
+                'Grocery Store',
+                'Gas Station',
+                'Utility Company',
+                'Insurance Company',
+                'Bank',
+                'Credit Card Company',
+                'Restaurant'
+            ];
+        } catch (error) {
+            console.error('Error loading payees:', error);
+            return [];
+        }
+    });
+
+    const handleAddPayee = (newPayee) => {
+        if (newPayee.trim() && !payees.includes(newPayee.trim())) {
+            const updatedPayees = [...payees, newPayee.trim()];
+            setPayees(updatedPayees);
+            localStorage.setItem('budgetCalc_payees', JSON.stringify(updatedPayees));
+        }
+    };
     // Determine if we're editing a goal category
     const isGoal = category?.targetAmount !== undefined;
     const initialType = isGoal ? 'goal' : 'expense';
@@ -364,6 +394,7 @@ const UnifiedCategoryForm = ({
         percentageAmount: category?.percentageAmount ? category.percentageAmount.toString() : '',
         frequency: category?.frequency || category?.settings?.frequency || 'monthly',
         dueDate: category?.dueDate || category?.settings?.dueDate || '',
+        payee: category?.payee || '',
 
         // Timing configuration
         isRecurring: category?.isRecurring || false,
@@ -383,6 +414,12 @@ const UnifiedCategoryForm = ({
         targetDate: category?.targetDate || formatDate(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)), // 1 year from now
         perPaycheckContribution: category?.perPaycheckContribution || category?.monthlyContribution || 0, // Support legacy data
         alreadySaved: category?.alreadySaved || 0,
+
+        // Scheduled transaction fields
+        createScheduledTransactions: category?.createScheduledTransactions || false,
+        scheduledEndCondition: category?.scheduledEndCondition || 'indefinite',
+        scheduledEndDate: category?.scheduledEndDate || '',
+        scheduledMaxOccurrences: category?.scheduledMaxOccurrences || 12,
     };
 
     const form = useForm({
@@ -500,6 +537,13 @@ const UnifiedCategoryForm = ({
 
     // Handle form submission
     const handleSubmit = () => {
+        console.log('🔥 FORM SUBMIT - Starting handleSubmit');
+        console.log('🔥 FORM VALUES:', form.values);
+        console.log('🔥 SCHEDULED TRANSACTIONS CHECKBOX:', form.values.createScheduledTransactions);
+        console.log('🔥 END CONDITION:', form.values.scheduledEndCondition);
+        console.log('🔥 END DATE:', form.values.scheduledEndDate);
+        console.log('🔥 MAX OCCURRENCES:', form.values.scheduledMaxOccurrences);
+
         // Trigger validation using the validate function directly
         const validateFunction = form.validate || ((values) => {
             const errors = {};
@@ -577,8 +621,21 @@ const UnifiedCategoryForm = ({
                 percentageAmount: form.values.percentageAmount || 0,
                 frequency: form.values.frequency,
                 dueDate: form.values.dueDate,
+                payee: form.values.payee,
                 isRecurring: form.values.isRecurring,
+                // Scheduled transaction options
+                createScheduledTransactions: form.values.createScheduledTransactions,
+                endCondition: form.values.scheduledEndCondition,
+                endDate: form.values.scheduledEndDate,
+                maxOccurrences: form.values.scheduledMaxOccurrences,
             };
+
+            console.log('🔥 CATEGORY DATA PREPARED:', categoryData);
+            console.log('🔥 SCHEDULED TRANSACTION FIELDS IN CATEGORY DATA:');
+            console.log('  - createScheduledTransactions:', categoryData.createScheduledTransactions);
+            console.log('  - endCondition:', categoryData.endCondition);
+            console.log('  - endDate:', categoryData.endDate);
+            console.log('  - maxOccurrences:', categoryData.maxOccurrences);
         } else if (form.values.type === 'single' && form.values.planningType === 'goal') {
             categoryData = {
                 ...commonData,
@@ -908,14 +965,111 @@ const UnifiedCategoryForm = ({
                                     </Select>
                                 </div>
 
-                                <Input
-                                    label="Due Date (Optional)"
-                                    name="dueDate"
-                                    type="date"
-                                    value={form.values.dueDate}
-                                    onChange={form.handleChange}
-                                    className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input
+                                        label="Due Date (Optional)"
+                                        name="dueDate"
+                                        type="date"
+                                        value={form.values.dueDate}
+                                        onChange={form.handleChange}
+                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    />
+
+                                    <PayeeAutocomplete
+                                        label="Payee (Optional)"
+                                        value={form.values.payee}
+                                        onChange={form.handleChange}
+                                        payees={payees}
+                                        onAddPayee={handleAddPayee}
+                                        placeholder="Enter payee name"
+                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    />
+                                </div>
+
+                                {/* Scheduled Transactions Option */}
+                                <div className="space-y-3 pt-4 border-t border-blue-200 dark:border-blue-700">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            checked={form.values.createScheduledTransactions}
+                                            onChange={(e) => form.setFieldValue('createScheduledTransactions', e.target.checked)}
+                                        />
+                                        <label className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                            Create scheduled transactions for this expense
+                                        </label>
+                                    </div>
+
+                                    {form.values.createScheduledTransactions && (
+                                        <div className="ml-6 space-y-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                            <p className="text-xs text-blue-800 dark:text-blue-200">
+                                                Scheduled transactions will be created based on the due date and frequency above.
+                                            </p>
+
+                                            {/* End Condition Selection */}
+                                            <div className="space-y-2">
+                                                <label className="block text-sm font-medium text-blue-900 dark:text-blue-100">
+                                                    End Condition
+                                                </label>
+                                                <div className="space-y-2">
+                                                    <label className="flex items-center">
+                                                        <input
+                                                            type="radio"
+                                                            name="scheduledEndCondition"
+                                                            value="until_date"
+                                                            checked={form.values.scheduledEndCondition === 'until_date'}
+                                                            onChange={form.handleChange}
+                                                            className="mr-2"
+                                                        />
+                                                        <span className="text-sm text-blue-900 dark:text-blue-100">Repeat until date</span>
+                                                    </label>
+                                                    {form.values.scheduledEndCondition === 'until_date' && (
+                                                        <Input
+                                                            name="scheduledEndDate"
+                                                            type="date"
+                                                            value={form.values.scheduledEndDate}
+                                                            onChange={form.handleChange}
+                                                            className="ml-6 border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                        />
+                                                    )}
+
+                                                    <label className="flex items-center">
+                                                        <input
+                                                            type="radio"
+                                                            name="scheduledEndCondition"
+                                                            value="max_occurrences"
+                                                            checked={form.values.scheduledEndCondition === 'max_occurrences'}
+                                                            onChange={form.handleChange}
+                                                            className="mr-2"
+                                                        />
+                                                        <span className="text-sm text-blue-900 dark:text-blue-100">Number of payments</span>
+                                                    </label>
+                                                    {form.values.scheduledEndCondition === 'max_occurrences' && (
+                                                        <Input
+                                                            name="scheduledMaxOccurrences"
+                                                            type="number"
+                                                            min="1"
+                                                            value={form.values.scheduledMaxOccurrences}
+                                                            onChange={form.handleChange}
+                                                            placeholder="12"
+                                                            className="ml-6 w-24 border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                        />
+                                                    )}
+
+                                                    <label className="flex items-center">
+                                                        <input
+                                                            type="radio"
+                                                            name="scheduledEndCondition"
+                                                            value="indefinite"
+                                                            checked={form.values.scheduledEndCondition === 'indefinite'}
+                                                            onChange={form.handleChange}
+                                                            className="mr-2"
+                                                        />
+                                                        <span className="text-sm text-blue-900 dark:text-blue-100">Repeat indefinitely</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 

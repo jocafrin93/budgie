@@ -1,5 +1,5 @@
 import { Page } from "components/shared/Page";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AccountBalanceSidebar from "../../../../components/budget/AccountBalanceSidebar";
 import TransactionsTab from "../../../../components/budget/TransactionsTab";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
@@ -373,6 +373,106 @@ export default function BudgetTransactions() {
         deleteTransaction
     } = useTransactionManagement(accounts, setAccounts, categories, setCategories);
 
+    // Load scheduled transactions component dynamically
+    const [ScheduledTransactionsRow, setScheduledTransactionsRow] = useState(null);
+
+    // Use scheduled transactions hook directly (not dynamically)
+    const scheduledTransactionsHook = React.useMemo(() => {
+        try {
+            // Import the hook functions directly and create a simple wrapper
+            const getUpcomingScheduledTransactions = (days = 30) => {
+                const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+                const scheduledTransactions = stored ? JSON.parse(stored) : [];
+
+                const today = new Date();
+                const futureDate = new Date();
+                futureDate.setDate(today.getDate() + days);
+
+                return scheduledTransactions
+                    .filter(txn => !txn.isActivated && new Date(txn.nextDueDate || txn.dueDate) <= futureDate)
+                    .sort((a, b) => new Date(a.nextDueDate || a.dueDate) - new Date(b.nextDueDate || b.dueDate));
+            };
+
+            const editScheduledTransaction = (id, updates) => {
+                const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+                const scheduledTransactions = stored ? JSON.parse(stored) : [];
+
+                const updated = scheduledTransactions.map(txn =>
+                    txn.id === id ? { ...txn, ...updates } : txn
+                );
+
+                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updated));
+            };
+
+            const skipScheduledTransaction = (id) => {
+                editScheduledTransaction(id, { isSkipped: true, skippedAt: new Date().toISOString() });
+            };
+
+            const activateScheduledTransactionEarly = (id) => {
+                const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+                const scheduledTransactions = stored ? JSON.parse(stored) : [];
+
+                const transaction = scheduledTransactions.find(txn => txn.id === id);
+                if (transaction) {
+                    // Create actual transaction
+                    const actualTransaction = {
+                        ...transaction,
+                        id: undefined, // Let addTransaction generate new ID
+                        isScheduled: false,
+                        scheduledTransactionId: transaction.id,
+                        date: new Date().toISOString().split('T')[0] // Use today's date
+                    };
+
+                    addTransaction(actualTransaction);
+
+                    // Mark as activated
+                    editScheduledTransaction(id, {
+                        isActivated: true,
+                        activatedAt: new Date().toISOString(),
+                        activatedEarly: true
+                    });
+                }
+            };
+
+            const deleteScheduledTransaction = (id) => {
+                const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+                const scheduledTransactions = stored ? JSON.parse(stored) : [];
+
+                const filtered = scheduledTransactions.filter(txn => txn.id !== id);
+                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(filtered));
+            };
+
+            return {
+                getUpcomingScheduledTransactions,
+                editScheduledTransaction,
+                skipScheduledTransaction,
+                activateScheduledTransactionEarly,
+                deleteScheduledTransaction
+            };
+        } catch (error) {
+            console.error('Error creating scheduled transactions wrapper:', error);
+            return null;
+        }
+    }, [addTransaction]);
+
+    // Load scheduled transactions component dynamically
+    useEffect(() => {
+        const loadScheduledTransactionsComponent = async () => {
+            try {
+                const componentModule = await import('../../../../components/budget/ScheduledTransactionsWidget');
+                setScheduledTransactionsRow(() => componentModule.default);
+            } catch (error) {
+                console.error('Failed to load scheduled transactions component:', error);
+            }
+        };
+        loadScheduledTransactionsComponent();
+    }, []);
+
+    // Get upcoming scheduled transactions for display
+    const upcomingScheduledTransactions = scheduledTransactionsHook
+        ? scheduledTransactionsHook.getUpcomingScheduledTransactions(30)
+        : [];
+
     // Payee management
     const [payees, setPayees] = useLocalStorage('budgetCalc_payees', [
         'Amazon',
@@ -463,6 +563,19 @@ export default function BudgetTransactions() {
                                 alert(`Would create ${transfers.length} transfer transactions totaling $${transfers.reduce((sum, t) => sum + t.amount, 0)}`);
                             }}
                         />
+
+                        {/* Scheduled Transactions Widget */}
+                        {ScheduledTransactionsRow && scheduledTransactionsHook && (
+                            <ScheduledTransactionsRow
+                                scheduledTransactions={upcomingScheduledTransactions}
+                                selectedAccountId={selectedAccountId}
+                                accounts={accounts}
+                                onEditScheduledTransaction={scheduledTransactionsHook.editScheduledTransaction}
+                                onSkipScheduledTransaction={scheduledTransactionsHook.skipScheduledTransaction}
+                                onActivateScheduledTransactionEarly={scheduledTransactionsHook.activateScheduledTransactionEarly}
+                                onDeleteScheduledTransaction={scheduledTransactionsHook.deleteScheduledTransaction}
+                            />
+                        )}
 
                         <TransactionsTab
                             transactions={transactions}

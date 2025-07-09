@@ -229,7 +229,7 @@ const PayeeAutocomplete = ({
                                      border-t border-gray-200 dark:border-gray-600 flex items-center space-x-2"
                         >
                             <TbPlus className="size-4" />
-                            <span>Add "{inputValue}"</span>
+                            <span>Add &#34;{inputValue}&quot;</span>
                         </button>
                     )}
 

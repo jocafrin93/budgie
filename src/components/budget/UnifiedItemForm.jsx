@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from '../../hooks/useForm';
 import { frequencyOptions } from '../../utils/constants';
 import { formatDate } from '../../utils/dateUtils';
@@ -14,6 +14,168 @@ const formFrequencyOptions = frequencyOptions.map(freq => ({
     label: freq.label
 }));
 
+// Simple PayeeAutocomplete component that matches the form styling
+const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, placeholder }) => {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [inputValue, setInputValue] = React.useState(value || '');
+    const [filteredPayees, setFilteredPayees] = React.useState(payees);
+    const inputRef = React.useRef(null);
+    const dropdownRef = React.useRef(null);
+
+    // Update input value when prop value changes
+    React.useEffect(() => {
+        setInputValue(value || '');
+    }, [value]);
+
+    // Filter payees based on input
+    React.useEffect(() => {
+        if (!inputValue.trim()) {
+            setFilteredPayees(payees);
+        } else {
+            const filtered = payees.filter(payee =>
+                payee.toLowerCase().includes(inputValue.toLowerCase())
+            );
+            setFilteredPayees(filtered);
+        }
+    }, [inputValue, payees]);
+
+    // Close dropdown when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleInputChange = (e) => {
+        const newValue = e.target.value;
+        setInputValue(newValue);
+        onChange?.({ target: { name: 'payee', value: newValue } });
+        setIsOpen(true);
+    };
+
+    const handleSelectPayee = (payee) => {
+        setInputValue(payee);
+        onChange?.({ target: { name: 'payee', value: payee } });
+        setIsOpen(false);
+        inputRef.current?.blur();
+    };
+
+    const handleAddNewPayee = () => {
+        if (inputValue.trim() && !payees.includes(inputValue.trim())) {
+            const newPayee = inputValue.trim();
+            onAddPayee?.(newPayee);
+            handleSelectPayee(newPayee);
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const exactMatch = filteredPayees.find(payee =>
+                payee.toLowerCase() === inputValue.toLowerCase()
+            );
+
+            if (exactMatch) {
+                handleSelectPayee(exactMatch);
+            } else if (inputValue.trim() && filteredPayees.length === 0) {
+                handleAddNewPayee();
+            } else if (filteredPayees.length > 0) {
+                handleSelectPayee(filteredPayees[0]);
+            }
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+            inputRef.current?.blur();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setIsOpen(true);
+        }
+    };
+
+    const showAddOption = inputValue.trim() &&
+        !payees.some(payee => payee.toLowerCase() === inputValue.toLowerCase()) &&
+        filteredPayees.length === 0;
+
+    return (
+        <div className="relative" ref={dropdownRef}>
+            <div className="relative">
+                <input
+                    ref={inputRef}
+                    type="text"
+                    name="payee"
+                    value={inputValue}
+                    onChange={handleInputChange}
+                    onFocus={() => setIsOpen(true)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={placeholder}
+                    className="w-full px-3 py-2 pr-10 border border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                    <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+            </div>
+
+            {/* Dropdown */}
+            {isOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {/* Existing payees */}
+                    {filteredPayees.length > 0 && (
+                        <div>
+                            {filteredPayees.map((payee, index) => (
+                                <button
+                                    key={index}
+                                    type="button"
+                                    onClick={() => handleSelectPayee(payee)}
+                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                                >
+                                    {payee}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Add new payee option */}
+                    {showAddOption && (
+                        <button
+                            type="button"
+                            onClick={handleAddNewPayee}
+                            className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors border-t border-gray-200 dark:border-gray-600 flex items-center space-x-2"
+                        >
+                            <span>+</span>
+                            <span>Add "{inputValue}"</span>
+                        </button>
+                    )}
+
+                    {/* No results */}
+                    {filteredPayees.length === 0 && !showAddOption && inputValue.trim() && (
+                        <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
+                            No payees found
+                        </div>
+                    )}
+
+                    {/* Show all payees when input is empty */}
+                    {!inputValue.trim() && payees.length === 0 && (
+                        <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
+                            Start typing to add your first payee
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
+
 const UnifiedItemForm = ({
     item = null,
     onSave,
@@ -23,6 +185,35 @@ const UnifiedItemForm = ({
     currentPay = 0,
     preselectedCategory = null,
 }) => {
+    // Payee management - use localStorage directly
+    const [payees, setPayees] = React.useState(() => {
+        try {
+            const stored = localStorage.getItem('budgetCalc_payees');
+            return stored ? JSON.parse(stored) : [
+                'Amazon',
+                'Walmart',
+                'Target',
+                'Grocery Store',
+                'Gas Station',
+                'Utility Company',
+                'Insurance Company',
+                'Bank',
+                'Credit Card Company',
+                'Restaurant'
+            ];
+        } catch (error) {
+            console.error('Error loading payees:', error);
+            return [];
+        }
+    });
+
+    const handleAddPayee = (newPayee) => {
+        if (newPayee.trim() && !payees.includes(newPayee.trim())) {
+            const updatedPayees = [...payees, newPayee.trim()];
+            setPayees(updatedPayees);
+            localStorage.setItem('budgetCalc_payees', JSON.stringify(updatedPayees));
+        }
+    };
     // Determine if we're editing an expense or a goal
     const isGoal = item?.targetAmount !== undefined;
     const initialType = isGoal ? 'goal' : 'expense';
@@ -42,6 +233,7 @@ const UnifiedItemForm = ({
         percentageAmount: item?.percentageAmount !== undefined ? item.percentageAmount : 0,
         frequency: item?.frequency || 'monthly',
         dueDate: item?.dueDate || '',
+        payee: item?.payee || '',
         categoryId: item?.categoryId || resolvedCategoryId || '',
         accountId: item?.accountId || (accounts[0]?.id || ''),
         priorityState: item?.priorityState || 'active',
@@ -218,6 +410,7 @@ const UnifiedItemForm = ({
                 percentageAmount: form.values.percentageAmount || 0,
                 frequency: form.values.frequency,
                 dueDate: form.values.dueDate,
+                payee: form.values.payee,
                 isRecurring: form.values.isRecurring,
                 priority: form.values.priority,
             };
@@ -504,13 +697,29 @@ const UnifiedItemForm = ({
                                     />
                                 )}
 
-                                {/* Due Date Field */}
-                                <Input
-                                    {...form.getFieldProps('dueDate')}
-                                    label="Due Date"
-                                    type="date"
-                                    description="Optional - leave blank if no specific due date"
-                                />
+                                {/* Due Date and Payee Fields */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Input
+                                        {...form.getFieldProps('dueDate')}
+                                        label="Due Date"
+                                        type="date"
+                                        description="Optional - leave blank if no specific due date"
+                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    />
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                            Payee (Optional)
+                                        </label>
+                                        <PayeeAutocompleteComponent
+                                            value={form.values.payee}
+                                            onChange={form.handleChange}
+                                            payees={payees}
+                                            onAddPayee={handleAddPayee}
+                                            placeholder="Enter payee name"
+                                        />
+                                    </div>
+                                </div>
 
                                 {/* Recurring Checkbox */}
                                 {form.values.dueDate && (
