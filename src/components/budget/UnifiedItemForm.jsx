@@ -112,7 +112,7 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
-                    className="w-full px-3 py-2 pr-10 border border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-3 py-2 pr-10 border border-info-300 dark:border-info-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-info-500 focus:border-info-500 transition-colors"
                 />
 
                 <button
@@ -128,7 +128,7 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-info-300 dark:border-info-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {/* Existing payees */}
                     {filteredPayees.length > 0 && (
                         <div>
@@ -137,7 +137,7 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
                                     key={index}
                                     type="button"
                                     onClick={() => handleSelectPayee(payee)}
-                                    className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-900 dark:text-gray-100 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                                    className="w-full px-3 py-2 text-left hover:bg-info-50 dark:hover:bg-info/20/20 text-gray-900 dark:text-gray-100 transition-colors first:rounded-t-lg last:rounded-b-lg"
                                 >
                                     {payee}
                                 </button>
@@ -150,7 +150,7 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
                         <button
                             type="button"
                             onClick={handleAddNewPayee}
-                            className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors border-t border-blue-200 dark:border-blue-600 flex items-center space-x-2"
+                            className="w-full px-3 py-2 text-left hover:bg-info-50 dark:hover:bg-info/20/20 text-info-600 dark:text-info-400 transition-colors border-t border-info-200 dark:border-info-600 flex items-center space-x-2"
                         >
                             <span>+</span>
                             <span>Add &#34;{inputValue}&#34;</span>
@@ -721,27 +721,27 @@ const UnifiedItemForm = ({
 
                                 {/* Scheduled Transactions Option - Only show if due date AND frequency are filled */}
                                 {form.values.dueDate && form.values.frequency && (
-                                    <div className="space-y-3 pt-4 border-t border-blue-200 dark:border-blue-700">
+                                    <div className="space-y-3 pt-4 border-t border-info-200 dark:border-info-700">
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
                                                 checked={form.values.createScheduledTransactions}
                                                 onChange={(e) => form.setFieldValue('createScheduledTransactions', e.target.checked)}
                                             />
-                                            <label className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                            <label className="text-sm font-medium text-info-900 dark:text-info-100">
                                                 Create scheduled transactions for this expense
                                             </label>
                                         </div>
 
                                         {/* Payee and End Conditions - Only show if scheduled transactions is checked */}
                                         {form.values.createScheduledTransactions && (
-                                            <div className="ml-6 space-y-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                                                <p className="text-xs text-blue-800 dark:text-blue-200">
+                                            <div className="ml-6 space-y-4 p-3 bg-info/10 dark:bg-info/20/30 rounded-lg">
+                                                <p className="text-xs text-info-800 dark:text-info-200">
                                                     Scheduled transactions will be created based on the due date and frequency above.
                                                 </p>
 
                                                 {/* Payee Field */}
                                                 <div>
-                                                    <label className="block text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                                                    <label className="block text-sm font-medium text-info-900 dark:text-info-100 mb-1">
                                                         Payee (Optional)
                                                     </label>
                                                     <PayeeAutocompleteComponent
@@ -755,7 +755,7 @@ const UnifiedItemForm = ({
 
                                                 {/* End Condition Selection */}
                                                 <div className="space-y-2">
-                                                    <label className="block text-sm font-medium text-blue-900 dark:text-blue-100">
+                                                    <label className="block text-sm font-medium text-info-900 dark:text-info-100">
                                                         End Condition
                                                     </label>
                                                     <div className="space-y-2">
@@ -768,7 +768,7 @@ const UnifiedItemForm = ({
                                                                 onChange={form.handleChange}
                                                                 className="mr-2"
                                                             />
-                                                            <span className="text-sm text-blue-900 dark:text-blue-100">Repeat until date</span>
+                                                            <span className="text-sm text-info-900 dark:text-info-100">Repeat until date</span>
                                                         </label>
                                                         {form.values.scheduledEndCondition === 'until_date' && (
                                                             <Input
@@ -776,7 +776,7 @@ const UnifiedItemForm = ({
                                                                 type="date"
                                                                 value={form.values.scheduledEndDate}
                                                                 onChange={form.handleChange}
-                                                                className="ml-6 border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                                className="ml-6 border-info-300 dark:border-info-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                                                             />
                                                         )}
 
@@ -789,7 +789,7 @@ const UnifiedItemForm = ({
                                                                 onChange={form.handleChange}
                                                                 className="mr-2"
                                                             />
-                                                            <span className="text-sm text-blue-900 dark:text-blue-100">Number of payments</span>
+                                                            <span className="text-sm text-info-900 dark:text-info-100">Number of payments</span>
                                                         </label>
                                                         {form.values.scheduledEndCondition === 'max_occurrences' && (
                                                             <Input
@@ -799,7 +799,7 @@ const UnifiedItemForm = ({
                                                                 value={form.values.scheduledMaxOccurrences}
                                                                 onChange={form.handleChange}
                                                                 placeholder="12"
-                                                                className="ml-6 w-24 border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                                className="ml-6 w-24 border-info-300 dark:border-info-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                                                             />
                                                         )}
 
@@ -812,7 +812,7 @@ const UnifiedItemForm = ({
                                                                 onChange={form.handleChange}
                                                                 className="mr-2"
                                                             />
-                                                            <span className="text-sm text-blue-900 dark:text-blue-100">Repeat indefinitely</span>
+                                                            <span className="text-sm text-info-900 dark:text-info-100">Repeat indefinitely</span>
                                                         </label>
                                                     </div>
                                                 </div>

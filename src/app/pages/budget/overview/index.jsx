@@ -1,3 +1,4 @@
+import { useBreakpointsContext } from "app/contexts/breakpoint/context";
 import { Page } from "components/shared/Page";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import BudgetCategoriesTable from "../../../../components/budget/BudgetCategoriesTable";
@@ -12,10 +13,13 @@ import { usePaycheckManagement } from "../../../../hooks/usePaycheckManagement";
 // Dynamic imports for forms
 const UnifiedCategoryForm = React.lazy(() => import("../../../../components/budget/UnifiedCategoryForm"));
 const UnifiedItemForm = React.lazy(() => import("../../../../components/budget/UnifiedItemForm"));
+const MobileBudgetView = React.lazy(() => import("../../../../components/budget/MobileBudgetView"));
 
 // Import MonthlyBudgetNavigator
 
 export default function BudgetOverview() {
+    // Get breakpoint context for responsive rendering
+    const { mdAndDown } = useBreakpointsContext();
     // Modal state for category form
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
@@ -24,6 +28,9 @@ export default function BudgetOverview() {
     const [showItemModal, setShowItemModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [preselectedCategory, setPreselectedCategory] = useState(null);
+
+    // Quick Allocate Modal state
+    const [quickAllocateModal, setQuickAllocateModal] = useState({ isOpen: false });
 
     // Monthly budget navigator state
     const [currentBudgetMonth, setCurrentBudgetMonth] = useState(() => {
@@ -49,10 +56,9 @@ export default function BudgetOverview() {
         updateCategory,
         deleteCategory,
         migrateCategoriesWithTypes,
-        setCategories
     } = useCategoryManagement();
 
-    // Import transaction management hook dynamically to avoid circular dependencies
+    // Load transactions from localStorage for calculating spent amounts
     const [transactions, setTransactions] = useState([]);
 
     // Load transactions from localStorage to sync with transaction management
@@ -65,16 +71,34 @@ export default function BudgetOverview() {
             if (e.key === 'budgetCalc_transactions') {
                 const updatedTransactions = JSON.parse(e.newValue || '[]');
                 setTransactions(updatedTransactions);
-            } else if (e.key === 'budgetCalc_categories') {
-                // Also listen for category changes to stay in sync with transaction updates
-                const updatedCategories = JSON.parse(e.newValue || '[]');
-                setCategories(updatedCategories);
             }
         };
 
         window.addEventListener('storage', handleStorageChange);
         return () => window.removeEventListener('storage', handleStorageChange);
-    }, [setCategories]);
+    }, []);
+
+    // Helper function to calculate spent amount for a category from transactions
+    const calculateCategorySpent = useCallback((categoryId) => {
+        if (!transactions || !Array.isArray(transactions)) return 0;
+
+        return transactions.reduce((total, transaction) => {
+            // Only count expense transactions (negative amounts) for this category
+            if (transaction.categoryId === categoryId && transaction.amount < 0) {
+                return total + Math.abs(transaction.amount);
+            }
+
+            // Handle split transactions
+            if (transaction.isSplit && transaction.splits) {
+                const categorySpent = transaction.splits
+                    .filter(split => split.categoryId === categoryId && split.amount < 0)
+                    .reduce((sum, split) => sum + Math.abs(split.amount), 0);
+                return total + categorySpent;
+            }
+
+            return total;
+        }, 0);
+    }, [transactions]);
 
     // Data model hook for planning items - simplified to prevent infinite loops
     const {
@@ -270,6 +294,11 @@ export default function BudgetOverview() {
                 perPaycheck = monthlyNeed / paycheckInfo.conservative; // Conservative: 2 paychecks per month for bi-weekly
             }
 
+            // Calculate actual spent amount from transactions
+            const actualSpent = calculateCategorySpent(category.id);
+            const allocated = category.allocated || 0;
+            const available = allocated - actualSpent;
+
             return {
                 id: category.id,
                 name: category.name,
@@ -278,11 +307,11 @@ export default function BudgetOverview() {
                 accountId: category.accountId, // Pass through account ID for paycheck calculations
                 monthlyNeed,
                 perPaycheck,
-                allocated: category.allocated || 0,
-                spent: category.spent || 0,
-                available: category.available || 0,
+                allocated,
+                spent: actualSpent,
+                available,
                 dueDate: categoryDueDate,
-                color: category.color || 'bg-blue-500',
+                color: category.color || 'bg-primary-500',
                 isActive: category.isActive !== false, // Default to true if not specified
                 isParent: true,
                 subItems,
@@ -297,7 +326,7 @@ export default function BudgetOverview() {
                 isRecurring: category.isRecurring
             };
         });
-    }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount]);
+    }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateCategorySpent]);
 
     // Transform the real data for the table
     const tableData = useMemo(() =>
@@ -736,41 +765,76 @@ export default function BudgetOverview() {
                     </React.Suspense>
                 </div>
 
-                {/* Main Budget View */}
-                <BudgetCategoriesTable
-                    data={tableData}
-                    accounts={accounts || []} // Pass accounts for "Available to Allocate" calculation
-                    getAllUpcomingPaycheckDates={getAllUpcomingPaycheckDates} // Pass paycheck function for account-specific countdown
-                    currentBudgetMonth={currentBudgetMonth}
-                    monthlyBudgetingHook={monthlyBudgetingHook}
-                    onDataUpdate={(updatedTableData) => {
-                        console.log('🔄 BudgetOverview: Received data update from BudgetCategoriesTable');
-                        console.log('📊 Updated table data:', updatedTableData);
+                {/* Main Budget View - Responsive */}
+                {mdAndDown ? (
+                    <React.Suspense fallback={<div>Loading mobile view...</div>}>
+                        <MobileBudgetView
+                            data={tableData}
+                            accounts={accounts || []}
+                            onAddCategory={handleAddCategory}
+                            onEditCategory={handleEditCategory}
+                            onDeleteCategory={handleDeleteCategory}
+                            onAddItem={handleAddItem}
+                            onEditItem={handleEditItem}
+                            onDeleteItem={handleDeleteItem}
+                            onQuickAllocate={() => setQuickAllocateModal({ isOpen: true })}
+                            onDataUpdate={(updatedTableData) => {
+                                console.log('🔄 BudgetOverview: Received data update from MobileBudgetView');
+                                console.log('📊 Updated table data:', updatedTableData);
 
-                        // Update the categories based on the updated table data
-                        updatedTableData.forEach(updatedCategory => {
-                            if (updatedCategory.isParent) {
-                                // Update the category in the categories state
-                                updateCategory(updatedCategory.id, {
-                                    allocated: updatedCategory.allocated,
-                                    available: updatedCategory.available,
-                                    spent: updatedCategory.spent
+                                // Update the categories based on the updated table data
+                                updatedTableData.forEach(updatedCategory => {
+                                    if (updatedCategory.isParent) {
+                                        // Update the category in the categories state
+                                        updateCategory(updatedCategory.id, {
+                                            allocated: updatedCategory.allocated,
+                                            available: updatedCategory.available,
+                                            spent: updatedCategory.spent
+                                        });
+                                        console.log(`✅ Updated category ${updatedCategory.name}: allocated=${updatedCategory.allocated}, available=${updatedCategory.available}`);
+                                    }
                                 });
-                                console.log(`✅ Updated category ${updatedCategory.name}: allocated=${updatedCategory.allocated}, available=${updatedCategory.available}`);
-                            }
-                        });
 
-                        console.log('🔄 BudgetOverview: Category updates complete');
-                    }}
-                    onAddCategory={handleAddCategory}
-                    onEditCategory={handleEditCategory}
-                    onDeleteCategory={handleDeleteCategory}
-                    onAddItem={handleAddItem}
-                    onEditItem={handleEditItem}
-                    onDeleteItem={handleDeleteItem}
-                    onToggleItemActive={handleToggleItemActive}
-                    onToggleCategoryActive={handleToggleCategoryActive}
-                />
+                                console.log('🔄 BudgetOverview: Category updates complete');
+                            }}
+                        />
+                    </React.Suspense>
+                ) : (
+                    <BudgetCategoriesTable
+                        data={tableData}
+                        accounts={accounts || []} // Pass accounts for "Available to Allocate" calculation
+                        getAllUpcomingPaycheckDates={getAllUpcomingPaycheckDates} // Pass paycheck function for account-specific countdown
+                        currentBudgetMonth={currentBudgetMonth}
+                        monthlyBudgetingHook={monthlyBudgetingHook}
+                        onDataUpdate={(updatedTableData) => {
+                            console.log('🔄 BudgetOverview: Received data update from BudgetCategoriesTable');
+                            console.log('📊 Updated table data:', updatedTableData);
+
+                            // Update the categories based on the updated table data
+                            updatedTableData.forEach(updatedCategory => {
+                                if (updatedCategory.isParent) {
+                                    // Update the category in the categories state
+                                    updateCategory(updatedCategory.id, {
+                                        allocated: updatedCategory.allocated,
+                                        available: updatedCategory.available,
+                                        spent: updatedCategory.spent
+                                    });
+                                    console.log(`✅ Updated category ${updatedCategory.name}: allocated=${updatedCategory.allocated}, available=${updatedCategory.available}`);
+                                }
+                            });
+
+                            console.log('🔄 BudgetOverview: Category updates complete');
+                        }}
+                        onAddCategory={handleAddCategory}
+                        onEditCategory={handleEditCategory}
+                        onDeleteCategory={handleDeleteCategory}
+                        onAddItem={handleAddItem}
+                        onEditItem={handleEditItem}
+                        onDeleteItem={handleDeleteItem}
+                        onToggleItemActive={handleToggleItemActive}
+                        onToggleCategoryActive={handleToggleCategoryActive}
+                    />
+                )}
 
                 {/* Category Form Modal */}
                 {showCategoryModal && (
@@ -796,6 +860,44 @@ export default function BudgetOverview() {
                             categories={categories}
                             accounts={accounts}
                         />
+                    </React.Suspense>
+                )}
+
+                {/* Quick Allocate Modal - Responsive */}
+                {quickAllocateModal.isOpen && (
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                        {React.createElement(
+                            React.lazy(() => mdAndDown
+                                ? import("../../../../components/budget/MobileQuickAllocateModal")
+                                : import("../../../../components/budget/QuickAllocateModal")
+                            ),
+                            {
+                                isOpen: quickAllocateModal.isOpen,
+                                onClose: () => setQuickAllocateModal({ isOpen: false }),
+                                availableToAllocate: (() => {
+                                    const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
+                                        const startingBalance = account.startingBalance || account.balance || 0;
+                                        return sum + startingBalance;
+                                    }, 0);
+                                    const totalAllocated = tableData.reduce((sum, category) => sum + (category.allocated || 0), 0);
+                                    return totalWorkingBalance - totalAllocated;
+                                })(),
+                                categories: tableData,
+                                accounts: accounts || [],
+                                onBulkAllocate: (allocations) => {
+                                    console.log('🔄 BudgetOverview: Bulk allocate requested:', allocations);
+
+                                    // Apply allocations to categories
+                                    allocations.forEach(allocation => {
+                                        updateCategory(allocation.categoryId, {
+                                            allocated: (tableData.find(cat => cat.id === allocation.categoryId)?.allocated || 0) + allocation.amount
+                                        });
+                                    });
+
+                                    setQuickAllocateModal({ isOpen: false });
+                                }
+                            }
+                        )}
                     </React.Suspense>
                 )}
             </div>

@@ -164,7 +164,7 @@ const PayeeManagement = ({ payees = [], onAddPayee, onEditPayee, onDeletePayee }
                                                     variant="flat"
                                                     size="sm"
                                                     isIcon
-                                                    className="text-blue-600 hover:text-blue-700"
+                                                    className="text-info-600 hover:text-info-700"
                                                     title="Edit payee"
                                                 >
                                                     <TbEdit className="size-4" />
@@ -189,12 +189,12 @@ const PayeeManagement = ({ payees = [], onAddPayee, onEditPayee, onDeletePayee }
                 </div>
 
                 {/* Usage Info */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="bg-info-50 dark:bg-info/20/20 border border-info-200 dark:border-info-800 rounded-lg p-4">
                     <div className="flex items-start space-x-3">
-                        <div className="text-blue-600 dark:text-blue-400 mt-0.5">
+                        <div className="text-info-600 dark:text-info-400 mt-0.5">
                             💡
                         </div>
-                        <div className="text-sm text-blue-800 dark:text-blue-200">
+                        <div className="text-sm text-info-800 dark:text-info-200">
                             <p className="font-medium mb-1">Tips for managing payees:</p>
                             <ul className="space-y-1 text-xs">
                                 <li>• Payees are automatically added when you type new names in transaction forms</li>

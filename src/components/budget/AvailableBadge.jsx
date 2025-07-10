@@ -54,7 +54,7 @@ const AvailableBadge = ({ amount, isSubItem, onClick, category }) => {
                 ${styles.bg} ${styles.text} ${styles.border} ${styles.cursor}
                 ${isClickable ? 'hover:scale-105 hover:shadow-sm active:scale-95' : ''}
                 ${!isClickable ? 'opacity-75' : ''}
-                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
+                focus:outline-none focus:ring-2 focus:ring-info-500 focus:ring-offset-1
             `}
             title={isClickable ? `Click to move money ${isOverspent ? 'to' : 'from'} ${category?.name || 'this category'}` : undefined}
         >

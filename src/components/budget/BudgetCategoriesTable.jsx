@@ -26,6 +26,7 @@ import {
     calculatePaychecksUntilDue,
     formatAmountWithFrequency
 } from '../../utils/budgetDisplayUtils';
+import { Button } from '../ui/Button';
 import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
 
@@ -181,13 +182,13 @@ const BudgetCategoriesTable = ({
     const getUrgencyStyles = (urgency) => {
         switch (urgency) {
             case 'overdue':
-                return 'bg-red-100 text-red-800 border-red-200';
+                return 'bg-error-100 text-error-800 border-error-200';
             case 'urgent':
-                return 'bg-orange-100 text-orange-800 border-orange-200';
+                return 'bg-warning-100 text-warning-800 border-warning-200';
             case 'soon':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                return 'bg-warning-100 text-warning-800 border-warning-200';
             case 'future':
-                return 'bg-blue-100 text-blue-800 border-blue-200';
+                return 'bg-info/10 text-info-800 border-info-200';
             default:
                 return 'bg-gray-100 text-gray-600 border-gray-200';
         }
@@ -317,7 +318,7 @@ const BudgetCategoriesTable = ({
         const sorted = column.getIsSorted();
         return (
             <button
-                className="flex items-center gap-2 font-medium text-left w-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="flex items-center gap-2 font-medium text-left w-full hover:text-info-600 dark:hover:text-info-400 transition-colors"
                 onClick={() => column.toggleSorting()}
             >
                 {children}
@@ -327,7 +328,7 @@ const BudgetCategoriesTable = ({
                     ) : sorted === 'desc' ? (
                         <ArrowDown className="w-4 h-4" />
                     ) : (
-                        <ArrowUpDown className="w-4 h-4 text-gray-400 dark:text-dark-400" />
+                        <ArrowUpDown className="w-4 h-4 text-gray-400 dark:text-gray-400" />
                     )}
                 </div>
             </button>
@@ -345,7 +346,7 @@ const BudgetCategoriesTable = ({
                 header: ({ table }) => (
                     <input
                         type="checkbox"
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="rounded border-gray-300 text-info-600 focus:ring-info-500"
                         checked={table.getIsAllRowsSelected()}
                         onChange={table.getToggleAllRowsSelectedHandler()}
                     />
@@ -355,7 +356,7 @@ const BudgetCategoriesTable = ({
                     return (
                         <input
                             type="checkbox"
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="rounded border-gray-300 text-info-600 focus:ring-info-500"
                             style={{ marginLeft: row.original.depth * 20 }}
                             checked={row.getIsSelected()}
                             onChange={row.getToggleSelectedHandler()}
@@ -384,12 +385,12 @@ const BudgetCategoriesTable = ({
                                     [category.id]: !prev[category.id]
                                 }));
                             }}
-                            className="p-0.5 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
+                            className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
                         >
                             {isExpanded ? (
-                                <ChevronDown className="w-4 h-4 text-gray-600 dark:text-dark-300" />
+                                <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                             ) : (
-                                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-dark-300" />
+                                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                             )}
                         </button>
                     );
@@ -408,7 +409,7 @@ const BudgetCategoriesTable = ({
                             <div style={{ marginLeft: item.depth * 20 + 16 }}>
                                 <button
                                     onClick={() => onAddItem && onAddItem({ categoryId: item.parentCategory.id })}
-                                    className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-blue-700 dark:hover:text-blue-300 border-l-2 border-gray-200 dark:border-dark-600 pl-4"
+                                    className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-info-700 dark:hover:text-info-300 border-l-2 border-gray-200 dark:border-dark-600 pl-4"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Add Item to {item.parentCategory.name}
@@ -420,16 +421,16 @@ const BudgetCategoriesTable = ({
                     if (item.isExpenseDetails) {
                         // Expense details row with paycheck countdown and details
                         return (
-                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-blue-200 dark:border-blue-800 pl-4 py-2">
+                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-info-200 dark:border-info-800 pl-4 py-2">
                                 <div className="space-y-3">
                                     {/* Expense header */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className="text-lg">💸</span>
-                                            <span className="font-medium text-blue-800 dark:text-blue-200">Expense Details</span>
+                                            <span className="font-medium text-info-800 dark:text-info-200">Expense Details</span>
                                         </div>
                                         {item.paychecksLeft !== null && (
-                                            <div className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                            <div className="text-sm font-medium text-info-700 dark:text-info-300">
                                                 {item.paychecksLeft === 0 ? 'Due Now!' :
                                                     item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
                                             </div>
@@ -440,7 +441,7 @@ const BudgetCategoriesTable = ({
                                     <div className="grid grid-cols-2 gap-4 text-sm">
                                         <div>
                                             <div className="text-gray-600 dark:text-gray-400">Amount</div>
-                                            <div className="font-medium text-blue-600 dark:text-blue-400">
+                                            <div className="font-medium text-info-600 dark:text-info-400">
                                                 ${(parseFloat(item.amount) || 0).toFixed(2)}
                                             </div>
                                         </div>
@@ -454,16 +455,16 @@ const BudgetCategoriesTable = ({
                                             <>
                                                 <div>
                                                     <div className="text-gray-600 dark:text-gray-400">Due Date</div>
-                                                    <div className="font-medium text-orange-600 dark:text-orange-400">
+                                                    <div className="font-medium text-warning dark:text-warning-light">
                                                         {formatDueDate(item.dueDate)}
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <div className="text-gray-600 dark:text-gray-400">Paychecks Left</div>
-                                                    <div className={`font-medium ${item.paychecksLeft === 0 ? 'text-red-600 dark:text-red-400' :
-                                                        item.paychecksLeft === 1 ? 'text-yellow-600 dark:text-yellow-400' :
-                                                            item.paychecksLeft > 1 ? 'text-green-600 dark:text-green-400' :
-                                                                'text-red-700 dark:text-red-300'
+                                                    <div className={`font-medium ${item.paychecksLeft === 0 ? 'text-error dark:text-error-light' :
+                                                        item.paychecksLeft === 1 ? 'text-warning dark:text-warning-light' :
+                                                            item.paychecksLeft > 1 ? 'text-success dark:text-success-light' :
+                                                                'text-error-dark dark:text-error'
                                                         }`}>
                                                         {item.paychecksLeft === 0 ? 'Due now!' :
                                                             item.paychecksLeft > 0 ? `${item.paychecksLeft} left` : 'Overdue'}
@@ -490,7 +491,7 @@ const BudgetCategoriesTable = ({
                                     </Box>
 
                                 )}
-                                <div className="font-medium text-gray-900 dark:text-dark-100">{item.name}</div>
+                                <div className="font-medium text-gray-900 dark:text-gray-100">{item.name}</div>
 
                             </div>
                         );
@@ -554,25 +555,25 @@ const BudgetCategoriesTable = ({
                             const paychecksLeft = calculatePaychecksUntilDue(row.original.dueDate, upcomingPaychecks, row.original.parentCategory?.accountId);
                             return (
                                 <div className="text-right">
-                                    <div className="flex items-center justify-end gap-1 font-medium text-blue-500">
+                                    <div className="flex items-center justify-end gap-1 font-medium text-info-500">
                                         <span>{formatCurrency(value || 0)}</span>
                                         {paychecksLeft === 0 ? (
-                                            <span className="text-green-500" title="Due now">
+                                            <span className="text-success" title="Due now">
                                                 ⚡
                                             </span>
                                         ) : (
-                                            <span className="text-blue-400" title={`${paychecksLeft} paychecks until due`}>
+                                            <span className="text-info-400" title={`${paychecksLeft} paychecks until due`}>
                                                 🕒
                                             </span>
                                         )}
                                     </div>
                                     <div className="text-xs">
                                         {paychecksLeft === 0 ? (
-                                            <span className="text-green-500 font-medium">due now</span>
+                                            <span className="text-success font-medium">due now</span>
                                         ) : paychecksLeft > 0 ? (
-                                            <span className="text-blue-400">{paychecksLeft} left</span>
+                                            <span className="text-info-400">{paychecksLeft} left</span>
                                         ) : (
-                                            <span className="text-red-400">overdue</span>
+                                            <span className="text-error-light">overdue</span>
                                         )}
                                     </div>
                                 </div>
@@ -581,7 +582,7 @@ const BudgetCategoriesTable = ({
                             // For sub-items without due dates, show amount with ongoing indicator
                             return (
                                 <div className="text-right">
-                                    <div className="flex items-center justify-end gap-1 font-medium text-blue-500">
+                                    <div className="flex items-center justify-end gap-1 font-medium text-info-500">
                                         <span>{formatCurrency(value || 0)}</span>
                                         <span className="text-gray-400" title="Ongoing expense">
                                             ♾️
@@ -596,7 +597,7 @@ const BudgetCategoriesTable = ({
                     }
 
                     return (
-                        <div className={`text-right font-medium ${isSubItem ? 'text-blue-500' : 'text-blue-600'}`}>
+                        <div className={`text-right font-medium ${isSubItem ? 'text-primary-500 dark:text-primary-400' : 'text-primary-600 dark:text-primary-400'}`}>
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -616,7 +617,7 @@ const BudgetCategoriesTable = ({
 
                     const value = getValue();
                     return (
-                        <div className="text-right font-medium text-green-600">
+                        <div className="text-right font-medium text-success-600 dark:text-success-400">
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -636,7 +637,7 @@ const BudgetCategoriesTable = ({
 
                     const value = getValue();
                     return (
-                        <div className="text-right font-medium text-red-600">
+                        <div className="text-right font-medium text-error-600 dark:text-error-400">
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -663,7 +664,7 @@ const BudgetCategoriesTable = ({
                             <div className="text-right">
                                 <button
                                     onClick={() => handleTransferClick(row.original)}
-                                    className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
+                                    className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-info-500 focus:outline-none bg-success-100 text-success-800 border-success-200 hover:bg-success-200"
                                     title="Click to move money out of this category"
                                 >
                                     <span className="mr-1">💰</span>
@@ -676,7 +677,7 @@ const BudgetCategoriesTable = ({
                         return (
                             <div className="text-right">
                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
-                                    ? 'bg-red-100 text-red-800 border border-red-200'
+                                    ? 'bg-error-100 text-error-800 border border-error-200'
                                     : 'bg-gray-100 text-gray-600 border border-gray-200'
                                     }`}>
                                     {isOverspent && <span className="mr-1">⚠️</span>}
@@ -865,14 +866,14 @@ const BudgetCategoriesTable = ({
                 <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-100 flex items-center gap-2">
-                            <DollarSign className="w-7 h-7 text-green-600 dark:text-green-400" />
+                            <DollarSign className="w-7 h-7 text-success dark:text-success-light" />
                             Budget Categories
                         </h2>
                         <p className="text-gray-600 dark:text-dark-300">Manage your envelope budgeting categories and items</p>
                     </div>
                     <button
                         onClick={() => onAddCategory && onAddCategory()}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-info/60 dark:bg-info/50 text-white rounded-lg hover:bg-info/70 dark:hover:bg-info/60 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add Category
@@ -888,7 +889,7 @@ const BudgetCategoriesTable = ({
                             placeholder="Search categories..."
                             value={globalFilter}
                             onChange={(e) => setGlobalFilter(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent placeholder-gray-500 dark:placeholder-dark-400"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 rounded-lg focus:ring-2 focus:ring-info-500 dark:focus:ring-info-400 focus:border-transparent placeholder-gray-500 dark:placeholder-dark-400"
                         />
                     </div>
 
@@ -924,27 +925,27 @@ const BudgetCategoriesTable = ({
 
                 if (availableToAllocate > 0) {
                     return (
-                        <div className="mb-4 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg border border-green-200 dark:border-green-800 overflow-hidden shadow-sm">
+                        <div className="mb-4 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-500 dark:to-secondary rounded-lg border border-success-light dark:border-success overflow-hidden shadow-sm">
                             <div className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-xl">
+                                        <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white text-xl">
                                             💰
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">
+                                            <h3 className="text-lg font-semibold text-success-dark dark:text-success-light">
                                                 Available to Allocate
                                             </h3>
-                                            <p className="text-sm text-green-600 dark:text-green-400">
+                                            <p className="text-sm text-success dark:text-success-light">
                                                 Choose how to allocate your money
                                             </p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                                        <div className="text-2xl font-bold text-success-dark dark:text-success-light">
                                             {formatCurrency(availableToAllocate)}
                                         </div>
-                                        <div className="text-sm text-green-600 dark:text-green-400">
+                                        <div className="text-sm text-success dark:text-success-light">
                                             Ready to allocate
                                         </div>
                                     </div>
@@ -952,14 +953,17 @@ const BudgetCategoriesTable = ({
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center gap-3 mt-4">
-                                    <button
+                                    <Button
+                                        color="primary"
                                         onClick={() => setQuickAllocateModal({ isOpen: true })}
-                                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium"
+                                        variant="outlined-primary"
+                                        isGlow={true}
+                                        className="flex items-center gap-2"
                                     >
                                         <span>⚡</span>
                                         Quick Allocate
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                         onClick={() => setTransferModal({
                                             isOpen: true,
                                             targetCategory: {
@@ -969,11 +973,14 @@ const BudgetCategoriesTable = ({
                                             },
                                             mode: 'allocate-from'
                                         })}
-                                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                                        variant="filled"
+                                        color="primary"
+                                        isGlow={true}
+                                        className="flex items-center gap-2"
                                     >
                                         <span>🎯</span>
                                         Single Category
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         </div>
@@ -1020,17 +1027,17 @@ const BudgetCategoriesTable = ({
                                             item.progressPercentage >= 50 ? 'warning' : 'neutral';
 
                                     return (
-                                        <tr key={row.id} className="bg-green-25 dark:bg-green-900/10">
+                                        <tr key={row.id} className="bg-success-lighter/20 dark:bg-success/10">
                                             <td colSpan={columns.length} className="px-4 py-2">
-                                                <div className="bg-green-50 dark:bg-green-900/20 rounded p-3 border border-green-200 dark:border-green-800">
+                                                <div className="bg-success-lighter/20 dark:bg-success/20 rounded p-3 border border-success-light dark:border-success">
                                                     <div className="space-y-2">
                                                         {/* Progress header */}
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-lg">🎯</span>
-                                                                <span className="text-sm font-semibold text-green-800 dark:text-green-200">Goal Progress</span>
+                                                                <span className="text-sm font-semibold text-success-dark dark:text-success-light">Goal Progress</span>
                                                             </div>
-                                                            <div className="text-sm font-bold text-green-700 dark:text-green-300">
+                                                            <div className="text-sm font-bold text-success-dark dark:text-success-light">
                                                                 {item.progressPercentage.toFixed(1)}%
                                                             </div>
                                                         </div>
@@ -1038,9 +1045,9 @@ const BudgetCategoriesTable = ({
                                                         {/* Progress bar */}
                                                         <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                                             <div
-                                                                className={`h-2 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-green-500' :
-                                                                    progressColor === 'primary' ? 'bg-blue-500' :
-                                                                        progressColor === 'warning' ? 'bg-yellow-500' :
+                                                                className={`h-2 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-success' :
+                                                                    progressColor === 'primary' ? 'bg-info/50' :
+                                                                        progressColor === 'warning' ? 'bg-warning' :
                                                                             'bg-gray-400'
                                                                     }`}
                                                                 style={{ width: `${Math.min(100, item.progressPercentage)}%` }}
@@ -1051,7 +1058,7 @@ const BudgetCategoriesTable = ({
                                                         <div className="grid grid-cols-4 gap-4 text-xs">
                                                             <div className="text-center">
                                                                 <div className="text-gray-600 dark:text-gray-400">Saved</div>
-                                                                <div className="font-bold text-green-600 dark:text-green-400">
+                                                                <div className="font-bold text-success dark:text-success-light">
                                                                     ${(parseFloat(item.currentAmount) || 0).toFixed(2)}
                                                                 </div>
                                                             </div>
@@ -1063,7 +1070,7 @@ const BudgetCategoriesTable = ({
                                                             </div>
                                                             <div className="text-center">
                                                                 <div className="text-gray-600 dark:text-gray-400">Per Paycheck</div>
-                                                                <div className="font-bold text-blue-600 dark:text-blue-400">
+                                                                <div className="font-bold text-info-600 dark:text-info-400">
                                                                     ${(parseFloat(item.perPaycheckContribution) || 0).toFixed(2)}
                                                                 </div>
                                                             </div>
@@ -1076,9 +1083,9 @@ const BudgetCategoriesTable = ({
                                                                 </div>
                                                                 <div className={`font-bold ${item.daysUntilTarget !== null ? (
                                                                     item.daysUntilTarget > 30 ? 'text-gray-600 dark:text-gray-400' :
-                                                                        item.daysUntilTarget > 7 ? 'text-yellow-600 dark:text-yellow-400' :
-                                                                            item.daysUntilTarget >= 0 ? 'text-red-600 dark:text-red-400' :
-                                                                                'text-red-700 dark:text-red-300'
+                                                                        item.daysUntilTarget > 7 ? 'text-warning dark:text-warning-light' :
+                                                                            item.daysUntilTarget >= 0 ? 'text-error dark:text-error-light' :
+                                                                                'text-error-dark dark:text-error'
                                                                 ) : 'text-gray-600 dark:text-gray-400'
                                                                     }`}>
                                                                     {item.daysUntilTarget !== null ? (
@@ -1099,9 +1106,9 @@ const BudgetCategoriesTable = ({
 
                                                         {/* Remaining amount - inline */}
                                                         {item.progressPercentage < 100 && (
-                                                            <div className="text-center text-xs pt-1 border-t border-green-200 dark:border-green-700">
+                                                            <div className="text-center text-xs pt-1 border-t border-success-light dark:border-success">
                                                                 <span className="text-gray-600 dark:text-gray-400">Still need: </span>
-                                                                <span className="font-bold text-orange-600 dark:text-orange-400">
+                                                                <span className="font-bold text-warning dark:text-warning-light">
                                                                     ${(item.targetAmount - item.currentAmount).toFixed(2)}
                                                                 </span>
                                                             </div>
@@ -1116,18 +1123,18 @@ const BudgetCategoriesTable = ({
                                 if (isExpenseDetails) {
                                     const item = row.original;
                                     return (
-                                        <tr key={row.id} className="bg-blue-25 dark:bg-blue-900/10">
+                                        <tr key={row.id} className="bg-info-25 dark:bg-info/20/10">
                                             <td colSpan={columns.length} className="px-4 py-2">
-                                                <div className="bg-blue-50 dark:bg-blue-900/20 rounded p-3 border border-blue-200 dark:border-blue-800">
+                                                <div className="bg-info-50 dark:bg-info/20/20 rounded p-3 border border-info-200 dark:border-info-800">
                                                     <div className="space-y-2">
                                                         {/* Expense header */}
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-lg">💸</span>
-                                                                <span className="text-sm font-semibold text-blue-800 dark:text-blue-200">Expense Details</span>
+                                                                <span className="text-sm font-semibold text-info-800 dark:text-info-200">Expense Details</span>
                                                             </div>
                                                             {item.paychecksLeft !== null && (
-                                                                <div className="text-sm font-bold text-blue-700 dark:text-blue-300">
+                                                                <div className="text-sm font-bold text-info-700 dark:text-info-300">
                                                                     {item.paychecksLeft === 0 ? 'Due Now!' :
                                                                         item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
                                                                 </div>
@@ -1138,7 +1145,7 @@ const BudgetCategoriesTable = ({
                                                         <div className="grid grid-cols-3 gap-4 text-xs">
                                                             <div className="text-center">
                                                                 <div className="text-gray-600 dark:text-gray-400">Amount</div>
-                                                                <div className="font-bold text-blue-600 dark:text-blue-400">
+                                                                <div className="font-bold text-info-600 dark:text-info-400">
                                                                     ${(parseFloat(item.amount) || 0).toFixed(2)}
                                                                 </div>
                                                             </div>
@@ -1158,9 +1165,9 @@ const BudgetCategoriesTable = ({
 
                                                         {/* Due date info - inline */}
                                                         {item.dueDate && (
-                                                            <div className="text-center text-xs pt-1 border-t border-blue-200 dark:border-blue-700">
+                                                            <div className="text-center text-xs pt-1 border-t border-info-200 dark:border-info-700">
                                                                 <div className="text-gray-600 dark:text-gray-400">Due Date</div>
-                                                                <div className="font-bold text-orange-600 dark:text-orange-400">
+                                                                <div className="font-bold text-warning dark:text-warning-light">
                                                                     {formatDueDate(item.dueDate)}
                                                                 </div>
                                                             </div>
@@ -1215,13 +1222,13 @@ const BudgetCategoriesTable = ({
                             </div>
                             <div>
                                 <span className="text-gray-500 dark:text-dark-400">Total Allocated: </span>
-                                <span className="font-medium text-green-600 dark:text-green-400">
+                                <span className="font-medium text-success dark:text-success-light">
                                     {formatCurrency(data.reduce((sum, cat) => sum + cat.allocated, 0))}
                                 </span>
                             </div>
                             <div>
                                 <span className="text-gray-500 dark:text-dark-400">Total Available: </span>
-                                <span className="font-medium text-blue-600 dark:text-blue-400">
+                                <span className="font-medium text-info-600 dark:text-info-400">
                                     {formatCurrency(data.reduce((sum, cat) => sum + cat.available, 0))}
                                 </span>
                             </div>

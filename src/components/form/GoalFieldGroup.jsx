@@ -269,7 +269,7 @@ const GoalFieldGroup = ({ formValues, onChange, errors = {}, currentPay = 0 }) =
         <div className="space-y-4">
             <h3 className="text-md font-medium mt-4 text-gray-900 dark:text-gray-100">Goal Details</h3>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 mb-4 rounded-md text-sm text-blue-800 dark:text-blue-200">
+            <div className="bg-info-50 dark:bg-info/20/20 border border-info-200 dark:border-info-800 p-3 mb-4 rounded-md text-sm text-info-800 dark:text-info-200">
                 <div className="mt-1 text-xs">
                     <span className="text-red-500">*</span> Required field
                 </div>

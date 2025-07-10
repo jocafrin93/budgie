@@ -32,7 +32,7 @@ export const useCategoryManagement = () => {
       name: 'Pet Care',
       type: 'multiple', // NEW: Added type field
       accountId: 1, // NEW: Account assignment
-      color: 'bg-gradient-to-r from-green-500 to-blue-500',
+      color: 'bg-gradient-to-r from-green-500 to-info-500',
       collapsed: false,
       allocated: 0,
       spent: 0,
@@ -89,7 +89,7 @@ export const useCategoryManagement = () => {
     const newCategory = {
       name: categoryData.name.trim(),
       type: categoryData.type, // NEW: Required type field
-      color: categoryData.color || 'bg-gradient-to-r from-blue-500 to-purple-500',
+      color: categoryData.color || 'bg-gradient-to-r from-info-500 to-purple-500',
       collapsed: false,
       allocated: 0,
       spent: 0,

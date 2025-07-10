@@ -61,7 +61,7 @@ const UpcomingPaychecks = ({
         if (daysUntil === 0) {
             return 'bg-green-100 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300';
         } else if (daysUntil <= 3) {
-            return 'bg-blue-100 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300';
+            return 'bg-info/10 dark:bg-info/20/20 border-info-300 dark:border-info-700 text-info-800 dark:text-info-300';
         } else if (daysUntil <= 7) {
             return 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300';
         } else {
@@ -170,7 +170,7 @@ const UpcomingPaychecks = ({
                         {upcomingPaychecks.map((paycheckEntry, index) => (
                             <div
                                 key={`${paycheckEntry.paycheck.id}-${paycheckEntry.formattedDate}`}
-                                className={`p-3 rounded-lg border ${index === 0 ? 'border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/10' :
+                                className={`p-3 rounded-lg border ${index === 0 ? 'border-info-300 dark:border-info-700 bg-info/10 dark:bg-info/20/10' :
                                     'border-gray-200 dark:border-dark-500 bg-gray-50 dark:bg-dark-600'
                                     }`}
                             >

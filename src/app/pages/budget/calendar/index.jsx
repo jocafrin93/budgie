@@ -87,27 +87,122 @@ export default function BudgetCalendar() {
 
         switch (action) {
             case 'skip': {
-                const skippedTransactions = transactions.map(t =>
+                const updatedTransactions = transactions.map(t =>
                     t.id === txn.id ? { ...t, isSkipped: true, skippedAt: new Date().toISOString() } : t
                 );
-                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(skippedTransactions));
+                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updatedTransactions));
+
+                // Trigger a storage event to update the UI
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'budgetCalc_scheduledTransactions',
+                    newValue: JSON.stringify(updatedTransactions)
+                }));
                 break;
             }
 
-            case 'payNow':
-                // This would integrate with transaction creation
-                console.log('Pay now:', txn);
-                alert(`Would create transaction for ${txn.payee}: ${formatCurrency(txn.amount)}`);
-                break;
+            case 'payNow': {
+                // Create actual transaction from scheduled transaction
+                const actualTransactions = JSON.parse(localStorage.getItem('budgetCalc_transactions') || '[]');
+                const newTransactionId = Math.max(...actualTransactions.map(t => t.id), 0) + 1;
 
-            case 'edit':
-                console.log('Edit:', txn);
-                alert('Edit functionality would open transaction edit modal');
+                const newTransaction = {
+                    id: newTransactionId,
+                    date: new Date().toISOString().split('T')[0], // Today's date
+                    payee: txn.payee,
+                    amount: txn.amount,
+                    categoryId: txn.categoryId,
+                    accountId: txn.accountId,
+                    memo: `${txn.memo || ''} (Paid early from scheduled)`.trim(),
+                    isCleared: false,
+                    scheduledTransactionId: txn.id,
+                    createdAt: new Date().toISOString()
+                };
+
+                // Add the new transaction
+                const updatedTransactions = [...actualTransactions, newTransaction];
+                localStorage.setItem('budgetCalc_transactions', JSON.stringify(updatedTransactions));
+
+                // Mark scheduled transaction as activated
+                const updatedScheduledTransactions = transactions.map(t =>
+                    t.id === txn.id ? {
+                        ...t,
+                        isActivated: true,
+                        activatedAt: new Date().toISOString(),
+                        activatedEarly: true
+                    } : t
+                );
+                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updatedScheduledTransactions));
+
+                // Update account balance
+                const accounts = JSON.parse(localStorage.getItem('budgetCalc_accounts') || '[]');
+                const updatedAccounts = accounts.map(account => {
+                    if (account.id === txn.accountId) {
+                        return { ...account, balance: (account.balance || 0) + txn.amount };
+                    }
+                    return account;
+                });
+                localStorage.setItem('budgetCalc_accounts', JSON.stringify(updatedAccounts));
+
+                // Update category spending if it's an expense
+                if (txn.amount < 0 && txn.categoryId) {
+                    const categories = JSON.parse(localStorage.getItem('budgetCalc_categories') || '[]');
+                    const updatedCategories = categories.map(category => {
+                        if (category.id === txn.categoryId) {
+                            const newSpent = (category.spent || 0) + Math.abs(txn.amount);
+                            return {
+                                ...category,
+                                spent: newSpent,
+                                available: (category.allocated || 0) - newSpent
+                            };
+                        }
+                        return category;
+                    });
+                    localStorage.setItem('budgetCalc_categories', JSON.stringify(updatedCategories));
+                }
+
+                // Trigger storage events to update UI
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'budgetCalc_transactions',
+                    newValue: JSON.stringify(updatedTransactions)
+                }));
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: 'budgetCalc_scheduledTransactions',
+                    newValue: JSON.stringify(updatedScheduledTransactions)
+                }));
+
+                alert(`✅ Transaction created successfully!\n${txn.payee}: ${formatCurrency(txn.amount)}`);
                 break;
+            }
+
+            case 'edit': {
+                // For now, show a simple prompt to edit the payee
+                const newPayee = prompt('Edit payee name:', txn.payee);
+                if (newPayee && newPayee !== txn.payee) {
+                    const updatedTransactions = transactions.map(t =>
+                        t.id === txn.id ? { ...t, payee: newPayee, lastModified: new Date().toISOString() } : t
+                    );
+                    localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updatedTransactions));
+
+                    // Trigger storage event
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'budgetCalc_scheduledTransactions',
+                        newValue: JSON.stringify(updatedTransactions)
+                    }));
+                }
+                break;
+            }
 
             case 'delete': {
-                const filteredTransactions = transactions.filter(t => t.id !== txn.id);
-                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(filteredTransactions));
+                if (window.confirm(`Are you sure you want to delete the scheduled transaction for "${txn.payee}"?\n\nThis action cannot be undone.`)) {
+                    const filteredTransactions = transactions.filter(t => t.id !== txn.id);
+                    localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(filteredTransactions));
+
+                    // Trigger storage event
+                    window.dispatchEvent(new StorageEvent('storage', {
+                        key: 'budgetCalc_scheduledTransactions',
+                        newValue: JSON.stringify(filteredTransactions)
+                    }));
+                }
                 break;
             }
 
@@ -158,7 +253,7 @@ export default function BudgetCalendar() {
                         <div className="flex items-center space-x-3">
                             <button
                                 onClick={handleBackToTransactions}
-                                className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                                className="flex items-center space-x-2 text-info-600 hover:text-info-800 dark:text-info-400 dark:hover:text-info-300"
                             >
                                 <ChevronLeft size={20} />
                                 <span>Back to Transactions</span>
@@ -183,7 +278,7 @@ export default function BudgetCalendar() {
                         <select
                             value={selectedAccountId}
                             onChange={(e) => handleAccountChange(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-info-500"
                         >
                             <option value="all">All Accounts</option>
                             {accounts.map(account => (
@@ -211,7 +306,7 @@ export default function BudgetCalendar() {
                             </p>
                             <button
                                 onClick={handleBackToTransactions}
-                                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                             >
                                 Go to Transactions
                             </button>
@@ -223,7 +318,7 @@ export default function BudgetCalendar() {
                                 {selectedAccountId === 'all' && (
                                     <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-600">
                                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center space-x-2">
-                                            <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                                            <span className="w-3 h-3 bg-primary-500 rounded-full"></span>
                                             <span>{account.name}</span>
                                         </h3>
                                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -279,7 +374,7 @@ export default function BudgetCalendar() {
 
                                                     <button
                                                         onClick={() => handleQuickAction('skip', txn)}
-                                                        className="flex items-center space-x-1 px-3 py-1.5 text-xs bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/30 rounded-md transition-colors"
+                                                        className="flex items-center space-x-1 px-3 py-1.5 text-xs bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/30 rounded-md transition-colors"
                                                     >
                                                         <SkipForward size={12} />
                                                         <span>Skip</span>

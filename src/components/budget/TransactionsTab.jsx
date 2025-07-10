@@ -51,8 +51,8 @@ const CircleCheck = ({ className = "w-5 h-5", checked = false, ...props }) => (
         viewBox="0 0 24 24"
         {...props}
     >
-        <circle cx="12" cy="12" r="10" className={checked ? "text-green-600" : "text-gray-400"} />
-        <path d="m9 12 2 2 4-4" className={checked ? "text-green-600" : "text-gray-400"} />
+        <circle cx="12" cy="12" r="10" className={checked ? "text-success" : "text-gray-400"} />
+        <path d="m9 12 2 2 4-4" className={checked ? "text-success" : "text-gray-400"} />
     </svg>
 );
 
@@ -231,7 +231,7 @@ const PayeeAutocompleteInline = ({
             {label && (
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     {label}
-                    {required && <span className="text-red-500 ml-1">*</span>}
+                    {required && <span className="text-error ml-1">*</span>}
                 </label>
             )}
 
@@ -250,7 +250,7 @@ const PayeeAutocompleteInline = ({
                              bg-white dark:bg-gray-800 
                              text-gray-900 dark:text-gray-100
                              placeholder-gray-500 dark:placeholder-gray-400
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                             focus:outline-none focus:ring-2 focus:ring-info-500 focus:border-info-500
                              transition-colors
                              ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700' : ''}`}
                     {...props}
@@ -293,8 +293,8 @@ const PayeeAutocompleteInline = ({
                         <button
                             type="button"
                             onClick={handleAddNewPayee}
-                            className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 
-                                     text-blue-600 dark:text-blue-400 transition-colors
+                            className="w-full px-3 py-2 text-left hover:bg-info-50 dark:hover:bg-info/20/20 
+                                     text-info-600 dark:text-info-400 transition-colors
                                      border-t border-gray-200 dark:border-gray-600 flex items-center space-x-2"
                         >
                             <span>+</span>
@@ -565,10 +565,10 @@ const TransactionFormModal = ({
                                         checked={transactionType === 'inflow'}
                                         onChange={(e) => setTransactionType(e.target.checked ? 'inflow' : 'outflow')}
                                     />
-                                    <span className="px-4 py-2 rounded-l-md bg-red-500 text-white peer-checked:bg-gray-300 peer-checked:text-gray-700 dark:bg-red-600 dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-300 transition-colors">
+                                    <span className="px-4 py-2 rounded-l-md bg-error text-white peer-checked:bg-gray-300 peer-checked:text-gray-700 dark:bg-error-dark dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-300 transition-colors">
                                         💸 Expense
                                     </span>
-                                    <span className="px-4 py-2 rounded-r-md bg-gray-300 text-gray-700 peer-checked:bg-green-500 peer-checked:text-white dark:bg-gray-700 dark:text-gray-300 dark:peer-checked:bg-green-600 dark:peer-checked:text-white transition-colors">
+                                    <span className="px-4 py-2 rounded-r-md bg-gray-300 text-gray-700 peer-checked:bg-success peer-checked:text-white dark:bg-gray-700 dark:text-gray-300 dark:peer-checked:bg-success-dark dark:peer-checked:text-white transition-colors">
                                         💰 Income
                                     </span>
                                 </label>
@@ -709,10 +709,10 @@ const TransactionFormModal = ({
 
                                             {/* Balance Status */}
                                             {!splitValidation.isBalanced && (
-                                                <div className="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                                <div className="mt-3 p-3 bg-warning-lighter/20 dark:bg-warning/20 border border-warning-light dark:border-warning rounded-lg">
                                                     <div className="flex items-center space-x-2">
-                                                        <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
-                                                        <span className="text-sm text-yellow-800 dark:text-yellow-200">
+                                                        <span className="text-warning dark:text-warning-light">⚠️</span>
+                                                        <span className="text-sm text-warning-dark dark:text-warning-light">
                                                             Fix splits {splitValidation.isOverAllocated ? 'Over-allocated' : 'Under-allocated'} by {formatCurrency(Math.abs(splitValidation.remainingToAllocate))}
                                                         </span>
                                                     </div>
@@ -721,10 +721,10 @@ const TransactionFormModal = ({
 
                                             {/* Success Status */}
                                             {splitValidation.isBalanced && formData.splits.length > 0 && (
-                                                <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                                                <div className="mt-3 p-3 bg-success-lighter/20 dark:bg-success/20 border border-success-light dark:border-success rounded-lg">
                                                     <div className="flex items-center space-x-2">
-                                                        <span className="text-green-600 dark:text-green-400">✅</span>
-                                                        <span className="text-sm text-green-800 dark:text-green-200">
+                                                        <span className="text-success dark:text-success-light">✅</span>
+                                                        <span className="text-sm text-success-dark dark:text-success-light">
                                                             Splits are perfectly balanced!
                                                         </span>
                                                     </div>
@@ -1117,7 +1117,7 @@ export default function TransactionsTab({
                             />
                             {isReconciled && (
                                 <div
-                                    className="text-blue-600 dark:text-blue-400"
+                                    className="text-info-600 dark:text-info-400"
                                     title="This transaction has been reconciled"
                                 >
                                     🔒
@@ -1199,6 +1199,27 @@ export default function TransactionsTab({
             tableSettings,
         },
     });
+
+    // Get selected rows for bulk operations
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedCount = selectedRows.length;
+
+    // Handle bulk delete
+    const handleBulkDelete = () => {
+        if (selectedCount === 0) return;
+
+        const confirmMessage = `Are you sure you want to delete ${selectedCount} selected transaction${selectedCount > 1 ? 's' : ''}? This action cannot be undone.`;
+
+        if (window.confirm(confirmMessage)) {
+            // Process each selected transaction
+            selectedRows.forEach(row => {
+                handleDeleteTransaction(row.original);
+            });
+
+            // Clear selection after deletion
+            table.resetRowSelection();
+        }
+    };
 
     // Handle form submission
     const handleSaveTransaction = (transactionData) => {
@@ -1351,6 +1372,19 @@ export default function TransactionsTab({
                 </div>
 
                 <div className="flex items-center space-x-2">
+                    {/* Bulk Delete Button - Only show when transactions are selected */}
+                    {selectedCount > 0 && (
+                        <Button
+                            onClick={handleBulkDelete}
+                            variant="filled"
+                            color="error"
+                            size="sm"
+                            className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            <TbTrash className="size-4" />
+                            <span>Delete {selectedCount} Selected</span>
+                        </Button>
+                    )}
                     <Button
                         onClick={() => setShowFilters(!showFilters)}
                         variant="outlined"

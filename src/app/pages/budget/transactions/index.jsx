@@ -1,3 +1,4 @@
+import { useBreakpointsContext } from "app/contexts/breakpoint/context";
 import { Page } from "components/shared/Page";
 import React, { useEffect, useState } from "react";
 import AccountBalanceSidebar from "../../../../components/budget/AccountBalanceSidebar";
@@ -6,6 +7,9 @@ import { useAccountManagement } from "../../../../hooks/useAccountManagement";
 import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
 import { useLocalStorage } from "../../../../hooks/useLocalStorage";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
+
+// Dynamic import for mobile view
+const MobileTransactionsView = React.lazy(() => import("../../../../components/budget/MobileTransactionsView"));
 
 // Quick Reconcile Modal Component
 const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) => {
@@ -113,7 +117,7 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Bank Balance Input */}
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="p-4 bg-info-50 dark:bg-info/20/20 border border-info-200 dark:border-info-800 rounded-lg">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Bank Statement Balance
                         </label>
@@ -127,10 +131,10 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
                                 onChange={handleCurrencyChange}
                                 required
                                 placeholder="0.00"
-                                className="w-full pl-7 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-7 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-info-500"
                             />
                         </div>
-                        <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
+                        <p className="text-sm text-info-800 dark:text-info-200 mt-2">
                             Enter the balance shown on your bank statement or online banking.
                         </p>
                     </div>
@@ -145,36 +149,36 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
                             <div className="text-xs text-gray-500 dark:text-gray-400">All transactions</div>
                         </div>
 
-                        <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                            <div className="text-sm text-green-600 dark:text-green-400">Cleared Balance</div>
-                            <div className="text-lg font-bold text-green-700 dark:text-green-300">
+                        <div className="text-center p-4 bg-success-50 dark:bg-success-900/20 rounded-lg">
+                            <div className="text-sm text-success-600 dark:text-success-400">Cleared Balance</div>
+                            <div className="text-lg font-bold text-success-700 dark:text-success-300">
                                 {formatCurrency(balances.clearedBalance)}
                             </div>
-                            <div className="text-xs text-green-600 dark:text-green-400">Cleared transactions</div>
+                            <div className="text-xs text-success-600 dark:text-success-400">Cleared transactions</div>
                         </div>
 
-                        <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                            <div className="text-sm text-yellow-600 dark:text-yellow-400">Pending</div>
-                            <div className="text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                        <div className="text-center p-4 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
+                            <div className="text-sm text-warning-600 dark:text-warning-400">Pending</div>
+                            <div className="text-lg font-bold text-warning-700 dark:text-warning-300">
                                 {formatCurrency(balances.pendingBalance)}
                             </div>
-                            <div className="text-xs text-yellow-600 dark:text-yellow-400">Uncleared transactions</div>
+                            <div className="text-xs text-warning-600 dark:text-warning-400">Uncleared transactions</div>
                         </div>
                     </div>
 
                     {/* Difference Display */}
                     <div className={`p-4 rounded-lg border ${isBalanced
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        ? 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-800'
+                        : 'bg-error-50 dark:bg-error-900/20 border-error-200 dark:border-error-800'
                         }`}>
                         <div className="text-center">
-                            <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            <div className={`text-sm ${isBalanced ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
                                 Difference
                             </div>
-                            <div className={`text-2xl font-bold ${isBalanced ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                            <div className={`text-2xl font-bold ${isBalanced ? 'text-success-700 dark:text-success-300' : 'text-error-700 dark:text-error-300'}`}>
                                 {formatCurrency(Math.abs(difference))}
                             </div>
-                            <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            <div className={`text-sm ${isBalanced ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
                                 {isBalanced ? '✅ Perfect match!' : `${difference > 0 ? 'Bank higher' : 'Bank lower'} - Review transactions`}
                             </div>
                         </div>
@@ -193,7 +197,7 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
                             type="submit"
                             disabled={!isBalanced}
                             className={`px-4 py-2 rounded-lg font-medium ${isBalanced
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                ? 'bg-primary-600 text-white hover:bg-primary-700'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
                         >
@@ -264,23 +268,23 @@ const PendingTransfersAlert = ({ accounts, onCreateTransfers, className = "" }) 
     };
 
     return (
-        <div className={`bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6 ${className}`}>
+        <div className={`bg-warning dark:bg-dark-600 border border-warning dark:border-warning rounded-lg p-4 mb-6 ${className}`}>
             {/* Main Alert Header */}
             <div className="flex items-center gap-3 mb-3">
                 <span className="text-2xl">🔄</span>
                 <div className="flex-1">
-                    <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                    <h3 className="font-semibold text-warning-800 dark:text-warning">
                         Pending Account Transfers
                     </h3>
-                    <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+                    <p className="text-warning-700 dark:text-warning-300 text-sm">
                         You have allocated funds that require {pendingTransfers.length} account transfer{pendingTransfers.length !== 1 ? 's' : ''}
                     </p>
                 </div>
                 <div className="text-right">
-                    <div className="text-lg font-bold text-yellow-800 dark:text-yellow-200">
+                    <div className="text-lg font-bold text-warning dark:text-warning">
                         {formatCurrency(totalAmount)}
                     </div>
-                    <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                    <div className="text-sm text-warning-600 dark:text-warning-400">
                         Total transfer amount
                     </div>
                 </div>
@@ -290,7 +294,7 @@ const PendingTransfersAlert = ({ accounts, onCreateTransfers, className = "" }) 
             <div className="flex items-center gap-3 mb-3">
                 <button
                     onClick={handleCreateAllTransfers}
-                    className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    className="flex items-center gap-2 bg-warning-600 hover:bg-warning-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                     <span>💸</span>
                     Create All Transfers
@@ -306,32 +310,32 @@ const PendingTransfersAlert = ({ accounts, onCreateTransfers, className = "" }) 
 
             {/* Transfer Details (Expandable) */}
             {showDetails && (
-                <div className="border-t border-yellow-200 dark:border-yellow-700 pt-3">
-                    <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-3">
+                <div className="border-t border-warning-200 dark:border-warning-700 pt-3">
+                    <h4 className="font-medium text-warning-800 dark:text-warning-200 mb-3">
                         Transfer Details:
                     </h4>
                     <div className="space-y-2">
                         {pendingTransfers.map((transfer) => (
                             <div
                                 key={transfer.id}
-                                className="flex items-center justify-between bg-yellow-100 dark:bg-yellow-900/30 rounded-lg p-3"
+                                className="flex items-center justify-between bg-warning-100 dark:bg-warning-900/30 rounded-lg p-3"
                             >
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 text-sm">
-                                        <span className="font-medium text-yellow-800 dark:text-yellow-200">
+                                        <span className="font-medium text-warning-800 dark:text-warning-200">
                                             {getAccountName(transfer.fromAccountId)}
                                         </span>
-                                        <span className="text-yellow-600 dark:text-yellow-400">→</span>
-                                        <span className="font-medium text-yellow-800 dark:text-yellow-200">
+                                        <span className="text-warning-600 dark:text-warning-400">→</span>
+                                        <span className="font-medium text-warning-800 dark:text-warning-200">
                                             {getAccountName(transfer.toAccountId)}
                                         </span>
                                     </div>
-                                    <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                                    <div className="text-xs text-warning-600 dark:text-warning-400 mt-1">
                                         {transfer.reason}
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <span className="font-bold text-yellow-800 dark:text-yellow-200">
+                                    <span className="font-bold text-warning-800 dark:text-warning-200">
                                         {formatCurrency(transfer.amount)}
                                     </span>
                                     <button
@@ -349,7 +353,7 @@ const PendingTransfersAlert = ({ accounts, onCreateTransfers, className = "" }) 
             )}
 
             {/* Help Text */}
-            <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-3 border-t border-yellow-200 dark:border-yellow-700 pt-2">
+            <div className="text-xs text-warning-600 dark:text-warning-400 mt-3 border-t border-warning-200 dark:border-warning-700 pt-2">
                 💡 <strong>Tip:</strong> These transfers were created when you allocated money to categories funded by accounts with insufficient funds.
                 Creating the transfers will move money between your accounts to support the allocations.
             </div>
@@ -358,6 +362,9 @@ const PendingTransfersAlert = ({ accounts, onCreateTransfers, className = "" }) 
 };
 
 export default function BudgetTransactions() {
+    // Breakpoint context for responsive design
+    const { mdAndDown } = useBreakpointsContext();
+
     // State for sidebar account selection
     const [selectedAccountId, setSelectedAccountId] = useState('all');
     const [showReconcileModal, setShowReconcileModal] = useState(false);
@@ -577,17 +584,34 @@ export default function BudgetTransactions() {
                             />
                         )}
 
-                        <TransactionsTab
-                            transactions={transactions}
-                            accounts={accounts}
-                            categories={categories}
-                            payees={payees}
-                            onAddPayee={handleAddPayee}
-                            onAddTransaction={handleAddTransaction}
-                            onEditTransaction={handleEditTransaction}
-                            onDeleteTransaction={handleDeleteTransaction}
-                            viewAccount={selectedAccountId}
-                        />
+                        {/* Responsive Transaction Views */}
+                        {mdAndDown ? (
+                            <React.Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+                                <MobileTransactionsView
+                                    transactions={transactions}
+                                    accounts={accounts}
+                                    categories={categories}
+                                    payees={payees}
+                                    onAddPayee={handleAddPayee}
+                                    onAddTransaction={handleAddTransaction}
+                                    onEditTransaction={handleEditTransaction}
+                                    onDeleteTransaction={handleDeleteTransaction}
+                                    viewAccount={selectedAccountId}
+                                />
+                            </React.Suspense>
+                        ) : (
+                            <TransactionsTab
+                                transactions={transactions}
+                                accounts={accounts}
+                                categories={categories}
+                                payees={payees}
+                                onAddPayee={handleAddPayee}
+                                onAddTransaction={handleAddTransaction}
+                                onEditTransaction={handleEditTransaction}
+                                onDeleteTransaction={handleDeleteTransaction}
+                                viewAccount={selectedAccountId}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

@@ -178,7 +178,7 @@ const ScheduledTransactionsRow = ({
                                 <div className="flex items-center space-x-2 ml-4">
                                     <button
                                         onClick={(e) => handleEditClick(scheduledTxn, e)}
-                                        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                        className="p-2 text-gray-500 hover:text-info-600 hover:bg-info-50 dark:hover:bg-info/20/20 rounded transition-colors"
                                         title="Edit scheduled transaction"
                                     >
                                         <Edit size={16} />

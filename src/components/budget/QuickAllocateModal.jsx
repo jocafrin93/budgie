@@ -230,21 +230,21 @@ const QuickAllocateModal = ({
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-dark-600">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white">
+                            <div className="w-10 h-10 bg-warning rounded-full flex items-center justify-center text-white">
                                 🔄
                             </div>
                             <div>
-                                <h3 className="text-xl font-semibold text-gray-900 dark:text-dark-100">
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                                     Cross-Account Transfer Required
                                 </h3>
-                                <p className="text-sm text-gray-600 dark:text-dark-300">
+                                <p className="text-sm text-gray-600 dark:text-gray-300">
                                     You need {formatCurrency(shortfall)} more to complete this allocation
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={() => setShowSourceAccountModal(false)}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-dark-300 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                         >
                             <X className="w-6 h-6" />
                         </button>
@@ -253,12 +253,12 @@ const QuickAllocateModal = ({
                     {/* Content */}
                     <div className="p-6">
                         <div className="mb-6">
-                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                            <div className="bg-warning-lighter/20 dark:bg-warning/20 border border-warning-light dark:border-warning rounded-lg p-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-yellow-600 dark:text-yellow-400">⚠️</span>
-                                    <span className="font-medium text-yellow-800 dark:text-yellow-200">Insufficient Funds</span>
+                                    <span className="text-warning dark:text-warning-light">⚠️</span>
+                                    <span className="font-medium text-warning-darker dark:text-warning-lighter">Insufficient Funds</span>
                                 </div>
-                                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                <p className="text-sm text-warning-dark dark:text-warning-light">
                                     You&lsquo;re trying to allocate {formatCurrency(totalAllocated)} but only have {formatCurrency(availableToAllocate)} available.
                                     Choose an account to transfer {formatCurrency(shortfall)} from:
                                 </p>
@@ -277,7 +277,7 @@ const QuickAllocateModal = ({
                                             className="w-full flex items-center justify-between p-4 border border-gray-200 dark:border-dark-600 rounded-lg hover:bg-gray-50 dark:hover:bg-dark-750 transition-colors"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
+                                                <div className="w-8 h-8 bg-info/50 rounded-full flex items-center justify-center text-white text-sm">
                                                     {account.name.charAt(0)}
                                                 </div>
                                                 <div className="text-left">
@@ -291,7 +291,7 @@ const QuickAllocateModal = ({
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-sm text-gray-500 dark:text-dark-400">Transfer</div>
-                                                <div className="font-medium text-blue-600 dark:text-blue-400">
+                                                <div className="font-medium text-info-600 dark:text-info-400">
                                                     {formatCurrency(shortfall)}
                                                 </div>
                                             </div>
@@ -337,21 +337,21 @@ const QuickAllocateModal = ({
                     {/* Header */}
                     <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-dark-600">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
+                            <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center text-white">
                                 <Zap className="w-5 h-5" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-semibold text-gray-900 dark:text-dark-100">
+                                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                                     Quick Allocate
                                 </h3>
-                                <p className="text-sm text-gray-600 dark:text-dark-300">
+                                <p className="text-sm text-gray-600 dark:text-gray-300">
                                     Allocate {formatCurrency(availableToAllocate)} to multiple categories at once
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-dark-300 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                         >
                             <X className="w-6 h-6" />
                         </button>
@@ -367,7 +367,7 @@ const QuickAllocateModal = ({
                                     <button
                                         onClick={() => setViewMode('total')}
                                         className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'total'
-                                            ? 'bg-blue-500 text-white'
+                                            ? 'bg-info/50 text-white'
                                             : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-600'
                                             }`}
                                     >
@@ -376,7 +376,7 @@ const QuickAllocateModal = ({
                                     <button
                                         onClick={() => setViewMode('by-account')}
                                         className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'by-account'
-                                            ? 'bg-blue-500 text-white'
+                                            ? 'bg-info/50 text-white'
                                             : 'text-gray-600 dark:text-dark-400 hover:bg-gray-100 dark:hover:bg-dark-600'
                                             }`}
                                     >
@@ -387,7 +387,7 @@ const QuickAllocateModal = ({
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={applySuggestions}
-                                    className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                                    className="px-3 py-1 text-sm bg-info/10 dark:bg-info/20/30 text-info-700 dark:text-info-300 rounded-lg hover:bg-info/20 dark:hover:bg-info/20/50 transition-colors"
                                 >
                                     Use Suggestions
                                 </button>
@@ -406,13 +406,13 @@ const QuickAllocateModal = ({
                             <div className="flex items-center gap-6">
                                 <div>
                                     <span className="text-sm text-gray-600 dark:text-dark-400">Available:</span>
-                                    <span className="ml-2 font-semibold text-green-600 dark:text-green-400">
+                                    <span className="ml-2 font-semibold text-success dark:text-success-light">
                                         {formatCurrency(availableToAllocate)}
                                     </span>
                                 </div>
                                 <div>
                                     <span className="text-sm text-gray-600 dark:text-dark-400">Allocating:</span>
-                                    <span className="ml-2 font-semibold text-blue-600 dark:text-blue-400">
+                                    <span className="ml-2 font-semibold text-info-600 dark:text-info-400">
                                         {formatCurrency(totalAllocated)}
                                     </span>
                                 </div>
@@ -420,7 +420,7 @@ const QuickAllocateModal = ({
                                     <span className="text-sm text-gray-600 dark:text-dark-400">Remaining:</span>
                                     <span className={`ml-2 font-semibold ${remaining >= 0
                                         ? 'text-gray-900 dark:text-dark-100'
-                                        : 'text-red-600 dark:text-red-400'
+                                        : 'text-error dark:text-error-light'
                                         }`}>
                                         {formatCurrency(remaining)}
                                     </span>
@@ -443,13 +443,13 @@ const QuickAllocateModal = ({
                                         <div className="space-y-1 text-sm">
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600 dark:text-dark-400">Available:</span>
-                                                <span className="font-medium text-green-600 dark:text-green-400">
+                                                <span className="font-medium text-success dark:text-success-light">
                                                     {formatCurrency(summary.totalAvailable)}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-600 dark:text-dark-400">Allocating:</span>
-                                                <span className="font-medium text-blue-600 dark:text-blue-400">
+                                                <span className="font-medium text-info-600 dark:text-info-400">
                                                     {formatCurrency(summary.currentlyAllocating)}
                                                 </span>
                                             </div>
@@ -506,7 +506,7 @@ const QuickAllocateModal = ({
                                                                     [category.id]: newAccountId
                                                                 }));
                                                             }}
-                                                            className="text-xs px-2 py-1 rounded-full border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            className="text-xs px-2 py-1 rounded-full border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 focus:ring-2 focus:ring-info-500 focus:border-transparent"
                                                         >
                                                             {accounts.map(account => (
                                                                 <option key={account.id} value={account.id}>
@@ -526,7 +526,7 @@ const QuickAllocateModal = ({
                                                         <span>Available: {formatCurrency(category.available || 0)}</span>
                                                         {/* Account Balance Info */}
                                                         {categoryAccount && (
-                                                            <span className="text-blue-600 dark:text-blue-400">
+                                                            <span className="text-info-600 dark:text-info-400">
                                                                 Account: {formatCurrency(categoryAccount.balance || 0)}
                                                             </span>
                                                         )}
@@ -539,7 +539,7 @@ const QuickAllocateModal = ({
                                         {suggested > 0 && (
                                             <div className="text-center">
                                                 <div className="text-xs text-gray-500 dark:text-dark-400">Suggested</div>
-                                                <div className="font-medium text-blue-600 dark:text-blue-400">
+                                                <div className="font-medium text-info-600 dark:text-info-400">
                                                     {formatCurrency(suggested)}
                                                 </div>
                                             </div>
@@ -560,7 +560,7 @@ const QuickAllocateModal = ({
                                                     step="0.01"
                                                     className={`w-24 pl-6 pr-2 py-2 text-sm border rounded-lg focus:ring-2 focus:border-transparent ${accountValidationInfo && !accountValidationInfo.isValid && allocation > 0
                                                         ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 text-red-900 dark:text-red-100 focus:ring-red-500'
-                                                        : 'border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 focus:ring-blue-500'
+                                                        : 'border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 focus:ring-info-500'
                                                         }`}
                                                 />
                                             </div>
@@ -580,7 +580,7 @@ const QuickAllocateModal = ({
                                             {suggested > 0 && (
                                                 <button
                                                     onClick={() => handleAllocationChange(category.id, suggested)}
-                                                    className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                                                    className="px-2 py-1 text-xs bg-info/10 dark:bg-info/20/30 text-info-700 dark:text-info-300 rounded hover:bg-info/20 dark:hover:bg-info/20/50 transition-colors"
                                                     title="Use suggested amount"
                                                 >
                                                     Suggested
@@ -625,8 +625,8 @@ const QuickAllocateModal = ({
                                 disabled={!canAllocate}
                                 className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-colors ${canAllocate
                                     ? needsCrossAccountTransfer
-                                        ? 'bg-orange-600 hover:bg-orange-700 text-white'
-                                        : 'bg-green-600 hover:bg-green-700 text-white'
+                                        ? 'bg-warning hover:bg-warning-dark text-white'
+                                        : 'bg-success hover:bg-success-dark text-white'
                                     : 'bg-gray-300 dark:bg-dark-600 text-gray-500 dark:text-dark-400 cursor-not-allowed'
                                     }`}
                             >

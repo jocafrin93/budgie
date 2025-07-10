@@ -442,7 +442,7 @@ const UnifiedEnvelopeBudgetView = ({
                                         setEditingItem(item);
                                         setShowItemForm(true);
                                     }}
-                                    className="font-medium text-gray-900 dark:text-dark-50 text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left"
+                                    className="font-medium text-gray-900 dark:text-dark-50 text-sm hover:text-info-600 dark:hover:text-info-400 transition-colors text-left"
                                 >
                                     {item.name}
                                 </button>
@@ -491,7 +491,7 @@ const UnifiedEnvelopeBudgetView = ({
                             <div className={`w-3 h-3 rounded-full ${category.color || 'bg-gray-400 dark:bg-dark-500'} border border-gray-300 dark:border-dark-500 shadow-sm`}></div>
                             <button
                                 onClick={() => handleEditCategory(category)}
-                                className={`font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left ${categoryData.type === 'single' && !categoryData.isActive
+                                className={`font-medium hover:text-info-600 dark:hover:text-info-400 transition-colors text-left ${categoryData.type === 'single' && !categoryData.isActive
                                     ? 'text-gray-500 dark:text-dark-400'
                                     : 'text-gray-900 dark:text-dark-50'
                                     }`}
@@ -519,7 +519,7 @@ const UnifiedEnvelopeBudgetView = ({
                                                 }
                                             }
                                         }}
-                                        className="p-1 text-gray-400 dark:text-dark-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                        className="p-1 text-gray-400 dark:text-dark-500 hover:text-info-600 dark:hover:text-info-400 hover:bg-info-50 dark:hover:bg-info/20/20 rounded transition-colors"
                                         title="Fund this category"
                                     >
                                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">

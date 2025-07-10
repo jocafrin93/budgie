@@ -15,7 +15,7 @@ export const useAccountManagement = () => {
       balance: 1000,
       clearedBalance: 950, // Cleared balance is typically less than total balance
       type: 'checking',
-      color: 'bg-blue-500',
+      color: 'bg-info/50',
       isDefault: true
     },
     {

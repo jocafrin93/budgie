@@ -85,6 +85,7 @@ const colors = {
     },
     indigo: twColors.indigo,
     blue: twColors.blue,
+    info: twColors.info,
     green: twColors.green,
     amber: twColors.amber,
     purple: twColors.purple,
@@ -113,4 +114,5 @@ const colors = {
     },
 };
 
-export { twColors, colors };
+export { colors, twColors };
+

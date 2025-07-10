@@ -56,7 +56,7 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                         <select
                             value={selectedCategoryId}
                             onChange={(e) => setSelectedCategoryId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500 dark:focus:ring-info-400"
                         >
                             <option value="">Select destination...</option>
                             <option value="ready-to-assign">Ready to Assign</option>
@@ -80,7 +80,7 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                             value={moveAmount}
                             onChange={(e) => setMoveAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                            className="w-full border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500 dark:focus:ring-info-400"
                             hideLabel={true}
                         />
                         {maxAmount > 0 && (
@@ -101,7 +101,7 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                     <button
                         onClick={handleMove}
                         disabled={!selectedCategoryId || !moveAmount || parseFloat(moveAmount) <= 0}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-2 bg-info/60 hover:bg-info/70 dark:bg-info/50 dark:hover:bg-info/60 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         Move Money
                     </button>

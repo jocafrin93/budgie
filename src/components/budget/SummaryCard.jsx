@@ -21,7 +21,7 @@ const SummaryCard = ({
     const valueColorClass =
         color === 'green' ? 'text-success' :
             color === 'red' ? 'text-error' :
-                color === 'blue' ? 'text-info' :
+                color === 'info' ? 'text-info' :
                     color === 'yellow' ? 'text-warning' :
                         color === 'neutral' ? 'text-gray-900 dark:text-dark-50' :
                             color; // Use custom color class if provided
@@ -31,7 +31,7 @@ const SummaryCard = ({
         progressColor === 'green' ? 'bg-success' :
             progressColor === 'red' ? 'bg-error' :
                 progressColor === 'yellow' ? 'bg-warning' :
-                    progressColor === 'blue' ? 'bg-info' :
+                    progressColor === 'info' ? 'bg-info' :
                         progressColor === 'gradient' ? 'bg-gradient-to-r from-warning-light to-error-light' :
                             progressColor || 'bg-success'; // Default to success
 

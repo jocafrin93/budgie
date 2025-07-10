@@ -54,7 +54,7 @@ const PendingTransfersAlert = ({
     };
 
     return (
-        <div className={`bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6 ${className}`}>
+        <div className={`bg-warning dark:bg-warning border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6 ${className}`}>
             {/* Main Alert Header */}
             <div className="flex items-center gap-3 mb-3">
                 <span className="text-2xl">🔄</span>
@@ -62,12 +62,12 @@ const PendingTransfersAlert = ({
                     <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
                         Pending Account Transfers
                     </h3>
-                    <p className="text-yellow-700 dark:text-yellow-300 text-sm">
+                    <p className="text-warning-700 dark:text-warning-300 text-sm">
                         You have allocated funds that require {pendingTransfers.length} account transfer{pendingTransfers.length !== 1 ? 's' : ''}
                     </p>
                 </div>
                 <div className="text-right">
-                    <div className="text-lg font-bold text-yellow-800 dark:text-yellow-200">
+                    <div className="text-lg font-bold text-yellow-800 dark:text-warning-200">
                         {formatCurrency(totalAmount)}
                     </div>
                     <div className="text-sm text-yellow-600 dark:text-yellow-400">

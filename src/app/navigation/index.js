@@ -3,7 +3,6 @@ import {
     CalendarIcon,
     ChartBarIcon,
     CogIcon,
-    CreditCardIcon,
     HomeIcon
 } from '@heroicons/react/24/outline';
 import SettingIcon from 'assets/dualicons/setting.svg?react';
@@ -18,14 +17,6 @@ export const navigation = [
         title: 'Home',
         transKey: 'nav.dashboards.home',
         Icon: HomeIcon,
-    },
-    {
-        id: 'accounts',
-        path: '/budget/accounts',
-        type: NAV_TYPE_ITEM,
-        title: 'Accounts',
-        transKey: 'nav.budget.accounts',
-        Icon: CreditCardIcon,
     },
     {
         id: 'overview',

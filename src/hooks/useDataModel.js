@@ -9,7 +9,7 @@ import {
   removePlanningItem,
   updatePlanningItem
 } from '../utils/dataModelUtils';
-import { useLocalStorage } from './useLocalStorage';
+import { useStorage } from './useStorage';
 
 /**
  * Custom hook for managing the unified data model
@@ -25,16 +25,16 @@ export const useDataModel = ({
   payFrequencyOptions = []
 } = {}) => {
   // Legacy state (for backward compatibility)
-  const [expenses, setExpenses] = useLocalStorage('budgetCalc_expenses', initialExpenses);
-  const [savingsGoals, setSavingsGoals] = useLocalStorage('budgetCalc_savingsGoals', initialSavingsGoals);
+  const [expenses, setExpenses] = useStorage('budgetCalc_expenses', initialExpenses);
+  const [savingsGoals, setSavingsGoals] = useStorage('budgetCalc_savingsGoals', initialSavingsGoals);
 
   // Unified data model state
-  const [planningItems, setPlanningItems] = useLocalStorage('budgetCalc_planningItems', []);
-  const [activeBudgetAllocations, setActiveBudgetAllocations] = useLocalStorage('budgetCalc_activeBudgetAllocations', []);
+  const [planningItems, setPlanningItems] = useStorage('budgetCalc_planningItems', []);
+  const [activeBudgetAllocations, setActiveBudgetAllocations] = useStorage('budgetCalc_activeBudgetAllocations', []);
 
   // Categories and accounts
-  const [categories, setCategories] = useLocalStorage('budgetCalc_categories', initialCategories);
-  const [accounts, setAccounts] = useLocalStorage('budgetCalc_accounts', initialAccounts);
+  const [categories, setCategories] = useStorage('budgetCalc_categories', initialCategories);
+  const [accounts, setAccounts] = useStorage('budgetCalc_accounts', initialAccounts);
 
   // Use refs to track if we're in a sync operation to prevent infinite loops
   const isSyncing = useRef(false);

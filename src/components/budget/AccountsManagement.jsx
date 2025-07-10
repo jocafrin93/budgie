@@ -137,12 +137,12 @@ const AccountFormModal = ({
                         </Select>
 
                         {/* Starting Balance Section */}
-                        <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div className="space-y-3 p-4 bg-info-lighter/20 dark:bg-info/20 border border-info-light dark:border-info rounded-lg">
                             <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <h3 className="font-medium text-blue-900 dark:text-blue-100">Starting Balance</h3>
+                                <div className="w-2 h-2 bg-info rounded-full"></div>
+                                <h3 className="font-medium text-info-dark dark:text-info-light">Starting Balance</h3>
                             </div>
-                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                            <p className="text-sm text-info-dark dark:text-info-light">
                                 {isEdit ?
                                     "This is the balance when you first added this account to the system." :
                                     "Enter your current account balance. This will be your starting point for transaction tracking."
@@ -169,7 +169,7 @@ const AccountFormModal = ({
                             </div>
 
                             {isEdit && (
-                                <div className="text-xs text-blue-700 dark:text-blue-300">
+                                <div className="text-xs text-info-700 dark:text-info-300">
                                     💡 Starting balance and date cannot be changed after account creation. Use transactions to track balance changes.
                                 </div>
                             )}
@@ -275,7 +275,7 @@ const ReconciliationModal = ({
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Bank Balance Input */}
-                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div className="p-4 bg-info-lighter/20 dark:bg-info/20 border border-info-light dark:border-info rounded-lg">
                             <CurrencyField
                                 label="Bank Statement Balance"
                                 value={bankBalance}
@@ -283,7 +283,7 @@ const ReconciliationModal = ({
                                 required
                                 placeholder="Enter your bank balance"
                             />
-                            <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
+                            <p className="text-sm text-info-dark dark:text-info-light mt-2">
                                 Enter the balance shown on your bank statement or online banking.
                             </p>
                         </div>
@@ -298,36 +298,36 @@ const ReconciliationModal = ({
                                 <div className="text-xs text-gray-500 dark:text-gray-400">All transactions</div>
                             </div>
 
-                            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <div className="text-sm text-green-600 dark:text-green-400">Cleared Balance</div>
-                                <div className="text-lg font-bold text-green-700 dark:text-green-300">
+                            <div className="text-center p-4 bg-success-lighter/20 dark:bg-success/20 rounded-lg">
+                                <div className="text-sm text-success dark:text-success-light">Cleared Balance</div>
+                                <div className="text-lg font-bold text-success-dark dark:text-success-light">
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balances.clearedBalance)}
                                 </div>
-                                <div className="text-xs text-green-600 dark:text-green-400">Cleared transactions</div>
+                                <div className="text-xs text-success dark:text-success-light">Cleared transactions</div>
                             </div>
 
-                            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                                <div className="text-sm text-yellow-600 dark:text-yellow-400">Pending</div>
-                                <div className="text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                            <div className="text-center p-4 bg-warning-lighter/20 dark:bg-warning/20 rounded-lg">
+                                <div className="text-sm text-warning dark:text-warning-light">Pending</div>
+                                <div className="text-lg font-bold text-warning-dark dark:text-warning-light">
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balances.pendingBalance)}
                                 </div>
-                                <div className="text-xs text-yellow-600 dark:text-yellow-400">Uncleared transactions</div>
+                                <div className="text-xs text-warning dark:text-warning-light">Uncleared transactions</div>
                             </div>
                         </div>
 
                         {/* Difference Display */}
                         <div className={`p-4 rounded-lg border ${isBalanced
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                            ? 'bg-success-lighter/20 dark:bg-success/20 border-success-light dark:border-success'
+                            : 'bg-error-lighter/20 dark:bg-error/20 border-error-light dark:border-error'
                             }`}>
                             <div className="text-center">
-                                <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                <div className={`text-sm ${isBalanced ? 'text-success dark:text-success-light' : 'text-error dark:text-error-light'}`}>
                                     Difference
                                 </div>
-                                <div className={`text-2xl font-bold ${isBalanced ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                <div className={`text-2xl font-bold ${isBalanced ? 'text-success-dark dark:text-success-light' : 'text-error-dark dark:text-error-light'}`}>
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.abs(difference))}
                                 </div>
-                                <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                <div className={`text-sm ${isBalanced ? 'text-success dark:text-success-light' : 'text-error dark:text-error-light'}`}>
                                     {isBalanced ? '✅ Perfect match!' : `${difference > 0 ? 'Bank higher' : 'Bank lower'} - Review transactions`}
                                 </div>
                             </div>
@@ -454,9 +454,9 @@ export default function AccountsManagement({
             return {
                 status: 'never',
                 message: 'Never reconciled',
-                color: 'text-red-600',
-                bgColor: 'bg-red-50 dark:bg-red-900/20',
-                borderColor: 'border-red-200 dark:border-red-800'
+                color: 'text-error',
+                bgColor: 'bg-error-lighter/20 dark:bg-error/20',
+                borderColor: 'border-error-light dark:border-error'
             };
         }
 
@@ -468,33 +468,33 @@ export default function AccountsManagement({
             return {
                 status: 'recent',
                 message: `${daysDiff === 0 ? 'Today' : `${daysDiff} day${daysDiff === 1 ? '' : 's'} ago`}`,
-                color: 'text-green-600',
-                bgColor: 'bg-green-50 dark:bg-green-900/20',
-                borderColor: 'border-green-200 dark:border-green-800'
+                color: 'text-success',
+                bgColor: 'bg-success-lighter/20 dark:bg-success/20',
+                borderColor: 'border-success-light dark:border-success'
             };
         } else if (daysDiff <= 7) {
             return {
                 status: 'warning',
                 message: `${daysDiff} days ago`,
-                color: 'text-yellow-600',
-                bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
-                borderColor: 'border-yellow-200 dark:border-yellow-800'
+                color: 'text-warning',
+                bgColor: 'bg-warning-lighter/20 dark:bg-warning/20',
+                borderColor: 'border-warning-light dark:border-warning'
             };
         } else if (daysDiff <= 14) {
             return {
                 status: 'overdue',
                 message: `${daysDiff} days ago - Reconcile recommended`,
-                color: 'text-orange-600',
-                bgColor: 'bg-orange-50 dark:bg-orange-900/20',
-                borderColor: 'border-orange-200 dark:border-orange-800'
+                color: 'text-warning-dark',
+                bgColor: 'bg-warning-lighter/20 dark:bg-warning/20',
+                borderColor: 'border-warning-light dark:border-warning'
             };
         } else {
             return {
                 status: 'critical',
                 message: `${daysDiff} days ago - Reconcile overdue`,
-                color: 'text-red-600',
-                bgColor: 'bg-red-50 dark:bg-red-900/20',
-                borderColor: 'border-red-200 dark:border-red-800'
+                color: 'text-error',
+                bgColor: 'bg-error-lighter/20 dark:bg-error/20',
+                borderColor: 'border-error-light dark:border-error'
             };
         }
     };
@@ -546,7 +546,7 @@ export default function AccountsManagement({
 
                 <Card className="p-4">
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
+                        <div className="text-2xl font-bold text-success">
                             {activeAccounts.length}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -557,7 +557,7 @@ export default function AccountsManagement({
 
                 <Card className="p-4">
                     <div className="text-center">
-                        <div className={`text-2xl font-bold ${totalWorkingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className={`text-2xl font-bold ${totalWorkingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                             {formatCurrency(totalWorkingBalance)}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -626,13 +626,13 @@ export default function AccountsManagement({
                                                     return (
                                                         <>
                                                             <div className="flex items-center space-x-2">
-                                                                <span className={`font-medium ${balances.workingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                <span className={`font-medium ${balances.workingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                                                                     {formatCurrency(balances.workingBalance)}
                                                                 </span>
                                                                 <span className="text-xs text-gray-500">Working</span>
                                                             </div>
                                                             <div className="flex items-center space-x-2">
-                                                                <span className="text-sm text-green-600">
+                                                                <span className="text-sm text-success">
                                                                     {formatCurrency(balances.clearedBalance)}
                                                                 </span>
                                                                 <span className="text-xs text-gray-500">Cleared</span>
@@ -657,7 +657,7 @@ export default function AccountsManagement({
                                                     title={account.isActive ? 'Deactivate Account' : 'Activate Account'}
                                                 >
                                                     {account.isActive ? (
-                                                        <TbEye className="size-3 text-green-600" />
+                                                        <TbEye className="size-3 text-success" />
                                                     ) : (
                                                         <TbEyeOff className="size-3 text-gray-400" />
                                                     )}
@@ -678,7 +678,7 @@ export default function AccountsManagement({
                                                     variant="flat"
                                                     size="xs"
                                                     title="Reconcile Account"
-                                                    className="text-blue-600 hover:text-blue-700"
+                                                    className="text-info-600 hover:text-info-700"
                                                 >
                                                     ⚖️
                                                 </Button>
@@ -746,7 +746,7 @@ export default function AccountsManagement({
                                     title={account.isActive ? 'Deactivate Account' : 'Activate Account'}
                                 >
                                     {account.isActive ? (
-                                        <TbEye className="size-4 text-green-600" />
+                                        <TbEye className="size-4 text-success" />
                                     ) : (
                                         <TbEyeOff className="size-4 text-gray-400" />
                                     )}
@@ -785,7 +785,7 @@ export default function AccountsManagement({
                                         <>
                                             <div className="text-center mb-3">
                                                 <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Working Balance</div>
-                                                <div className={`text-2xl font-bold ${balances.workingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                <div className={`text-2xl font-bold ${balances.workingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                                                     {formatCurrency(balances.workingBalance)}
                                                 </div>
                                             </div>
@@ -793,13 +793,13 @@ export default function AccountsManagement({
                                             <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                                                 <div className="text-center">
                                                     <div className="text-gray-600 dark:text-gray-400">Cleared</div>
-                                                    <div className="font-medium text-green-600">
+                                                    <div className="font-medium text-success">
                                                         {formatCurrency(balances.clearedBalance)}
                                                     </div>
                                                 </div>
                                                 <div className="text-center">
                                                     <div className="text-gray-600 dark:text-gray-400">Pending</div>
-                                                    <div className="font-medium text-yellow-600">
+                                                    <div className="font-medium text-warning">
                                                         {formatCurrency(balances.pendingBalance)}
                                                     </div>
                                                 </div>
@@ -819,7 +819,7 @@ export default function AccountsManagement({
                                                     }}
                                                     variant="filled"
                                                     size="sm"
-                                                    className="bg-blue-600 hover:bg-blue-700"
+                                                    className="bg-info/60 hover:bg-info/70"
                                                 >
                                                     ⚖️ Reconcile Account
                                                 </Button>

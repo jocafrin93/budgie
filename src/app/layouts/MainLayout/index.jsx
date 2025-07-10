@@ -3,12 +3,16 @@ import clsx from "clsx";
 import { Outlet } from "react-router";
 
 // Local Imports
+import { useBreakpointsContext } from "app/contexts/breakpoint/context";
 import { Header } from "./Header";
+import { MobileBottomNav } from "./MobileBottomNav";
 import { Sidebar } from "./Sidebar";
 
 // ----------------------------------------------------------------------
 
 export default function MainLayout() {
+  const { mdAndDown } = useBreakpointsContext();
+
   return (
     <>
       <Header />
@@ -17,7 +21,7 @@ export default function MainLayout() {
       >
         <Outlet />
       </main>
-      <Sidebar />
+      {mdAndDown ? <MobileBottomNav /> : <Sidebar />}
     </>
   );
 }

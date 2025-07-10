@@ -531,7 +531,7 @@ const PaycheckManager = ({
 
                                     {/* Next Paycheck Dates */}
                                     {showDates === paycheck.id && (
-                                        <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
+                                        <div className="mt-3 p-2 bg-info-50 dark:bg-info/20/20 rounded text-xs">
                                             <div className="font-medium mb-1 text-gray-900 dark:text-dark-50">Next Paycheck Dates:</div>
                                             <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                                                 {nextDates.map((date, idx) => (
@@ -547,21 +547,21 @@ const PaycheckManager = ({
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={() => handleShowDates(paycheck.id)}
-                                        className="p-1 text-xs rounded hover:bg-blue-100 dark:hover:bg-blue-900/20"
+                                        className="p-1 text-xs rounded hover:bg-info/10 dark:hover:bg-info/20/20"
                                         title="Show next paycheck dates"
                                     >
                                         📅
                                     </button>
                                     <button
                                         onClick={() => togglePaycheckActive(paycheck.id)}
-                                        className="p-1 text-xs rounded hover:bg-blue-100 dark:hover:bg-blue-900/20"
+                                        className="p-1 text-xs rounded hover:bg-info/10 dark:hover:bg-info/20/20"
                                         title={paycheck.isActive ? "Disable paycheck" : "Enable paycheck"}
                                     >
                                         {paycheck.isActive ? '✅' : '❌'}
                                     </button>
                                     <button
                                         onClick={() => handleEditPaycheck(paycheck)}
-                                        className="p-1 text-xs rounded hover:bg-blue-100 dark:hover:bg-blue-900/20"
+                                        className="p-1 text-xs rounded hover:bg-info/10 dark:hover:bg-info/20/20"
                                         title="Edit paycheck"
                                     >
                                         ✏️
@@ -635,7 +635,7 @@ const PaycheckManager = ({
                                     value={formValues.name}
                                     onChange={(e) => setFormValues(prev => ({ ...prev, name: e.target.value }))}
                                     placeholder="e.g., Main Job, Side Gig"
-                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
                                 />
                             </div>
 
@@ -644,7 +644,7 @@ const PaycheckManager = ({
                                 <select
                                     value={formValues.frequency}
                                     onChange={(e) => setFormValues(prev => ({ ...prev, frequency: e.target.value }))}
-                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
                                 >
                                     {frequencyOptions.map(option => (
                                         <option key={option.value} value={option.value}>
@@ -662,7 +662,7 @@ const PaycheckManager = ({
                                     type="date"
                                     value={formValues.startDate}
                                     onChange={(e) => setFormValues(prev => ({ ...prev, startDate: e.target.value }))}
-                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
                                 />
                             </div>
 
@@ -753,7 +753,7 @@ const PaycheckManager = ({
                                                         }]
                                                     }));
                                                 }}
-                                                className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
                                             >
                                                 {accounts.map(account => (
                                                     <option key={account.id} value={account.id}>
@@ -789,7 +789,7 @@ const PaycheckManager = ({
                                                         <select
                                                             value={dist.accountId}
                                                             onChange={(e) => handleDistributionChange(index, 'accountId', e.target.value)}
-                                                            className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                            className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
                                                         >
                                                             {accounts.map(account => (
                                                                 <option key={account.id} value={account.id}>
@@ -829,7 +829,7 @@ const PaycheckManager = ({
                                     {formValues.accountDistribution.length < accounts.length && (
                                         <button
                                             onClick={handleAddAccount}
-                                            className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                            className="mt-2 text-sm text-info-600 dark:text-info-400 hover:text-info-800 dark:hover:text-info-300"
                                         >
                                             + Add Another Account
                                         </button>

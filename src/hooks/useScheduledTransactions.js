@@ -1,6 +1,6 @@
 // src/hooks/useScheduledTransactions.js
 import { useCallback, useEffect } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useStorage } from './useStorage';
 
 /**
  * Custom hook for managing scheduled transactions
@@ -8,7 +8,7 @@ import { useLocalStorage } from './useLocalStorage';
  */
 export const useScheduledTransactions = (addTransaction) => {
     // Scheduled transactions state
-    const [scheduledTransactions, setScheduledTransactions] = useLocalStorage('budgetCalc_scheduledTransactions', []);
+    const [scheduledTransactions, setScheduledTransactions] = useStorage('budgetCalc_scheduledTransactions', []);
 
     /**
      * Generate next occurrence date based on frequency

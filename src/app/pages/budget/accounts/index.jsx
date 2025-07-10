@@ -27,7 +27,7 @@ export default function BudgetAccounts() {
             balance: accountData.startingBalance || 0,
             startingBalance: accountData.startingBalance || 0,
             startingBalanceDate: accountData.startingBalanceDate,
-            color: accountData.color || 'bg-blue-500',
+            color: accountData.color || 'bg-primary-500',
             isDefault: accounts.length === 0, // First account becomes default
             // Additional fields that the new component supports
             institution: accountData.institution,
