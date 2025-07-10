@@ -268,7 +268,7 @@ export default function BudgetCalendar() {
                                                 </div>
 
                                                 {/* Quick Actions */}
-                                                <div className="flex items-center space-x-2 pt-2 border-t border-gray-100 dark:border-gray-600">
+                                                <div className="flex items-center space-x-2 pt-2 border-t border-gray-300 dark:border-gray-600">
                                                     <button
                                                         onClick={() => handleQuickAction('payNow', txn)}
                                                         className="flex items-center space-x-1 px-3 py-1.5 text-xs bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 rounded-md transition-colors"

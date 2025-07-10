@@ -112,7 +112,7 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
-                    className="w-full px-3 py-2 pr-10 border border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-3 py-2 pr-10 border border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                 />
 
                 <button
@@ -128,7 +128,7 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-blue-300 dark:border-blue-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {/* Existing payees */}
                     {filteredPayees.length > 0 && (
                         <div>
@@ -137,7 +137,7 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
                                     key={index}
                                     type="button"
                                     onClick={() => handleSelectPayee(payee)}
-                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                                    className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-900 dark:text-gray-100 transition-colors first:rounded-t-lg last:rounded-b-lg"
                                 >
                                     {payee}
                                 </button>
@@ -150,10 +150,10 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
                         <button
                             type="button"
                             onClick={handleAddNewPayee}
-                            className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors border-t border-gray-200 dark:border-gray-600 flex items-center space-x-2"
+                            className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400 transition-colors border-t border-blue-200 dark:border-blue-600 flex items-center space-x-2"
                         >
                             <span>+</span>
-                            <span>Add "{inputValue}"</span>
+                            <span>Add &#34;{inputValue}&#34;</span>
                         </button>
                     )}
 
@@ -246,6 +246,12 @@ const UnifiedItemForm = ({
         monthlyContribution: item?.monthlyContribution !== undefined ? item.monthlyContribution : 0,
         monthlyPercentage: item?.monthlyPercentage !== undefined ? item.monthlyPercentage : 0,
         alreadySaved: item?.alreadySaved !== undefined ? item.alreadySaved : 0,
+
+        // Scheduled transaction fields
+        createScheduledTransactions: item?.createScheduledTransactions || false,
+        scheduledEndCondition: item?.scheduledEndCondition || 'indefinite',
+        scheduledEndDate: item?.scheduledEndDate || '',
+        scheduledMaxOccurrences: item?.scheduledMaxOccurrences || 12,
     };
 
     console.log('DEBUG - Form initialValues:', initialValues);
@@ -697,46 +703,122 @@ const UnifiedItemForm = ({
                                     />
                                 )}
 
-                                {/* Due Date and Payee Fields */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <Input
-                                        {...form.getFieldProps('dueDate')}
-                                        label="Due Date"
-                                        type="date"
-                                        description="Optional - leave blank if no specific due date"
-                                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                                    />
+                                {/* Due Date - Always show */}
+                                <Input
+                                    {...form.getFieldProps('dueDate')}
+                                    label="Due Date (Optional)"
+                                    type="date"
+                                    className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                />
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                            Payee (Optional)
-                                        </label>
-                                        <PayeeAutocompleteComponent
-                                            value={form.values.payee}
-                                            onChange={form.handleChange}
-                                            payees={payees}
-                                            onAddPayee={handleAddPayee}
-                                            placeholder="Enter payee name"
-                                        />
+                                {/* Frequency - Always show */}
+                                <Select
+                                    {...form.getFieldProps('frequency')}
+                                    label="Frequency"
+                                    data={formFrequencyOptions}
+                                    className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                />
+
+                                {/* Scheduled Transactions Option - Only show if due date AND frequency are filled */}
+                                {form.values.dueDate && form.values.frequency && (
+                                    <div className="space-y-3 pt-4 border-t border-blue-200 dark:border-blue-700">
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                checked={form.values.createScheduledTransactions}
+                                                onChange={(e) => form.setFieldValue('createScheduledTransactions', e.target.checked)}
+                                            />
+                                            <label className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                                Create scheduled transactions for this expense
+                                            </label>
+                                        </div>
+
+                                        {/* Payee and End Conditions - Only show if scheduled transactions is checked */}
+                                        {form.values.createScheduledTransactions && (
+                                            <div className="ml-6 space-y-4 p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                                <p className="text-xs text-blue-800 dark:text-blue-200">
+                                                    Scheduled transactions will be created based on the due date and frequency above.
+                                                </p>
+
+                                                {/* Payee Field */}
+                                                <div>
+                                                    <label className="block text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                                                        Payee (Optional)
+                                                    </label>
+                                                    <PayeeAutocompleteComponent
+                                                        value={form.values.payee}
+                                                        onChange={form.handleChange}
+                                                        payees={payees}
+                                                        onAddPayee={handleAddPayee}
+                                                        placeholder="Enter payee name"
+                                                    />
+                                                </div>
+
+                                                {/* End Condition Selection */}
+                                                <div className="space-y-2">
+                                                    <label className="block text-sm font-medium text-blue-900 dark:text-blue-100">
+                                                        End Condition
+                                                    </label>
+                                                    <div className="space-y-2">
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="scheduledEndCondition"
+                                                                value="until_date"
+                                                                checked={form.values.scheduledEndCondition === 'until_date'}
+                                                                onChange={form.handleChange}
+                                                                className="mr-2"
+                                                            />
+                                                            <span className="text-sm text-blue-900 dark:text-blue-100">Repeat until date</span>
+                                                        </label>
+                                                        {form.values.scheduledEndCondition === 'until_date' && (
+                                                            <Input
+                                                                name="scheduledEndDate"
+                                                                type="date"
+                                                                value={form.values.scheduledEndDate}
+                                                                onChange={form.handleChange}
+                                                                className="ml-6 border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                            />
+                                                        )}
+
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="scheduledEndCondition"
+                                                                value="max_occurrences"
+                                                                checked={form.values.scheduledEndCondition === 'max_occurrences'}
+                                                                onChange={form.handleChange}
+                                                                className="mr-2"
+                                                            />
+                                                            <span className="text-sm text-blue-900 dark:text-blue-100">Number of payments</span>
+                                                        </label>
+                                                        {form.values.scheduledEndCondition === 'max_occurrences' && (
+                                                            <Input
+                                                                name="scheduledMaxOccurrences"
+                                                                type="number"
+                                                                min="1"
+                                                                value={form.values.scheduledMaxOccurrences}
+                                                                onChange={form.handleChange}
+                                                                placeholder="12"
+                                                                className="ml-6 w-24 border-blue-300 dark:border-blue-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                            />
+                                                        )}
+
+                                                        <label className="flex items-center">
+                                                            <input
+                                                                type="radio"
+                                                                name="scheduledEndCondition"
+                                                                value="indefinite"
+                                                                checked={form.values.scheduledEndCondition === 'indefinite'}
+                                                                onChange={form.handleChange}
+                                                                className="mr-2"
+                                                            />
+                                                            <span className="text-sm text-blue-900 dark:text-blue-100">Repeat indefinitely</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-
-                                {/* Recurring Checkbox */}
-                                {form.values.dueDate && (
-                                    <Checkbox
-                                        {...form.getFieldProps('isRecurring')}
-                                        label="This is a recurring expense"
-                                    />
-                                )}
-
-                                {/* Frequency Field */}
-                                {form.values.dueDate && form.values.isRecurring && (
-                                    <Select
-                                        {...form.getFieldProps('frequency')}
-                                        label="Frequency"
-                                        data={formFrequencyOptions}
-                                        description="How often does this expense repeat?"
-                                    />
                                 )}
                             </>
                         ) : (

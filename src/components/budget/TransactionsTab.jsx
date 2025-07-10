@@ -298,7 +298,7 @@ const PayeeAutocompleteInline = ({
                                      border-t border-gray-200 dark:border-gray-600 flex items-center space-x-2"
                         >
                             <span>+</span>
-                            <span>"Add {inputValue}&quot;</span>
+                            <span>&#34;Add {inputValue}&quot;</span>
                         </button>
                     )}
 

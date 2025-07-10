@@ -117,9 +117,9 @@ export default function AccountBalanceSidebar({
     const activeAccounts = accounts.filter(account => account.isActive !== false);
 
     return (
-        <div className={`bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 ${className}`}>
+        <div className={`bg-gray-100 dark:bg-dark-700 border-r border-gray-300 dark:border-gray-700 ${className}`}>
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="p-4 border-b border-gray-300 dark:border-gray-700">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                         <TbWallet className="size-5 text-gray-600 dark:text-gray-400" />
@@ -141,7 +141,7 @@ export default function AccountBalanceSidebar({
                 {/* Total Balance - Always visible */}
                 <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="text-center">
-                        <div className={`text-lg font-bold ${totalWorkingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className={`text-lg font-bold ${totalWorkingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                             {formatCurrency(totalWorkingBalance)}
                         </div>
                         {!isCollapsed && (
@@ -159,7 +159,7 @@ export default function AccountBalanceSidebar({
                     {/* All Accounts Option */}
                     <button
                         onClick={() => onAccountSelect('all')}
-                        className={`w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-600 transition-colors ${selectedAccountId === 'all' ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
+                        className={`w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-600 transition-colors ${selectedAccountId === 'all' ? 'bg-primary-50 dark:bg-primary-900/20 border-l-4 border-l-primary-500' : ''
                             }`}
                     >
                         <div className="flex items-center justify-between">
@@ -188,7 +188,7 @@ export default function AccountBalanceSidebar({
                             <div key={account.id} className="border-b border-gray-100 dark:border-gray-600">
                                 <button
                                     onClick={() => onAccountSelect(account.id)}
-                                    className={`w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
+                                    className={`w-full p-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${isSelected ? 'bg-primary-50 dark:bg-primary-900/20 border-l-4 border-l-primary-500' : ''
                                         }`}
                                 >
                                     <div className="flex items-center justify-between">
@@ -218,11 +218,11 @@ export default function AccountBalanceSidebar({
 
                                 {/* Account Details - Show when selected */}
                                 {isSelected && (
-                                    <div className="px-3 pb-3 bg-blue-50 dark:bg-blue-900/10">
+                                    <div className="px-3 pb-3 bg-primary-50 dark:bg-primary-900/20 border-l-4 border-l-primary-500">
                                         {/* Balance Breakdown */}
                                         <div className="grid grid-cols-2 gap-2 mb-3 text-xs">
                                             <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
-                                                <div className="text-green-600 font-medium">
+                                                <div className="text-success font-medium">
                                                     {formatCurrency(balances.clearedBalance)}
                                                 </div>
                                                 <div className="text-gray-500">Cleared</div>
@@ -250,7 +250,7 @@ export default function AccountBalanceSidebar({
                                             }}
                                             variant="filled"
                                             size="xs"
-                                            className="w-full bg-blue-600 hover:bg-blue-700 text-xs"
+                                            className="w-full bg-primary-600 hover:bg-primary-700 text-xs"
                                         >
                                             ⚖️ Reconcile
                                         </Button>
