@@ -45,7 +45,15 @@ export default function BudgetSettings() {
     };
 
     const handleDeletePayee = (payeeToDelete) => {
-        setPayees(prev => prev.filter(payee => payee !== payeeToDelete));
+        console.log('DEBUG: Deleting payee:', payeeToDelete);
+        console.log('DEBUG: Current payees before deletion:', payees);
+
+        setPayees(prev => {
+            const newPayees = prev.filter(payee => payee !== payeeToDelete);
+            console.log('DEBUG: New payees after deletion:', newPayees);
+            console.log('DEBUG: Array changed?', prev.length !== newPayees.length);
+            return newPayees;
+        });
     };
 
     return (

@@ -218,6 +218,12 @@ export const useCloudStorage = (key, defaultValue) => {
 
         // Prevent saving the same data multiple times
         const dataString = JSON.stringify(data);
+        console.log('DEBUG: Checking if data changed for', key);
+        console.log('DEBUG: Current data:', data);
+        console.log('DEBUG: Last saved data string:', lastSavedValueRef.current);
+        console.log('DEBUG: New data string:', dataString);
+        console.log('DEBUG: Strings equal?', lastSavedValueRef.current === dataString);
+
         if (lastSavedValueRef.current === dataString) {
             console.log('Data unchanged, skipping save to Drive');
             return;
