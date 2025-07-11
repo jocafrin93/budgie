@@ -229,6 +229,8 @@ export const useCloudStorage = (key, defaultValue) => {
             return;
         }
 
+        console.log('Data changed, saving to Drive. Previous:', lastSavedValueRef.current?.length || 0, 'chars, New:', dataString.length, 'chars');
+
         isSavingRef.current = true;
 
         try {
