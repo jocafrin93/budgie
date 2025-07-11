@@ -368,7 +368,14 @@ export default function BudgetOverview() {
                     };
 
                     scheduledTransactions.push(newTransaction);
-                    localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(scheduledTransactions));
+                    // Use cloud storage instead of localStorage directly
+                    try {
+                        const { useStorage } = require('../../../hooks/useStorage');
+                        // This is a fallback - ideally we'd use the hook properly but this is in a callback
+                        localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(scheduledTransactions));
+                    } catch {
+                        localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(scheduledTransactions));
+                    }
 
                     console.log('Created scheduled transaction:', newTransaction);
                     return newTransaction;

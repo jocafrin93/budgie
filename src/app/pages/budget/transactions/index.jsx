@@ -383,10 +383,15 @@ export default function BudgetTransactions() {
     // Load scheduled transactions component dynamically
     const [ScheduledTransactionsRow, setScheduledTransactionsRow] = useState(null);
 
-    // Use scheduled transactions hook directly (not dynamically)
+    // Use proper scheduled transactions hook with cloud storage
     const scheduledTransactionsHook = React.useMemo(() => {
         try {
-            // Import the hook functions directly and create a simple wrapper
+            // Dynamic import of the hook to avoid build issues
+            const { useScheduledTransactions } = require('../../../../hooks/useScheduledTransactions');
+            return useScheduledTransactions(addTransaction);
+        } catch (error) {
+            console.error('Error loading scheduled transactions hook:', error);
+            // Fallback to localStorage-based implementation
             const getUpcomingScheduledTransactions = (days = 30) => {
                 const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
                 const scheduledTransactions = stored ? JSON.parse(stored) : [];
@@ -403,36 +408,25 @@ export default function BudgetTransactions() {
             const editScheduledTransaction = (id, updates) => {
                 const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
                 const scheduledTransactions = stored ? JSON.parse(stored) : [];
-
                 const updated = scheduledTransactions.map(txn =>
                     txn.id === id ? { ...txn, ...updates } : txn
                 );
-
                 localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updated));
-            };
-
-            const skipScheduledTransaction = (id) => {
-                editScheduledTransaction(id, { isSkipped: true, skippedAt: new Date().toISOString() });
             };
 
             const activateScheduledTransactionEarly = (id) => {
                 const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
                 const scheduledTransactions = stored ? JSON.parse(stored) : [];
-
                 const transaction = scheduledTransactions.find(txn => txn.id === id);
                 if (transaction) {
-                    // Create actual transaction
                     const actualTransaction = {
                         ...transaction,
-                        id: undefined, // Let addTransaction generate new ID
+                        id: undefined,
                         isScheduled: false,
                         scheduledTransactionId: transaction.id,
-                        date: new Date().toISOString().split('T')[0] // Use today's date
+                        date: new Date().toISOString().split('T')[0]
                     };
-
                     addTransaction(actualTransaction);
-
-                    // Mark as activated
                     editScheduledTransaction(id, {
                         isActivated: true,
                         activatedAt: new Date().toISOString(),
@@ -444,7 +438,6 @@ export default function BudgetTransactions() {
             const deleteScheduledTransaction = (id) => {
                 const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
                 const scheduledTransactions = stored ? JSON.parse(stored) : [];
-
                 const filtered = scheduledTransactions.filter(txn => txn.id !== id);
                 localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(filtered));
             };
@@ -452,13 +445,10 @@ export default function BudgetTransactions() {
             return {
                 getUpcomingScheduledTransactions,
                 editScheduledTransaction,
-                skipScheduledTransaction,
+                skipScheduledTransaction: (id) => editScheduledTransaction(id, { isSkipped: true, skippedAt: new Date().toISOString() }),
                 activateScheduledTransactionEarly,
                 deleteScheduledTransaction
             };
-        } catch (error) {
-            console.error('Error creating scheduled transactions wrapper:', error);
-            return null;
         }
     }, [addTransaction]);
 
