@@ -55,7 +55,7 @@ export const useDataModel = ({
       );
       setActiveBudgetAllocations(calculatedAllocations);
     }
-  }, [expenses, savingsGoals, planningItems.length, setPlanningItems, setActiveBudgetAllocations, payFrequency, payFrequencyOptions]);
+  }, [expenses, savingsGoals, planningItems.length, setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, payFrequency, payFrequencyOptions]);
 
   // DISABLED: Sync legacy state with unified model when planning items change
   // This was causing infinite loops - legacy sync is not critical for core functionality
@@ -196,7 +196,7 @@ export const useDataModel = ({
 
       return updatedItems;
     });
-  }, [setPlanningItems, setActiveBudgetAllocations, accounts, payFrequency, payFrequencyOptions]);
+  }, [setPlanningItems, setActiveBudgetAllocations, accounts, payFrequency, payFrequencyOptions, categories]);
 
   // Remove a planning item and return allocated funds
   const removeItem = useCallback((itemId) => {
@@ -370,7 +370,7 @@ export const useDataModel = ({
     };
 
     cleanup();
-  }, [categories]);
+  }, [categories, planningItems, activeBudgetAllocations, setPlanningItems, setActiveBudgetAllocations, setExpenses, setSavingsGoals]);
 
   return {
     // Unified data model
