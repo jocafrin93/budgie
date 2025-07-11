@@ -170,7 +170,7 @@ const UpcomingPaychecks = ({
                         {upcomingPaychecks.map((paycheckEntry, index) => (
                             <div
                                 key={`${paycheckEntry.paycheck.id}-${paycheckEntry.formattedDate}`}
-                                className={`p-3 rounded-lg border ${index === 0 ? 'border-info-300 dark:border-info-700 bg-info/10 dark:bg-info/20/10' :
+                                className={`p-3 rounded-lg border ${index === 0 ? 'border-info-300 dark:border-info bg-info/10 dark:bg-info/20/10' :
                                     'border-gray-200 dark:border-dark-500 bg-gray-50 dark:bg-dark-600'
                                     }`}
                             >
