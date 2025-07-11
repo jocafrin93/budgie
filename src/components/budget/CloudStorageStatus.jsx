@@ -55,6 +55,10 @@ const CloudStorageStatus = () => {
     }
 
     if (error) {
+        const errorMessage = typeof error === 'string' ? error :
+            error?.message ? error.message :
+                'Unknown error occurred';
+
         return (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="flex items-center">
@@ -68,14 +72,32 @@ const CloudStorageStatus = () => {
                             Cloud Storage Error
                         </h3>
                         <div className="mt-1 text-sm text-red-700 dark:text-red-300">
-                            {error}
+                            {errorMessage}
                         </div>
-                        <div className="mt-3">
+                        <details className="mt-2">
+                            <summary className="text-xs text-red-600 dark:text-red-400 cursor-pointer hover:text-red-800 dark:hover:text-red-200">
+                                Debug Information
+                            </summary>
+                            <div className="mt-1 text-xs text-red-600 dark:text-red-400 font-mono bg-red-100 dark:bg-red-900/30 p-2 rounded">
+                                <div>Error Type: {typeof error}</div>
+                                <div>Error Object: {JSON.stringify(error, null, 2)}</div>
+                                <div>Client ID: {import.meta.env.VITE_GOOGLE_CLIENT_ID ? 'Set' : 'Missing'}</div>
+                                <div>API Key: {import.meta.env.VITE_GOOGLE_API_KEY ? 'Set' : 'Missing'}</div>
+                                <div>Domain: {window.location.hostname}</div>
+                            </div>
+                        </details>
+                        <div className="mt-3 space-x-2">
                             <button
                                 onClick={() => window.location.reload()}
                                 className="text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 px-3 py-1 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                             >
                                 Retry
+                            </button>
+                            <button
+                                onClick={() => console.log('Google API Debug:', { error, gapi: window.gapi, env: import.meta.env })}
+                                className="text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 px-3 py-1 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                            >
+                                Log Debug Info
                             </button>
                         </div>
                     </div>

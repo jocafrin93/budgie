@@ -49,7 +49,8 @@ export const useCloudStorage = (key, defaultValue) => {
                 isInitialized = true;
             });
         } catch (err) {
-            setError(`Failed to initialize Google API: ${err.message}`);
+            console.error('Google API initialization error:', err);
+            setError(`Failed to initialize Google API: ${err?.message || err || 'Unknown error'}`);
         }
     }, []);
 
