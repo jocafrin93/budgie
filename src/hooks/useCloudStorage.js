@@ -202,6 +202,7 @@ export const useCloudStorage = (key, defaultValue) => {
             const content = await response.text();
             const data = JSON.parse(content);
             console.log(`Successfully loaded data from Google Drive: ${fileName}`);
+            console.log('Loaded data content:', data);
             return data;
         } catch (err) {
             console.error('Error reading from Drive:', err);
