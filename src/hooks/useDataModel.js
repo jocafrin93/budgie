@@ -88,8 +88,20 @@ export const useDataModel = ({
   const addItem = useCallback((newItem) => {
     // Validate category exists and ensure categoryId is a number
     const categoryId = parseInt(newItem.categoryId, 10);
-    if (isNaN(categoryId) || !categories.some(cat => parseInt(cat.id, 10) === categoryId)) {
+
+    // Debug logging to see what we're working with
+    console.log('DEBUG - Adding item with categoryId:', categoryId);
+    console.log('DEBUG - Available categories:', categories.map(cat => ({ id: cat.id, name: cat.name })));
+
+    // More flexible category validation - check both string and number IDs
+    const categoryExists = categories.some(cat => {
+      const catId = parseInt(cat.id, 10);
+      return catId === categoryId || cat.id === categoryId || cat.id === String(categoryId);
+    });
+
+    if (isNaN(categoryId) || !categoryExists) {
       console.error('Invalid category ID for new item:', newItem);
+      console.error('Available category IDs:', categories.map(cat => cat.id));
       return;
     }
 

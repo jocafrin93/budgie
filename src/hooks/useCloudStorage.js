@@ -40,9 +40,16 @@ export const useCloudStorage = (key, defaultValue) => {
             const storedToken = localStorage.getItem('google_access_token');
             const tokenExpiry = localStorage.getItem('google_token_expiry');
 
+            console.log('DEBUG - Checking auth state:');
+            console.log('- Token exists:', !!storedToken);
+            console.log('- Token expiry:', tokenExpiry);
+            console.log('- Current time:', Date.now());
+
             if (storedToken && tokenExpiry) {
                 const now = Date.now();
                 const expiry = parseInt(tokenExpiry);
+
+                console.log('- Token valid:', now < expiry);
 
                 if (now < expiry) {
                     console.log('Found valid Google token for cloud storage');
@@ -55,6 +62,7 @@ export const useCloudStorage = (key, defaultValue) => {
                     setIsAuthenticated(false);
                 }
             } else {
+                console.log('No valid token found - cloud storage disabled');
                 setIsAuthenticated(false);
             }
         } catch (err) {
@@ -312,6 +320,7 @@ export const useCloudStorage = (key, defaultValue) => {
         };
 
         initialize();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // EMPTY DEPENDENCIES - CRITICAL FOR PREVENTING LOOPS
 
     // Save data when value changes (debounced)
