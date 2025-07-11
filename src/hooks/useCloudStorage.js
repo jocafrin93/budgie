@@ -212,36 +212,20 @@ export const useCloudStorage = (key, defaultValue) => {
         }
     }, [key, isAuthenticated, getFileId]);
 
-    // Load data on mount
+    // EMERGENCY DISABLE: Load data on mount
     useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true);
+        // Completely disable cloud storage to stop infinite loops
+        console.log('Cloud storage DISABLED - using local storage only');
+        setIsLoading(false);
+        setIsAuthenticated(false);
+    }, []);
 
-            // Check for existing authentication first
-            checkAuthState();
-
-            await initializeGapi();
-
-            if (isAuthenticated) {
-                console.log('Loading data from Google Drive...');
-                const data = await readFromDrive();
-                setValue(data);
-            } else {
-                console.log('Not authenticated, using default value');
-            }
-
-            setIsLoading(false);
-        };
-
-        loadData();
-    }, [initializeGapi, readFromDrive, isAuthenticated, checkAuthState]);
-
-    // Save data when value changes
-    useEffect(() => {
-        if (!isLoading && isAuthenticated && value !== defaultValue) {
-            writeToDrive(value);
-        }
-    }, [value, isLoading, isAuthenticated, writeToDrive, defaultValue]);
+    // EMERGENCY DISABLE: Save data when value changes
+    // useEffect(() => {
+    //     if (!isLoading && isAuthenticated && value !== defaultValue) {
+    //         writeToDrive(value);
+    //     }
+    // }, [value, isLoading, isAuthenticated, writeToDrive, defaultValue]);
 
     const updateValue = useCallback((newValue) => {
         const finalValue = typeof newValue === 'function' ? newValue(value) : newValue;
