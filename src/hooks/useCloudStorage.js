@@ -236,10 +236,10 @@ export const useCloudStorage = (key, defaultValue) => {
             const fileId = await getFileIdRef.current(fileName);
             const content = JSON.stringify(data, null, 2);
 
-            const fileMetadata = {
-                name: fileName,
-                parents: ['appDataFolder']
-            };
+            // Different metadata for create vs update
+            const fileMetadata = fileId
+                ? { name: fileName } // Update: only name, no parents
+                : { name: fileName, parents: ['appDataFolder'] }; // Create: include parents
 
             const form = new FormData();
             form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
