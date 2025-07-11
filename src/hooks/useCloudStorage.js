@@ -20,8 +20,13 @@ export const useCloudStorage = (key, defaultValue) => {
         if (isInitialized) return;
 
         try {
+            console.log('Initializing Google API...');
+            console.log('CLIENT_ID:', CLIENT_ID ? 'Set' : 'Not set');
+            console.log('API_KEY:', API_KEY ? 'Set' : 'Not set');
+
             // Load gapi if not already loaded
             if (!window.gapi) {
+                console.log('Loading Google API script...');
                 await new Promise((resolve, reject) => {
                     const script = document.createElement('script');
                     script.src = 'https://apis.google.com/js/api.js';
@@ -32,21 +37,38 @@ export const useCloudStorage = (key, defaultValue) => {
             }
 
             gapi = window.gapi;
-            await gapi.load('client:auth2', async () => {
-                await gapi.client.init({
-                    apiKey: API_KEY,
-                    clientId: CLIENT_ID,
-                    discoveryDocs: [DISCOVERY_DOC],
-                    scope: SCOPES
+            console.log('Loading gapi client and auth2...');
+
+            await new Promise((resolve, reject) => {
+                gapi.load('client:auth2', async () => {
+                    try {
+                        console.log('Initializing gapi client...');
+                        await gapi.client.init({
+                            apiKey: API_KEY,
+                            clientId: CLIENT_ID,
+                            discoveryDocs: [DISCOVERY_DOC],
+                            scope: SCOPES
+                        });
+
+                        console.log('Getting auth instance...');
+                        const authInstance = gapi.auth2.getAuthInstance();
+                        if (!authInstance) {
+                            throw new Error('Failed to get auth instance');
+                        }
+
+                        setIsAuthenticated(authInstance.isSignedIn.get());
+
+                        // Listen for sign-in state changes
+                        authInstance.isSignedIn.listen(setIsAuthenticated);
+
+                        isInitialized = true;
+                        console.log('Google API initialized successfully');
+                        resolve();
+                    } catch (initError) {
+                        console.error('Error during gapi client init:', initError);
+                        reject(initError);
+                    }
                 });
-
-                const authInstance = gapi.auth2.getAuthInstance();
-                setIsAuthenticated(authInstance.isSignedIn.get());
-
-                // Listen for sign-in state changes
-                authInstance.isSignedIn.listen(setIsAuthenticated);
-
-                isInitialized = true;
             });
         } catch (err) {
             console.error('Google API initialization error:', err);
@@ -57,10 +79,20 @@ export const useCloudStorage = (key, defaultValue) => {
     // Sign in to Google
     const signIn = useCallback(async () => {
         try {
+            if (!gapi || !isInitialized) {
+                throw new Error('Google API not initialized');
+            }
+
             const authInstance = gapi.auth2.getAuthInstance();
+            if (!authInstance) {
+                throw new Error('Google Auth instance not available');
+            }
+
             await authInstance.signIn();
         } catch (err) {
-            setError(`Failed to sign in: ${err.message}`);
+            console.error('Google Sign-In error:', err);
+            const errorMessage = err?.error || err?.message || err?.toString() || 'Unknown error occurred';
+            setError(`Failed to sign in: ${errorMessage}`);
         }
     }, []);
 
