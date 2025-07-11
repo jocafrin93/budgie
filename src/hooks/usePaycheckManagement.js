@@ -1,6 +1,6 @@
 // src/hooks/usePaycheckManagement.js
 import { useCallback } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useStorage } from './useStorage';
 
 /**
  * Custom hook for managing multiple paychecks
@@ -90,8 +90,8 @@ export const usePaycheckManagement = (accounts = []) => {
   const parsedOldPaySchedule = oldPaySchedule ? JSON.parse(oldPaySchedule) : null;
   const parsedOldCurrentPay = oldCurrentPay ? parseFloat(oldCurrentPay) : null;
 
-  // Paychecks state - migrate from old format if needed
-  const [paychecks, setPaychecks] = useLocalStorage(
+  // Paychecks state - migrate from old format if needed - now using cloud storage
+  const [paychecks, setPaychecks] = useStorage(
     'budgetCalc_paychecks',
     migrateFromLegacyPaySchedule(parsedOldPaySchedule, parsedOldCurrentPay)
   );
