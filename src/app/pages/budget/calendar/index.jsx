@@ -17,10 +17,7 @@ export default function BudgetCalendar() {
     const { accounts, setAccounts } = useAccountManagement();
     const { categories, setCategories } = useCategoryManagement();
     const {
-        transactions,
-        addTransaction,
-        updateTransaction,
-        deleteTransaction
+        addTransaction
     } = useTransactionManagement(accounts, setAccounts, categories, setCategories);
 
     // Use cloud storage for scheduled transactions
