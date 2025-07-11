@@ -1,18 +1,17 @@
 // src/hooks/useConfigSettings.js
 import { useCallback } from 'react';
 import { frequencyOptions } from '../utils/constants';
-import { useLocalStorage } from './useLocalStorage';
-
+import { useStorage } from './useStorage';
 
 /**
  * Custom hook for managing configuration and settings
  * Extracts configuration-related state and operations from App.js
  */
 export const useConfigSettings = () => {
-  // Pay settings
-  const [currentPay, setCurrentPay] = useLocalStorage('budgetCalc_currentPay', 2000);
-  const [payFrequency, setPayFrequency] = useLocalStorage('budgetCalc_payFrequency', 'biweekly');
-  const [paySchedule, setPaySchedule] = useLocalStorage('budgetCalc_paySchedule', {
+  // Pay settings - now uses cloud storage
+  const [currentPay, setCurrentPay] = useStorage('budgetCalc_currentPay', 2000);
+  const [payFrequency, setPayFrequency] = useStorage('budgetCalc_payFrequency', 'biweekly');
+  const [paySchedule, setPaySchedule] = useStorage('budgetCalc_paySchedule', {
     frequency: 'biweekly',
     startDate: new Date().toISOString(),
     dayOfWeek: 5, // Friday
@@ -20,12 +19,12 @@ export const useConfigSettings = () => {
     excludeWeekends: true
   });
 
-  // Budget settings
-  const [roundingOption, setRoundingOption] = useLocalStorage('budgetCalc_roundingOption', 'round');
-  const [bufferPercentage, setBufferPercentage] = useLocalStorage('budgetCalc_bufferPercentage', 10);
+  // Budget settings - now uses cloud storage
+  const [roundingOption, setRoundingOption] = useStorage('budgetCalc_roundingOption', 'round');
+  const [bufferPercentage, setBufferPercentage] = useStorage('budgetCalc_bufferPercentage', 10);
 
-  // Theme settings
-  const [theme, setTheme] = useLocalStorage('budgetCalc_theme', 'light');
+  // Theme settings - now uses cloud storage
+  const [theme, setTheme] = useStorage('budgetCalc_theme', 'light');
 
   // Frequency options for expenses
   const payFrequencyOptions = [

@@ -3,7 +3,7 @@ import React from "react";
 import PaycheckManager from "../../../../components/budget/PaycheckManager";
 import PayeeManagement from "../../../../components/budget/PayeeManagement";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
-import { useLocalStorage } from "../../../../hooks/useLocalStorage";
+import { useStorage } from "../../../../hooks/useStorage";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
 
 export default function BudgetSettings() {
@@ -20,8 +20,8 @@ export default function BudgetSettings() {
         transactions
     } = useTransactionManagement();
 
-    // Use the same payee storage as transactions page
-    const [payees, setPayees] = useLocalStorage('budgetCalc_payees', [
+    // Use cloud storage for payees - now syncs to Google Drive
+    const [payees, setPayees] = useStorage('budgetCalc_payees', [
         'Amazon',
         'Target',
         'Walmart',
