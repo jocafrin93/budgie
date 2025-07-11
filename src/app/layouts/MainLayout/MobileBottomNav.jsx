@@ -17,7 +17,7 @@ export function MobileBottomNav() {
     // Filter navigation to show only the most important items on mobile
     // You can customize this to show different items or all items
     const mobileNavItems = navigation.filter(item =>
-        ['home', 'accounts', 'overview', 'transactions', 'calendar'].includes(item.id)
+        ['home', 'overview', 'transactions', 'calendar', 'budget-settings'].includes(item.id)
     );
 
     return (
