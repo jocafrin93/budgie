@@ -15,6 +15,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
    */
   const addTransaction = useCallback((transactionData) => {
     console.log('addTransaction called with:', transactionData);
+    console.log('addTransaction called from:', new Error().stack);
 
     let createdTransaction;
 

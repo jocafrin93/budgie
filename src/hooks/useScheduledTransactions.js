@@ -169,6 +169,14 @@ export const useScheduledTransactions = (addTransaction) => {
                         scheduledTransactionId: scheduledTxn.id
                     };
 
+                    console.log('🔄 SCHEDULED TRANSACTION ACTIVATION - Creating transaction from scheduled:', {
+                        scheduledTransactionId: scheduledTxn.id,
+                        scheduledDate: scheduledTxn.scheduledDate,
+                        payee: scheduledTxn.payee,
+                        amount: scheduledTxn.amount,
+                        wasAlreadyActivated: scheduledTxn.isActivated
+                    });
+
                     addTransaction(actualTransaction);
 
                     // Generate next occurrence for indefinite recurring
