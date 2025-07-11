@@ -114,19 +114,35 @@ export const useCloudStorage = (key, defaultValue) => {
         return initializationPromise;
     }, []);
 
-    // Get file ID with retry logic
+    // Get file ID with retry logic using OAuth token
     const getFileId = useCallback(async (fileName, retryCount = 0) => {
         if (circuitBreakerRef.current) {
             throw new Error('Circuit breaker open - too many failures');
         }
 
         try {
-            const response = await gapi.client.drive.files.list({
-                q: `name='${fileName}' and parents in 'appDataFolder'`,
-                spaces: 'appDataFolder'
+            const storedToken = localStorage.getItem('google_access_token');
+            if (!storedToken) {
+                throw new Error('No access token available for Drive access');
+            }
+
+            const query = encodeURIComponent(`name='${fileName}' and parents in 'appDataFolder'`);
+            const url = `https://www.googleapis.com/drive/v3/files?q=${query}&spaces=appDataFolder`;
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${storedToken}`,
+                    'Content-Type': 'application/json'
+                }
             });
 
-            const files = response.result.files;
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const files = data.files;
             return files && files.length > 0 ? files[0].id : null;
         } catch (err) {
             console.error(`Error getting file ID (attempt ${retryCount + 1}):`, err);
@@ -148,7 +164,7 @@ export const useCloudStorage = (key, defaultValue) => {
         }
     }, []);
 
-    // Read data from Google Drive with error handling
+    // Read data from Google Drive with error handling using OAuth token
     const readFromDrive = useCallback(async () => {
         if (!isAuthenticated || circuitBreakerRef.current) return defaultValue;
 
@@ -161,12 +177,24 @@ export const useCloudStorage = (key, defaultValue) => {
                 return defaultValue;
             }
 
-            const response = await gapi.client.drive.files.get({
-                fileId: fileId,
-                alt: 'media'
+            const storedToken = localStorage.getItem('google_access_token');
+            if (!storedToken) {
+                throw new Error('No access token available for Drive read');
+            }
+
+            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${storedToken}`
+                }
             });
 
-            const data = JSON.parse(response.body);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const content = await response.text();
+            const data = JSON.parse(content);
             console.log(`Successfully loaded data from Google Drive: ${fileName}`);
             return data;
         } catch (err) {
