@@ -13,7 +13,7 @@ export const useStorage = (key, defaultValue) => {
 
     if (isDevelopment) {
         // In development, use cloud storage if authenticated, otherwise localStorage
-        const [cloudValue, setCloudValue, cloudMeta] = cloudStorageResult;
+        const [, , cloudMeta] = cloudStorageResult;
 
         if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
             console.log(`🔄 STORAGE (${key}) - Using cloud storage in development (authenticated)`);

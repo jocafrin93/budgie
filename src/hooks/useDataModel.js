@@ -55,7 +55,7 @@ export const useDataModel = ({
       );
       setActiveBudgetAllocations(calculatedAllocations);
     }
-  }, [expenses, savingsGoals, planningItems.length, setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, payFrequency, payFrequencyOptions]);
+  }, [expenses, savingsGoals, planningItems.length, setPlanningItems, setActiveBudgetAllocations, payFrequency, payFrequencyOptions]);
 
   // Ensure all categories have IDs - MIGRATION FIX
   useEffect(() => {
@@ -163,7 +163,7 @@ export const useDataModel = ({
     if (itemWithId.isActive) {
       itemWithId.needsAllocation = true;
     }
-  }, [setPlanningItems, setActiveBudgetAllocations, accounts, payFrequency, payFrequencyOptions, categories, planningItems]);
+  }, [setPlanningItems, categories, planningItems]);
 
 
 
@@ -369,7 +369,7 @@ export const useDataModel = ({
 
       return updatedItems;
     });
-  }, [setPlanningItems, setActiveBudgetAllocations]);
+  }, [setPlanningItems, setActiveBudgetAllocations, categories]);
 
   // Clean up invalid items only when categories change
   useEffect(() => {
