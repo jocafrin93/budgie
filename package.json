@@ -10,11 +10,6 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
-  "overrides": {
-    "vite": {
-      "rollup": "npm:@rollup/wasm-node"
-    }
-  },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.0",
     "@atlaskit/pragmatic-drag-and-drop-auto-scroll": "^2.1.0",
@@ -94,6 +89,9 @@
     "vite-jsconfig-paths": "^2.0.1",
     "vite-plugin-eslint": "^1.8.1",
     "vite-plugin-svgr": "^4.3.0"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.9.5"
   },
   "lint-staged": {
     "**/*.{js,jsx}": [
