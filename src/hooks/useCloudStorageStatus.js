@@ -1,5 +1,5 @@
 // src/hooks/useCloudStorageStatus.js
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -14,6 +14,46 @@ export const useCloudStorageStatus = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [error, setError] = useState(null);
+
+    // Check for existing token on mount
+    const checkExistingAuth = useCallback(() => {
+        try {
+            const storedToken = localStorage.getItem('google_access_token');
+            const tokenExpiry = localStorage.getItem('google_token_expiry');
+
+            if (storedToken && tokenExpiry) {
+                const now = Date.now();
+                const expiry = parseInt(tokenExpiry);
+
+                if (now < expiry) {
+                    // Token is still valid
+                    console.log('Found valid stored Google token');
+                    setIsAuthenticated(true);
+
+                    // Set the token for gapi if available
+                    if (window.gapi?.client) {
+                        window.gapi.client.setToken({
+                            access_token: storedToken
+                        });
+                    }
+                    return true;
+                } else {
+                    // Token expired, clean up
+                    console.log('Stored Google token expired, cleaning up');
+                    localStorage.removeItem('google_access_token');
+                    localStorage.removeItem('google_token_expiry');
+                }
+            }
+        } catch (err) {
+            console.error('Error checking existing auth:', err);
+        }
+        return false;
+    }, []);
+
+    // Check for existing authentication on mount
+    useEffect(() => {
+        checkExistingAuth();
+    }, [checkExistingAuth]);
 
     // Initialize Google API (only called when user wants to sign in)
     const initializeGapi = useCallback(async () => {
@@ -126,6 +166,12 @@ export const useCloudStorageStatus = () => {
                     }
 
                     console.log('OAuth token received:', response);
+
+                    // Store token in localStorage with expiry
+                    const expiryTime = Date.now() + (response.expires_in * 1000);
+                    localStorage.setItem('google_access_token', response.access_token);
+                    localStorage.setItem('google_token_expiry', expiryTime.toString());
+
                     // Set the access token for gapi
                     gapi.client.setToken(response);
                     setIsAuthenticated(true);
@@ -145,6 +191,7 @@ export const useCloudStorageStatus = () => {
         isLoading,
         isAuthenticated,
         error,
-        signIn
+        signIn,
+        checkExistingAuth
     };
 };
