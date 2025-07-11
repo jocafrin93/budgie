@@ -16,6 +16,13 @@ export const useCloudStorage = (key, defaultValue) => {
     const [value, setValue] = useState(defaultValue);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    // Quick auth check on mount to reduce flicker
+    const quickAuthCheck = () => {
+        const storedToken = localStorage.getItem('google_access_token');
+        const tokenExpiry = localStorage.getItem('google_token_expiry');
+        return storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
+    };
     const [error, setError] = useState(null);
 
     // Refs to prevent infinite loops
@@ -317,9 +324,23 @@ export const useCloudStorage = (key, defaultValue) => {
                     // Use hasAuth instead of isAuthenticated to avoid race condition
                     if (hasAuth) {
                         console.log('Loading data from Google Drive...');
-                        const data = await readFromDriveRef.current();
-                        console.log('DEBUG: Data loaded, setting value:', data);
-                        setValue(data);
+                        const cloudData = await readFromDriveRef.current();
+
+                        // Check if we have localStorage data to migrate
+                        const localData = localStorage.getItem(key);
+                        const hasLocalData = localData && localData !== 'undefined' && localData !== JSON.stringify(defaultValue);
+                        const hasCloudData = JSON.stringify(cloudData) !== JSON.stringify(defaultValue);
+
+                        if (hasLocalData && !hasCloudData) {
+                            // Migrate localStorage data to cloud storage
+                            console.log(`🔄 MIGRATING localStorage data to cloud storage for ${key}`);
+                            const parsedLocalData = JSON.parse(localData);
+                            setValue(parsedLocalData);
+                            // The save will happen automatically via the save effect
+                        } else {
+                            console.log('DEBUG: Using cloud data:', cloudData);
+                            setValue(cloudData);
+                        }
                     } else {
                         console.log('DEBUG: Not authenticated, using default value');
                         setValue(defaultValue);

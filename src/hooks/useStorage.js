@@ -10,20 +10,39 @@ const isDevelopment =
 export const useStorage = (key, defaultValue) => {
     const localStorageResult = useLocalStorage(key, defaultValue);
     const cloudStorageResult = useCloudStorage(key, defaultValue);
+    const [, , cloudMeta] = cloudStorageResult;
 
-    if (isDevelopment) {
-        // In development, use cloud storage if authenticated, otherwise localStorage
-        const [, , cloudMeta] = cloudStorageResult;
-
-        if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
-            console.log(`🔄 STORAGE (${key}) - Using cloud storage in development (authenticated)`);
-            return cloudStorageResult;
-        } else {
-            console.log(`🔄 STORAGE (${key}) - Using localStorage in development (not authenticated)`);
-            return [localStorageResult[0], localStorageResult[1], { isLoading: false, isAuthenticated: false, error: null, signIn: () => { } }];
-        }
-    } else {
-        // Return cloud storage result in production
+    // ALWAYS prioritize cloud storage when authenticated (dev AND production)
+    if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
+        console.log(`☁️ STORAGE (${key}) - Using CLOUD STORAGE (authenticated)`);
         return cloudStorageResult;
     }
+
+    // Show loading state while cloud storage initializes
+    if (cloudMeta.isLoading) {
+        console.log(`⏳ STORAGE (${key}) - Loading cloud storage state...`);
+        return [
+            defaultValue, // Show default while loading to prevent flicker
+            () => { }, // Disabled setter during loading
+            {
+                isLoading: true,
+                isAuthenticated: false,
+                error: cloudMeta.error,
+                signIn: cloudMeta.signIn
+            }
+        ];
+    }
+
+    // Fallback to localStorage only when cloud storage is not authenticated
+    console.log(`💾 STORAGE (${key}) - Using localStorage fallback (not authenticated)`);
+    return [
+        localStorageResult[0],
+        localStorageResult[1],
+        {
+            isLoading: false,
+            isAuthenticated: false,
+            error: cloudMeta.error,
+            signIn: cloudMeta.signIn
+        }
+    ];
 };
