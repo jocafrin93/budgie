@@ -57,6 +57,27 @@ export const useDataModel = ({
     }
   }, [expenses, savingsGoals, planningItems.length, setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, payFrequency, payFrequencyOptions]);
 
+  // Ensure all categories have IDs - MIGRATION FIX
+  useEffect(() => {
+    const categoriesNeedingIds = categories.filter(cat => !cat.id);
+
+    if (categoriesNeedingIds.length > 0) {
+      console.log('MIGRATION: Found categories without IDs:', categoriesNeedingIds);
+
+      setCategories(prev => {
+        let nextId = Math.max(...prev.filter(cat => cat.id).map(cat => cat.id), 0) + 1;
+
+        return prev.map(cat => {
+          if (!cat.id) {
+            console.log('MIGRATION: Assigning ID', nextId, 'to category:', cat.name);
+            return { ...cat, id: nextId++ };
+          }
+          return cat;
+        });
+      });
+    }
+  }, [categories, setCategories]);
+
   // DISABLED: Sync legacy state with unified model when planning items change
   // This was causing infinite loops - legacy sync is not critical for core functionality
   // useEffect(() => {

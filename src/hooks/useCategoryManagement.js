@@ -86,7 +86,11 @@ export const useCategoryManagement = () => {
       throw new Error('Category type must be either "single" or "multiple"');
     }
 
+    // Generate ID first to ensure it's not overwritten
+    const newCategoryId = generateNextCategoryId();
+
     const newCategory = {
+      id: newCategoryId, // ID FIRST - CRITICAL!
       name: categoryData.name.trim(),
       type: categoryData.type, // NEW: Required type field
       color: categoryData.color || 'bg-gradient-to-r from-info-500 to-purple-500',
@@ -126,9 +130,10 @@ export const useCategoryManagement = () => {
           allowInactiveItems: true,
           autoDistribution: false // Whether to auto-distribute funds among items
         })
-      },
-      id: generateNextCategoryId()
+      }
     };
+
+    console.log('DEBUG - Creating new category with ID:', newCategoryId, newCategory);
 
     setCategories(prev => [...prev, newCategory]);
     return newCategory;
