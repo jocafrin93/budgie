@@ -11,6 +11,7 @@
 
 # production
 /build
+/dist
 
 # Archive folder
 /archive/ 
