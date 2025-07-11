@@ -103,7 +103,7 @@ export const useDataModel = ({
         setActiveBudgetAllocations(calculatedAllocations);
       }
     }
-  }, [payFrequency, payFrequencyOptions]); // REMOVED setActiveBudgetAllocations from dependencies
+  }, [activeBudgetAllocations, payFrequency, payFrequencyOptions, setActiveBudgetAllocations]);
 
   // Add a new planning item
   const addItem = useCallback((newItem) => {

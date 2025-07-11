@@ -2,11 +2,6 @@
 import { useCloudStorage } from './useCloudStorage';
 import { useLocalStorage } from './useLocalStorage';
 
-const isDevelopment =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1' ||
-    window.location.hostname.includes('localhost');
-
 export const useStorage = (key, defaultValue) => {
     const localStorageResult = useLocalStorage(key, defaultValue);
     const cloudStorageResult = useCloudStorage(key, defaultValue);

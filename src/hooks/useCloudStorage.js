@@ -16,13 +16,6 @@ export const useCloudStorage = (key, defaultValue) => {
     const [value, setValue] = useState(defaultValue);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-    // Quick auth check on mount to reduce flicker
-    const quickAuthCheck = () => {
-        const storedToken = localStorage.getItem('google_access_token');
-        const tokenExpiry = localStorage.getItem('google_token_expiry');
-        return storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
-    };
     const [error, setError] = useState(null);
 
     // Refs to prevent infinite loops
