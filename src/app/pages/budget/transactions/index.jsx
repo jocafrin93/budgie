@@ -389,6 +389,8 @@ export default function BudgetTransactions() {
             const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
             const scheduledTransactions = stored ? JSON.parse(stored) : [];
 
+            console.log('🔍 DEBUGGING - localStorage scheduled transactions:', scheduledTransactions);
+
             const today = new Date();
             const futureDate = new Date();
             futureDate.setDate(today.getDate() + days);
