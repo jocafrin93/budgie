@@ -16,6 +16,43 @@ export const useCloudStorage = (key, defaultValue) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [error, setError] = useState(null);
 
+    // Check for existing token and set auth state
+    const checkAuthState = useCallback(() => {
+        try {
+            const storedToken = localStorage.getItem('google_access_token');
+            const tokenExpiry = localStorage.getItem('google_token_expiry');
+
+            if (storedToken && tokenExpiry) {
+                const now = Date.now();
+                const expiry = parseInt(tokenExpiry);
+
+                if (now < expiry) {
+                    console.log('Found valid Google token for cloud storage');
+                    setIsAuthenticated(true);
+
+                    // Set the token for gapi if available
+                    if (window.gapi?.client) {
+                        window.gapi.client.setToken({
+                            access_token: storedToken
+                        });
+                    }
+                    return true;
+                } else {
+                    console.log('Google token expired for cloud storage');
+                    localStorage.removeItem('google_access_token');
+                    localStorage.removeItem('google_token_expiry');
+                    setIsAuthenticated(false);
+                }
+            } else {
+                setIsAuthenticated(false);
+            }
+        } catch (err) {
+            console.error('Error checking auth state:', err);
+            setIsAuthenticated(false);
+        }
+        return false;
+    }, []);
+
     // Initialize Google API
     const initializeGapi = useCallback(async () => {
         if (isInitialized) return;
@@ -23,13 +60,10 @@ export const useCloudStorage = (key, defaultValue) => {
 
         initializationPromise = (async () => {
             try {
-                console.log('Initializing Google API...');
-                console.log('CLIENT_ID:', CLIENT_ID ? 'Set' : 'Not set');
-                console.log('API_KEY:', API_KEY ? 'Set' : 'Not set');
+                console.log('Initializing Google API for cloud storage...');
 
                 // Load gapi if not already loaded
                 if (!window.gapi) {
-                    console.log('Loading Google API script...');
                     await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
                         script.src = 'https://apis.google.com/js/api.js';
@@ -40,32 +74,17 @@ export const useCloudStorage = (key, defaultValue) => {
                 }
 
                 gapi = window.gapi;
-                console.log('Loading gapi client and auth2...');
 
                 await new Promise((resolve, reject) => {
-                    gapi.load('client:auth2', async () => {
+                    gapi.load('client', async () => {
                         try {
-                            console.log('Initializing gapi client...');
                             await gapi.client.init({
                                 apiKey: API_KEY,
-                                clientId: CLIENT_ID,
-                                discoveryDocs: [DISCOVERY_DOC],
-                                scope: SCOPES
+                                discoveryDocs: [DISCOVERY_DOC]
                             });
 
-                            console.log('Getting auth instance...');
-                            const authInstance = gapi.auth2.getAuthInstance();
-                            if (!authInstance) {
-                                throw new Error('Failed to get auth instance');
-                            }
-
-                            setIsAuthenticated(authInstance.isSignedIn.get());
-
-                            // Listen for sign-in state changes
-                            authInstance.isSignedIn.listen(setIsAuthenticated);
-
                             isInitialized = true;
-                            console.log('Google API initialized successfully');
+                            console.log('Google API initialized for cloud storage');
                             resolve();
                         } catch (initError) {
                             console.error('Error during gapi client init:', initError);
@@ -149,6 +168,12 @@ export const useCloudStorage = (key, defaultValue) => {
         if (!isAuthenticated) return;
 
         try {
+            const storedToken = localStorage.getItem('google_access_token');
+            if (!storedToken) {
+                console.error('No access token available for Drive write');
+                return;
+            }
+
             const fileName = `budgie_${key}.json`;
             const fileId = await getFileId(fileName);
             const content = JSON.stringify(data, null, 2);
@@ -168,10 +193,12 @@ export const useCloudStorage = (key, defaultValue) => {
 
             const method = fileId ? 'PATCH' : 'POST';
 
+            console.log(`${method === 'PATCH' ? 'Updating' : 'Creating'} file in Google Drive:`, fileName);
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
-                    'Authorization': `Bearer ${gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token}`
+                    'Authorization': `Bearer ${storedToken}`
                 },
                 body: form
             });
@@ -179,7 +206,10 @@ export const useCloudStorage = (key, defaultValue) => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
+
+            console.log('Successfully saved to Google Drive:', fileName);
         } catch (err) {
+            console.error('Error saving to Drive:', err);
             setError(`Failed to save to Drive: ${err.message}`);
         }
     }, [key, isAuthenticated, getFileId]);
@@ -188,18 +218,25 @@ export const useCloudStorage = (key, defaultValue) => {
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
+
+            // Check for existing authentication first
+            checkAuthState();
+
             await initializeGapi();
 
             if (isAuthenticated) {
+                console.log('Loading data from Google Drive...');
                 const data = await readFromDrive();
                 setValue(data);
+            } else {
+                console.log('Not authenticated, using default value');
             }
 
             setIsLoading(false);
         };
 
         loadData();
-    }, [initializeGapi, readFromDrive, isAuthenticated]);
+    }, [initializeGapi, readFromDrive, isAuthenticated, checkAuthState]);
 
     // Save data when value changes
     useEffect(() => {
