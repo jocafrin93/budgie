@@ -61,6 +61,26 @@ export default function BudgetSettings() {
                 </div>
 
                 <div className="mt-6 space-y-8">
+                    {/* Cloud Storage Section */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                                Cloud Storage & Sync
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                                Connect with Google Drive to sync your budget data across devices
+                            </p>
+                        </div>
+                        {(() => {
+                            const CloudStorageStatus = React.lazy(() => import("../../../../components/budget/CloudStorageStatus"));
+                            return (
+                                <React.Suspense fallback={<div className="p-4 text-center">Loading cloud storage status...</div>}>
+                                    <CloudStorageStatus />
+                                </React.Suspense>
+                            );
+                        })()}
+                    </div>
+
                     {/* Account Management Section */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
                         <div className="mb-6">
