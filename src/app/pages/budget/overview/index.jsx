@@ -9,6 +9,7 @@ import { useDataModel } from "../../../../hooks/useDataModel";
 import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
 import { useMonthlyBudgeting } from "../../../../hooks/useMonthlyBudgeting";
 import { usePaycheckManagement } from "../../../../hooks/usePaycheckManagement";
+import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
 
 // Dynamic imports for forms
 const UnifiedCategoryForm = React.lazy(() => import("../../../../components/budget/UnifiedCategoryForm"));
@@ -56,27 +57,16 @@ export default function BudgetOverview() {
         updateCategory,
         deleteCategory,
         migrateCategoriesWithTypes,
+        setCategories
     } = useCategoryManagement();
 
-    // Load transactions from localStorage for calculating spent amounts
-    const [transactions, setTransactions] = useState([]);
-
-    // Load transactions from localStorage to sync with transaction management
-    useEffect(() => {
-        const storedTransactions = JSON.parse(localStorage.getItem('budgetCalc_transactions') || '[]');
-        setTransactions(storedTransactions);
-
-        // Listen for localStorage changes to keep transactions in sync
-        const handleStorageChange = (e) => {
-            if (e.key === 'budgetCalc_transactions') {
-                const updatedTransactions = JSON.parse(e.newValue || '[]');
-                setTransactions(updatedTransactions);
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, []);
+    // Use transaction management hook properly (same as transactions page)
+    const {
+        transactions,
+        addTransaction,
+        updateTransaction,
+        deleteTransaction
+    } = useTransactionManagement(accounts, () => { }, categories, setCategories);
 
     // Helper function to calculate spent amount for a category from transactions
     const calculateCategorySpent = useCallback((categoryId) => {

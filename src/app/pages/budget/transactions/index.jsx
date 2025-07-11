@@ -5,7 +5,7 @@ import AccountBalanceSidebar from "../../../../components/budget/AccountBalanceS
 import TransactionsTab from "../../../../components/budget/TransactionsTab";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
 import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
-import { useLocalStorage } from "../../../../hooks/useLocalStorage";
+import { useStorage } from "../../../../hooks/useStorage";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
 
 // Dynamic import for mobile view
@@ -480,8 +480,8 @@ export default function BudgetTransactions() {
         ? scheduledTransactionsHook.getUpcomingScheduledTransactions(30)
         : [];
 
-    // Payee management
-    const [payees, setPayees] = useLocalStorage('budgetCalc_payees', [
+    // Payee management - use cloud storage
+    const [payees, setPayees] = useStorage('budgetCalc_payees', [
         'Amazon',
         'Target',
         'Walmart',

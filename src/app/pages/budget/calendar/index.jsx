@@ -4,12 +4,27 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Timeline, TimelineItem } from '../../../../components/ui/Timeline';
 import { useAccountManagement } from '../../../../hooks/useAccountManagement';
+import { useCategoryManagement } from '../../../../hooks/useCategoryManagement';
+import { useStorage } from '../../../../hooks/useStorage';
+import { useTransactionManagement } from '../../../../hooks/useTransactionManagement';
 import { formatCurrency } from '../../../../utils/formatUtils';
 
 export default function BudgetCalendar() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { accounts } = useAccountManagement();
+
+    // Use proper data management hooks
+    const { accounts, setAccounts } = useAccountManagement();
+    const { categories, setCategories } = useCategoryManagement();
+    const {
+        transactions,
+        addTransaction,
+        updateTransaction,
+        deleteTransaction
+    } = useTransactionManagement(accounts, setAccounts, categories, setCategories);
+
+    // Use cloud storage for scheduled transactions
+    const [scheduledTransactionsData, setScheduledTransactionsData] = useStorage('budgetCalc_scheduledTransactions', []);
 
     // Get selected account from navigation state or default to 'all'
     const [selectedAccountId, setSelectedAccountId] = useState(
@@ -18,37 +33,20 @@ export default function BudgetCalendar() {
 
     const [scheduledTransactions, setScheduledTransactions] = useState([]);
 
-    // Load scheduled transactions
+    // Load scheduled transactions from cloud storage
     useEffect(() => {
-        const loadScheduledTransactions = () => {
-            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-            const transactions = stored ? JSON.parse(stored) : [];
+        // Filter by account if specific account is selected
+        const filtered = selectedAccountId === 'all'
+            ? scheduledTransactionsData
+            : scheduledTransactionsData.filter(txn => String(txn.accountId) === String(selectedAccountId));
 
-            // Filter by account if specific account is selected
-            const filtered = selectedAccountId === 'all'
-                ? transactions
-                : transactions.filter(txn => String(txn.accountId) === String(selectedAccountId));
+        // Sort by due date
+        const sorted = filtered
+            .filter(txn => !txn.isActivated) // Only show non-activated transactions
+            .sort((a, b) => new Date(a.nextDueDate || a.dueDate) - new Date(b.nextDueDate || b.dueDate));
 
-            // Sort by due date
-            const sorted = filtered
-                .filter(txn => !txn.isActivated) // Only show non-activated transactions
-                .sort((a, b) => new Date(a.nextDueDate || a.dueDate) - new Date(b.nextDueDate || b.dueDate));
-
-            setScheduledTransactions(sorted);
-        };
-
-        loadScheduledTransactions();
-
-        // Listen for localStorage changes
-        const handleStorageChange = (e) => {
-            if (e.key === 'budgetCalc_scheduledTransactions') {
-                loadScheduledTransactions();
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        return () => window.removeEventListener('storage', handleStorageChange);
-    }, [selectedAccountId]);
+        setScheduledTransactions(sorted);
+    }, [selectedAccountId, scheduledTransactionsData]);
 
     const getAccountName = (accountId) => {
         const account = accounts.find(acc => acc.id === accountId);
@@ -82,31 +80,18 @@ export default function BudgetCalendar() {
     };
 
     const handleQuickAction = (action, txn) => {
-        const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-        const transactions = stored ? JSON.parse(stored) : [];
-
         switch (action) {
             case 'skip': {
-                const updatedTransactions = transactions.map(t =>
+                const updatedTransactions = scheduledTransactionsData.map(t =>
                     t.id === txn.id ? { ...t, isSkipped: true, skippedAt: new Date().toISOString() } : t
                 );
-                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updatedTransactions));
-
-                // Trigger a storage event to update the UI
-                window.dispatchEvent(new StorageEvent('storage', {
-                    key: 'budgetCalc_scheduledTransactions',
-                    newValue: JSON.stringify(updatedTransactions)
-                }));
+                setScheduledTransactionsData(updatedTransactions);
                 break;
             }
 
             case 'payNow': {
                 // Create actual transaction from scheduled transaction
-                const actualTransactions = JSON.parse(localStorage.getItem('budgetCalc_transactions') || '[]');
-                const newTransactionId = Math.max(...actualTransactions.map(t => t.id), 0) + 1;
-
                 const newTransaction = {
-                    id: newTransactionId,
                     date: new Date().toISOString().split('T')[0], // Today's date
                     payee: txn.payee,
                     amount: txn.amount,
@@ -118,12 +103,11 @@ export default function BudgetCalendar() {
                     createdAt: new Date().toISOString()
                 };
 
-                // Add the new transaction
-                const updatedTransactions = [...actualTransactions, newTransaction];
-                localStorage.setItem('budgetCalc_transactions', JSON.stringify(updatedTransactions));
+                // Add the new transaction using the hook
+                addTransaction(newTransaction);
 
                 // Mark scheduled transaction as activated
-                const updatedScheduledTransactions = transactions.map(t =>
+                const updatedScheduledTransactions = scheduledTransactionsData.map(t =>
                     t.id === txn.id ? {
                         ...t,
                         isActivated: true,
@@ -131,44 +115,7 @@ export default function BudgetCalendar() {
                         activatedEarly: true
                     } : t
                 );
-                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updatedScheduledTransactions));
-
-                // Update account balance
-                const accounts = JSON.parse(localStorage.getItem('budgetCalc_accounts') || '[]');
-                const updatedAccounts = accounts.map(account => {
-                    if (account.id === txn.accountId) {
-                        return { ...account, balance: (account.balance || 0) + txn.amount };
-                    }
-                    return account;
-                });
-                localStorage.setItem('budgetCalc_accounts', JSON.stringify(updatedAccounts));
-
-                // Update category spending if it's an expense
-                if (txn.amount < 0 && txn.categoryId) {
-                    const categories = JSON.parse(localStorage.getItem('budgetCalc_categories') || '[]');
-                    const updatedCategories = categories.map(category => {
-                        if (category.id === txn.categoryId) {
-                            const newSpent = (category.spent || 0) + Math.abs(txn.amount);
-                            return {
-                                ...category,
-                                spent: newSpent,
-                                available: (category.allocated || 0) - newSpent
-                            };
-                        }
-                        return category;
-                    });
-                    localStorage.setItem('budgetCalc_categories', JSON.stringify(updatedCategories));
-                }
-
-                // Trigger storage events to update UI
-                window.dispatchEvent(new StorageEvent('storage', {
-                    key: 'budgetCalc_transactions',
-                    newValue: JSON.stringify(updatedTransactions)
-                }));
-                window.dispatchEvent(new StorageEvent('storage', {
-                    key: 'budgetCalc_scheduledTransactions',
-                    newValue: JSON.stringify(updatedScheduledTransactions)
-                }));
+                setScheduledTransactionsData(updatedScheduledTransactions);
 
                 alert(`✅ Transaction created successfully!\n${txn.payee}: ${formatCurrency(txn.amount)}`);
                 break;
@@ -178,30 +125,18 @@ export default function BudgetCalendar() {
                 // For now, show a simple prompt to edit the payee
                 const newPayee = prompt('Edit payee name:', txn.payee);
                 if (newPayee && newPayee !== txn.payee) {
-                    const updatedTransactions = transactions.map(t =>
+                    const updatedTransactions = scheduledTransactionsData.map(t =>
                         t.id === txn.id ? { ...t, payee: newPayee, lastModified: new Date().toISOString() } : t
                     );
-                    localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updatedTransactions));
-
-                    // Trigger storage event
-                    window.dispatchEvent(new StorageEvent('storage', {
-                        key: 'budgetCalc_scheduledTransactions',
-                        newValue: JSON.stringify(updatedTransactions)
-                    }));
+                    setScheduledTransactionsData(updatedTransactions);
                 }
                 break;
             }
 
             case 'delete': {
                 if (window.confirm(`Are you sure you want to delete the scheduled transaction for "${txn.payee}"?\n\nThis action cannot be undone.`)) {
-                    const filteredTransactions = transactions.filter(t => t.id !== txn.id);
-                    localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(filteredTransactions));
-
-                    // Trigger storage event
-                    window.dispatchEvent(new StorageEvent('storage', {
-                        key: 'budgetCalc_scheduledTransactions',
-                        newValue: JSON.stringify(filteredTransactions)
-                    }));
+                    const filteredTransactions = scheduledTransactionsData.filter(t => t.id !== txn.id);
+                    setScheduledTransactionsData(filteredTransactions);
                 }
                 break;
             }

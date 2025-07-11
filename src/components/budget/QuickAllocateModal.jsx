@@ -9,6 +9,12 @@ const QuickAllocateModal = ({
     accounts = [],
     onBulkAllocate
 }) => {
+    // Import useStorage hook dynamically to avoid auto-formatter issues
+    const { useStorage } = require('../../hooks/useStorage');
+
+    // Use cloud storage for pending transfers
+    const [pendingTransfers, setPendingTransfers] = useStorage('budgetCalc_pendingTransfers', []);
+
     const [allocations, setAllocations] = useState({});
     const [showSuggestions, setShowSuggestions] = useState(true);
     const [showSourceAccountModal, setShowSourceAccountModal] = useState(false);
@@ -192,10 +198,9 @@ const QuickAllocateModal = ({
             status: 'pending'
         };
 
-        // Store pending transfer in localStorage
-        const existingTransfers = JSON.parse(localStorage.getItem('budgetCalc_pendingTransfers') || '[]');
-        existingTransfers.push(pendingTransfer);
-        localStorage.setItem('budgetCalc_pendingTransfers', JSON.stringify(existingTransfers));
+        // Store pending transfer using cloud storage
+        const updatedTransfers = [...pendingTransfers, pendingTransfer];
+        setPendingTransfers(updatedTransfers);
 
         // Now proceed with the original allocations
         onBulkAllocate?.(pendingAllocations);

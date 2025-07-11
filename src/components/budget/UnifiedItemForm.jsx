@@ -185,33 +185,27 @@ const UnifiedItemForm = ({
     currentPay = 0,
     preselectedCategory = null,
 }) => {
-    // Payee management - use localStorage directly
-    const [payees, setPayees] = React.useState(() => {
-        try {
-            const stored = localStorage.getItem('budgetCalc_payees');
-            return stored ? JSON.parse(stored) : [
-                'Amazon',
-                'Walmart',
-                'Target',
-                'Grocery Store',
-                'Gas Station',
-                'Utility Company',
-                'Insurance Company',
-                'Bank',
-                'Credit Card Company',
-                'Restaurant'
-            ];
-        } catch (error) {
-            console.error('Error loading payees:', error);
-            return [];
-        }
-    });
+    // Import useStorage hook dynamically to avoid auto-formatter issues
+    const { useStorage } = require('../../hooks/useStorage');
+
+    // Payee management - use cloud storage
+    const [payees, setPayees] = useStorage('budgetCalc_payees', [
+        'Amazon',
+        'Walmart',
+        'Target',
+        'Grocery Store',
+        'Gas Station',
+        'Utility Company',
+        'Insurance Company',
+        'Bank',
+        'Credit Card Company',
+        'Restaurant'
+    ]);
 
     const handleAddPayee = (newPayee) => {
         if (newPayee.trim() && !payees.includes(newPayee.trim())) {
             const updatedPayees = [...payees, newPayee.trim()];
             setPayees(updatedPayees);
-            localStorage.setItem('budgetCalc_payees', JSON.stringify(updatedPayees));
         }
     };
     // Determine if we're editing an expense or a goal
