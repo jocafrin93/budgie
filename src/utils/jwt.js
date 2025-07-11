@@ -13,6 +13,12 @@ const isTokenValid = (authToken) => {
     return false;
   }
 
+  // Handle mock tokens for development
+  if (authToken.startsWith("mock-token-")) {
+    console.log("Mock token detected, treating as valid");
+    return true;
+  }
+
   try {
     const decoded = jwtDecode(authToken);
     const currentTime = Date.now() / 1000; // Current time in seconds since epoch
@@ -42,3 +48,4 @@ const setSession = (authToken) => {
 };
 
 export { isTokenValid, setSession };
+

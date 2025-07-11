@@ -119,34 +119,30 @@ export function AuthProvider({ children }) {
     init();
   }, []);
 
-  const login = async ({ username, password }) => {
+  const login = async ({ username = "user" } = {}) => {
     dispatch({
       type: "LOGIN_REQUEST",
     });
 
     try {
       // Simple local authentication - bypass external API
-      if (username && password) {
-        // Create a mock auth token and user
-        const authToken = `mock-token-${Date.now()}`;
-        const user = {
-          id: 1,
-          username: username,
-          email: `${username}@example.com`,
-          name: username.charAt(0).toUpperCase() + username.slice(1),
-        };
+      // Allow login without credentials for development
+      const authToken = `mock-token-${Date.now()}`;
+      const user = {
+        id: 1,
+        username: username || "user",
+        email: `${username || "user"}@example.com`,
+        name: (username || "user").charAt(0).toUpperCase() + (username || "user").slice(1),
+      };
 
-        setSession(authToken);
+      setSession(authToken);
 
-        dispatch({
-          type: "LOGIN_SUCCESS",
-          payload: {
-            user,
-          },
-        });
-      } else {
-        throw new Error("Username and password are required");
-      }
+      dispatch({
+        type: "LOGIN_SUCCESS",
+        payload: {
+          user,
+        },
+      });
     } catch (err) {
       dispatch({
         type: "LOGIN_ERROR",
