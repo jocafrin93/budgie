@@ -59,9 +59,9 @@ const UpcomingPaychecks = ({
     // Get urgency styling based on days until paycheck
     const getUrgencyStyle = (daysUntil) => {
         if (daysUntil === 0) {
-            return 'bg-green-100 dark:bg-green-900/20 border-green-300 dark:border-green-700 text-green-800 dark:text-green-300';
+            return 'bg-primary dark:bg-primary border-green-300 dark:border-green-700 text-green-800 dark:text-green-300';
         } else if (daysUntil <= 3) {
-            return 'bg-info/10 dark:bg-info/20/20 border-info-300 dark:border-info-700 text-info-800 dark:text-info-300';
+            return 'bg-primary dark:bg-primary border-info-300 dark:border-primary-500 text-info-800 dark:text-info-300';
         } else if (daysUntil <= 7) {
             return 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300';
         } else {
@@ -170,7 +170,7 @@ const UpcomingPaychecks = ({
                         {upcomingPaychecks.map((paycheckEntry, index) => (
                             <div
                                 key={`${paycheckEntry.paycheck.id}-${paycheckEntry.formattedDate}`}
-                                className={`p-3 rounded-lg border ${index === 0 ? 'border-info-300 dark:border-info bg-info/10 dark:bg-info/20/10' :
+                                className={`p-3 rounded-lg border ${index === 0 ? 'border-info dark:border-info bg-info/10 dark:bg-dark-600' :
                                     'border-gray-200 dark:border-dark-500 bg-gray-50 dark:bg-dark-600'
                                     }`}
                             >
@@ -215,17 +215,20 @@ const UpcomingPaychecks = ({
                         ))}
                     </div>
                 </div>
-            )}
+            )
+            }
 
             {/* No upcoming paychecks */}
-            {upcomingPaychecks.length === 0 && (
-                <div className="text-center py-8">
-                    <div className="text-gray-500 dark:text-dark-400 mb-2">📅</div>
-                    <p className="text-gray-600 dark:text-dark-300">
-                        No upcoming paychecks found. Check your paycheck configuration.
-                    </p>
-                </div>
-            )}
+            {
+                upcomingPaychecks.length === 0 && (
+                    <div className="text-center py-8">
+                        <div className="text-gray-500 dark:text-dark-400 mb-2">📅</div>
+                        <p className="text-gray-600 dark:text-dark-300">
+                            No upcoming paychecks found. Check your paycheck configuration.
+                        </p>
+                    </div>
+                )
+            }
 
             {/* Today's Date Reference */}
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-500">
@@ -233,7 +236,7 @@ const UpcomingPaychecks = ({
                     Today: {formatDateForDisplay(new Date())} • Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
                 </div>
             </div>
-        </Card>
+        </Card >
     );
 };
 
