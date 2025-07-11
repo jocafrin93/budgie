@@ -267,7 +267,11 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
     }
 
     // Remove the transaction
-    setTransactions(prev => prev.filter(t => t.id !== transactionId));
+    setTransactions(prev => {
+      const filtered = prev.filter(t => t.id !== transactionId);
+      console.log('🔄 TRANSACTIONS - Removing transaction. Before:', prev.length, 'After:', filtered.length);
+      return filtered;
+    });
   }, [transactions, setTransactions, setAccounts, setCategories]);
 
   /**

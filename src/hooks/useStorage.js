@@ -12,8 +12,16 @@ export const useStorage = (key, defaultValue) => {
     const cloudStorageResult = useCloudStorage(key, defaultValue);
 
     if (isDevelopment) {
-        // Return localStorage result in development
-        return [localStorageResult[0], localStorageResult[1], { isLoading: false, isAuthenticated: true, error: null, signIn: () => { } }];
+        // In development, use cloud storage if authenticated, otherwise localStorage
+        const [cloudValue, setCloudValue, cloudMeta] = cloudStorageResult;
+
+        if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
+            console.log(`🔄 STORAGE (${key}) - Using cloud storage in development (authenticated)`);
+            return cloudStorageResult;
+        } else {
+            console.log(`🔄 STORAGE (${key}) - Using localStorage in development (not authenticated)`);
+            return [localStorageResult[0], localStorageResult[1], { isLoading: false, isAuthenticated: false, error: null, signIn: () => { } }];
+        }
     } else {
         // Return cloud storage result in production
         return cloudStorageResult;
