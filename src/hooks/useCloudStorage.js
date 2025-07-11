@@ -218,12 +218,6 @@ export const useCloudStorage = (key, defaultValue) => {
 
         // Prevent saving the same data multiple times
         const dataString = JSON.stringify(data);
-        console.log('DEBUG: Checking if data changed for', key);
-        console.log('DEBUG: Current data:', data);
-        console.log('DEBUG: Last saved data string:', lastSavedValueRef.current);
-        console.log('DEBUG: New data string:', dataString);
-        console.log('DEBUG: Strings equal?', lastSavedValueRef.current === dataString);
-
         if (lastSavedValueRef.current === dataString) {
             console.log('Data unchanged, skipping save to Drive');
             return;
@@ -331,7 +325,10 @@ export const useCloudStorage = (key, defaultValue) => {
 
     // Save data when value changes (debounced)
     useEffect(() => {
-        if (isLoading || !isAuthenticated || value === defaultValue) return;
+        if (isLoading || !isAuthenticated) return;
+
+        // Don't save if value is exactly the same as defaultValue (deep comparison for arrays/objects)
+        if (JSON.stringify(value) === JSON.stringify(defaultValue)) return;
 
         // Clear existing timeout
         if (saveTimeoutRef.current) {
