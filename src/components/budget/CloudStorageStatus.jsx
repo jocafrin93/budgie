@@ -1,8 +1,7 @@
-import { useStorage } from '../../hooks/useStorage';
+import { useCloudStorageStatus } from '../../hooks/useCloudStorageStatus';
 
 const CloudStorageStatus = () => {
-    // Use any storage key to get the cloud storage status
-    const [, , { isLoading, isAuthenticated, error, signIn }] = useStorage('budgetCalc_cloudStatus', null);
+    const { isLoading, isAuthenticated, error, signIn } = useCloudStorageStatus();
 
     const isDevelopment =
         window.location.hostname === 'localhost' ||
