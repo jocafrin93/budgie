@@ -350,9 +350,19 @@ export const useCloudStorage = (key, defaultValue) => {
         }
 
         // Don't save if value is exactly the same as defaultValue (deep comparison for arrays/objects)
-        if (JSON.stringify(value) === JSON.stringify(defaultValue)) {
-            console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: value equals defaultValue`);
+        // BUT: Always save if we have an empty array that resulted from deletions
+        const valueString = JSON.stringify(value);
+        const defaultString = JSON.stringify(defaultValue);
+
+        if (valueString === defaultString && lastSavedValueRef.current === null) {
+            // Only skip if this is the initial state (never saved before)
+            console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: initial state equals defaultValue`);
             return;
+        }
+
+        if (valueString === defaultString && lastSavedValueRef.current !== null) {
+            // This is a legitimate empty state after deletions - SAVE IT
+            console.log(`💾 CLOUD STORAGE (${key}) - Saving empty state after deletions`);
         }
 
         console.log(`💾 CLOUD STORAGE (${key}) - Scheduling save for:`, value);
