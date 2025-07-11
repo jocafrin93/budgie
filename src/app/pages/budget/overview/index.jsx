@@ -62,10 +62,7 @@ export default function BudgetOverview() {
 
     // Use transaction management hook properly (same as transactions page)
     const {
-        transactions,
-        addTransaction,
-        updateTransaction,
-        deleteTransaction
+        transactions
     } = useTransactionManagement(accounts, () => { }, categories, setCategories);
 
     // Helper function to calculate spent amount for a category from transactions
