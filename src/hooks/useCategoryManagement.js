@@ -1,14 +1,14 @@
 // src/hooks/useCategoryManagement.js - UPDATED
 import { useCallback } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useStorage } from './useStorage';
 
 /**
  * Custom hook for managing categories with Enhanced Category Structure
  * Now supports 'single' and 'multiple' category types
  */
 export const useCategoryManagement = () => {
-  // Categories state - UPDATED with type field
-  const [categories, setCategories] = useLocalStorage('budgetCalc_categories', [
+  // Categories state - now using cloud storage
+  const [categories, setCategories] = useStorage('budgetCalc_categories', [
     {
       id: 1,
       name: 'Personal Care',

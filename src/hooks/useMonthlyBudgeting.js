@@ -1,6 +1,6 @@
 // src/hooks/useMonthlyBudgeting.js
 import { useCallback, useMemo } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useStorage } from './useStorage';
 
 /**
  * Custom hook for managing monthly budget data
@@ -17,7 +17,7 @@ export const useMonthlyBudgeting = (categories = [], transactions = []) => {
     //     toBeBudgeted: 1000 // Available money for this month
     //   }
     // }
-    const [monthlyBudgets, setMonthlyBudgets] = useLocalStorage('budgetCalc_monthlyBudgets', {});
+    const [monthlyBudgets, setMonthlyBudgets] = useStorage('budgetCalc_monthlyBudgets', {});
 
     /**
      * Get current month string in YYYY-MM format

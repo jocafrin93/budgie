@@ -1,6 +1,6 @@
 // src/hooks/useEnvelopeBudgeting.js
 import { useCallback } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useStorage } from './useStorage';
 
 /**
  * Custom hook for YNAB-style envelope budgeting system
@@ -21,17 +21,17 @@ export const useEnvelopeBudgeting = ({
   transactions = [],
   accounts = []
 } = {}) => {
-  // State for tracking category funding history
-  const [categoryFundingHistory, setCategoryFundingHistory] = useLocalStorage('budgetCalc_categoryFundingHistory', []);
+  // State for tracking category funding history - now using cloud storage
+  const [categoryFundingHistory, setCategoryFundingHistory] = useStorage('budgetCalc_categoryFundingHistory', []);
 
-  // State for tracking money movements between categories
-  const [categoryTransfers, setCategoryTransfers] = useLocalStorage('budgetCalc_categoryTransfers', []);
+  // State for tracking money movements between categories - now using cloud storage
+  const [categoryTransfers, setCategoryTransfers] = useStorage('budgetCalc_categoryTransfers', []);
 
-  // Monthly budget settings - to store the amount allocated per month to each category
-  const [monthlyBudget, setMonthlyBudget] = useLocalStorage('budgetCalc_monthlyBudget', {});
+  // Monthly budget settings - to store the amount allocated per month to each category - now using cloud storage
+  const [monthlyBudget, setMonthlyBudget] = useStorage('budgetCalc_monthlyBudget', {});
 
-  // State for tracking pending account transfers (NEW - for cross-account allocation)
-  const [pendingTransfers, setPendingTransfers] = useLocalStorage('budgetCalc_pendingTransfers', []);
+  // State for tracking pending account transfers (NEW - for cross-account allocation) - now using cloud storage
+  const [pendingTransfers, setPendingTransfers] = useStorage('budgetCalc_pendingTransfers', []);
 
   /**
    * Calculate the total amount available to be allocated (legacy - global)
