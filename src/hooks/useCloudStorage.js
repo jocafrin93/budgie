@@ -344,10 +344,18 @@ export const useCloudStorage = (key, defaultValue) => {
 
     // Save data when value changes (debounced)
     useEffect(() => {
-        if (isLoading || !isAuthenticated) return;
+        if (isLoading || !isAuthenticated) {
+            console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: loading=${isLoading}, authenticated=${isAuthenticated}`);
+            return;
+        }
 
         // Don't save if value is exactly the same as defaultValue (deep comparison for arrays/objects)
-        if (JSON.stringify(value) === JSON.stringify(defaultValue)) return;
+        if (JSON.stringify(value) === JSON.stringify(defaultValue)) {
+            console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: value equals defaultValue`);
+            return;
+        }
+
+        console.log(`💾 CLOUD STORAGE (${key}) - Scheduling save for:`, value);
 
         // Clear existing timeout
         if (saveTimeoutRef.current) {
@@ -356,6 +364,7 @@ export const useCloudStorage = (key, defaultValue) => {
 
         // Debounced save
         saveTimeoutRef.current = setTimeout(() => {
+            console.log(`💾 CLOUD STORAGE (${key}) - Executing save...`);
             writeToDriveRef.current(value);
         }, DEBOUNCE_DELAY);
 
@@ -365,7 +374,7 @@ export const useCloudStorage = (key, defaultValue) => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [value, isLoading, isAuthenticated, defaultValue]);
+    }, [value, isLoading, isAuthenticated, defaultValue, key]);
 
     // Update value function
     const updateValue = (newValue) => {
