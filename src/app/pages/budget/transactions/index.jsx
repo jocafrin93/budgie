@@ -383,73 +383,65 @@ export default function BudgetTransactions() {
     // Load scheduled transactions component dynamically
     const [ScheduledTransactionsRow, setScheduledTransactionsRow] = useState(null);
 
-    // Use proper scheduled transactions hook with cloud storage
+    // Use localStorage-based scheduled transactions (build-compatible fallback)
     const scheduledTransactionsHook = React.useMemo(() => {
-        try {
-            // Dynamic import of the hook to avoid build issues
-            const { useScheduledTransactions } = require('../../../../hooks/useScheduledTransactions');
-            return useScheduledTransactions(addTransaction);
-        } catch (error) {
-            console.error('Error loading scheduled transactions hook:', error);
-            // Fallback to localStorage-based implementation
-            const getUpcomingScheduledTransactions = (days = 30) => {
-                const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-                const scheduledTransactions = stored ? JSON.parse(stored) : [];
+        const getUpcomingScheduledTransactions = (days = 30) => {
+            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+            const scheduledTransactions = stored ? JSON.parse(stored) : [];
 
-                const today = new Date();
-                const futureDate = new Date();
-                futureDate.setDate(today.getDate() + days);
+            const today = new Date();
+            const futureDate = new Date();
+            futureDate.setDate(today.getDate() + days);
 
-                return scheduledTransactions
-                    .filter(txn => !txn.isActivated && new Date(txn.nextDueDate || txn.dueDate) <= futureDate)
-                    .sort((a, b) => new Date(a.nextDueDate || a.dueDate) - new Date(b.nextDueDate || b.dueDate));
-            };
+            return scheduledTransactions
+                .filter(txn => !txn.isActivated && new Date(txn.nextDueDate || txn.dueDate) <= futureDate)
+                .sort((a, b) => new Date(a.nextDueDate || a.dueDate) - new Date(b.nextDueDate || b.dueDate));
+        };
 
-            const editScheduledTransaction = (id, updates) => {
-                const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-                const scheduledTransactions = stored ? JSON.parse(stored) : [];
-                const updated = scheduledTransactions.map(txn =>
-                    txn.id === id ? { ...txn, ...updates } : txn
-                );
-                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updated));
-            };
+        const editScheduledTransaction = (id, updates) => {
+            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+            const scheduledTransactions = stored ? JSON.parse(stored) : [];
+            const updated = scheduledTransactions.map(txn =>
+                txn.id === id ? { ...txn, ...updates } : txn
+            );
+            localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updated));
+        };
 
-            const activateScheduledTransactionEarly = (id) => {
-                const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-                const scheduledTransactions = stored ? JSON.parse(stored) : [];
-                const transaction = scheduledTransactions.find(txn => txn.id === id);
-                if (transaction) {
-                    const actualTransaction = {
-                        ...transaction,
-                        id: undefined,
-                        isScheduled: false,
-                        scheduledTransactionId: transaction.id,
-                        date: new Date().toISOString().split('T')[0]
-                    };
-                    addTransaction(actualTransaction);
-                    editScheduledTransaction(id, {
-                        isActivated: true,
-                        activatedAt: new Date().toISOString(),
-                        activatedEarly: true
-                    });
-                }
-            };
+        const activateScheduledTransactionEarly = (id) => {
+            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+            const scheduledTransactions = stored ? JSON.parse(stored) : [];
+            const transaction = scheduledTransactions.find(txn => txn.id === id);
+            if (transaction) {
+                const actualTransaction = {
+                    ...transaction,
+                    id: undefined,
+                    isScheduled: false,
+                    scheduledTransactionId: transaction.id,
+                    date: new Date().toISOString().split('T')[0]
+                };
+                addTransaction(actualTransaction);
+                editScheduledTransaction(id, {
+                    isActivated: true,
+                    activatedAt: new Date().toISOString(),
+                    activatedEarly: true
+                });
+            }
+        };
 
-            const deleteScheduledTransaction = (id) => {
-                const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-                const scheduledTransactions = stored ? JSON.parse(stored) : [];
-                const filtered = scheduledTransactions.filter(txn => txn.id !== id);
-                localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(filtered));
-            };
+        const deleteScheduledTransaction = (id) => {
+            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+            const scheduledTransactions = stored ? JSON.parse(stored) : [];
+            const filtered = scheduledTransactions.filter(txn => txn.id !== id);
+            localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(filtered));
+        };
 
-            return {
-                getUpcomingScheduledTransactions,
-                editScheduledTransaction,
-                skipScheduledTransaction: (id) => editScheduledTransaction(id, { isSkipped: true, skippedAt: new Date().toISOString() }),
-                activateScheduledTransactionEarly,
-                deleteScheduledTransaction
-            };
-        }
+        return {
+            getUpcomingScheduledTransactions,
+            editScheduledTransaction,
+            skipScheduledTransaction: (id) => editScheduledTransaction(id, { isSkipped: true, skippedAt: new Date().toISOString() }),
+            activateScheduledTransactionEarly,
+            deleteScheduledTransaction
+        };
     }, [addTransaction]);
 
     // Load scheduled transactions component dynamically

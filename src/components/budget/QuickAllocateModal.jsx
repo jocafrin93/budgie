@@ -1,5 +1,6 @@
 import { CheckCircle, DollarSign, X, Zap } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useStorage } from '../../hooks/useStorage';
 
 const QuickAllocateModal = ({
     isOpen,
@@ -9,9 +10,6 @@ const QuickAllocateModal = ({
     accounts = [],
     onBulkAllocate
 }) => {
-    // Import useStorage hook dynamically to avoid auto-formatter issues
-    const { useStorage } = require('../../hooks/useStorage');
-
     // Use cloud storage for pending transfers
     const [pendingTransfers, setPendingTransfers] = useStorage('budgetCalc_pendingTransfers', []);
 

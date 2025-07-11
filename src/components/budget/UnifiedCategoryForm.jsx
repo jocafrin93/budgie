@@ -511,27 +511,43 @@ const UnifiedCategoryForm = ({
     accounts = [],
     currentPay = 0,
 }) => {
-    // Import useStorage hook dynamically to avoid auto-formatter issues
-    const { useStorage } = require('../../hooks/useStorage');
-
-    // Payee management - use cloud storage
-    const [payees, setPayees] = useStorage('budgetCalc_payees', [
-        'Amazon',
-        'Walmart',
-        'Target',
-        'Grocery Store',
-        'Gas Station',
-        'Utility Company',
-        'Insurance Company',
-        'Bank',
-        'Credit Card Company',
-        'Restaurant'
-    ]);
+    // Payee management - use localStorage fallback for build compatibility
+    const [payees, setPayees] = useState(() => {
+        try {
+            const stored = localStorage.getItem('budgetCalc_payees');
+            return stored ? JSON.parse(stored) : [
+                'Amazon',
+                'Walmart',
+                'Target',
+                'Grocery Store',
+                'Gas Station',
+                'Utility Company',
+                'Insurance Company',
+                'Bank',
+                'Credit Card Company',
+                'Restaurant'
+            ];
+        } catch {
+            return [
+                'Amazon',
+                'Walmart',
+                'Target',
+                'Grocery Store',
+                'Gas Station',
+                'Utility Company',
+                'Insurance Company',
+                'Bank',
+                'Credit Card Company',
+                'Restaurant'
+            ];
+        }
+    });
 
     const handleAddPayee = (newPayee) => {
         if (newPayee.trim() && !payees.includes(newPayee.trim())) {
             const updatedPayees = [...payees, newPayee.trim()];
             setPayees(updatedPayees);
+            localStorage.setItem('budgetCalc_payees', JSON.stringify(updatedPayees));
         }
     };
 
