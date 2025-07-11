@@ -168,7 +168,12 @@ export const useCloudStorage = (key, defaultValue) => {
 
     // Read data from Google Drive
     readFromDriveRef.current = async () => {
-        if (!isAuthenticated || circuitBreakerRef.current || isLoadingRef.current) {
+        // Check token directly instead of relying on state to avoid race conditions
+        const storedToken = localStorage.getItem('google_access_token');
+        const tokenExpiry = localStorage.getItem('google_token_expiry');
+        const hasValidToken = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
+
+        if (!hasValidToken || circuitBreakerRef.current || isLoadingRef.current) {
             return defaultValue;
         }
 
@@ -303,9 +308,10 @@ export const useCloudStorage = (key, defaultValue) => {
             if (hasAuth) {
                 try {
                     await initializeGapiRef.current();
-                    console.log('DEBUG: GAPI initialized, isAuthenticated:', isAuthenticated);
+                    console.log('DEBUG: GAPI initialized, hasAuth:', hasAuth);
 
-                    if (isAuthenticated) {
+                    // Use hasAuth instead of isAuthenticated to avoid race condition
+                    if (hasAuth) {
                         console.log('Loading data from Google Drive...');
                         const data = await readFromDriveRef.current();
                         console.log('DEBUG: Data loaded, setting value:', data);
