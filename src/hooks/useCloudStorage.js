@@ -1,10 +1,8 @@
 // src/hooks/useCloudStorage.js
 import { useCallback, useEffect, useState } from 'react';
 
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 let gapi = null;
 let isInitialized = false;
