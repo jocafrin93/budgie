@@ -1,11 +1,8 @@
 // Import Dependencies
-import { useEffect, useReducer } from "react";
-import isObject from "lodash/isObject";
 import PropTypes from "prop-types";
-import isString from "lodash/isString";
+import { useEffect, useReducer } from "react";
 
 // Local Imports
-import axios from "utils/axios";
 import { isTokenValid, setSession } from "utils/jwt";
 import { AuthContext } from "./context";
 
@@ -83,8 +80,13 @@ export function AuthProvider({ children }) {
         if (authToken && isTokenValid(authToken)) {
           setSession(authToken);
 
-          const response = await axios.get("/user/profile");
-          const { user } = response.data;
+          // Create mock user from stored token (bypass external API)
+          const user = {
+            id: 1,
+            username: "user",
+            email: "user@example.com",
+            name: "User",
+          };
 
           dispatch({
             type: "INITIALIZE",
@@ -123,25 +125,28 @@ export function AuthProvider({ children }) {
     });
 
     try {
-      const response = await axios.post("/login", {
-        username,
-        password,
-      });
+      // Simple local authentication - bypass external API
+      if (username && password) {
+        // Create a mock auth token and user
+        const authToken = `mock-token-${Date.now()}`;
+        const user = {
+          id: 1,
+          username: username,
+          email: `${username}@example.com`,
+          name: username.charAt(0).toUpperCase() + username.slice(1),
+        };
 
-      const { authToken, user } = response.data;
+        setSession(authToken);
 
-      if (!isString(authToken) && !isObject(user)) {
-        throw new Error("Response is not vallid");
+        dispatch({
+          type: "LOGIN_SUCCESS",
+          payload: {
+            user,
+          },
+        });
+      } else {
+        throw new Error("Username and password are required");
       }
-
-      setSession(authToken);
-
-      dispatch({
-        type: "LOGIN_SUCCESS",
-        payload: {
-          user,
-        },
-      });
     } catch (err) {
       dispatch({
         type: "LOGIN_ERROR",
