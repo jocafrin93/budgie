@@ -293,30 +293,38 @@ export const useCloudStorage = (key, defaultValue) => {
         hasInitializedRef.current = true;
 
         const initialize = async () => {
+            console.log('DEBUG: Starting cloud storage initialization for key:', key);
             setIsLoading(true);
 
             // Check authentication
             const hasAuth = checkAuthStateRef.current();
+            console.log('DEBUG: Has auth?', hasAuth);
 
             if (hasAuth) {
                 try {
                     await initializeGapiRef.current();
+                    console.log('DEBUG: GAPI initialized, isAuthenticated:', isAuthenticated);
 
                     if (isAuthenticated) {
                         console.log('Loading data from Google Drive...');
                         const data = await readFromDriveRef.current();
+                        console.log('DEBUG: Data loaded, setting value:', data);
                         setValue(data);
                     } else {
+                        console.log('DEBUG: Not authenticated, using default value');
                         setValue(defaultValue);
                     }
                 } catch (err) {
                     console.error('Initialization error:', err);
+                    console.log('DEBUG: Error occurred, using default value');
                     setValue(defaultValue);
                 }
             } else {
+                console.log('DEBUG: No auth, using default value');
                 setValue(defaultValue);
             }
 
+            console.log('DEBUG: Initialization complete, setting loading to false');
             setIsLoading(false);
         };
 
