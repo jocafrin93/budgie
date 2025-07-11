@@ -91,17 +91,28 @@ export const useDataModel = ({
 
     // Debug logging to see what we're working with
     console.log('DEBUG - Adding item with categoryId:', categoryId);
-    console.log('DEBUG - Available categories:', categories.map(cat => ({ id: cat.id, name: cat.name })));
+    console.log('DEBUG - Available categories:', categories.map(cat => ({ id: cat.id, name: cat.name, hasId: 'id' in cat })));
+    console.log('DEBUG - Full category objects:', categories);
 
-    // More flexible category validation - check both string and number IDs
-    const categoryExists = categories.some(cat => {
-      const catId = parseInt(cat.id, 10);
-      return catId === categoryId || cat.id === categoryId || cat.id === String(categoryId);
+    // More flexible category validation - handle categories without ID field
+    const categoryExists = categories.some((cat, index) => {
+      // Check if category has an ID field
+      if (cat.id !== undefined) {
+        const catId = parseInt(cat.id, 10);
+        return catId === categoryId || cat.id === categoryId || cat.id === String(categoryId);
+      } else {
+        // For categories without ID, use array index + 1 as ID (common pattern)
+        return (index + 1) === categoryId;
+      }
     });
 
     if (isNaN(categoryId) || !categoryExists) {
       console.error('Invalid category ID for new item:', newItem);
-      console.error('Available category IDs:', categories.map(cat => cat.id));
+      console.error('Available categories with IDs:', categories.map((cat, index) => ({
+        id: cat.id || (index + 1),
+        name: cat.name,
+        hasIdField: 'id' in cat
+      })));
       return;
     }
 
