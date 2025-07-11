@@ -357,6 +357,33 @@ export const useCloudStorage = (key, defaultValue) => {
         setError('Please sign in through the settings page');
     };
 
+    // Sign out function
+    const signOut = async () => {
+        try {
+            console.log('Signing out of Google Drive...');
+
+            // Clear stored tokens
+            localStorage.removeItem('google_access_token');
+            localStorage.removeItem('google_token_expiry');
+
+            // Reset state
+            setIsAuthenticated(false);
+            setError(null);
+
+            // Reset circuit breaker
+            circuitBreakerRef.current = false;
+            retryCountRef.current = 0;
+
+            console.log('Successfully signed out of Google Drive');
+
+            return { success: true };
+        } catch (err) {
+            console.error('Error signing out:', err);
+            setError(`Failed to sign out: ${err.message}`);
+            return { success: false, error: err.message };
+        }
+    };
+
     return [
         value,
         updateValue,
@@ -364,7 +391,8 @@ export const useCloudStorage = (key, defaultValue) => {
             isLoading,
             isAuthenticated,
             error,
-            signIn
+            signIn,
+            signOut
         }
     ];
 };

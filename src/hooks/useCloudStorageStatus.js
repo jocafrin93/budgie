@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
 
 let gapi = null;
 let isInitialized = false;
@@ -187,11 +187,40 @@ export const useCloudStorageStatus = () => {
         }
     }, [initializeGapi]);
 
+    // Sign out from Google
+    const signOut = useCallback(async () => {
+        try {
+            console.log('Signing out of Google Drive...');
+
+            // Clear stored tokens
+            localStorage.removeItem('google_access_token');
+            localStorage.removeItem('google_token_expiry');
+
+            // Clear gapi token if available
+            if (window.gapi?.client) {
+                window.gapi.client.setToken(null);
+            }
+
+            // Reset state
+            setIsAuthenticated(false);
+            setError(null);
+
+            console.log('Successfully signed out of Google Drive');
+
+            return { success: true };
+        } catch (err) {
+            console.error('Error signing out:', err);
+            setError(`Failed to sign out: ${err.message}`);
+            return { success: false, error: err.message };
+        }
+    }, []);
+
     return {
         isLoading,
         isAuthenticated,
         error,
         signIn,
+        signOut,
         checkExistingAuth
     };
 };

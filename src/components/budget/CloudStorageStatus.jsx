@@ -1,7 +1,7 @@
 import { useCloudStorageStatus } from '../../hooks/useCloudStorageStatus';
 
 const CloudStorageStatus = () => {
-    const { isLoading, isAuthenticated, error, signIn } = useCloudStorageStatus();
+    const { isLoading, isAuthenticated, error, signIn, signOut } = useCloudStorageStatus();
 
     const isDevelopment =
         window.location.hostname === 'localhost' ||
@@ -145,19 +145,32 @@ const CloudStorageStatus = () => {
 
     return (
         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <div className="flex items-center">
-                <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                </div>
-                <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
-                        Cloud Storage Connected
-                    </h3>
-                    <div className="mt-1 text-sm text-green-700 dark:text-green-300">
-                        Your data is automatically syncing with Google Drive
+            <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
                     </div>
+                    <div className="ml-3">
+                        <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
+                            Cloud Storage Connected
+                        </h3>
+                        <div className="mt-1 text-sm text-green-700 dark:text-green-300">
+                            Your data is automatically syncing with Google Drive
+                        </div>
+                    </div>
+                </div>
+                <div className="ml-4">
+                    <button
+                        onClick={signOut}
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center space-x-1"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        <span>Disconnect</span>
+                    </button>
                 </div>
             </div>
         </div>
