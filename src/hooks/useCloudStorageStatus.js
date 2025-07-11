@@ -18,9 +18,7 @@ export const useCloudStorageStatus = () => {
     // Initialize Google API (only called when user wants to sign in)
     const initializeGapi = useCallback(async () => {
         if (isInitialized) {
-            // If already initialized, just check auth status
-            const authInstance = gapi.auth2.getAuthInstance();
-            setIsAuthenticated(authInstance.isSignedIn.get());
+            // If already initialized, just return
             return;
         }
 
@@ -35,9 +33,11 @@ export const useCloudStorageStatus = () => {
                 console.log('CLIENT_ID:', CLIENT_ID ? 'Set' : 'Not set');
                 console.log('API_KEY:', API_KEY ? 'Set' : 'Not set');
 
-                // Load gapi if not already loaded
+                // Load Google APIs
+                console.log('Loading Google API scripts...');
+
+                // Load gapi for Drive API
                 if (!window.gapi) {
-                    console.log('Loading Google API script...');
                     await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
                         script.src = 'https://apis.google.com/js/api.js';
@@ -47,30 +47,37 @@ export const useCloudStorageStatus = () => {
                     });
                 }
 
+                // Load Google Identity Services for auth
+                if (!window.google?.accounts) {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://accounts.google.com/gsi/client';
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                }
+
                 gapi = window.gapi;
-                console.log('Loading gapi client and auth2...');
+                console.log('Loading gapi client...');
 
                 await new Promise((resolve, reject) => {
-                    gapi.load('client:auth2', async () => {
+                    gapi.load('client', async () => {
                         try {
                             console.log('Initializing gapi client...');
                             await gapi.client.init({
                                 apiKey: API_KEY,
-                                clientId: CLIENT_ID,
-                                discoveryDocs: [DISCOVERY_DOC],
-                                scope: SCOPES
+                                discoveryDocs: [DISCOVERY_DOC]
                             });
 
-                            console.log('Getting auth instance...');
-                            const authInstance = gapi.auth2.getAuthInstance();
-                            if (!authInstance) {
-                                throw new Error('Failed to get auth instance');
-                            }
-
-                            setIsAuthenticated(authInstance.isSignedIn.get());
-
-                            // Listen for sign-in state changes
-                            authInstance.isSignedIn.listen(setIsAuthenticated);
+                            console.log('Initializing Google Identity Services...');
+                            window.google.accounts.id.initialize({
+                                client_id: CLIENT_ID,
+                                callback: (response) => {
+                                    console.log('Google Sign-In response:', response);
+                                    setIsAuthenticated(true);
+                                }
+                            });
 
                             isInitialized = true;
                             console.log('Google API initialized successfully');
@@ -101,16 +108,32 @@ export const useCloudStorageStatus = () => {
             // Initialize if not already done
             await initializeGapi();
 
-            if (!gapi || !isInitialized) {
-                throw new Error('Google API not initialized');
+            if (!window.google?.accounts || !isInitialized) {
+                throw new Error('Google Identity Services not initialized');
             }
 
-            const authInstance = gapi.auth2.getAuthInstance();
-            if (!authInstance) {
-                throw new Error('Google Auth instance not available');
-            }
+            console.log('Requesting OAuth token...');
 
-            await authInstance.signIn();
+            // Use Google Identity Services OAuth 2.0 flow
+            const tokenClient = window.google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (response) => {
+                    if (response.error) {
+                        console.error('OAuth error:', response.error);
+                        setError(`OAuth error: ${response.error}`);
+                        return;
+                    }
+
+                    console.log('OAuth token received:', response);
+                    // Set the access token for gapi
+                    gapi.client.setToken(response);
+                    setIsAuthenticated(true);
+                    setError(null);
+                }
+            });
+
+            tokenClient.requestAccessToken();
         } catch (err) {
             console.error('Google Sign-In error:', err);
             const errorMessage = err?.error || err?.message || err?.toString() || 'Unknown error occurred';
