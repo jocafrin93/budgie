@@ -1,15 +1,17 @@
 @layer base, vendor, components, utilities;
 
-@import "tailwindcss";
-
 @import "./variants.css" layer(base);
 @import "./base.css" layer(base);
 @import "./layouts.css" layer(base);
 
 @import "./app/index.css" layer(components);
 
-/* DISABLED: This colors.css file conflicts with DaisyUI theming */
-/* @import "./colors.css" layer(theme); */
+@import "tailwindcss";
+
+@import "./colors.css" layer(theme);
+@import "./daisy-themes.css";
+@import "./daisy-utilities.css";
+@import "./daisy-tailux-bridge.css";
 
 @custom-variant dark (&:is(.dark *));
 

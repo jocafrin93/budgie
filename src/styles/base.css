@@ -12,15 +12,15 @@ html.dark {
 }
 
 body {
-  @apply h-full bg-base-200 font-sans text-sm leading-5 text-base-content antialiased [text-rendering:optimizeLegibility];
+  @apply h-full bg-gray-50 font-sans text-sm leading-5 text-gray-700 antialiased [text-rendering:optimizeLegibility] dark:bg-dark-900 dark:text-dark-200 dark:[color-scheme:dark];
 }
 
 [data-card-skin="bordered"] body {
-  @apply bg-base-100;
+  @apply bg-white dark:bg-dark-900;
 }
 
 .dark[data-card-skin="bordered"] body {
-  @apply bg-base-100;
+  @apply bg-dark-900;
 }
 
 body.is-monochrome::before {
@@ -28,7 +28,7 @@ body.is-monochrome::before {
 }
 
 .transition-content {
-  @apply duration-[.25s] ease-in [transition-property:width, padding-left, padding-right, margin-left, margin-right];
+  @apply duration-[.25s] ease-in [transition-property:width,padding-left,padding-right,margin-left,margin-right];
 }
 
 .is-sidebar-open .transition-content {
@@ -71,7 +71,7 @@ body.is-monochrome::before {
 }
 
 /* Demo inline space */
-.inline-space> :not([hidden]) {
+.inline-space > :not([hidden]) {
   @apply mb-2.5 mr-2.5;
 }
 
