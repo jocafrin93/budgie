@@ -1,14 +1,575 @@
 import { useBreakpointsContext } from 'app/contexts/breakpoint/context';
-import { CheckCircle, Edit, Plus, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { CheckCircle, Edit, Plus, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+
+// Mobile Transaction Form Component
+const MobileTransactionForm = ({
+    isOpen,
+    onClose,
+    accounts = [],
+    categories = [],
+    payees = [],
+    onAddPayee,
+    onSave,
+    viewAccount = 'all'
+}) => {
+    // Get today's date in local timezone
+    const getTodayLocalDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const [formData, setFormData] = useState({
+        date: getTodayLocalDate(),
+        payee: '',
+        amount: '',
+        categoryId: '',
+        accountId: viewAccount !== 'all' ? viewAccount : '',
+        memo: '',
+        isCleared: false,
+        isTransfer: false,
+        transferToAccountId: '',
+        splits: []
+    });
+
+    const [transactionType, setTransactionType] = useState('outflow');
+    const [showPayeeDropdown, setShowPayeeDropdown] = useState(false);
+    const [filteredPayees, setFilteredPayees] = useState(payees);
+    const [showSplits, setShowSplits] = useState(false);
+    const payeeInputRef = useRef(null);
+
+    // Reset form when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setFormData({
+                date: getTodayLocalDate(),
+                payee: '',
+                amount: '',
+                categoryId: '',
+                accountId: viewAccount !== 'all' ? viewAccount : '',
+                memo: '',
+                isCleared: false,
+                isTransfer: false,
+                transferToAccountId: '',
+                splits: []
+            });
+            setTransactionType('outflow');
+            setShowPayeeDropdown(false);
+            setShowSplits(false);
+        }
+    }, [isOpen, viewAccount]);
+
+    // Filter payees based on input
+    useEffect(() => {
+        if (!formData.payee.trim()) {
+            setFilteredPayees(payees);
+        } else {
+            const filtered = payees.filter(payee =>
+                payee.toLowerCase().includes(formData.payee.toLowerCase())
+            );
+            setFilteredPayees(filtered);
+        }
+    }, [formData.payee, payees]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        // Validate required fields
+        if (!formData.accountId || !formData.amount) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        if (formData.isTransfer && !formData.transferToAccountId) {
+            alert('Please select a transfer destination account');
+            return;
+        }
+
+        if (!formData.isTransfer && !formData.payee.trim()) {
+            alert('Please enter a payee');
+            return;
+        }
+
+        // Validate split transactions
+        if (showSplits && formData.splits.length > 0 && !isBalanced) {
+            alert('Split amounts must equal the transaction amount. Please balance the splits or use auto-distribute.');
+            return;
+        }
+
+        // Prepare transaction data
+        const parsedAmount = parseFloat(formData.amount) || 0;
+        const finalAmount = transactionType === 'outflow' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount);
+
+        const transactionData = {
+            ...formData,
+            amount: finalAmount,
+            payee: formData.isTransfer ? '' : formData.payee.trim(),
+            isSplit: showSplits && formData.splits.length > 0,
+            splits: showSplits ? formData.splits : []
+        };
+
+        onSave(transactionData);
+        onClose();
+    };
+
+    const handlePayeeSelect = (payee) => {
+        setFormData(prev => ({ ...prev, payee }));
+        setShowPayeeDropdown(false);
+    };
+
+    const handleAddNewPayee = () => {
+        if (formData.payee.trim() && !payees.includes(formData.payee.trim())) {
+            const newPayee = formData.payee.trim();
+            onAddPayee?.(newPayee);
+            setShowPayeeDropdown(false);
+        }
+    };
+
+    const showAddPayeeOption = formData.payee.trim() &&
+        !payees.some(payee => payee.toLowerCase() === formData.payee.toLowerCase()) &&
+        filteredPayees.length === 0;
+
+    // Split transaction calculations
+    const splitTotal = formData.splits.reduce((sum, split) => sum + (parseFloat(split.amount) || 0), 0);
+    const transactionAmount = parseFloat(formData.amount) || 0;
+    const remaining = transactionAmount - splitTotal;
+    const isBalanced = Math.abs(remaining) < 0.01;
+
+    // Split transaction functions
+    const addSplit = () => {
+        setFormData(prev => ({
+            ...prev,
+            splits: [...prev.splits, { categoryId: '', amount: 0 }]
+        }));
+    };
+
+    const updateSplit = (index, field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            splits: prev.splits.map((split, i) =>
+                i === index ? { ...split, [field]: value } : split
+            )
+        }));
+    };
+
+    const removeSplit = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            splits: prev.splits.filter((_, i) => i !== index)
+        }));
+    };
+
+    const autoDistribute = () => {
+        if (formData.splits.length === 0 || Math.abs(remaining) < 0.01) return;
+
+        const amountPerSplit = remaining / formData.splits.length;
+        setFormData(prev => ({
+            ...prev,
+            splits: prev.splits.map(split => ({
+                ...split,
+                amount: (parseFloat(split.amount) || 0) + amountPerSplit
+            }))
+        }));
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-base-content/50 backdrop-blur-sm">
+            <div className="bg-base-100 rounded-t-xl shadow-xl w-full max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom duration-300 flex flex-col">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-base-300 bg-base-200 flex-shrink-0">
+                    <h2 className="text-lg font-semibold text-base-content">Add Transaction</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-base-300 rounded-lg transition-colors"
+                    >
+                        <X className="w-5 h-5 text-base-content" />
+                    </button>
+                </div>
+
+                {/* Form - Scrollable content */}
+                <div className="flex-1 overflow-y-auto">
+                    <form id="mobile-transaction-form" onSubmit={handleSubmit} className="p-4 space-y-4">
+                        {/* Transaction Type Toggle */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-base-content">Transaction Type</label>
+                            <div className="flex rounded-lg overflow-hidden border border-base-300">
+                                <button
+                                    type="button"
+                                    onClick={() => setTransactionType('outflow')}
+                                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'outflow'
+                                        ? 'bg-error text-white'
+                                        : 'bg-base-200 text-base-content hover:bg-base-300'
+                                        }`}
+                                >
+                                    💸 Expense
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTransactionType('inflow')}
+                                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'inflow'
+                                        ? 'bg-success text-white'
+                                        : 'bg-base-200 text-base-content hover:bg-base-300'
+                                        }`}
+                                >
+                                    💰 Income
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Date */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-base-content">
+                                Date <span className="text-error">*</span>
+                            </label>
+                            <input
+                                type="date"
+                                value={formData.date}
+                                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                                required
+                                className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                            />
+                        </div>
+
+                        {/* Account */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-base-content">
+                                Account <span className="text-error">*</span>
+                            </label>
+                            <select
+                                value={formData.accountId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
+                                required
+                                className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                            >
+                                <option value="">Select Account</option>
+                                {accounts.map(account => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Transfer Toggle */}
+                        <div className="flex items-center space-x-3">
+                            <input
+                                type="checkbox"
+                                id="isTransfer"
+                                checked={formData.isTransfer}
+                                onChange={(e) => setFormData(prev => ({
+                                    ...prev,
+                                    isTransfer: e.target.checked,
+                                    payee: e.target.checked ? '' : prev.payee
+                                }))}
+                                className="form-checkbox-rounded this:info"
+                            />
+                            <label htmlFor="isTransfer" className="text-sm font-medium text-base-content">
+                                This is a transfer
+                            </label>
+                        </div>
+
+                        {/* Transfer To Account */}
+                        {formData.isTransfer && (
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-base-content">
+                                    Transfer To Account <span className="text-error">*</span>
+                                </label>
+                                <select
+                                    value={formData.transferToAccountId}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, transferToAccountId: e.target.value }))}
+                                    required
+                                    className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                >
+                                    <option value="">Select Account</option>
+                                    {accounts.filter(acc => acc.id !== formData.accountId).map(account => (
+                                        <option key={account.id} value={account.id}>
+                                            {account.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Payee - Only show for non-transfers */}
+                        {!formData.isTransfer && (
+                            <div className="space-y-2 relative">
+                                <label className="block text-sm font-medium text-base-content">
+                                    Payee <span className="text-error">*</span>
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        ref={payeeInputRef}
+                                        type="text"
+                                        value={formData.payee}
+                                        onChange={(e) => {
+                                            setFormData(prev => ({ ...prev, payee: e.target.value }));
+                                            setShowPayeeDropdown(true);
+                                        }}
+                                        onFocus={() => setShowPayeeDropdown(true)}
+                                        onBlur={() => setTimeout(() => setShowPayeeDropdown(false), 200)}
+                                        placeholder="Enter payee name..."
+                                        required
+                                        className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                    />
+
+                                    {/* Payee Dropdown */}
+                                    {showPayeeDropdown && (
+                                        <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                            {filteredPayees.length > 0 && (
+                                                <div>
+                                                    {filteredPayees.map((payee, index) => (
+                                                        <button
+                                                            key={index}
+                                                            type="button"
+                                                            onClick={() => handlePayeeSelect(payee)}
+                                                            className="w-full px-3 py-2 text-left hover:bg-base-200 text-base-content transition-colors first:rounded-t-lg last:rounded-b-lg"
+                                                        >
+                                                            {payee}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {showAddPayeeOption && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleAddNewPayee}
+                                                    className="w-full px-3 py-2 text-left hover:bg-base-200 text-info transition-colors border-t border-base-300 flex items-center space-x-2"
+                                                >
+                                                    <span>+</span>
+                                                    <span>Add &#34;{formData.payee}&#34;</span>
+                                                </button>
+                                            )}
+
+                                            {filteredPayees.length === 0 && !showAddPayeeOption && formData.payee.trim() && (
+                                                <div className="px-3 py-2 text-base-content/60 text-sm">
+                                                    No payees found
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Amount */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-base-content">
+                                Amount <span className="text-error">*</span>
+                            </label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">$</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={formData.amount}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                                    placeholder="0.00"
+                                    required
+                                    className="w-full pl-8 pr-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Category - Only show for non-transfers */}
+                        {!formData.isTransfer && (
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-base-content">Category</label>
+                                <select
+                                    value={formData.categoryId}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                                    className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                >
+                                    <option value="">Select Category</option>
+                                    {categories.map(category => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Memo */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-base-content">Memo</label>
+                            <input
+                                type="text"
+                                value={formData.memo}
+                                onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
+                                placeholder="Optional memo..."
+                                className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                            />
+                        </div>
+
+                        {/* Cleared Status */}
+                        <div className="flex items-center space-x-3">
+                            <input
+                                type="checkbox"
+                                id="isCleared"
+                                checked={formData.isCleared}
+                                onChange={(e) => setFormData(prev => ({ ...prev, isCleared: e.target.checked }))}
+                                className="form-checkbox-rounded this:success"
+                            />
+                            <label htmlFor="isCleared" className="text-sm font-medium text-base-content">
+                                Mark as cleared
+                            </label>
+                        </div>
+
+                        {/* Split Transaction Toggle - Only show for non-transfers */}
+                        {!formData.isTransfer && (
+                            <div className="flex items-center space-x-3">
+                                <input
+                                    type="checkbox"
+                                    id="showSplits"
+                                    checked={showSplits}
+                                    onChange={(e) => {
+                                        setShowSplits(e.target.checked);
+                                        if (!e.target.checked) {
+                                            setFormData(prev => ({ ...prev, splits: [] }));
+                                        }
+                                    }}
+                                    className="form-checkbox-rounded this:warning"
+                                />
+                                <label htmlFor="showSplits" className="text-sm font-medium text-base-content">
+                                    Split transaction across categories
+                                </label>
+                            </div>
+                        )}
+
+                        {/* Split Transaction Section */}
+                        {showSplits && !formData.isTransfer && (
+                            <div className="space-y-4 border-t border-base-300 pt-4">
+                                {/* Split Balance Indicator */}
+                                <div className="bg-base-200 p-3 rounded-lg">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-base-content/60">Transaction Amount:</span>
+                                        <span className="font-semibold">${parseFloat(formData.amount) || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-base-content/60">Split Total:</span>
+                                        <span className="font-semibold">${splitTotal}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-base-content/60">Remaining:</span>
+                                        <span className={`font-semibold ${isBalanced ? 'text-success' : 'text-error'}`}>
+                                            ${remaining}
+                                        </span>
+                                    </div>
+                                    {!isBalanced && (
+                                        <div className="mt-2 text-xs text-warning">
+                                            ⚠️ Splits must equal transaction amount
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Split Rows */}
+                                <div className="space-y-3">
+                                    {formData.splits.map((split, index) => (
+                                        <div key={index} className="bg-base-100 border border-base-300 rounded-lg p-3 space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-medium text-base-content">Split {index + 1}</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeSplit(index)}
+                                                    className="p-1 text-error hover:bg-error/10 rounded transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+
+                                            <select
+                                                value={split.categoryId}
+                                                onChange={(e) => updateSplit(index, 'categoryId', e.target.value)}
+                                                className="w-full px-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                            >
+                                                <option value="">Select Category</option>
+                                                {categories.map(category => (
+                                                    <option key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">$</span>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    value={split.amount}
+                                                    onChange={(e) => updateSplit(index, 'amount', parseFloat(e.target.value) || 0)}
+                                                    placeholder="0.00"
+                                                    className="w-full pl-8 pr-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Split Actions */}
+                                <div className="flex space-x-2">
+                                    <button
+                                        type="button"
+                                        onClick={addSplit}
+                                        className="flex-1 py-2 px-3 bg-base-300 text-base-content rounded-lg text-sm font-medium hover:bg-base-200 transition-colors flex items-center justify-center space-x-2"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        <span>Add Split</span>
+                                    </button>
+                                    {formData.splits.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={autoDistribute}
+                                            className="flex-1 py-2 px-3 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                                        >
+                                            Auto-Distribute
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                    </form>
+                </div>
+
+                {/* Fixed Action Buttons - Always visible at bottom */}
+                <div className="flex-shrink-0 p-4 border-t border-base-300 bg-base-100">
+                    <div className="flex space-x-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 py-3 px-4 bg-base-300 text-base-content rounded-lg font-medium hover:bg-base-200 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            form="mobile-transaction-form"
+                            className="flex-1 py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                        >
+                            Add Transaction
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const MobileTransactionsView = ({
     transactions = [],
     accounts = [],
     categories = [],
-    // payees = [],
-    // onAddPayee,
-    // onAddTransaction,
+    payees = [],
+    onAddPayee,
+    onAddTransaction,
     onEditTransaction,
     onDeleteTransaction,
     viewAccount = 'all'
@@ -196,13 +757,13 @@ const MobileTransactionsView = ({
                         <>
                             <button
                                 onClick={() => setIsSelectionMode(true)}
-                                className="flex items-center gap-2 bg-base-300 hover text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                             >
                                 Select
                             </button>
                             <button
                                 onClick={() => setShowAddModal(true)}
-                                className="flex items-center gap-2 bg-info/60 hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
                                 Add
@@ -212,13 +773,13 @@ const MobileTransactionsView = ({
                         <>
                             <button
                                 onClick={handleSelectAll}
-                                className="flex items-center gap-2 bg-base-300 hover text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                             >
                                 Select All
                             </button>
                             <button
                                 onClick={handleClearSelection}
-                                className="flex items-center gap-2 bg-base-300 hover text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                             >
                                 Cancel
                             </button>
@@ -231,12 +792,12 @@ const MobileTransactionsView = ({
             {selectedCount > 0 && (
                 <div className="bg-error/10 border border-error/30 rounded-lg p-4 mb-4">
                     <div className="flex items-center justify-between">
-                        <div className="text-error-dark">
+                        <div className="text-error">
                             <span className="font-medium">{selectedCount} transaction{selectedCount > 1 ? 's' : ''} selected</span>
                         </div>
                         <button
                             onClick={handleBulkDelete}
-                            className="flex items-center gap-2 bg-error hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="flex items-center gap-2 bg-error hover:bg-error/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                         >
                             <Trash2 className="w-4 h-4" />
                             Delete Selected
@@ -262,7 +823,7 @@ const MobileTransactionsView = ({
                         </p>
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="bg-info/60 hover text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                            className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-colors"
                         >
                             Add Transaction
                         </button>
@@ -274,7 +835,7 @@ const MobileTransactionsView = ({
                         return (
                             <div key={date} className="bg-base-100 rounded-lg shadow-sm border border-base-300 overflow-hidden">
                                 {/* Day Header */}
-                                <div className="bg-base-200 bg-base-200 px-4 py-3 border-b border-base-300">
+                                <div className="bg-base-200 px-4 py-3 border-b border-base-300">
                                     <div className="flex items-center justify-between">
                                         <h3 className="font-medium text-base-content">
                                             {formatDate(date)}
@@ -289,7 +850,7 @@ const MobileTransactionsView = ({
                                 </div>
 
                                 {/* Transactions for this day */}
-                                <div className="divide-y divide-gray-200">
+                                <div className="divide-y divide-base-300">
                                     {dayTransactions.map(transaction => {
                                         const isTransfer = transaction.isTransfer || transaction.transferToAccountId;
                                         const isSplit = transaction.isSplit || (transaction.splits && transaction.splits.length > 0);
@@ -385,13 +946,13 @@ const MobileTransactionsView = ({
                                                     <div className="flex items-center gap-1">
                                                         <button
                                                             onClick={() => onEditTransaction(transaction)}
-                                                            className="p-2 text-base-content/60 hover transition-colors"
+                                                            className="p-2 text-base-content/60 hover:text-base-content transition-colors"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteTransaction(transaction)}
-                                                            className="p-2 text-base-content/60 hover transition-colors"
+                                                            className="p-2 text-base-content/60 hover:text-error transition-colors"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
@@ -407,26 +968,18 @@ const MobileTransactionsView = ({
                 )}
             </div>
 
-            {/* Add Transaction Modal - Placeholder for now */}
+            {/* Mobile Transaction Form Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center bg-base-content/50 backdrop-blur-sm transition-opacity md:items-center">
-                    <div className="bg-base-100 rounded-t-lg md:rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[85vh] overflow-hidden md:max-h-[80vh] mb-16 md:mb-0">
-                        <div className="p-4 text-center">
-                            <h3 className="text-lg font-semibold text-base-content mb-4">
-                                Add Transaction
-                            </h3>
-                            <p className="text-base-content/60 mb-4">
-                                Transaction form will be integrated here
-                            </p>
-                            <button
-                                onClick={() => setShowAddModal(false)}
-                                className="mt-4 px-4 py-2 bg-base-300 text-white rounded-lg hover transition-colors"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <MobileTransactionForm
+                    isOpen={showAddModal}
+                    onClose={() => setShowAddModal(false)}
+                    accounts={accounts}
+                    categories={categories}
+                    payees={payees}
+                    onAddPayee={onAddPayee}
+                    onSave={onAddTransaction}
+                    viewAccount={viewAccount}
+                />
             )}
         </div>
     );
