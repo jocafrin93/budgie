@@ -1,14 +1,15 @@
 @layer base, vendor, components, utilities;
 
+@import "tailwindcss";
+
 @import "./variants.css" layer(base);
 @import "./base.css" layer(base);
 @import "./layouts.css" layer(base);
 
 @import "./app/index.css" layer(components);
 
-@import "tailwindcss";
-
-@import "./colors.css" layer(theme);
+/* DISABLED: This colors.css file conflicts with DaisyUI theming */
+/* @import "./colors.css" layer(theme); */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -127,6 +128,7 @@
     from {
       background-position: 0 0;
     }
+
     to {
       background-position: -200% 0;
     }
@@ -134,6 +136,7 @@
 }
 
 @layer base {
+
   *,
   ::after,
   ::before,

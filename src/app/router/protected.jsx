@@ -103,6 +103,13 @@ const protectedRoutes = {
                 ).default,
               }),
             },
+            {
+              path: "daisy-theme-test",
+              lazy: async () => ({
+                Component: (await import("app/pages/settings/daisy-theme-test"))
+                  .default,
+              }),
+            },
           ],
         },
       ],
