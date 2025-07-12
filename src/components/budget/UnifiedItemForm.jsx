@@ -7,7 +7,7 @@ import { dollarToPercentage, percentageToDollar } from '../../utils/moneyUtils';
 import { CurrencyField } from '../form';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
-import { Checkbox, Input, Select } from '../ui/Form';
+import { Input, Select } from '../ui/Form';
 
 const formFrequencyOptions = frequencyOptions.map(freq => ({
     value: freq.value,
@@ -283,8 +283,14 @@ const UnifiedItemForm = ({
                     percentageAmount: parseFloat(values.percentageAmount) || 0,
                     frequency: values.frequency,
                     dueDate: values.dueDate,
+                    payee: values.payee,
                     isRecurring: values.isRecurring,
                     priority: values.priority,
+                    // Scheduled transaction fields
+                    createScheduledTransactions: values.createScheduledTransactions,
+                    scheduledEndCondition: values.scheduledEndCondition,
+                    scheduledEndDate: values.scheduledEndDate,
+                    scheduledMaxOccurrences: values.scheduledMaxOccurrences,
                 });
             } else {
                 onSave({
@@ -419,6 +425,11 @@ const UnifiedItemForm = ({
                 payee: form.values.payee,
                 isRecurring: form.values.isRecurring,
                 priority: form.values.priority,
+                // Scheduled transaction fields
+                createScheduledTransactions: form.values.createScheduledTransactions,
+                scheduledEndCondition: form.values.scheduledEndCondition,
+                scheduledEndDate: form.values.scheduledEndDate,
+                scheduledMaxOccurrences: form.values.scheduledMaxOccurrences,
             };
         } else {
             itemData = {
@@ -470,8 +481,14 @@ const UnifiedItemForm = ({
                 percentageAmount: parseFloat(form.values.percentageAmount) || 0,
                 frequency: form.values.frequency,
                 dueDate: form.values.dueDate,
+                payee: form.values.payee,
                 isRecurring: form.values.isRecurring,
                 priority: form.values.priority,
+                // Scheduled transaction fields
+                createScheduledTransactions: form.values.createScheduledTransactions,
+                scheduledEndCondition: form.values.scheduledEndCondition,
+                scheduledEndDate: form.values.scheduledEndDate,
+                scheduledMaxOccurrences: form.values.scheduledMaxOccurrences,
             };
         } else {
             itemData = {
@@ -723,7 +740,9 @@ const UnifiedItemForm = ({
                                 {form.values.dueDate && form.values.frequency && (
                                     <div className="space-y-3 pt-4 border-t border-info">
                                         <div className="flex items-center space-x-2">
-                                            <Checkbox
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox-rounded this:secondary"
                                                 checked={form.values.createScheduledTransactions}
                                                 onChange={(e) => form.setFieldValue('createScheduledTransactions', e.target.checked)}
                                             />

@@ -4,7 +4,7 @@ import { useForm } from '../../hooks/useForm';
 import { formatDate } from '../../utils/dateUtils';
 import { dollarToPercentage, percentageToDollar } from '../../utils/moneyUtils';
 import { CurrencyField } from '../form';
-import { Checkbox, Input, Select, Textarea } from '../ui';
+import { Input, Select, Textarea } from '../ui';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 
@@ -1089,7 +1089,9 @@ const UnifiedCategoryForm = ({
                                 {/* Amount Field - Always show */}
                                 <div>
                                     <div className="flex items-center space-x-2 mb-2">
-                                        <Checkbox
+                                        <input
+                                            type="checkbox"
+                                            className="form-checkbox-rounded this:success"
                                             checked={form.values.usePercentage}
                                             onChange={(e) => form.setFieldValue('usePercentage', e.target.checked)}
                                         />
@@ -1153,7 +1155,9 @@ const UnifiedCategoryForm = ({
                                 {form.values.dueDate && form.values.frequency && (
                                     <div className="space-y-3 pt-4 border-t border-info">
                                         <div className="flex items-center space-x-2">
-                                            <Checkbox
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox-rounded this:secondary"
                                                 checked={form.values.createScheduledTransactions}
                                                 onChange={(e) => form.setFieldValue('createScheduledTransactions', e.target.checked)}
                                             />
@@ -1337,7 +1341,9 @@ const UnifiedCategoryForm = ({
                         {/* Advanced Options */}
                         <div className="space-y-3">
                             <div className="flex items-center space-x-2">
-                                <Checkbox
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox-rounded this:secondary"
                                     checked={form.values.autoFunding}
                                     onChange={(e) => form.setFieldValue('autoFunding', e.target.checked)}
                                 />

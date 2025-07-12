@@ -1,0 +1,42 @@
+/* Checkbox Color System */
+/* This file defines the color variants for checkboxes using DaisyUI theme-aware colors */
+
+/* Primary Color - Uses current DaisyUI theme's primary color */
+.form-checkbox-rounded.this\:primary {
+    --checkbox-color: var(--color-primary);
+}
+
+/* Secondary Color - Uses current DaisyUI theme's secondary color */
+.form-checkbox-rounded.this\:secondary {
+    --checkbox-color: var(--color-secondary);
+}
+
+/* Info Color - Uses current DaisyUI theme's info color */
+.form-checkbox-rounded.this\:info {
+    --checkbox-color: var(--color-info);
+}
+
+/* Success Color - Uses current DaisyUI theme's success color */
+.form-checkbox-rounded.this\:success {
+    --checkbox-color: var(--color-success);
+}
+
+/* Warning Color - Uses current DaisyUI theme's warning color */
+.form-checkbox-rounded.this\:warning {
+    --checkbox-color: var(--color-warning);
+}
+
+/* Error Color - Uses current DaisyUI theme's error color */
+.form-checkbox-rounded.this\:error {
+    --checkbox-color: var(--color-error);
+}
+
+/* Accent Color - Uses current DaisyUI theme's accent color */
+.form-checkbox-rounded.this\:accent {
+    --checkbox-color: var(--color-accent);
+}
+
+/* Neutral Color - Uses current DaisyUI theme's neutral color */
+.form-checkbox-rounded.this\:neutral {
+    --checkbox-color: var(--color-neutral);
+}

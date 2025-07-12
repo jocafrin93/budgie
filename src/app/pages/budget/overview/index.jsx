@@ -9,6 +9,7 @@ import { useDataModel } from "../../../../hooks/useDataModel";
 import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
 import { useMonthlyBudgeting } from "../../../../hooks/useMonthlyBudgeting";
 import { usePaycheckManagement } from "../../../../hooks/usePaycheckManagement";
+import { useScheduledTransactions } from "../../../../hooks/useScheduledTransactions";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
 
 // Import DaisyUI wrapper for theme support
@@ -336,57 +337,11 @@ export default function BudgetOverview() {
         setPreselectedCategory(null);
     }, []);
 
-    // Use scheduled transactions hook directly (no dynamic loading needed)
-    const [scheduledTransactionsFunctions, setScheduledTransactionsFunctions] = useState(null);
-
-    // Load scheduled transactions functions using a different approach
-    useEffect(() => {
-        const loadScheduledTransactionsFunctions = async () => {
-            try {
-                // Create a simple wrapper that provides the functions we need
-                const createScheduledTransactionWrapper = (transactionData) => {
-                    // Get stored transactions
-                    const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-                    const scheduledTransactions = stored ? JSON.parse(stored) : [];
-
-                    // Create new transaction
-                    const newTransaction = {
-                        id: Date.now().toString(),
-                        budgetItemId: transactionData.budgetItemId,
-                        categoryId: transactionData.categoryId,
-                        name: transactionData.name,
-                        amount: transactionData.amount,
-                        frequency: transactionData.frequency,
-                        dueDate: transactionData.dueDate,
-                        accountId: transactionData.accountId,
-                        payee: transactionData.payee,
-                        endCondition: transactionData.endCondition || 'indefinite',
-                        endDate: transactionData.endDate,
-                        maxOccurrences: transactionData.maxOccurrences,
-                        currentOccurrence: 0,
-                        isActive: true,
-                        createdAt: new Date().toISOString(),
-                        nextDueDate: transactionData.dueDate
-                    };
-
-                    scheduledTransactions.push(newTransaction);
-                    // Note: Using localStorage directly here since we're in a callback function
-                    // The proper useStorage hook should be used at component level, but this is acceptable as fallback
-                    localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(scheduledTransactions));
-
-                    console.log('Created scheduled transaction:', newTransaction);
-                    return newTransaction;
-                };
-
-                setScheduledTransactionsFunctions({
-                    createScheduledTransaction: createScheduledTransactionWrapper
-                });
-            } catch (error) {
-                console.error('Failed to load scheduled transactions functions:', error);
-            }
-        };
-        loadScheduledTransactionsFunctions();
-    }, []);
+    // Use scheduled transactions hook properly for cloud storage compatibility
+    const {
+        createScheduledTransactionsFromBudgetItem,
+        addScheduledTransactions
+    } = useScheduledTransactions();
 
     // Handler functions for the table
     const handleAddCategory = useCallback(() => {
@@ -479,7 +434,7 @@ export default function BudgetOverview() {
             console.log('  - frequency:', categoryData.frequency);
             console.log('  - amount:', categoryData.amount);
             console.log('  - accountId:', categoryData.accountId);
-            console.log('  - scheduledTransactionsFunctions available:', !!scheduledTransactionsFunctions);
+            console.log('  - createScheduledTransactionsFromBudgetItem available:', !!createScheduledTransactionsFromBudgetItem);
 
             if (categoryData.createScheduledTransactions &&
                 categoryData.planningType === 'expense' &&
@@ -488,30 +443,39 @@ export default function BudgetOverview() {
                 categoryData.frequency &&
                 categoryData.amount &&
                 categoryData.accountId &&
-                scheduledTransactionsFunctions) {
+                createScheduledTransactionsFromBudgetItem) {
 
                 console.log('🔥 ALL CONDITIONS MET - Creating scheduled transactions for category:', categoryData.name);
 
-                const scheduledTransactionData = {
-                    budgetItemId: categoryId,
+                const budgetItem = {
+                    id: categoryId,
                     categoryId: categoryId,
                     name: categoryData.name,
-                    amount: -Math.abs(categoryData.amount), // Make expenses negative (debits)
+                    amount: categoryData.amount,
                     frequency: categoryData.frequency,
                     dueDate: categoryData.dueDate,
                     accountId: categoryData.accountId,
-                    payee: categoryData.payee || categoryData.name,
+                    payee: categoryData.payee || categoryData.name
+                };
+
+                const scheduledTransactionOptions = {
+                    createScheduledTransactions: true,
                     endCondition: categoryData.endCondition || 'indefinite',
                     endDate: categoryData.endDate,
                     maxOccurrences: categoryData.maxOccurrences
                 };
 
-                console.log('🔥 SCHEDULED TRANSACTION DATA TO CREATE:', scheduledTransactionData);
+                console.log('🔥 BUDGET ITEM DATA:', budgetItem);
+                console.log('🔥 SCHEDULED TRANSACTION OPTIONS:', scheduledTransactionOptions);
 
                 try {
-                    const result = scheduledTransactionsFunctions.createScheduledTransaction(scheduledTransactionData);
-                    console.log('🔥 SCHEDULED TRANSACTION CREATION RESULT:', result);
-                    console.log('🔥 Scheduled transactions created successfully');
+                    const scheduledTransactions = createScheduledTransactionsFromBudgetItem(budgetItem, scheduledTransactionOptions);
+                    console.log('🔥 CREATED SCHEDULED TRANSACTIONS:', scheduledTransactions);
+
+                    if (scheduledTransactions.length > 0) {
+                        addScheduledTransactions(scheduledTransactions);
+                        console.log('🔥 Scheduled transactions added to store successfully');
+                    }
                 } catch (error) {
                     console.error('🔥 ERROR CREATING SCHEDULED TRANSACTION:', error);
                 }
@@ -524,7 +488,7 @@ export default function BudgetOverview() {
                 if (!categoryData.frequency) console.log('  ❌ frequency is missing');
                 if (!categoryData.amount) console.log('  ❌ amount is missing');
                 if (!categoryData.accountId) console.log('  ❌ accountId is missing');
-                if (!scheduledTransactionsFunctions) console.log('  ❌ scheduledTransactionsFunctions is not available');
+                if (!createScheduledTransactionsFromBudgetItem) console.log('  ❌ createScheduledTransactionsFromBudgetItem is not available');
             }
 
             // Close modal if not adding another
@@ -534,7 +498,7 @@ export default function BudgetOverview() {
         } catch (error) {
             console.error("Error saving category:", error);
         }
-    }, [editingCategory, addCategory, updateCategory, planningItems, handleCloseCategoryModal, removeItem, scheduledTransactionsFunctions]);
+    }, [editingCategory, addCategory, updateCategory, planningItems, handleCloseCategoryModal, removeItem, createScheduledTransactionsFromBudgetItem, addScheduledTransactions]);
 
     const handleEditCategory = useCallback((categoryData) => {
         try {
@@ -632,10 +596,92 @@ export default function BudgetOverview() {
 
     const handleSaveItem = useCallback((itemData, addAnother = false) => {
         try {
+            console.log('🔥 BUDGET OVERVIEW - handleSaveItem called');
+            console.log('🔥 RECEIVED ITEM DATA:', itemData);
+            console.log('🔥 SCHEDULED TRANSACTION FIELDS RECEIVED:');
+            console.log('  - createScheduledTransactions:', itemData.createScheduledTransactions);
+            console.log('  - scheduledEndCondition:', itemData.scheduledEndCondition);
+            console.log('  - scheduledEndDate:', itemData.scheduledEndDate);
+            console.log('  - scheduledMaxOccurrences:', itemData.scheduledMaxOccurrences);
+            console.log('  - payee:', itemData.payee);
+            console.log('  - dueDate:', itemData.dueDate);
+            console.log('  - frequency:', itemData.frequency);
+            console.log('  - amount:', itemData.amount);
+            console.log('  - accountId:', itemData.accountId);
+
+            let itemId;
+
             if (editingItem) {
+                itemId = editingItem.id;
                 updateItem(editingItem.id, itemData);
             } else {
-                addItem(itemData);
+                // Generate ID for new item
+                itemId = Date.now().toString();
+                const itemWithId = { ...itemData, id: itemId };
+                addItem(itemWithId);
+            }
+
+            // Create scheduled transactions if enabled for expense items
+            console.log('🔥 CHECKING SCHEDULED TRANSACTION CONDITIONS FOR ITEM:');
+            console.log('  - createScheduledTransactions:', itemData.createScheduledTransactions);
+            console.log('  - type:', itemData.type);
+            console.log('  - dueDate:', itemData.dueDate);
+            console.log('  - frequency:', itemData.frequency);
+            console.log('  - amount:', itemData.amount);
+            console.log('  - accountId:', itemData.accountId);
+            console.log('  - createScheduledTransactionsFromBudgetItem available:', !!createScheduledTransactionsFromBudgetItem);
+
+            if (itemData.createScheduledTransactions &&
+                itemData.type === 'expense' &&
+                itemData.dueDate &&
+                itemData.frequency &&
+                itemData.amount &&
+                itemData.accountId &&
+                createScheduledTransactionsFromBudgetItem) {
+
+                console.log('🔥 ALL CONDITIONS MET - Creating scheduled transactions for item:', itemData.name);
+
+                const budgetItem = {
+                    id: itemId,
+                    categoryId: itemData.categoryId,
+                    name: itemData.name,
+                    amount: itemData.amount,
+                    frequency: itemData.frequency,
+                    dueDate: itemData.dueDate,
+                    accountId: itemData.accountId,
+                    payee: itemData.payee || itemData.name
+                };
+
+                const scheduledTransactionOptions = {
+                    createScheduledTransactions: true,
+                    endCondition: itemData.scheduledEndCondition || 'indefinite',
+                    endDate: itemData.scheduledEndDate,
+                    maxOccurrences: itemData.scheduledMaxOccurrences
+                };
+
+                console.log('🔥 BUDGET ITEM DATA FOR ITEM:', budgetItem);
+                console.log('🔥 SCHEDULED TRANSACTION OPTIONS FOR ITEM:', scheduledTransactionOptions);
+
+                try {
+                    const scheduledTransactions = createScheduledTransactionsFromBudgetItem(budgetItem, scheduledTransactionOptions);
+                    console.log('🔥 CREATED SCHEDULED TRANSACTIONS FOR ITEM:', scheduledTransactions);
+
+                    if (scheduledTransactions.length > 0) {
+                        addScheduledTransactions(scheduledTransactions);
+                        console.log('🔥 Scheduled transactions added to store successfully for item');
+                    }
+                } catch (error) {
+                    console.error('🔥 ERROR CREATING SCHEDULED TRANSACTION FOR ITEM:', error);
+                }
+            } else {
+                console.log('🔥 CONDITIONS NOT MET - Scheduled transactions will NOT be created for item');
+                if (!itemData.createScheduledTransactions) console.log('  ❌ createScheduledTransactions is false');
+                if (itemData.type !== 'expense') console.log('  ❌ type is not expense');
+                if (!itemData.dueDate) console.log('  ❌ dueDate is missing');
+                if (!itemData.frequency) console.log('  ❌ frequency is missing');
+                if (!itemData.amount) console.log('  ❌ amount is missing');
+                if (!itemData.accountId) console.log('  ❌ accountId is missing');
+                if (!createScheduledTransactionsFromBudgetItem) console.log('  ❌ createScheduledTransactionsFromBudgetItem is not available');
             }
 
             if (!addAnother) {
@@ -644,7 +690,7 @@ export default function BudgetOverview() {
         } catch (error) {
             console.error("Error saving item:", error);
         }
-    }, [editingItem, addItem, updateItem, handleCloseItemModal]);
+    }, [editingItem, addItem, updateItem, handleCloseItemModal, createScheduledTransactionsFromBudgetItem, addScheduledTransactions]);
 
     const handleDeleteItem = useCallback((itemId) => {
         try {

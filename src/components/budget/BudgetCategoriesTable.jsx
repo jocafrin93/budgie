@@ -343,24 +343,27 @@ const BudgetCategoriesTable = ({
             // Row selection checkbox
             columnHelper.display({
                 id: 'select',
-                header: ({ table }) => (
-                    <input
-                        type="checkbox"
-                        className="rounded border-base-300 text-info focus:border-primary"
-                        checked={table.getIsAllRowsSelected()}
-                        onChange={table.getToggleAllRowsSelectedHandler()}
-                    />
-                ),
-                cell: ({ row }) => {
-                    if (row.original.isAddRow) return null;
+                header: ({ table }) => {
                     return (
                         <input
                             type="checkbox"
-                            className="rounded border-base-300 text-info focus:border-primary"
-                            style={{ marginLeft: row.original.depth * 20 }}
-                            checked={row.getIsSelected()}
-                            onChange={row.getToggleSelectedHandler()}
+                            className="form-checkbox-rounded this:secondary"
+                            checked={table.getIsAllRowsSelected()}
+                            onChange={table.getToggleAllRowsSelectedHandler()}
                         />
+                    );
+                },
+                cell: ({ row }) => {
+                    if (row.original.isAddRow) return null;
+                    return (
+                        <div style={{ marginLeft: row.original.depth * 20 }}>
+                            <input
+                                type="checkbox"
+                                className="form-checkbox-rounded this:secondary"
+                                checked={row.getIsSelected()}
+                                onChange={row.getToggleSelectedHandler()}
+                            />
+                        </div>
                     );
                 },
                 size: 24,
@@ -800,6 +803,7 @@ const BudgetCategoriesTable = ({
             }),
         ],
         [
+            columnHelper,
             expanded,
             formatCategoryDueDate,
             getCategoryDateInfo,

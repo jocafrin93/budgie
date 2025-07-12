@@ -20,7 +20,6 @@ import {
     Badge,
     Button,
     Card,
-    Checkbox,
     Input,
     Select,
     Table,
@@ -576,7 +575,9 @@ const TransactionFormModal = ({
 
                             {/* Transfer Toggle */}
                             <div className="flex items-center space-x-2">
-                                <Checkbox
+                                <input
+                                    type="checkbox"
+                                    className="form-checkbox-rounded this:info"
                                     checked={isTransfer}
                                     onChange={(e) => {
                                         const isTransferChecked = e.target.checked;
@@ -1012,13 +1013,17 @@ export default function TransactionsTab({
             {
                 id: 'select',
                 header: ({ table }) => (
-                    <Checkbox
+                    <input
+                        type="checkbox"
+                        className="form-checkbox-rounded this:secondary"
                         checked={table.getIsAllPageRowsSelected()}
                         onChange={table.getToggleAllPageRowsSelectedHandler()}
                     />
                 ),
                 cell: ({ row }) => (
-                    <Checkbox
+                    <input
+                        type="checkbox"
+                        className="form-checkbox-rounded this:secondary"
                         checked={row.getIsSelected()}
                         onChange={row.getToggleSelectedHandler()}
                     />

@@ -309,7 +309,7 @@ const MobileTransactionsView = ({
                                                             type="checkbox"
                                                             checked={selectedTransactions.has(transaction.id)}
                                                             onChange={() => handleToggleSelection(transaction.id)}
-                                                            className="w-5 h-5 text-info bg-base-200 border-base-300 rounded focus:border-primary"
+                                                            className="form-checkbox-rounded this:info"
                                                         />
                                                     </div>
                                                 )}

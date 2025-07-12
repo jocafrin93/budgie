@@ -1,8 +1,8 @@
 // Import Dependencies
-import PropTypes from "prop-types";
-import { NavLink, useRouteLoaderData } from "react-router";
 import clsx from "clsx";
+import PropTypes from "prop-types";
 import { useTranslation } from "react-i18next";
+import { NavLink, useRouteLoaderData } from "react-router";
 
 // Local Imports
 import { useBreakpointsContext } from "app/contexts/breakpoint/context";
@@ -30,8 +30,8 @@ export function MenuItem({ data }) {
         clsx(
           "outline-hidden transition-colors duration-300 ease-in-out",
           isActive
-            ? "font-medium text-primary-600 dark:text-primary-400"
-            : "text-gray-600 hover:text-gray-900 dark:text-dark-200 dark:hover:text-dark-50",
+            ? "font-medium text-primary"
+            : "text-base-content/70 hover:text-base-content",
         )
       }
     >
