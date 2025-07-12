@@ -13,83 +13,83 @@ export function TableSettings({ table }) {
   return (
     <>
       {Object.keys(tableSettings).length > 0 && (
-        <div className="mb-4 mt-3 flex flex-col items-start space-y-2 px-3 text-gray-600 dark:text-dark-100">
+        <div className="mb-4 mt-3 flex flex-col items-start space-y-2 px-3 text-base-content/60 text-base-content">
           {Object.prototype.hasOwnProperty.call(
             tableSettings,
             "enableFullScreen",
           ) && (
-            <Switch
-              label="Full Screen"
-              checked={tableSettings.enableFullScreen}
-              onChange={(e) =>
-                setTableSettings((state) => ({
-                  ...state,
-                  enableFullScreen: e.target.checked,
-                }))
-              }
-              className="h-4 w-8"
-            />
-          )}
+              <Switch
+                label="Full Screen"
+                checked={tableSettings.enableFullScreen}
+                onChange={(e) =>
+                  setTableSettings((state) => ({
+                    ...state,
+                    enableFullScreen: e.target.checked,
+                  }))
+                }
+                className="h-4 w-8"
+              />
+            )}
           {Object.prototype.hasOwnProperty.call(
             tableSettings,
             "enableRowDense",
           ) && (
-            <Switch
-              label="Row Dense"
-              checked={tableSettings.enableRowDense}
-              onChange={(e) =>
-                setTableSettings((state) => ({
-                  ...state,
-                  enableRowDense: e.target.checked,
-                }))
-              }
-              className="h-4 w-8"
-            />
-          )}
+              <Switch
+                label="Row Dense"
+                checked={tableSettings.enableRowDense}
+                onChange={(e) =>
+                  setTableSettings((state) => ({
+                    ...state,
+                    enableRowDense: e.target.checked,
+                  }))
+                }
+                className="h-4 w-8"
+              />
+            )}
           {Object.prototype.hasOwnProperty.call(
             tableSettings,
             "enableColumnFilters",
           ) && (
-            <Switch
-              label="Column Filters"
-              checked={tableSettings.enableColumnFilters}
-              onChange={(e) => {
-                setTableSettings((state) => ({
-                  ...state,
-                  enableColumnFilters: e.target.checked,
-                }));
+              <Switch
+                label="Column Filters"
+                checked={tableSettings.enableColumnFilters}
+                onChange={(e) => {
+                  setTableSettings((state) => ({
+                    ...state,
+                    enableColumnFilters: e.target.checked,
+                  }));
 
-                table.resetColumnFilters();
-              }}
-              className="h-4 w-8"
-            />
-          )}
+                  table.resetColumnFilters();
+                }}
+                className="h-4 w-8"
+              />
+            )}
           {Object.prototype.hasOwnProperty.call(
             tableSettings,
             "enableSorting",
           ) && (
-            <Switch
-              label="Sort"
-              checked={tableSettings.enableSorting}
-              onChange={(e) => {
-                setTableSettings((state) => ({
-                  ...state,
-                  enableSorting: e.target.checked,
-                }));
-                table.resetSorting();
-              }}
-              className="h-4 w-8"
-            />
-          )}
+              <Switch
+                label="Sort"
+                checked={tableSettings.enableSorting}
+                onChange={(e) => {
+                  setTableSettings((state) => ({
+                    ...state,
+                    enableSorting: e.target.checked,
+                  }));
+                  table.resetSorting();
+                }}
+                className="h-4 w-8"
+              />
+            )}
         </div>
       )}
 
       <div className="flex items-center space-x-2 px-3 ">
         <p className="text-tiny uppercase">column visibility</p>
-        <hr className="flex-1 border-gray-300 dark:border-dark-500" />
+        <hr className="flex-1 border-base-300" />
       </div>
 
-      <div className="mt-3 flex max-h-[50vh] flex-col space-y-2 overflow-y-auto overscroll-y-contain px-3 pb-3 text-gray-600 dark:text-dark-100">
+      <div className="mt-3 flex max-h-[50vh] flex-col space-y-2 overflow-y-auto overscroll-y-contain px-3 pb-3 text-base-content/60 text-base-content">
         {table
           .getAllLeafColumns()
           .filter((column) => !column.columnDef?.isHiddenColumn)
@@ -151,7 +151,7 @@ export function TableSettings({ table }) {
 
       <Button
         variant="flat"
-        className="h-9 w-full shrink-0 rounded-t-none border-t border-gray-300 text-xs-plus leading-none dark:border-dark-500"
+        className="h-9 w-full shrink-0 rounded-t-none border-t border-base-300 text-xs-plus leading-none"
         onClick={() => table.resetColumnVisibility()}
       >
         Show All Columns

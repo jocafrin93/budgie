@@ -10,8 +10,8 @@ import clsx from "clsx";
 import { useState } from "react";
 
 // Local Imports
-import { Button, Spinner } from "components/ui";
 import { useLocaleContext } from "app/contexts/locale/context";
+import { Button, Spinner } from "components/ui";
 import { locales } from "i18n/langs";
 
 // ----------------------------------------------------------------------
@@ -66,7 +66,7 @@ const LanguageSelector = () => {
         >
           <ListboxOptions
             anchor={{ to: "bottom end", gap: 8 }}
-            className="z-101 w-min min-w-[10rem] overflow-y-auto rounded-lg border border-gray-300 bg-white py-1 font-medium shadow-lg shadow-gray-200/50 outline-hidden focus-visible:outline-hidden dark:border-dark-500 dark:bg-dark-700 dark:shadow-none ltr:right-0 rtl:left-0"
+            className="z-101 w-min min-w-[10rem] overflow-y-auto rounded-lg border border-base-300 bg-base-100 py-1 font-medium shadow-lg shadow-gray-200/50 outline-hidden focus:outline-none bg-base-100 ltr:right-0 rtl:left-0"
           >
             {langs.map((lang) => (
               <ListboxOption
@@ -74,10 +74,10 @@ const LanguageSelector = () => {
                 className={({ selected, active }) =>
                   clsx(
                     "relative flex cursor-pointer select-none px-4 py-2 transition-colors",
-                    active && !selected && "bg-gray-100 dark:bg-dark-600",
+                    active && !selected && "bg-base-200",
                     selected
-                      ? "bg-primary-600 text-white dark:bg-primary-500"
-                      : "text-gray-800 dark:text-dark-100",
+                      ? "bg-primary text-white"
+                      : "text-base-content text-base-content",
                   )
                 }
                 value={lang.value}
@@ -100,3 +100,4 @@ const LanguageSelector = () => {
 };
 
 export { LanguageSelector };
+

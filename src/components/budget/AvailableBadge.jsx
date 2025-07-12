@@ -12,23 +12,23 @@ const AvailableBadge = ({ amount, isSubItem, onClick, category }) => {
     const getBadgeStyles = () => {
         if (isOverspent) {
             return {
-                bg: 'bg-red-100 hover:bg-red-200',
-                text: 'text-red-800',
-                border: 'border-red-300',
+                bg: 'bg-error/20 hover',
+                text: 'text-error',
+                border: 'border-error',
                 cursor: hasAmount ? 'cursor-pointer' : 'cursor-default'
             };
         } else if (hasAmount) {
             return {
-                bg: isSubItem ? 'bg-green-100 hover:bg-green-200' : 'bg-green-100 hover:bg-green-200',
-                text: isSubItem ? 'text-green-700' : 'text-green-800',
-                border: 'border-green-300',
+                bg: isSubItem ? 'bg-success/20 hover' : 'bg-success/20 hover',
+                text: isSubItem ? 'text-success' : 'text-success',
+                border: 'border-success',
                 cursor: 'cursor-pointer'
             };
         } else {
             return {
-                bg: 'bg-gray-100',
-                text: 'text-gray-600',
-                border: 'border-gray-300',
+                bg: 'bg-base-200',
+                text: 'text-base-content/60',
+                border: 'border-base-300',
                 cursor: 'cursor-default'
             };
         }
@@ -54,7 +54,7 @@ const AvailableBadge = ({ amount, isSubItem, onClick, category }) => {
                 ${styles.bg} ${styles.text} ${styles.border} ${styles.cursor}
                 ${isClickable ? 'hover:scale-105 hover:shadow-sm active:scale-95' : ''}
                 ${!isClickable ? 'opacity-75' : ''}
-                focus:outline-none focus:ring-2 focus:ring-info-500 focus:ring-offset-1
+                focus:outline-none focus:border-primary
             `}
             title={isClickable ? `Click to move money ${isOverspent ? 'to' : 'from'} ${category?.name || 'this category'}` : undefined}
         >

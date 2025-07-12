@@ -1,11 +1,11 @@
 // Import Dependencies
-import { forwardRef } from "react";
-import PropTypes from "prop-types";
 import clsx from "clsx";
+import PropTypes from "prop-types";
+import { forwardRef } from "react";
 
 // Local Imports
-import { setThisClass } from "utils/setThisClass";
 import { COLORS } from "constants/app.constant";
+import { setThisClass } from "utils/setThisClass";
 
 // ----------------------------------------------------------------------
 
@@ -25,8 +25,8 @@ const Range = forwardRef((props, ref) => {
       className={clsx(
         "form-range",
         color === "neutral"
-          ? "text-gray-500 dark:text-dark-300"
-          : [setThisClass(color), "text-this dark:text-this-light"],
+          ? "text-base-content/60"
+          : [setThisClass(color), "text-this"],
         className,
       )}
       ref={ref}
@@ -51,3 +51,4 @@ Range.propTypes = {
 };
 
 export { Range };
+

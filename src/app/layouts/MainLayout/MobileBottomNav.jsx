@@ -17,11 +17,11 @@ export function MobileBottomNav() {
     // Filter navigation to show only the most important items on mobile
     // You can customize this to show different items or all items
     const mobileNavItems = navigation.filter(item =>
-        ['home', 'overview', 'transactions', 'calendar', 'budget-settings'].includes(item.id)
+        ['home', 'overview', 'transactions', 'calendar', 'budget-settings', 'daisy-theme-test'].includes(item.id)
     );
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-600 safe-area-pb">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-base-100 border-t border-base-300 pb-2 backdrop-blur-sm">
             <div className="flex items-center justify-around px-2 py-1">
                 {mobileNavItems.map(({ id, path, Icon, title, transKey, type }) => {
                     const isActive = isRouteActive(path, pathname);
@@ -38,8 +38,8 @@ export function MobileBottomNav() {
                             className={clsx(
                                 "flex flex-col items-center justify-center min-w-0 flex-1 py-2 px-1 rounded-lg transition-colors duration-200",
                                 isActive
-                                    ? "text-primary-600 dark:text-primary-400"
-                                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                    ? "text-primary"
+                                    : "text-base-content/60 hover:text-base-content/80"
                             )}
                         >
                             {Icon && (
@@ -53,7 +53,7 @@ export function MobileBottomNav() {
                             <span
                                 className={clsx(
                                     "text-xs font-medium truncate max-w-full transition-all duration-200",
-                                    isActive ? "text-primary-600 dark:text-primary-400" : "text-gray-500 dark:text-gray-400"
+                                    isActive ? "text-primary" : "text-base-content/60"
                                 )}
                             >
                                 {label}

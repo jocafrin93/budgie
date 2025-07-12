@@ -474,8 +474,8 @@ const PaycheckManager = ({
         <Card className="p-6">
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
                 <div>
-                    <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-dark-50">Paychecks</h3>
-                    <p className="text-sm text-gray-600 dark:text-dark-300">
+                    <h3 className="text-lg font-bold mb-2 text-base-content">Paychecks</h3>
+                    <p className="text-sm text-base-content/60">
                         Configure your paychecks to plan your budget. Add multiple paychecks if you have more than one income source.
                     </p>
                 </div>
@@ -495,8 +495,8 @@ const PaycheckManager = ({
 
             {/* Paycheck List */}
             {paychecks.length === 0 ? (
-                <div className="p-4 bg-gray-50 dark:bg-dark-600 rounded text-center">
-                    <p className="text-gray-600 dark:text-dark-300">
+                <div className="p-4 bg-base-200 rounded text-center">
+                    <p className="text-base-content/60">
                         No paychecks configured yet. Add your first paycheck to get started.
                     </p>
                 </div>
@@ -506,14 +506,14 @@ const PaycheckManager = ({
                         <div
                             key={paycheck.id}
                             className={`p-4 border rounded-lg ${paycheck.isActive ?
-                                'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
-                                'bg-gray-100 dark:bg-dark-600 border-gray-300 dark:border-dark-500'}`}
+                                'bg-success/10 border-success/30' :
+                                'bg-base-200 border-base-300'}`}
                         >
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <h4 className="font-bold text-gray-900 dark:text-dark-50">{paycheck.name}</h4>
+                                    <h4 className="font-bold text-base-content">{paycheck.name}</h4>
                                     <div className="text-sm mt-1">
-                                        <span className="text-gray-600 dark:text-dark-300">
+                                        <span className="text-base-content/60">
                                             {frequencyOptions.find(f => f.value === paycheck.frequency)?.label || 'Custom'} •
                                             {paycheck.variableAmount ? ' Variable Amount' : ` ${formatCurrency(paycheck.baseAmount)}`}
                                         </span>
@@ -523,19 +523,19 @@ const PaycheckManager = ({
                                     <div className="mt-2 space-y-1">
                                         {paycheck.accountDistribution?.map((dist, idx) => (
                                             <div key={idx} className="text-xs flex justify-between">
-                                                <span className="text-gray-600 dark:text-dark-300">{getAccountName(dist.accountId)}</span>
-                                                <span className="font-medium text-gray-900 dark:text-dark-50">{formatCurrency(dist.amount)}</span>
+                                                <span className="text-base-content/60">{getAccountName(dist.accountId)}</span>
+                                                <span className="font-medium text-base-content">{formatCurrency(dist.amount)}</span>
                                             </div>
                                         ))}
                                     </div>
 
                                     {/* Next Paycheck Dates */}
                                     {showDates === paycheck.id && (
-                                        <div className="mt-3 p-2 bg-info-50 dark:bg-info/20/20 rounded text-xs">
-                                            <div className="font-medium mb-1 text-gray-900 dark:text-dark-50">Next Paycheck Dates:</div>
+                                        <div className="mt-3 p-2 bg-info/10 rounded text-xs">
+                                            <div className="font-medium mb-1 text-base-content">Next Paycheck Dates:</div>
                                             <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                                                 {nextDates.map((date, idx) => (
-                                                    <div key={idx} className="text-gray-600 dark:text-dark-300">
+                                                    <div key={idx} className="text-base-content/60">
                                                         {formatDateForDisplay(date)}
                                                     </div>
                                                 ))}
@@ -547,28 +547,28 @@ const PaycheckManager = ({
                                 <div className="flex space-x-2">
                                     <button
                                         onClick={() => handleShowDates(paycheck.id)}
-                                        className="p-1 text-xs rounded hover:bg-info/10 dark:hover:bg-info/20/20"
+                                        className="p-1 text-xs rounded hover"
                                         title="Show next paycheck dates"
                                     >
                                         📅
                                     </button>
                                     <button
                                         onClick={() => togglePaycheckActive(paycheck.id)}
-                                        className="p-1 text-xs rounded hover:bg-info/10 dark:hover:bg-info/20/20"
+                                        className="p-1 text-xs rounded hover"
                                         title={paycheck.isActive ? "Disable paycheck" : "Enable paycheck"}
                                     >
                                         {paycheck.isActive ? '✅' : '❌'}
                                     </button>
                                     <button
                                         onClick={() => handleEditPaycheck(paycheck)}
-                                        className="p-1 text-xs rounded hover:bg-info/10 dark:hover:bg-info/20/20"
+                                        className="p-1 text-xs rounded hover"
                                         title="Edit paycheck"
                                     >
                                         ✏️
                                     </button>
                                     <button
                                         onClick={() => setShowDeleteConfirm(paycheck.id)}
-                                        className="p-1 text-xs rounded hover:bg-red-100 dark:hover:bg-red-900/20"
+                                        className="p-1 text-xs rounded hover"
                                         title="Delete paycheck"
                                     >
                                         🗑️
@@ -578,8 +578,8 @@ const PaycheckManager = ({
 
                             {/* Delete Confirmation */}
                             {showDeleteConfirm === paycheck.id && (
-                                <div className="mt-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
-                                    <p className="text-sm text-red-600 dark:text-red-400 mb-2">
+                                <div className="mt-3 p-2 bg-error/10 border border-error/30 rounded">
+                                    <p className="text-sm text-error mb-2">
                                         Are you sure you want to delete this paycheck? This action cannot be undone.
                                     </p>
                                     <div className="flex justify-end gap-2">
@@ -620,8 +620,8 @@ const PaycheckManager = ({
 
             {/* Add/Edit Form */}
             {(showAddForm || editingPaycheck) && (
-                <div ref={formRef} className="mt-6 p-6 bg-gray-50 dark:bg-dark-600 rounded-lg border border-gray-200 dark:border-dark-500">
-                    <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-dark-50">
+                <div ref={formRef} className="mt-6 p-6 bg-base-200 rounded-lg border border-base-300">
+                    <h4 className="text-lg font-semibold mb-4 text-base-content">
                         {editingPaycheck ? 'Edit Paycheck' : 'Add New Paycheck'}
                     </h4>
 
@@ -629,22 +629,22 @@ const PaycheckManager = ({
                         {/* Basic Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-dark-50">Name</label>
+                                <label className="block text-sm font-medium mb-1 text-base-content">Name</label>
                                 <input
                                     type="text"
                                     value={formValues.name}
                                     onChange={(e) => setFormValues(prev => ({ ...prev, name: e.target.value }))}
                                     placeholder="e.g., Main Job, Side Gig"
-                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
+                                    className="w-full p-2 border border-base-300 rounded bg-base-100 text-base-content focus:outline-none focus:border-primary"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-dark-50">Frequency</label>
+                                <label className="block text-sm font-medium mb-1 text-base-content">Frequency</label>
                                 <select
                                     value={formValues.frequency}
                                     onChange={(e) => setFormValues(prev => ({ ...prev, frequency: e.target.value }))}
-                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
+                                    className="w-full p-2 border border-base-300 rounded bg-base-100 text-base-content focus:outline-none focus:border-primary"
                                 >
                                     {frequencyOptions.map(option => (
                                         <option key={option.value} value={option.value}>
@@ -657,17 +657,17 @@ const PaycheckManager = ({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-dark-50">Start Date</label>
+                                <label className="block text-sm font-medium mb-1 text-base-content">Start Date</label>
                                 <input
                                     type="date"
                                     value={formValues.startDate}
                                     onChange={(e) => setFormValues(prev => ({ ...prev, startDate: e.target.value }))}
-                                    className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
+                                    className="w-full p-2 border border-base-300 rounded bg-base-100 text-base-content focus:outline-none focus:border-primary"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium mb-1 text-gray-900 dark:text-dark-50">Base Amount</label>
+                                <label className="block text-sm font-medium mb-1 text-base-content">Base Amount</label>
                                 <CurrencyField
                                     value={formValues.baseAmount}
                                     onChange={handleBaseAmountChange}
@@ -686,7 +686,7 @@ const PaycheckManager = ({
                                 checked={formValues.variableAmount}
                                 onChange={(e) => setFormValues(prev => ({ ...prev, variableAmount: e.target.checked }))}
                             />
-                            <label htmlFor="variableAmount" className="text-sm text-gray-900 dark:text-dark-50">
+                            <label htmlFor="variableAmount" className="text-sm text-base-content">
                                 This paycheck has a variable amount (will track history for averaging)
                             </label>
                         </div>
@@ -694,7 +694,7 @@ const PaycheckManager = ({
                         {/* Account Distribution */}
                         <div>
                             <div className="flex justify-between items-center mb-3">
-                                <label className="block text-sm font-medium text-gray-900 dark:text-dark-50">Account Distribution</label>
+                                <label className="block text-sm font-medium text-base-content">Account Distribution</label>
                                 {accounts.length > 1 && (
                                     <div className="flex items-center gap-3">
                                         <Checkbox
@@ -726,7 +726,7 @@ const PaycheckManager = ({
                                                 });
                                             }}
                                         />
-                                        <label htmlFor="useMultipleAccounts" className="text-sm text-gray-900 dark:text-dark-50">
+                                        <label htmlFor="useMultipleAccounts" className="text-sm text-base-content">
                                             Split across multiple accounts
                                         </label>
                                     </div>
@@ -738,7 +738,7 @@ const PaycheckManager = ({
                                 <div className="space-y-2">
                                     <div className="flex items-center gap-3">
                                         <div className="flex-1">
-                                            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-dark-300">Account</label>
+                                            <label className="block text-xs font-medium mb-1 text-base-content/60">Account</label>
                                             <select
                                                 value={formValues.accountDistribution[0]?.accountId || ''}
                                                 onChange={(e) => {
@@ -753,7 +753,7 @@ const PaycheckManager = ({
                                                         }]
                                                     }));
                                                 }}
-                                                className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
+                                                className="w-full p-2 border border-base-300 rounded bg-base-100 text-base-content focus:outline-none focus:border-primary"
                                             >
                                                 {accounts.map(account => (
                                                     <option key={account.id} value={account.id}>
@@ -763,13 +763,13 @@ const PaycheckManager = ({
                                             </select>
                                         </div>
                                         <div className="flex-1">
-                                            <label className="block text-xs font-medium mb-1 text-gray-700 dark:text-dark-300">Amount</label>
-                                            <div className="p-2 bg-gray-100 dark:bg-dark-700 border border-gray-300 dark:border-dark-500 rounded text-gray-900 dark:text-dark-50">
+                                            <label className="block text-xs font-medium mb-1 text-base-content/60">Amount</label>
+                                            <div className="p-2 bg-base-200 border border-base-300 rounded text-base-content">
                                                 {formatCurrency(formValues.baseAmount)} (Full Amount)
                                             </div>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-dark-400 mt-2">
+                                    <p className="text-xs text-base-content/60 mt-2">
                                         💡 The full paycheck amount will go to the selected account. Enable &quot;Split across multiple accounts&quot; above to customize distribution.
                                     </p>
                                 </div>
@@ -789,7 +789,7 @@ const PaycheckManager = ({
                                                         <select
                                                             value={dist.accountId}
                                                             onChange={(e) => handleDistributionChange(index, 'accountId', e.target.value)}
-                                                            className="w-full p-2 border border-gray-300 dark:border-dark-500 rounded bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500"
+                                                            className="w-full p-2 border border-base-300 rounded bg-base-100 text-base-content focus:outline-none focus:border-primary"
                                                         >
                                                             {accounts.map(account => (
                                                                 <option key={account.id} value={account.id}>
@@ -805,7 +805,7 @@ const PaycheckManager = ({
                                                             onChange={(e) => handleDistributionChange(index, 'amount', e.target.value)}
                                                             placeholder="0.00"
                                                             className={hasValidationError ?
-                                                                "border-red-500 dark:border-red-400 focus:ring-red-500" :
+                                                                "border-error focus:border-primary" :
                                                                 ""
                                                             }
                                                         />
@@ -814,7 +814,7 @@ const PaycheckManager = ({
                                                     {formValues.accountDistribution.length > 1 && (
                                                         <button
                                                             onClick={() => handleRemoveAccount(index)}
-                                                            className="text-red-500 hover:text-red-700 p-1"
+                                                            className="text-error hover p-1"
                                                             title="Remove account"
                                                         >
                                                             ✕
@@ -829,7 +829,7 @@ const PaycheckManager = ({
                                     {formValues.accountDistribution.length < accounts.length && (
                                         <button
                                             onClick={handleAddAccount}
-                                            className="mt-2 text-sm text-info-600 dark:text-info-400 hover:text-info-800 dark:hover:text-info-300"
+                                            className="mt-2 text-sm text-info hover"
                                         >
                                             + Add Another Account
                                         </button>
@@ -842,39 +842,39 @@ const PaycheckManager = ({
 
                                         return (
                                             <div className={`mt-3 p-3 rounded-lg border ${validation.isValid
-                                                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                                                ? 'bg-success/10 border-success/30'
                                                 : validation.isOver
-                                                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                                                    : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                                                    ? 'bg-error/10 border-error/30'
+                                                    : 'bg-warning/10 border-warning/30'
                                                 }`}>
                                                 <div className="flex justify-between items-center text-sm">
                                                     <span className={`font-medium ${validation.isValid
-                                                        ? 'text-green-700 dark:text-green-300'
+                                                        ? 'text-success'
                                                         : validation.isOver
-                                                            ? 'text-red-700 dark:text-red-300'
-                                                            : 'text-yellow-700 dark:text-yellow-300'
+                                                            ? 'text-error'
+                                                            : 'text-warning'
                                                         }`}>
                                                         Distribution Total:
                                                     </span>
                                                     <span className={`font-bold ${validation.isValid
-                                                        ? 'text-green-800 dark:text-green-200'
+                                                        ? 'text-success'
                                                         : validation.isOver
-                                                            ? 'text-red-800 dark:text-red-200'
-                                                            : 'text-yellow-800 dark:text-yellow-200'
+                                                            ? 'text-error'
+                                                            : 'text-warning'
                                                         }`}>
                                                         {formatCurrency(totalDistribution)}
                                                     </span>
                                                 </div>
 
                                                 <div className="flex justify-between items-center text-sm mt-1">
-                                                    <span className="text-gray-600 dark:text-dark-300">Base Amount:</span>
-                                                    <span className="text-gray-800 dark:text-dark-100">{formatCurrency(validation.baseAmount)}</span>
+                                                    <span className="text-base-content/60">Base Amount:</span>
+                                                    <span className="text-base-content text-base-content">{formatCurrency(validation.baseAmount)}</span>
                                                 </div>
 
                                                 {!validation.isValid && (
                                                     <div className={`text-xs mt-2 ${validation.isOver
-                                                        ? 'text-red-600 dark:text-red-400'
-                                                        : 'text-yellow-600 dark:text-yellow-400'
+                                                        ? 'text-error'
+                                                        : 'text-warning'
                                                         }`}>
                                                         {validation.isOver
                                                             ? `⚠️ Over by ${formatCurrency(validation.difference)}`
@@ -884,7 +884,7 @@ const PaycheckManager = ({
                                                 )}
 
                                                 {validation.isValid && (
-                                                    <div className="text-xs mt-2 text-green-600 dark:text-green-400">
+                                                    <div className="text-xs mt-2 text-success">
                                                         ✅ Distribution matches base amount
                                                     </div>
                                                 )}

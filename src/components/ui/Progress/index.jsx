@@ -1,7 +1,7 @@
 // Import Dependencies
-import { forwardRef } from "react";
-import PropTypes from "prop-types";
 import clsx from "clsx";
+import PropTypes from "prop-types";
+import { forwardRef } from "react";
 
 // Local Imports
 import { COLORS } from "constants/app.constant";
@@ -33,11 +33,11 @@ const Progress = forwardRef((props, ref) => {
       className={clsx(
         "progress-rail",
         showRail &&
-          !unstyled && [
-            color === "neutral" || variant !== "soft"
-              ? "bg-gray-150 dark:bg-dark-500"
-              : [setThisClass(color), "bg-this/[.15] dark:bg-this-light/25"],
-          ],
+        !unstyled && [
+          color === "neutral" || variant !== "soft"
+            ? "bg-base-200"
+            : [setThisClass(color), "bg-this/[.15]"],
+        ],
         className,
         classNames?.root,
       )}
@@ -49,8 +49,8 @@ const Progress = forwardRef((props, ref) => {
           "progress relative rounded-full transition-[width] ease-out",
           !unstyled && [
             color === "neutral"
-              ? "bg-gray-500 dark:bg-dark-400"
-              : [setThisClass(color), "bg-this dark:bg-this-light"],
+              ? "bg-base-2000 bg-base-100"
+              : [setThisClass(color), "bg-this"],
           ],
           isActive && "is-active",
           isIndeterminate
@@ -90,3 +90,4 @@ Progress.propTypes = {
 Progress.displayName = "Progress";
 
 export { Progress };
+

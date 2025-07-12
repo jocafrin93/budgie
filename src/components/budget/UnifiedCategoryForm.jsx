@@ -30,9 +30,9 @@ const colorOptions = [
     { value: 'bg-success', label: 'Green', color: '#10B981' },
     { value: 'bg-warning', label: 'Orange', color: '#F59E0B' },
     { value: 'bg-error', label: 'Red', color: '#EF4444' },
-    { value: 'bg-purple-500', label: 'Purple', color: '#8B5CF6' },
-    { value: 'bg-pink-500', label: 'Pink', color: '#EC4899' },
-    { value: 'bg-teal-500', label: 'Teal', color: '#14B8A6' },
+    { value: 'bg-secondary', label: 'Purple', color: '#8B5CF6' },
+    { value: 'bg-accent', label: 'Pink', color: '#EC4899' },
+    { value: 'bg-info', label: 'Teal', color: '#14B8A6' },
     { value: 'bg-lime-500', label: 'Lime', color: '#84CC16' },
 ];
 
@@ -134,13 +134,13 @@ const PayeeAutocompleteinfo = ({ value, onChange, payees, onAddPayee, placeholde
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
-                    className="w-full px-3 py-2 pr-10 border border-info-light dark:border-info bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-info focus:border-info transition-colors"
+                    className="w-full px-3 py-2 pr-10 border border-info bg-base-100 text-base-content rounded-lg focus:outline-none focus:border-primary transition-colors"
                 />
 
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-info-500 hover:text-info-700 dark:text-info-400 dark:hover:text-info-200"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-info hover"
                 >
                     <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -150,7 +150,7 @@ const PayeeAutocompleteinfo = ({ value, onChange, payees, onAddPayee, placeholde
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-info-300 dark:border-info-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-base-100 border border-info rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {/* Existing payees */}
                     {filteredPayees.length > 0 && (
                         <div>
@@ -159,7 +159,7 @@ const PayeeAutocompleteinfo = ({ value, onChange, payees, onAddPayee, placeholde
                                     key={index}
                                     type="button"
                                     onClick={() => handleSelectPayee(payee)}
-                                    className="w-full px-3 py-2 text-left hover:bg-info-lighter/20 dark:hover:bg-info/20 text-gray-900 dark:text-gray-100 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                                    className="w-full px-3 py-2 text-left hover text-base-content transition-colors first:rounded-t-lg last:rounded-b-lg"
                                 >
                                     {payee}
                                 </button>
@@ -172,7 +172,7 @@ const PayeeAutocompleteinfo = ({ value, onChange, payees, onAddPayee, placeholde
                         <button
                             type="button"
                             onClick={handleAddNewPayee}
-                            className="w-full px-3 py-2 text-left hover:bg-info-lighter/20 dark:hover:bg-info/20 text-info dark:text-info-light transition-colors border-t border-info-light dark:border-info flex items-center space-x-2"
+                            className="w-full px-3 py-2 text-left hover text-info transition-colors border-t border-info flex items-center space-x-2"
                         >
                             <span>+</span>
                             <span>Add &#34;{inputValue}&#34;</span>
@@ -181,14 +181,14 @@ const PayeeAutocompleteinfo = ({ value, onChange, payees, onAddPayee, placeholde
 
                     {/* No results */}
                     {filteredPayees.length === 0 && !showAddOption && inputValue.trim() && (
-                        <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
+                        <div className="px-3 py-2 text-base-content/60 text-sm">
                             No payees found
                         </div>
                     )}
 
                     {/* Show all payees when input is empty */}
                     {!inputValue.trim() && payees.length === 0 && (
-                        <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
+                        <div className="px-3 py-2 text-base-content/60 text-sm">
                             Start typing to add your first payee
                         </div>
                     )}
@@ -343,10 +343,10 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
     };
 
     return (
-        <div className="space-y-4 p-4 bg-success-lighter/20 dark:bg-success/20 border border-success-light dark:border-success rounded-lg">
-            <h3 className="font-medium text-success-dark dark:text-success-light">Savings Goal Configuration</h3>
+        <div className="space-y-4 p-4 bg-success-lighter/20 border border-success-light rounded-lg">
+            <h3 className="font-medium text-success-dark">Savings Goal Configuration</h3>
 
-            <div className="bg-info-50 dark:bg-info/20/20 border border-info-200 dark:border-info-800 p-3 mb-4 rounded-md text-sm text-info-800 dark:text-info-200">
+            <div className="bg-info/10 border border-info p-3 mb-4 rounded-md text-sm text-info">
                 <div className="mt-1 text-xs">
                     <span className="text-error">*</span> Required field
                 </div>
@@ -358,13 +358,13 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
                     <div className="flex items-center mb-1">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Target Amount <span className="text-red-500">*</span>
+                        <label className="text-sm font-medium text-base-content">
+                            Target Amount <span className="text-error">*</span>
                         </label>
                         {showRecalculationOptions && (
                             <button
                                 type="button"
-                                className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="ml-2 p-1 rounded focus:outline-none text-base-content hover"
                                 onClick={() => handleRecalculate('targetAmount')}
                                 title="Click to recalculate target amount"
                             >
@@ -378,19 +378,19 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
                         error={errors.targetAmount}
                         hint={getFieldHint('targetAmount')}
                         onChange={(e) => handleFieldChange('targetAmount', e.target.value)}
-                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        className="border-base-300 bg-base-100 text-base-content"
                     />
                 </div>
 
                 <div className="relative">
                     <div className="flex items-center mb-1">
-                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label className="text-sm font-medium text-base-content">
                             Target Date
                         </label>
                         {showRecalculationOptions && (
                             <button
                                 type="button"
-                                className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="ml-2 p-1 rounded focus:outline-none text-base-content hover"
                                 onClick={() => handleRecalculate('targetDate')}
                                 title="Click to recalculate target date"
                             >
@@ -405,13 +405,13 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
                         error={errors.targetDate}
                         hint={getFieldHint('targetDate')}
                         onChange={(e) => handleFieldChange('targetDate', e.target.value)}
-                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        className="border-base-300 bg-base-100 text-base-content"
                     />
                 </div>
             </div>
 
             <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block text-sm font-medium text-base-content">
                     How much will you save each paycheck?
                 </label>
                 <div className="flex space-x-2">
@@ -440,13 +440,13 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
 
             <div className="relative">
                 <div className="flex items-center mb-1">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="text-sm font-medium text-base-content">
                         Per Paycheck Contribution
                     </label>
                     {showRecalculationOptions && (
                         <button
                             type="button"
-                            className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="ml-2 p-1 rounded focus:outline-none text-base-content hover"
                             onClick={() => handleRecalculate('perPaycheckContribution')}
                             title="Click to recalculate per paycheck contribution"
                         >
@@ -473,7 +473,7 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
                             }
                         }}
                         placeholder="5.0"
-                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        className="border-base-300 bg-base-100 text-base-content"
                     />
                 ) : (
                     <CurrencyField
@@ -488,7 +488,7 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
                                 handleFieldChange('paycheckPercentage', percentageAmount);
                             }
                         }}
-                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        className="border-base-300 bg-base-100 text-base-content"
                     />
                 )}
             </div>
@@ -498,7 +498,7 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
                 name="alreadySaved"
                 value={formValues.alreadySaved}
                 onChange={(e) => setFieldValue('alreadySaved', e.target.value)}
-                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="border-base-300 bg-base-100 text-base-content"
             />
         </div>
     );
@@ -982,12 +982,12 @@ const UnifiedCategoryForm = ({
     }, [onCancel]);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
             <Card skin="shadow" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
                 <div className="p-6">
                     {/* Header */}
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                        <h2 className="text-xl font-semibold text-base-content">
                             {category ? 'Edit Category' : 'Add New Category'}
                         </h2>
                         <Button
@@ -1007,12 +1007,12 @@ const UnifiedCategoryForm = ({
                             placeholder="Enter category name"
                             autoFocus
                             error={form.errors.name}
-                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            className="border-base-300 bg-base-100 text-base-content"
                         />
 
                         {/* Category Type Selection */}
                         <div className="space-y-3">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Category Type</label>
+                            <label className="block text-sm font-medium text-base-content">Category Type</label>
                             <div className="flex space-x-3">
                                 <Button
                                     type="button"
@@ -1040,7 +1040,7 @@ const UnifiedCategoryForm = ({
                         {/* Planning Type Toggle - Only show for single categories */}
                         {form.values.type === 'single' && (
                             <div className="space-y-3">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Planning Type</label>
+                                <label className="block text-sm font-medium text-base-content">Planning Type</label>
                                 <div className="flex items-center space-x-4">
                                     <label className="flex items-center cursor-pointer">
                                         <input
@@ -1049,9 +1049,9 @@ const UnifiedCategoryForm = ({
                                             value="expense"
                                             checked={form.values.planningType === 'expense'}
                                             onChange={form.handleChange}
-                                            className="form-radio h-4 w-4 text-info-600 border-gray-300 focus:ring-info-500 mr-2"
+                                            className="form-radio h-4 w-4 text-info border-base-300 focus:border-primary mr-2"
                                         />
-                                        <span className="text-gray-900 dark:text-gray-100">💸 Expense</span>
+                                        <span className="text-base-content">💸 Expense</span>
                                     </label>
                                     <label className="flex items-center cursor-pointer">
                                         <input
@@ -1060,9 +1060,9 @@ const UnifiedCategoryForm = ({
                                             value="goal"
                                             checked={form.values.planningType === 'goal'}
                                             onChange={form.handleChange}
-                                            className="form-radio h-4 w-4 text-info-600 border-gray-300 focus:ring-info-500 mr-2"
+                                            className="form-radio h-4 w-4 text-info border-base-300 focus:border-primary mr-2"
                                         />
-                                        <span className="text-gray-900 dark:text-gray-100">🎯 Savings Goal</span>
+                                        <span className="text-base-content">🎯 Savings Goal</span>
                                     </label>
                                 </div>
                             </div>
@@ -1070,12 +1070,12 @@ const UnifiedCategoryForm = ({
 
                         {/* Multiple Category Info */}
                         {form.values.type === 'multiple' && (
-                            <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-600 rounded-lg">
+                            <div className="p-4 bg-base-200/50 border border-base-300 rounded-lg">
                                 <div className="flex items-center space-x-2 mb-2">
                                     <span className="text-lg">📁</span>
-                                    <h3 className="font-medium text-gray-900 dark:text-gray-100">Multiple Items Category</h3>
+                                    <h3 className="font-medium text-base-content">Multiple Items Category</h3>
                                 </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                <p className="text-sm text-base-content/60">
                                     This category will contain multiple budget items. The total amount needed per month and per paycheck will be calculated from the items you add to this category.
                                 </p>
                             </div>
@@ -1083,8 +1083,8 @@ const UnifiedCategoryForm = ({
 
                         {/* Expense-specific fields - Only show for single categories */}
                         {form.values.type === 'single' && form.values.planningType === 'expense' && (
-                            <div className="space-y-4 p-4 bg-primary-200 dark:bg-dark-450 border border-primary dark:border-neutral rounded-lg">
-                                <h3 className="font-medium text-info-900 dark:text-info-100">Expense Configuration</h3>
+                            <div className="space-y-4 p-4 bg-primary/20 bg-base-200 border border-primary rounded-lg">
+                                <h3 className="font-medium text-info">Expense Configuration</h3>
 
                                 {/* Amount Field - Always show */}
                                 <div>
@@ -1093,7 +1093,7 @@ const UnifiedCategoryForm = ({
                                             checked={form.values.usePercentage}
                                             onChange={(e) => form.setFieldValue('usePercentage', e.target.checked)}
                                         />
-                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        <label className="text-sm font-medium text-base-content">
                                             Use percentage of pay
                                         </label>
                                     </div>
@@ -1110,7 +1110,7 @@ const UnifiedCategoryForm = ({
                                             onChange={form.handleChange}
                                             error={form.errors.percentageAmount}
                                             placeholder="5.0"
-                                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                            className="border-base-300 bg-base-100 text-base-content"
                                         />
                                     ) : (
                                         <CurrencyField
@@ -1119,7 +1119,7 @@ const UnifiedCategoryForm = ({
                                             value={form.values.amount}
                                             onChange={(e) => form.setFieldValue('amount', e.target.value)}
                                             error={form.errors.amount}
-                                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                            className="border-base-300 bg-base-100 text-base-content"
                                         />
                                     )}
                                 </div>
@@ -1131,7 +1131,7 @@ const UnifiedCategoryForm = ({
                                     type="date"
                                     value={form.values.dueDate}
                                     onChange={form.handleChange}
-                                    className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    className="border-base-300 bg-base-100 text-base-content"
                                 />
 
                                 {/* Frequency - Always show */}
@@ -1140,7 +1140,7 @@ const UnifiedCategoryForm = ({
                                     name="frequency"
                                     value={form.values.frequency}
                                     onChange={form.handleChange}
-                                    className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                    className="border-base-300 bg-base-100 text-base-content"
                                 >
                                     {frequencyOptions.map(option => (
                                         <option key={option.value} value={option.value}>
@@ -1151,27 +1151,27 @@ const UnifiedCategoryForm = ({
 
                                 {/* Scheduled Transactions Option - Only show if due date AND frequency are filled */}
                                 {form.values.dueDate && form.values.frequency && (
-                                    <div className="space-y-3 pt-4 border-t border-info-200 dark:border-info-700">
+                                    <div className="space-y-3 pt-4 border-t border-info">
                                         <div className="flex items-center space-x-2">
                                             <Checkbox
                                                 checked={form.values.createScheduledTransactions}
                                                 onChange={(e) => form.setFieldValue('createScheduledTransactions', e.target.checked)}
                                             />
-                                            <label className="text-sm font-medium text-info-900 dark:text-info-100">
+                                            <label className="text-sm font-medium text-info">
                                                 Create scheduled transactions for this expense
                                             </label>
                                         </div>
 
                                         {/* Payee and End Conditions - Only show if scheduled transactions is checked */}
                                         {form.values.createScheduledTransactions && (
-                                            <div className="ml-6 space-y-4 p-3 bg-info/10 dark:bg-info/20/30 rounded-lg">
-                                                <p className="text-xs text-info-800 dark:text-info-200">
+                                            <div className="ml-6 space-y-4 p-3 bg-info/10 rounded-lg">
+                                                <p className="text-xs text-info">
                                                     Scheduled transactions will be created based on the due date and frequency above.
                                                 </p>
 
                                                 {/* Payee Field */}
                                                 <div>
-                                                    <label className="block text-sm font-medium text-info-900 dark:text-info-100 mb-1">
+                                                    <label className="block text-sm font-medium text-info mb-1">
                                                         Payee (Optional)
                                                     </label>
                                                     <PayeeAutocompleteinfo
@@ -1185,7 +1185,7 @@ const UnifiedCategoryForm = ({
 
                                                 {/* End Condition Selection */}
                                                 <div className="space-y-2">
-                                                    <label className="block text-sm font-medium text-info-900 dark:text-info-100">
+                                                    <label className="block text-sm font-medium text-info">
                                                         End Condition
                                                     </label>
                                                     <div className="space-y-2">
@@ -1198,7 +1198,7 @@ const UnifiedCategoryForm = ({
                                                                 onChange={form.handleChange}
                                                                 className="mr-2"
                                                             />
-                                                            <span className="text-sm text-info-900 dark:text-info-100">Repeat until date</span>
+                                                            <span className="text-sm text-info">Repeat until date</span>
                                                         </label>
                                                         {form.values.scheduledEndCondition === 'until_date' && (
                                                             <Input
@@ -1206,7 +1206,7 @@ const UnifiedCategoryForm = ({
                                                                 type="date"
                                                                 value={form.values.scheduledEndDate}
                                                                 onChange={form.handleChange}
-                                                                className="ml-6 border-info-300 dark:border-info-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                                className="ml-6 border-info bg-base-100 text-base-content"
                                                             />
                                                         )}
 
@@ -1219,7 +1219,7 @@ const UnifiedCategoryForm = ({
                                                                 onChange={form.handleChange}
                                                                 className="mr-2"
                                                             />
-                                                            <span className="text-sm text-info-900 dark:text-info-100">Number of payments</span>
+                                                            <span className="text-sm text-info">Number of payments</span>
                                                         </label>
                                                         {form.values.scheduledEndCondition === 'max_occurrences' && (
                                                             <Input
@@ -1229,7 +1229,7 @@ const UnifiedCategoryForm = ({
                                                                 value={form.values.scheduledMaxOccurrences}
                                                                 onChange={form.handleChange}
                                                                 placeholder="12"
-                                                                className="ml-6 w-24 border-info-300 dark:border-info-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                                                className="ml-6 w-24 border-info bg-base-100 text-base-content"
                                                             />
                                                         )}
 
@@ -1242,7 +1242,7 @@ const UnifiedCategoryForm = ({
                                                                 onChange={form.handleChange}
                                                                 className="mr-2"
                                                             />
-                                                            <span className="text-sm text-info-900 dark:text-info-100">Repeat indefinitely</span>
+                                                            <span className="text-sm text-info">Repeat indefinitely</span>
                                                         </label>
                                                     </div>
                                                 </div>
@@ -1272,7 +1272,7 @@ const UnifiedCategoryForm = ({
                                 onChange={form.handleChange}
                                 error={form.errors.accountId}
                                 required
-                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                className="border-base-300 bg-base-100 text-base-content"
                             >
                                 <option value="">Select Account</option>
                                 {accounts.map(account => (
@@ -1287,7 +1287,7 @@ const UnifiedCategoryForm = ({
                                 name="status"
                                 value={form.values.status}
                                 onChange={form.handleChange}
-                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                className="border-base-300 bg-base-100 text-base-content"
                             >
                                 {statusOptions.map(option => (
                                     <option key={option.value} value={option.value}>
@@ -1304,7 +1304,7 @@ const UnifiedCategoryForm = ({
                                 name="priority"
                                 value={form.values.priority}
                                 onChange={form.handleChange}
-                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                className="border-base-300 bg-base-100 text-base-content"
                             >
                                 {priorityOptions.map(option => (
                                     <option key={option.value} value={option.value}>
@@ -1314,7 +1314,7 @@ const UnifiedCategoryForm = ({
                             </Select>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                <label className="block text-sm font-medium text-base-content mb-1">
                                     Color
                                 </label>
                                 <div className="flex flex-wrap gap-2">
@@ -1324,8 +1324,8 @@ const UnifiedCategoryForm = ({
                                             type="button"
                                             onClick={() => form.setFieldValue('color', option.value)}
                                             className={`w-8 h-8 rounded-full border-2 ${form.values.color === option.value
-                                                ? 'border-gray-900 dark:border-white'
-                                                : 'border-gray-300 dark:border-gray-600'
+                                                ? 'border-base-content'
+                                                : 'border-base-300'
                                                 } ${option.value}`}
                                             title={option.label}
                                         />
@@ -1341,7 +1341,7 @@ const UnifiedCategoryForm = ({
                                     checked={form.values.autoFunding}
                                     onChange={(e) => form.setFieldValue('autoFunding', e.target.checked)}
                                 />
-                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                <label className="text-sm font-medium text-base-content">
                                     Enable auto-funding
                                 </label>
                             </div>
@@ -1354,11 +1354,11 @@ const UnifiedCategoryForm = ({
                             value={form.values.description}
                             onChange={form.handleChange}
                             rows={3}
-                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            className="border-base-300 bg-base-100 text-base-content"
                         />
 
                         {/* Form Actions */}
-                        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <div className="flex justify-end space-x-3 pt-4 border-t border-base-300">
                             <Button type="button" onClick={onCancel} variant="filled" color="secondary">
                                 Cancel
                             </Button>

@@ -182,15 +182,15 @@ const BudgetCategoriesTable = ({
     const getUrgencyStyles = (urgency) => {
         switch (urgency) {
             case 'overdue':
-                return 'bg-error-100 text-error-800 border-error-200';
+                return 'bg-error/20 text-error border-error';
             case 'urgent':
-                return 'bg-warning-100 text-warning-800 border-warning-200';
+                return 'bg-warning/20 text-warning border-warning';
             case 'soon':
-                return 'bg-warning-100 text-warning-800 border-warning-200';
+                return 'bg-warning/20 text-warning border-warning';
             case 'future':
-                return 'bg-info/10 text-info-800 border-info-200';
+                return 'bg-info/10 text-info border-info';
             default:
-                return 'bg-gray-100 text-gray-600 border-gray-200';
+                return 'bg-base-200 text-base-content/60 border-base-300';
         }
     };
 
@@ -318,7 +318,7 @@ const BudgetCategoriesTable = ({
         const sorted = column.getIsSorted();
         return (
             <button
-                className="flex items-center gap-2 font-medium text-left w-full hover:text-info-600 dark:hover:text-info-400 transition-colors"
+                className="flex items-center gap-2 font-medium text-left w-full hover transition-colors"
                 onClick={() => column.toggleSorting()}
             >
                 {children}
@@ -328,7 +328,7 @@ const BudgetCategoriesTable = ({
                     ) : sorted === 'desc' ? (
                         <ArrowDown className="w-4 h-4" />
                     ) : (
-                        <ArrowUpDown className="w-4 h-4 text-gray-400 dark:text-gray-400" />
+                        <ArrowUpDown className="w-4 h-4 text-base-content/60" />
                     )}
                 </div>
             </button>
@@ -346,7 +346,7 @@ const BudgetCategoriesTable = ({
                 header: ({ table }) => (
                     <input
                         type="checkbox"
-                        className="rounded border-gray-300 text-info-600 focus:ring-info-500"
+                        className="rounded border-base-300 text-info focus:border-primary"
                         checked={table.getIsAllRowsSelected()}
                         onChange={table.getToggleAllRowsSelectedHandler()}
                     />
@@ -356,7 +356,7 @@ const BudgetCategoriesTable = ({
                     return (
                         <input
                             type="checkbox"
-                            className="rounded border-gray-300 text-info-600 focus:ring-info-500"
+                            className="rounded border-base-300 text-info focus:border-primary"
                             style={{ marginLeft: row.original.depth * 20 }}
                             checked={row.getIsSelected()}
                             onChange={row.getToggleSelectedHandler()}
@@ -385,12 +385,12 @@ const BudgetCategoriesTable = ({
                                     [category.id]: !prev[category.id]
                                 }));
                             }}
-                            className="p-0.5 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors"
+                            className="p-0.5 hover rounded transition-colors"
                         >
                             {isExpanded ? (
-                                <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                                <ChevronDown className="w-4 h-4 text-base-content/70" />
                             ) : (
-                                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                                <ChevronRight className="w-4 h-4 text-base-content/70" />
                             )}
                         </button>
                     );
@@ -409,7 +409,7 @@ const BudgetCategoriesTable = ({
                             <div style={{ marginLeft: item.depth * 20 + 16 }}>
                                 <button
                                     onClick={() => onAddItem && onAddItem({ categoryId: item.parentCategory.id })}
-                                    className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-info-700 dark:hover:text-info-300 border-l-2 border-gray-200 dark:border-dark-600 pl-4"
+                                    className="flex items-center gap-2 text-sm text-primary hover border-l-2 border-base-300 pl-4"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Add Item to {item.parentCategory.name}
@@ -421,16 +421,16 @@ const BudgetCategoriesTable = ({
                     if (item.isExpenseDetails) {
                         // Expense details row with paycheck countdown and details
                         return (
-                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-info-200 dark:border-info-800 pl-4 py-2">
+                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-info pl-4 py-2">
                                 <div className="space-y-3">
                                     {/* Expense header */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className="text-lg">💸</span>
-                                            <span className="font-medium text-info-800 dark:text-info-200">Expense Details</span>
+                                            <span className="font-medium text-info">Expense Details</span>
                                         </div>
                                         {item.paychecksLeft !== null && (
-                                            <div className="text-sm font-medium text-info-700 dark:text-info-300">
+                                            <div className="text-sm font-medium text-info">
                                                 {item.paychecksLeft === 0 ? 'Due Now!' :
                                                     item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
                                             </div>
@@ -440,31 +440,31 @@ const BudgetCategoriesTable = ({
                                     {/* Expense details grid */}
                                     <div className="grid grid-cols-2 gap-4 text-sm">
                                         <div>
-                                            <div className="text-gray-600 dark:text-gray-400">Amount</div>
-                                            <div className="font-medium text-info-600 dark:text-info-400">
+                                            <div className="text-base-content/60">Amount</div>
+                                            <div className="font-medium text-info">
                                                 ${(parseFloat(item.amount) || 0).toFixed(2)}
                                             </div>
                                         </div>
                                         <div>
-                                            <div className="text-gray-600 dark:text-gray-400">Frequency</div>
-                                            <div className="font-medium text-gray-900 dark:text-gray-100 capitalize">
+                                            <div className="text-base-content/60">Frequency</div>
+                                            <div className="font-medium text-base-content capitalize">
                                                 {(item.frequency || 'monthly').replace('-', ' ')}
                                             </div>
                                         </div>
                                         {item.dueDate && (
                                             <>
                                                 <div>
-                                                    <div className="text-gray-600 dark:text-gray-400">Due Date</div>
-                                                    <div className="font-medium text-warning dark:text-warning-light">
+                                                    <div className="text-base-content/60">Due Date</div>
+                                                    <div className="font-medium text-warning">
                                                         {formatDueDate(item.dueDate)}
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div className="text-gray-600 dark:text-gray-400">Paychecks Left</div>
-                                                    <div className={`font-medium ${item.paychecksLeft === 0 ? 'text-error dark:text-error-light' :
-                                                        item.paychecksLeft === 1 ? 'text-warning dark:text-warning-light' :
-                                                            item.paychecksLeft > 1 ? 'text-success dark:text-success-light' :
-                                                                'text-error-dark dark:text-error'
+                                                    <div className="text-base-content/60">Paychecks Left</div>
+                                                    <div className={`font-medium ${item.paychecksLeft === 0 ? 'text-error' :
+                                                        item.paychecksLeft === 1 ? 'text-warning' :
+                                                            item.paychecksLeft > 1 ? 'text-success' :
+                                                                'text-error-dark'
                                                         }`}>
                                                         {item.paychecksLeft === 0 ? 'Due now!' :
                                                             item.paychecksLeft > 0 ? `${item.paychecksLeft} left` : 'Overdue'}
@@ -473,8 +473,8 @@ const BudgetCategoriesTable = ({
                                             </>
                                         )}
                                         <div>
-                                            <div className="text-gray-600 dark:text-gray-400">Type</div>
-                                            <div className="font-medium text-gray-900 dark:text-gray-100">
+                                            <div className="text-base-content/60">Type</div>
+                                            <div className="font-medium text-base-content">
                                                 {item.isRecurring ? 'Recurring' : 'One-time'}
                                             </div>
                                         </div>
@@ -485,13 +485,13 @@ const BudgetCategoriesTable = ({
                     } else if (item.isParent) {
                         return (
                             <div className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full ${item.color} border border-gray-200 dark:border-dark-600`}></div>
+                                <div className={`w-3 h-3 rounded-full ${item.color} border border-base-300`}></div>
                                 {item.type === 'multiple' && (
-                                    <Box className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor">
+                                    <Box className="w-4 h-4 text-base-content/60" fill="none" stroke="currentColor">
                                     </Box>
 
                                 )}
-                                <div className="font-medium text-gray-900 dark:text-gray-100">{item.name}</div>
+                                <div className="font-medium text-base-content">{item.name}</div>
 
                             </div>
                         );
@@ -500,9 +500,9 @@ const BudgetCategoriesTable = ({
                         const amountWithFrequency = formatAmountWithFrequency(item.amount, item.frequency);
 
                         return (
-                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-gray-200 dark:border-dark-600 pl-4">
-                                <div className="font-medium text-gray-700 dark:text-dark-200">{item.name}</div>
-                                <div className="text-sm text-gray-500 dark:text-dark-400">
+                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-base-300 pl-4">
+                                <div className="font-medium text-base-content/80">{item.name}</div>
+                                <div className="text-sm text-base-content/60">
                                     {amountWithFrequency}
                                 </div>
                             </div>
@@ -525,7 +525,7 @@ const BudgetCategoriesTable = ({
                         const monthlyAmount = calculateMonthlyAmount(row.original.amount, row.original.frequency);
                         return (
                             <div className="text-right">
-                                <div className="font-medium text-gray-600 dark:text-dark-300">
+                                <div className="font-medium text-base-content/60">
                                     {formatCurrency(monthlyAmount)}
                                 </div>
                             </div>
@@ -533,7 +533,7 @@ const BudgetCategoriesTable = ({
                     }
 
                     return (
-                        <div className={`text-right font-medium ${isSubItem ? 'text-gray-600 dark:text-dark-300' : 'text-gray-900 dark:text-dark-100'}`}>
+                        <div className={`text-right font-medium ${isSubItem ? 'text-base-content/60' : 'text-base-content'}`}>
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -555,14 +555,14 @@ const BudgetCategoriesTable = ({
                             const paychecksLeft = calculatePaychecksUntilDue(row.original.dueDate, upcomingPaychecks, row.original.parentCategory?.accountId);
                             return (
                                 <div className="text-right">
-                                    <div className="flex items-center justify-end gap-1 font-medium text-info-500">
+                                    <div className="flex items-center justify-end gap-1 font-medium text-info">
                                         <span>{formatCurrency(value || 0)}</span>
                                         {paychecksLeft === 0 ? (
                                             <span className="text-success" title="Due now">
                                                 ⚡
                                             </span>
                                         ) : (
-                                            <span className="text-info-400" title={`${paychecksLeft} paychecks until due`}>
+                                            <span className="text-info" title={`${paychecksLeft} paychecks until due`}>
                                                 🕒
                                             </span>
                                         )}
@@ -571,7 +571,7 @@ const BudgetCategoriesTable = ({
                                         {paychecksLeft === 0 ? (
                                             <span className="text-success font-medium">due now</span>
                                         ) : paychecksLeft > 0 ? (
-                                            <span className="text-info-400">{paychecksLeft} left</span>
+                                            <span className="text-info">{paychecksLeft} left</span>
                                         ) : (
                                             <span className="text-error-light">overdue</span>
                                         )}
@@ -582,13 +582,13 @@ const BudgetCategoriesTable = ({
                             // For sub-items without due dates, show amount with ongoing indicator
                             return (
                                 <div className="text-right">
-                                    <div className="flex items-center justify-end gap-1 font-medium text-info-500">
+                                    <div className="flex items-center justify-end gap-1 font-medium text-info">
                                         <span>{formatCurrency(value || 0)}</span>
-                                        <span className="text-gray-400" title="Ongoing expense">
+                                        <span className="text-base-content/60" title="Ongoing expense">
                                             ♾️
                                         </span>
                                     </div>
-                                    <div className="text-xs text-gray-400">
+                                    <div className="text-xs text-base-content/60">
                                         ongoing
                                     </div>
                                 </div>
@@ -597,7 +597,7 @@ const BudgetCategoriesTable = ({
                     }
 
                     return (
-                        <div className={`text-right font-medium ${isSubItem ? 'text-primary-500 dark:text-primary-400' : 'text-primary-600 dark:text-primary-400'}`}>
+                        <div className={`text-right font-medium ${isSubItem ? 'text-primary text-primary' : 'text-primary'}`}>
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -613,11 +613,11 @@ const BudgetCategoriesTable = ({
                     const isSubItem = !row.original.isParent;
 
                     // Don't show allocated amounts for sub-items - funds are allocated to categories, not individual items
-                    if (isSubItem) return <div className="text-right text-gray-400">—</div>;
+                    if (isSubItem) return <div className="text-right text-base-content/60">—</div>;
 
                     const value = getValue();
                     return (
-                        <div className="text-right font-medium text-success-600 dark:text-success-400">
+                        <div className="text-right font-medium text-success">
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -633,11 +633,11 @@ const BudgetCategoriesTable = ({
                     const isSubItem = !row.original.isParent;
 
                     // Don't show spent amounts for sub-items - spending is tracked at category level
-                    if (isSubItem) return <div className="text-right text-gray-400">—</div>;
+                    if (isSubItem) return <div className="text-right text-base-content/60">—</div>;
 
                     const value = getValue();
                     return (
-                        <div className="text-right font-medium text-error-600 dark:text-error-400">
+                        <div className="text-right font-medium text-error">
                             {formatCurrency(value || 0)}
                         </div>
                     );
@@ -653,7 +653,7 @@ const BudgetCategoriesTable = ({
                     const isSubItem = !row.original.isParent;
 
                     // Don't show available amounts for sub-items - only categories have available funds
-                    if (isSubItem) return <div className="text-right text-gray-400">—</div>;
+                    if (isSubItem) return <div className="text-right text-base-content/60">—</div>;
 
                     const value = getValue();
                     const isOverspent = value < 0;
@@ -664,7 +664,7 @@ const BudgetCategoriesTable = ({
                             <div className="text-right">
                                 <button
                                     onClick={() => handleTransferClick(row.original)}
-                                    className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:ring-2 focus:ring-info-500 focus:outline-none bg-success-100 text-success-800 border-success-200 hover:bg-success-200"
+                                    className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:border-primary focus:outline-none bg-success/20 text-success border-success hover"
                                     title="Click to move money out of this category"
                                 >
                                     <span className="mr-1">💰</span>
@@ -677,8 +677,8 @@ const BudgetCategoriesTable = ({
                         return (
                             <div className="text-right">
                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
-                                    ? 'bg-error-100 text-error-800 border border-error-200'
-                                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                                    ? 'bg-error/20 text-error border border-error'
+                                    : 'bg-base-200 text-base-content/60 border border-base-300'
                                     }`}>
                                     {isOverspent && <span className="mr-1">⚠️</span>}
                                     {formatCurrency(value || 0)}
@@ -706,7 +706,7 @@ const BudgetCategoriesTable = ({
                     if (isSubItem) {
                         // Sub-item: show its own due date
                         const dueDate = getValue();
-                        if (!dueDate) return <span className="text-gray-400">—</span>;
+                        if (!dueDate) return <span className="text-base-content/60">—</span>;
 
                         const urgency = getDueDateUrgency(dueDate);
                         return (
@@ -722,7 +722,7 @@ const BudgetCategoriesTable = ({
                         const dateInfo = getCategoryDateInfo(item);
 
                         if (!dateInfo.earliestDate) {
-                            return <span className="text-gray-400">—</span>;
+                            return <span className="text-base-content/60">—</span>;
                         }
 
                         const urgency = getDueDateUrgency(dateInfo.earliestDate);
@@ -775,10 +775,10 @@ const BudgetCategoriesTable = ({
                                         onEditCategory && onEditCategory(row.original);
                                     }
                                 }}
-                                className="p-2 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
+                                className="p-2 hover rounded transition-colors"
                                 title={isSubItem ? "Edit Item" : "Edit Category"}
                             >
-                                <Edit className="w-4 h-4 text-gray-600 dark:text-dark-300" />
+                                <Edit className="w-4 h-4 text-base-content/60" />
                             </button>
                             <button
                                 onClick={() => {
@@ -788,10 +788,10 @@ const BudgetCategoriesTable = ({
                                         onDeleteCategory && onDeleteCategory(row.original.id);
                                     }
                                 }}
-                                className="p-2 hover:bg-gray-100 dark:hover:bg-dark-600 rounded transition-colors"
+                                className="p-2 hover rounded transition-colors"
                                 title={isSubItem ? "Delete Item" : "Delete Category"}
                             >
-                                <Trash2 className="w-4 h-4 text-gray-600 dark:text-dark-300" />
+                                <Trash2 className="w-4 h-4 text-base-content/60" />
                             </button>
                         </div>
                     );
@@ -860,20 +860,20 @@ const BudgetCategoriesTable = ({
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-6 bg-white dark:bg-dark-800">
+        <div className="w-full max-w-7xl mx-auto p-6 bg-base-100">
             {/* Header */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900 dark:text-dark-100 flex items-center gap-2">
-                            <DollarSign className="w-7 h-7 text-success dark:text-success-light" />
+                        <h2 className="text-2xl font-bold text-base-content flex items-center gap-2">
+                            <DollarSign className="w-7 h-7 text-success" />
                             Budget Categories
                         </h2>
-                        <p className="text-gray-600 dark:text-dark-300">Manage your envelope budgeting categories and items</p>
+                        <p className="text-base-content/60">Manage your envelope budgeting categories and items</p>
                     </div>
                     <button
                         onClick={() => onAddCategory && onAddCategory()}
-                        className="flex items-center gap-2 px-4 py-2 bg-info/60 dark:bg-info/50 text-white rounded-lg hover:bg-info/70 dark:hover:bg-info/60 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 btn-primary text-white rounded-lg hover transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         Add Category
@@ -883,24 +883,24 @@ const BudgetCategoriesTable = ({
                 {/* Search and bulk actions */}
                 <div className="flex items-center justify-between gap-4">
                     <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-dark-400 w-4 h-4" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60 w-4 h-4" />
                         <input
                             type="text"
                             placeholder="Search categories..."
                             value={globalFilter}
                             onChange={(e) => setGlobalFilter(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-dark-600 bg-white dark:bg-dark-700 text-gray-900 dark:text-dark-100 rounded-lg focus:ring-2 focus:ring-info-500 dark:focus:ring-info-400 focus:border-transparent placeholder-gray-500 dark:placeholder-dark-400"
+                            className="w-full pl-10 pr-4 py-2 border border-base-300 bg-base-100 text-base-content rounded-lg focus:border-primary placeholder:text-base-content/60"
                         />
                     </div>
 
                     {selectedRowCount > 0 && (
                         <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600 dark:text-dark-300">
+                            <span className="text-sm text-base-content/60">
                                 {selectedRowCount} selected
                             </span>
                             <button
                                 onClick={handleBulkDelete}
-                                className="flex items-center gap-2 px-3 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 bg-error text-white rounded-lg hover transition-colors"
                             >
                                 <Trash2 className="w-4 h-4" />
                                 Delete Selected
@@ -925,7 +925,7 @@ const BudgetCategoriesTable = ({
 
                 if (availableToAllocate > 0) {
                     return (
-                        <div className="mb-4 bg-gradient-to-r from-primary-50 to-secondary-50 dark:from-primary-500 dark:to-secondary rounded-lg border border-success-light dark:border-success overflow-hidden shadow-sm">
+                        <div className="mb-4 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg border border-success-light overflow-hidden shadow-sm">
                             <div className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -933,19 +933,19 @@ const BudgetCategoriesTable = ({
                                             💰
                                         </div>
                                         <div>
-                                            <h3 className="text-lg font-semibold text-success-dark dark:text-success-light">
+                                            <h3 className="text-lg font-semibold text-success-dark">
                                                 Available to Allocate
                                             </h3>
-                                            <p className="text-sm text-success dark:text-success-light">
+                                            <p className="text-sm text-success">
                                                 Choose how to allocate your money
                                             </p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-2xl font-bold text-success-dark dark:text-success-light">
+                                        <div className="text-2xl font-bold text-success-dark">
                                             {formatCurrency(availableToAllocate)}
                                         </div>
-                                        <div className="text-sm text-success dark:text-success-light">
+                                        <div className="text-sm text-success">
                                             Ready to allocate
                                         </div>
                                     </div>
@@ -990,16 +990,16 @@ const BudgetCategoriesTable = ({
             })()}
 
             {/* Table */}
-            <div className="bg-white dark:bg-dark-800 rounded-lg border border-gray-200 dark:border-dark-600 overflow-hidden shadow-sm">
+            <div className="bg-base-100 rounded-lg border border-base-300 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gray-50 dark:bg-dark-700 border-b border-gray-200 dark:border-dark-600">
+                        <thead className="bg-base-200 border-b border-base-300">
                             {table.getHeaderGroups().map(headerGroup => (
                                 <tr key={headerGroup.id}>
                                     {headerGroup.headers.map(header => (
                                         <th
                                             key={header.id}
-                                            className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-dark-300 uppercase tracking-wider"
+                                            className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
                                             style={{ width: header.getSize() }}
                                         >
                                             {header.isPlaceholder
@@ -1011,7 +1011,7 @@ const BudgetCategoriesTable = ({
                                 </tr>
                             ))}
                         </thead>
-                        <tbody className="bg-white dark:bg-dark-800 divide-y divide-gray-200 dark:divide-dark-600">
+                        <tbody className="bg-base-100 divide-y divide-gray-200">
                             {table.getRowModel().rows.map(row => {
                                 const isSubItem = !row.original.isParent && !row.original.isAddRow;
                                 const isAddRow = row.original.isAddRow;
@@ -1027,28 +1027,28 @@ const BudgetCategoriesTable = ({
                                             item.progressPercentage >= 50 ? 'warning' : 'neutral';
 
                                     return (
-                                        <tr key={row.id} className="bg-success-lighter/20 dark:bg-success/10">
+                                        <tr key={row.id} className="bg-success-lighter/20">
                                             <td colSpan={columns.length} className="px-4 py-2">
-                                                <div className="bg-success-lighter/20 dark:bg-success/20 rounded p-3 border border-success-light dark:border-success">
+                                                <div className="bg-success-lighter/20 rounded p-3 border border-success-light">
                                                     <div className="space-y-2">
                                                         {/* Progress header */}
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-lg">🎯</span>
-                                                                <span className="text-sm font-semibold text-success-dark dark:text-success-light">Goal Progress</span>
+                                                                <span className="text-sm font-semibold text-success-dark">Goal Progress</span>
                                                             </div>
-                                                            <div className="text-sm font-bold text-success-dark dark:text-success-light">
+                                                            <div className="text-sm font-bold text-success-dark">
                                                                 {item.progressPercentage.toFixed(1)}%
                                                             </div>
                                                         </div>
 
                                                         {/* Progress bar */}
-                                                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                                        <div className="w-full bg-base-300 rounded-full h-2">
                                                             <div
                                                                 className={`h-2 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-success' :
                                                                     progressColor === 'primary' ? 'bg-info/50' :
                                                                         progressColor === 'warning' ? 'bg-warning' :
-                                                                            'bg-gray-400'
+                                                                            'bg-base-300'
                                                                     }`}
                                                                 style={{ width: `${Math.min(100, item.progressPercentage)}%` }}
                                                             />
@@ -1057,36 +1057,36 @@ const BudgetCategoriesTable = ({
                                                         {/* Goal details grid */}
                                                         <div className="grid grid-cols-4 gap-4 text-xs">
                                                             <div className="text-center">
-                                                                <div className="text-gray-600 dark:text-gray-400">Saved</div>
-                                                                <div className="font-bold text-success dark:text-success-light">
+                                                                <div className="text-base-content/60">Saved</div>
+                                                                <div className="font-bold text-success">
                                                                     ${(parseFloat(item.currentAmount) || 0).toFixed(2)}
                                                                 </div>
                                                             </div>
                                                             <div className="text-center">
-                                                                <div className="text-gray-600 dark:text-gray-400">Target</div>
-                                                                <div className="font-bold text-gray-900 dark:text-gray-100">
+                                                                <div className="text-base-content/60">Target</div>
+                                                                <div className="font-bold text-base-content">
                                                                     ${(parseFloat(item.targetAmount) || 0).toFixed(2)}
                                                                 </div>
                                                             </div>
                                                             <div className="text-center">
-                                                                <div className="text-gray-600 dark:text-gray-400">Per Paycheck</div>
-                                                                <div className="font-bold text-info-600 dark:text-info-400">
+                                                                <div className="text-base-content/60">Per Paycheck</div>
+                                                                <div className="font-bold text-info">
                                                                     ${(parseFloat(item.perPaycheckContribution) || 0).toFixed(2)}
                                                                 </div>
                                                             </div>
                                                             <div className="text-center">
-                                                                <div className="text-gray-600 dark:text-gray-400">
+                                                                <div className="text-base-content/60">
                                                                     {item.daysUntilTarget !== null ? (
                                                                         item.daysUntilTarget > 0 ? 'Days Left' :
                                                                             item.daysUntilTarget === 0 ? 'Due Today' : 'Overdue'
                                                                     ) : 'Target Date'}
                                                                 </div>
                                                                 <div className={`font-bold ${item.daysUntilTarget !== null ? (
-                                                                    item.daysUntilTarget > 30 ? 'text-gray-600 dark:text-gray-400' :
-                                                                        item.daysUntilTarget > 7 ? 'text-warning dark:text-warning-light' :
-                                                                            item.daysUntilTarget >= 0 ? 'text-error dark:text-error-light' :
-                                                                                'text-error-dark dark:text-error'
-                                                                ) : 'text-gray-600 dark:text-gray-400'
+                                                                    item.daysUntilTarget > 30 ? 'text-base-content/60' :
+                                                                        item.daysUntilTarget > 7 ? 'text-warning' :
+                                                                            item.daysUntilTarget >= 0 ? 'text-error' :
+                                                                                'text-error-dark'
+                                                                ) : 'text-base-content/60'
                                                                     }`}>
                                                                     {item.daysUntilTarget !== null ? (
                                                                         item.daysUntilTarget > 0 ? `${item.daysUntilTarget} days` :
@@ -1097,7 +1097,7 @@ const BudgetCategoriesTable = ({
                                                                     )}
                                                                 </div>
                                                                 {item.targetDate && (
-                                                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                                                    <div className="text-xs text-base-content/60 mt-1">
                                                                         ({new Date(item.targetDate).toLocaleDateString()})
                                                                     </div>
                                                                 )}
@@ -1106,9 +1106,9 @@ const BudgetCategoriesTable = ({
 
                                                         {/* Remaining amount - inline */}
                                                         {item.progressPercentage < 100 && (
-                                                            <div className="text-center text-xs pt-1 border-t border-success-light dark:border-success">
-                                                                <span className="text-gray-600 dark:text-gray-400">Still need: </span>
-                                                                <span className="font-bold text-warning dark:text-warning-light">
+                                                            <div className="text-center text-xs pt-1 border-t border-success-light">
+                                                                <span className="text-base-content/60">Still need: </span>
+                                                                <span className="font-bold text-warning">
                                                                     ${(item.targetAmount - item.currentAmount).toFixed(2)}
                                                                 </span>
                                                             </div>
@@ -1123,18 +1123,18 @@ const BudgetCategoriesTable = ({
                                 if (isExpenseDetails) {
                                     const item = row.original;
                                     return (
-                                        <tr key={row.id} className="bg-info-25 dark:bg-info/20/10">
+                                        <tr key={row.id} className="bg-info/10">
                                             <td colSpan={columns.length} className="px-4 py-2">
-                                                <div className="bg-info-50 dark:bg-info/20/20 rounded p-3 border border-info-200 dark:border-info-800">
+                                                <div className="bg-info/10 rounded p-3 border border-info">
                                                     <div className="space-y-2">
                                                         {/* Expense header */}
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-2">
                                                                 <span className="text-lg">💸</span>
-                                                                <span className="text-sm font-semibold text-info-800 dark:text-info-200">Expense Details</span>
+                                                                <span className="text-sm font-semibold text-info">Expense Details</span>
                                                             </div>
                                                             {item.paychecksLeft !== null && (
-                                                                <div className="text-sm font-bold text-info-700 dark:text-info-300">
+                                                                <div className="text-sm font-bold text-info">
                                                                     {item.paychecksLeft === 0 ? 'Due Now!' :
                                                                         item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
                                                                 </div>
@@ -1144,20 +1144,20 @@ const BudgetCategoriesTable = ({
                                                         {/* Expense details grid */}
                                                         <div className="grid grid-cols-3 gap-4 text-xs">
                                                             <div className="text-center">
-                                                                <div className="text-gray-600 dark:text-gray-400">Amount</div>
-                                                                <div className="font-bold text-info-600 dark:text-info-400">
+                                                                <div className="text-base-content/60">Amount</div>
+                                                                <div className="font-bold text-info">
                                                                     ${(parseFloat(item.amount) || 0).toFixed(2)}
                                                                 </div>
                                                             </div>
                                                             <div className="text-center">
-                                                                <div className="text-gray-600 dark:text-gray-400">Frequency</div>
-                                                                <div className="font-bold text-gray-900 dark:text-gray-100 capitalize">
+                                                                <div className="text-base-content/60">Frequency</div>
+                                                                <div className="font-bold text-base-content capitalize">
                                                                     {(item.frequency || 'monthly').replace('-', ' ')}
                                                                 </div>
                                                             </div>
                                                             <div className="text-center">
-                                                                <div className="text-gray-600 dark:text-gray-400">Type</div>
-                                                                <div className="font-bold text-gray-900 dark:text-gray-100">
+                                                                <div className="text-base-content/60">Type</div>
+                                                                <div className="font-bold text-base-content">
                                                                     {item.isRecurring ? 'Recurring' : 'One-time'}
                                                                 </div>
                                                             </div>
@@ -1165,9 +1165,9 @@ const BudgetCategoriesTable = ({
 
                                                         {/* Due date info - inline */}
                                                         {item.dueDate && (
-                                                            <div className="text-center text-xs pt-1 border-t border-info-200 dark:border-info-700">
-                                                                <div className="text-gray-600 dark:text-gray-400">Due Date</div>
-                                                                <div className="font-bold text-warning dark:text-warning-light">
+                                                            <div className="text-center text-xs pt-1 border-t border-info">
+                                                                <div className="text-base-content/60">Due Date</div>
+                                                                <div className="font-bold text-warning">
                                                                     {formatDueDate(item.dueDate)}
                                                                 </div>
                                                             </div>
@@ -1183,12 +1183,12 @@ const BudgetCategoriesTable = ({
                                     <tr
                                         key={row.id}
                                         className={`transition-colors ${isAddRow
-                                            ? 'bg-primary-25 hover:bg-primary-50 dark:bg-primary-900/20 dark:hover:bg-primary-800/30'
+                                            ? 'bg-primary/10 hover'
                                             : isSubItem
-                                                ? 'bg-gray-25 hover:bg-gray-50 dark:bg-dark-750 dark:hover:bg-dark-700'
+                                                ? 'bg-base-100 hover bg-base-200'
                                                 : isInactive
-                                                    ? 'bg-gray-50 dark:bg-dark-750 opacity-60'
-                                                    : 'hover:bg-gray-50 dark:hover:bg-dark-700'
+                                                    ? 'bg-base-200 bg-base-200 opacity-60'
+                                                    : 'hover'
                                             }`}
                                     >
                                         {row.getVisibleCells().map(cell => (
@@ -1208,27 +1208,27 @@ const BudgetCategoriesTable = ({
                 </div>
 
                 {/* Summary footer */}
-                <div className="bg-gray-50 dark:bg-dark-700 border-t border-gray-200 dark:border-dark-600 px-4 py-3">
+                <div className="bg-base-200 border-t border-base-300 px-4 py-3">
                     <div className="flex items-center justify-between text-sm">
-                        <div className="text-gray-600 dark:text-dark-300">
+                        <div className="text-base-content/60">
                             {data.length} categories • {data.reduce((sum, cat) => sum + (cat.subItems?.length || 0), 0)} total items
                         </div>
                         <div className="flex items-center gap-6 text-right">
                             <div>
-                                <span className="text-gray-500 dark:text-dark-400">Total Monthly Need: </span>
-                                <span className="font-medium text-gray-900 dark:text-dark-100">
+                                <span className="text-base-content/60">Total Monthly Need: </span>
+                                <span className="font-medium text-base-content">
                                     {formatCurrency(data.reduce((sum, cat) => sum + cat.monthlyNeed, 0))}
                                 </span>
                             </div>
                             <div>
-                                <span className="text-gray-500 dark:text-dark-400">Total Allocated: </span>
-                                <span className="font-medium text-success dark:text-success-light">
+                                <span className="text-base-content/60">Total Allocated: </span>
+                                <span className="font-medium text-success">
                                     {formatCurrency(data.reduce((sum, cat) => sum + cat.allocated, 0))}
                                 </span>
                             </div>
                             <div>
-                                <span className="text-gray-500 dark:text-dark-400">Total Available: </span>
-                                <span className="font-medium text-info-600 dark:text-info-400">
+                                <span className="text-base-content/60">Total Available: </span>
+                                <span className="font-medium text-info">
                                     {formatCurrency(data.reduce((sum, cat) => sum + cat.available, 0))}
                                 </span>
                             </div>

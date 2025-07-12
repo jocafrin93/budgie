@@ -1,12 +1,14 @@
 // src/components/budget/UpcomingPaychecks.jsx
 import { useEffect, useState } from 'react';
 import { usePaycheckManagement } from '../../hooks/usePaycheckManagement';
+import { useScheduledTransactions } from '../../hooks/useScheduledTransactions';
 import { Button } from '../ui/Button/index.jsx';
 import { Card } from '../ui/Card/index.jsx';
+import { Timeline, TimelineItem } from '../ui/Timeline/index.jsx';
 
 /**
- * Component to display upcoming paychecks with timezone-safe date handling
- * Shows next paycheck, upcoming paychecks, and provides payday workflow integration
+ * Component to display upcoming paychecks and scheduled transactions
+ * Shows calendar grid on desktop, timeline on mobile
  */
 const UpcomingPaychecks = ({
     accounts = [],
@@ -17,25 +19,95 @@ const UpcomingPaychecks = ({
     const {
         paychecks,
         getAllUpcomingPaycheckDates,
-        getNextPaycheckDate,
         calculateTotalMonthlyIncome
     } = usePaycheckManagement(accounts);
 
-    const [upcomingPaychecks, setUpcomingPaychecks] = useState([]);
-    const [nextPaycheck, setNextPaycheck] = useState(null);
-    const [monthlyIncome, setMonthlyIncome] = useState(0);
+    const { getUpcomingScheduledTransactions } = useScheduledTransactions();
 
-    // Update upcoming paychecks when paychecks change
+    const [upcomingPaychecks, setUpcomingPaychecks] = useState([]);
+    const [upcomingTransactions, setUpcomingTransactions] = useState([]);
+    const [monthlyIncome, setMonthlyIncome] = useState(0);
+    const [calendarData, setCalendarData] = useState([]);
+
+    // Update upcoming paychecks and transactions when data changes
     useEffect(() => {
         const upcoming = getAllUpcomingPaycheckDates(3); // Get next 3 months
         setUpcomingPaychecks(upcoming.slice(0, maxPaychecks));
 
-        const next = getNextPaycheckDate();
-        setNextPaycheck(next);
+        const scheduledTxns = getUpcomingScheduledTransactions();
+        setUpcomingTransactions(scheduledTxns.slice(0, 10)); // Limit to 10 transactions
 
         const monthly = calculateTotalMonthlyIncome();
         setMonthlyIncome(monthly);
-    }, [paychecks, getAllUpcomingPaycheckDates, getNextPaycheckDate, calculateTotalMonthlyIncome, maxPaychecks]);
+    }, [paychecks, getAllUpcomingPaycheckDates, calculateTotalMonthlyIncome, maxPaychecks, getUpcomingScheduledTransactions]);
+
+    // Generate calendar data for desktop view
+    useEffect(() => {
+        const generateCalendarData = () => {
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+
+            // Get first day of month and number of days
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+
+            // Create calendar grid
+            const calendar = [];
+            let week = [];
+
+            // Add empty cells for days before month starts
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                week.push(null);
+            }
+
+            // Add days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dateStr = date.toISOString().split('T')[0];
+
+                // Find paychecks for this day
+                const dayPaychecks = upcomingPaychecks.filter(paycheck => {
+                    const paycheckDate = new Date(paycheck.date).toISOString().split('T')[0];
+                    return paycheckDate === dateStr;
+                });
+
+                // Find scheduled transactions for this day
+                const dayTransactions = upcomingTransactions.filter(txn => {
+                    const txnDate = new Date(txn.nextDueDate || txn.dueDate).toISOString().split('T')[0];
+                    return txnDate === dateStr;
+                });
+
+                week.push({
+                    day,
+                    date,
+                    isToday: dateStr === today.toISOString().split('T')[0],
+                    paychecks: dayPaychecks,
+                    transactions: dayTransactions
+                });
+
+                // Start new week on Sunday
+                if (week.length === 7) {
+                    calendar.push(week);
+                    week = [];
+                }
+            }
+
+            // Add remaining days to last week
+            if (week.length > 0) {
+                while (week.length < 7) {
+                    week.push(null);
+                }
+                calendar.push(week);
+            }
+
+            setCalendarData(calendar);
+        };
+
+        generateCalendarData();
+    }, [upcomingPaychecks, upcomingTransactions]);
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -56,16 +128,16 @@ const UpcomingPaychecks = ({
         });
     };
 
-    // Get urgency styling based on days until paycheck
-    const getUrgencyStyle = (daysUntil) => {
+    // Get timeline item color based on urgency
+    const getTimelineColor = (daysUntil) => {
         if (daysUntil === 0) {
-            return 'bg-primary dark:bg-primary border-green-300 dark:border-green-700 text-green-800 dark:text-green-300';
+            return 'success';
         } else if (daysUntil <= 3) {
-            return 'bg-primary dark:bg-primary border-info-300 dark:border-primary-500 text-info-800 dark:text-info-300';
+            return 'primary';
         } else if (daysUntil <= 7) {
-            return 'bg-yellow-100 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-300';
+            return 'warning';
         } else {
-            return 'bg-gray-100 dark:bg-dark-600 border-gray-300 dark:border-dark-500 text-gray-800 dark:text-dark-200';
+            return 'neutral';
         }
     };
 
@@ -83,13 +155,28 @@ const UpcomingPaychecks = ({
         return account ? account.name : 'Unknown Account';
     };
 
-    if (paychecks.length === 0) {
+    // Get timeline item title
+    const getTimelineTitle = (item, isNext = false) => {
+        const prefix = isNext ? '💰 Next: ' : '';
+        if (item.paycheck) {
+            return `${prefix}${item.paycheck.name}`;
+        } else {
+            return `${prefix}${item.description || item.payee || 'Transaction'}`;
+        }
+    };
+
+    // Combine and sort paychecks and transactions for timeline
+    const timelineItems = [...upcomingPaychecks.map(p => ({ ...p, type: 'paycheck' })),
+    ...upcomingTransactions.map(t => ({ ...t, type: 'transaction', date: t.nextDueDate || t.dueDate }))];
+    timelineItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (paychecks.length === 0 && upcomingTransactions.length === 0) {
         return (
             <Card className="p-6">
                 <div className="text-center">
-                    <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-dark-50">No Paychecks Configured</h3>
-                    <p className="text-gray-600 dark:text-dark-300 mb-4">
-                        Set up your paychecks to see upcoming payment dates and plan your budget.
+                    <h3 className="text-lg font-bold mb-2 text-base-content">No Upcoming Items</h3>
+                    <p className="text-base-content/60 mb-4">
+                        Set up your paychecks and scheduled transactions to see upcoming dates.
                     </p>
                 </div>
             </Card>
@@ -97,146 +184,191 @@ const UpcomingPaychecks = ({
     }
 
     return (
-        <Card className="p-6">
+        <Card className="p-6 bg-base-100">
             {showHeader && (
                 <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-dark-50">Upcoming Paychecks</h3>
-                        <p className="text-sm text-gray-600 dark:text-dark-300">
-                            Your next paychecks with timezone-accurate scheduling
+                        <h3 className="text-lg font-bold mb-2 text-base-content">Upcoming Events</h3>
+                        <p className="text-sm text-base-content/60 hidden md:block">
+                            Calendar view of paychecks and scheduled transactions
+                        </p>
+                        <p className="text-sm text-base-content/60 md:hidden">
+                            Timeline of paychecks and scheduled transactions
                         </p>
                     </div>
 
                     {/* Monthly Income Summary */}
                     <div className="text-right">
-                        <div className="text-sm text-gray-600 dark:text-dark-300">Monthly Income</div>
-                        <div className="text-xl font-bold text-gray-900 dark:text-dark-50">
+                        <div className="text-sm text-base-content/60">Monthly Income</div>
+                        <div className="text-xl font-bold text-secondary">
                             {formatCurrency(monthlyIncome)}
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Next Paycheck Highlight */}
-            {nextPaycheck && (
-                <div className={`p-4 rounded-lg border-2 mb-4 ${getUrgencyStyle(nextPaycheck.daysUntil)}`}>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h4 className="font-bold text-lg">Next Paycheck</h4>
-                            <p className="text-sm opacity-90">{nextPaycheck.paycheck.name}</p>
-                            <p className="text-sm opacity-90">
-                                {formatDateForDisplay(nextPaycheck.date)} • {getDaysUntilText(nextPaycheck.daysUntil)}
-                            </p>
+            {/* Desktop Calendar View */}
+            <div className="hidden md:block">
+                {calendarData.length > 0 && (
+                    <div className="space-y-4">
+                        {/* Calendar Header */}
+                        <div className="text-center">
+                            <h4 className="text-lg font-semibold text-base-content">
+                                {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            </h4>
                         </div>
-                        <div className="text-right">
-                            <div className="text-2xl font-bold">
-                                {formatCurrency(nextPaycheck.paycheck.baseAmount)}
-                            </div>
-                            {onStartPaydayWorkflow && nextPaycheck.daysUntil <= 1 && (
-                                <Button
-                                    onClick={() => onStartPaydayWorkflow(nextPaycheck)}
-                                    color="success"
-                                    variant="filled"
-                                    className="mt-2"
-                                >
-                                    💰 Start Payday
-                                </Button>
-                            )}
-                        </div>
-                    </div>
 
-                    {/* Account Distribution Preview */}
-                    {nextPaycheck.paycheck.accountDistribution && nextPaycheck.paycheck.accountDistribution.length > 1 && (
-                        <div className="mt-3 pt-3 border-t border-current/20">
-                            <div className="text-xs opacity-75 mb-1">Distribution:</div>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                {nextPaycheck.paycheck.accountDistribution.map((dist, idx) => (
-                                    <div key={idx} className="flex justify-between">
-                                        <span>{getAccountName(dist.accountId)}</span>
-                                        <span className="font-medium">{formatCurrency(dist.amount)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Upcoming Paychecks List */}
-            {upcomingPaychecks.length > 1 && (
-                <div>
-                    <h4 className="font-semibold mb-3 text-gray-900 dark:text-dark-50">All Upcoming Paychecks</h4>
-                    <div className="space-y-3">
-                        {upcomingPaychecks.map((paycheckEntry, index) => (
-                            <div
-                                key={`${paycheckEntry.paycheck.id}-${paycheckEntry.formattedDate}`}
-                                className={`p-3 rounded-lg border ${index === 0 ? 'border-info dark:border-info bg-info/10 dark:bg-dark-600' :
-                                    'border-gray-200 dark:border-dark-500 bg-gray-50 dark:bg-dark-600'
-                                    }`}
-                            >
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <div className="font-medium text-gray-900 dark:text-dark-50">
-                                            {paycheckEntry.paycheck.name}
-                                        </div>
-                                        <div className="text-sm text-gray-600 dark:text-dark-300">
-                                            {formatDateForDisplay(paycheckEntry.date)}
-                                        </div>
-                                        <div className="text-xs text-gray-500 dark:text-dark-400">
-                                            {getDaysUntilText(paycheckEntry.daysUntil)}
-                                            {paycheckEntry.isThisWeek && ' • This week'}
-                                            {paycheckEntry.isThisMonth && ' • This month'}
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="font-bold text-gray-900 dark:text-dark-50">
-                                            {formatCurrency(paycheckEntry.paycheck.baseAmount)}
-                                        </div>
-                                        <div className="text-xs text-gray-500 dark:text-dark-400">
-                                            {paycheckEntry.paycheck.frequency}
-                                        </div>
-                                    </div>
+                        {/* Calendar Grid */}
+                        <div className="grid grid-cols-7 gap-1">
+                            {/* Day headers */}
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                <div key={day} className="p-2 text-center text-sm font-medium text-base-content/60 border-b border-base-300">
+                                    {day}
                                 </div>
+                            ))}
 
-                                {/* Account Distribution for each paycheck */}
-                                {paycheckEntry.paycheck.accountDistribution && paycheckEntry.paycheck.accountDistribution.length > 1 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-dark-500">
-                                        <div className="grid grid-cols-2 gap-1 text-xs text-gray-600 dark:text-dark-300">
-                                            {paycheckEntry.paycheck.accountDistribution.map((dist, idx) => (
-                                                <div key={idx} className="flex justify-between">
-                                                    <span>{getAccountName(dist.accountId)}</span>
-                                                    <span>{formatCurrency(dist.amount)}</span>
+                            {/* Calendar days */}
+                            {calendarData.flat().map((dayData, index) => (
+                                <div
+                                    key={index}
+                                    className={`min-h-[80px] p-1 border border-alert ${dayData ? 'bg-base-100' : 'bg-base-300'
+                                        }`}
+                                    style={dayData?.isToday ? {
+                                        borderWidth: '2px',
+                                        borderColor: 'rgb(var(--color-accent))',
+                                        boxShadow: '0 0 0 1px rgb(var(--color-primary) / 0.3)'
+                                    } : {}}
+                                >
+                                    {dayData && (
+                                        <>
+                                            <div className={`text-sm font-medium mb-1 ${dayData.isToday ? 'text-primary' : 'text-base-content'
+                                                }`}>
+                                                {dayData.day}
+                                            </div>
+
+                                            {/* Paychecks */}
+                                            {dayData.paychecks.map((paycheck, idx) => (
+                                                <div key={`paycheck-${idx}`} className="text-xs bg-secondary text-secondary-content px-1 py-0.5 rounded mb-1 truncate">
+                                                    💰 {paycheck.paycheck.name}
                                                 </div>
                                             ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )
-            }
 
-            {/* No upcoming paychecks */}
-            {
-                upcomingPaychecks.length === 0 && (
+                                            {/* Scheduled Transactions */}
+                                            {dayData.transactions.map((txn, idx) => (
+                                                <div key={`txn-${idx}`} className="text-xs bg-accent text-accent-content px-1 py-0.5 rounded mb-1 truncate">
+                                                    📅 {txn.description || txn.payee || 'Transaction'}
+                                                </div>
+                                            ))}
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Mobile Timeline View */}
+            <div className="md:hidden">
+                {timelineItems.length > 0 ? (
+                    <Timeline variant="filled" pointSize="12px" lineWidth="2px">
+                        {timelineItems.slice(0, maxPaychecks).map((item, index) => {
+                            const isNext = index === 0;
+                            const timelineColor = getTimelineColor(item.daysUntil || 0);
+
+                            return (
+                                <TimelineItem
+                                    key={`${item.type}-${item.id || index}-${item.date}`}
+                                    title={getTimelineTitle(item, isNext)}
+                                    time={item.date}
+                                    color={timelineColor}
+                                    isPing={isNext && (item.daysUntil || 0) <= 1}
+                                >
+                                    <div className="space-y-3">
+                                        {/* Main Item Info */}
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                {item.type === 'paycheck' ? (
+                                                    <>
+                                                        <div className="font-bold text-secondary text-lg">
+                                                            {formatCurrency(item.paycheck.baseAmount)}
+                                                        </div>
+                                                        <div className="text-sm text-base-content/60">
+                                                            {formatDateForDisplay(item.date)} • {getDaysUntilText(item.daysUntil)}
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="font-bold text-warning text-lg">
+                                                            📅 {item.description || item.payee || 'Transaction'}
+                                                        </div>
+                                                        <div className="text-sm text-base-content/60">
+                                                            {formatDateForDisplay(item.date)}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            {/* Payday Action Button */}
+                                            {onStartPaydayWorkflow && item.type === 'paycheck' && isNext && (item.daysUntil || 0) <= 1 && (
+                                                <Button
+                                                    onClick={() => onStartPaydayWorkflow(item)}
+                                                    color="success"
+                                                    variant="filled"
+                                                    size="sm"
+                                                >
+                                                    💰 Start Payday
+                                                </Button>
+                                            )}
+                                        </div>
+
+                                        {/* Account Distribution for paychecks */}
+                                        {item.type === 'paycheck' && item.paycheck.accountDistribution && item.paycheck.accountDistribution.length > 1 && (
+                                            <div className="bg-base-200 rounded-lg p-3">
+                                                <div className="text-xs font-medium text-base-content/70 mb-2">
+                                                    Account Distribution:
+                                                </div>
+                                                <div className="grid grid-cols-1 gap-1">
+                                                    {item.paycheck.accountDistribution.map((dist, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center text-sm">
+                                                            <span className="text-base-content/80">{getAccountName(dist.accountId)}</span>
+                                                            <span className="font-medium text-base-content">{formatCurrency(dist.amount)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Next Item Special Styling */}
+                                        {isNext && (
+                                            <div className="bg-primary/10 border border-primary/20 rounded-lg p-2">
+                                                <div className="text-xs text-primary font-medium">
+                                                    🎯 Next item - {item.type === 'paycheck' ? getDaysUntilText(item.daysUntil) : 'Scheduled'}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </TimelineItem>
+                            );
+                        })}
+                    </Timeline>
+                ) : (
                     <div className="text-center py-8">
-                        <div className="text-gray-500 dark:text-dark-400 mb-2">📅</div>
-                        <p className="text-gray-600 dark:text-dark-300">
-                            No upcoming paychecks found. Check your paycheck configuration.
+                        <div className="text-base-content/60 mb-2">📅</div>
+                        <p className="text-base-content/60">
+                            No upcoming items found.
                         </p>
                     </div>
-                )
-            }
+                )}
+            </div>
 
             {/* Today's Date Reference */}
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-dark-500">
-                <div className="text-xs text-gray-500 dark:text-dark-400 text-center">
+            <div className="mt-6 pt-4 border-t border-base-300">
+                <div className="text-xs text-base-content/60 text-center">
                     Today: {formatDateForDisplay(new Date())} • Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
                 </div>
             </div>
-        </Card >
+        </Card>
     );
 };
 

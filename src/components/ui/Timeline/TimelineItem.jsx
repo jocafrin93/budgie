@@ -1,27 +1,27 @@
 // Import Dependencies
-import PropTypes from "prop-types";
-import relativeTime from "dayjs/plugin/relativeTime";
-import dayjs from "dayjs";
 import clsx from "clsx";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import PropTypes from "prop-types";
 
 // Local Imports
-import { setThisClass } from "utils/setThisClass";
 import { useLocaleContext } from "app/contexts/locale/context";
-import { useTimelineContext } from "./context";
 import { COLORS } from "constants/app.constant";
+import { setThisClass } from "utils/setThisClass";
+import { useTimelineContext } from "./context";
 
 // ----------------------------------------------------------------------
 
 dayjs.extend(relativeTime);
 
 const variants = {
-  filled: "bg-this dark:bg-this-light",
-  outlined: "border-2 border-this dark:border-this-light",
+  filled: "bg-this",
+  outlined: "border-2 border-this",
 };
 
 const neutralVariant = {
-  filled: "bg-gray-300 dark:bg-dark-400",
-  outlined: "border-2 border-gray-300 dark:border-dark-400",
+  filled: "bg-base-300 bg-base-100",
+  outlined: "border-2 border-base-300",
 };
 
 const TimelineItem = ({
@@ -70,7 +70,7 @@ const TimelineItem = ({
         <div className="flex flex-col pb-1.5">
           <h3
             className={clsx(
-              "pb-1.5 font-medium leading-none text-gray-600 dark:text-dark-100",
+              "pb-1.5 font-medium leading-none text-base-content/60 text-base-content",
               classNames?.title,
             )}
           >
@@ -78,7 +78,7 @@ const TimelineItem = ({
           </h3>
           <span
             className={clsx(
-              "text-xs text-gray-400 dark:text-dark-300",
+              "text-xs text-base-content/60",
               classNames?.time,
             )}
           >
@@ -106,3 +106,4 @@ TimelineItem.propTypes = {
 };
 
 export { TimelineItem };
+

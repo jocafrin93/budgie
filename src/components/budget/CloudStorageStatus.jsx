@@ -10,18 +10,18 @@ const CloudStorageStatus = () => {
 
     if (isDevelopment) {
         return (
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div className="bg-info/10 border border-info/30 rounded-lg p-4">
                 <div className="flex items-center">
                     <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg className="h-5 w-5 text-info" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                         </svg>
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                        <h3 className="text-sm font-medium text-info">
                             Development Mode
                         </h3>
-                        <div className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                        <div className="mt-1 text-sm text-info">
                             Using local storage. Cloud sync will be available in production.
                         </div>
                     </div>
@@ -32,19 +32,19 @@ const CloudStorageStatus = () => {
 
     if (isLoading) {
         return (
-            <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <div className="bg-base-200 border border-base-300 rounded-lg p-4">
                 <div className="flex items-center">
                     <div className="flex-shrink-0">
-                        <svg className="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <svg className="animate-spin h-5 w-5 text-base-content/60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                        <h3 className="text-sm font-medium text-base-content">
                             Initializing Cloud Storage
                         </h3>
-                        <div className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="mt-1 text-sm text-base-content/60">
                             Setting up Google Drive integration...
                         </div>
                     </div>
@@ -59,25 +59,25 @@ const CloudStorageStatus = () => {
                 'Unknown error occurred';
 
         return (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div className="bg-error/10 border border-error/30 rounded-lg p-4">
                 <div className="flex items-center">
                     <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg className="h-5 w-5 text-error" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                         </svg>
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
+                        <h3 className="text-sm font-medium text-error">
                             Cloud Storage Error
                         </h3>
-                        <div className="mt-1 text-sm text-red-700 dark:text-red-300">
+                        <div className="mt-1 text-sm text-error">
                             {errorMessage}
                         </div>
                         <details className="mt-2">
-                            <summary className="text-xs text-red-600 dark:text-red-400 cursor-pointer hover:text-red-800 dark:hover:text-red-200">
+                            <summary className="text-xs text-error cursor-pointer hover">
                                 Debug Information
                             </summary>
-                            <div className="mt-1 text-xs text-red-600 dark:text-red-400 font-mono bg-red-100 dark:bg-red-900/30 p-2 rounded">
+                            <div className="mt-1 text-xs text-error font-mono bg-error/20 p-2 rounded">
                                 <div>Error Type: {typeof error}</div>
                                 <div>Error Object: {JSON.stringify(error, null, 2)}</div>
                                 <div>Client ID: {import.meta.env.VITE_GOOGLE_CLIENT_ID ? 'Set' : 'Missing'}</div>
@@ -88,13 +88,13 @@ const CloudStorageStatus = () => {
                         <div className="mt-3 space-x-2">
                             <button
                                 onClick={() => window.location.reload()}
-                                className="text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 px-3 py-1 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                className="text-sm bg-error/20 text-error px-3 py-1 rounded-md hover transition-colors"
                             >
                                 Retry
                             </button>
                             <button
                                 onClick={() => console.log('Google API Debug:', { error, gapi: window.gapi, env: import.meta.env })}
-                                className="text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 px-3 py-1 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                className="text-sm bg-error/20 text-error px-3 py-1 rounded-md hover transition-colors"
                             >
                                 Log Debug Info
                             </button>
@@ -107,19 +107,19 @@ const CloudStorageStatus = () => {
 
     if (!isAuthenticated) {
         return (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <svg className="h-5 w-5 text-warning" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
                         </div>
                         <div className="ml-3">
-                            <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                            <h3 className="text-sm font-medium text-warning">
                                 Cloud Storage Not Connected
                             </h3>
-                            <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                            <div className="mt-1 text-sm text-warning">
                                 Sign in with Google to sync your data across devices
                             </div>
                         </div>
@@ -127,7 +127,7 @@ const CloudStorageStatus = () => {
                     <div className="ml-4">
                         <button
                             onClick={signIn}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
+                            className="bg-info hover text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
                         >
                             <svg className="w-4 h-4" viewBox="0 0 24 24">
                                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -144,19 +144,19 @@ const CloudStorageStatus = () => {
     }
 
     return (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+        <div className="bg-success/10 border border-success/30 rounded-lg p-4">
             <div className="flex items-center justify-between">
                 <div className="flex items-center">
                     <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <svg className="h-5 w-5 text-success" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-green-800 dark:text-green-200">
+                        <h3 className="text-sm font-medium text-success">
                             Cloud Storage Connected
                         </h3>
-                        <div className="mt-1 text-sm text-green-700 dark:text-green-300">
+                        <div className="mt-1 text-sm text-success">
                             Your data is automatically syncing with Google Drive
                         </div>
                     </div>
@@ -164,7 +164,7 @@ const CloudStorageStatus = () => {
                 <div className="ml-4">
                     <button
                         onClick={signOut}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center space-x-1"
+                        className="bg-error hover text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center space-x-1"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

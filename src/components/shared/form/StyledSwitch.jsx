@@ -23,12 +23,12 @@ export const StyledSwitch = ({
     <Switch
       className={({ checked }) =>
         clsx(
-          `styled-switch relative flex shrink-0 cursor-pointer items-center rounded-full p-(--thumb-border) outline-hidden transition-colors duration-200 ease-in-out focus:outline-hidden`,
+          `styled-switch relative flex shrink-0 cursor-pointer items-center rounded-full p-0.5 outline-hidden transition-colors duration-200 ease-in-out focus:outline-none`,
           disabled
-            ? "pointer-events-none select-none bg-gray-150 opacity-70 ring-1 ring-gray-200 dark:bg-dark-450 dark:opacity-60 dark:ring-dark-450"
+            ? "pointer-events-none select-none bg-base-200 opacity-70 ring-1 ring-gray-200 bg-base-200"
             : checked
-              ? "this:primary bg-this dark:bg-this-light"
-              : "bg-gray-300 dark:bg-surface-1",
+              ? "this:primary bg-this"
+              : "bg-base-300",
           className,
           classNames?.switch,
         )
@@ -51,12 +51,12 @@ export const StyledSwitch = ({
               "styled-switch-thumb pointer-events-none flex h-full w-[calc(100%/2-var(--thumb-border))] transform items-center justify-center rounded-full p-0.5 shadow-lg ring-0 transition duration-200 ease-in-out",
               checked
                 ? "translate-x-[calc(100%+var(--thumb-border)*2)] rtl:-translate-x-[calc(100%+var(--thumb-border)*2)]"
-                : "translate-x-0 bg-white dark:bg-dark-50",
+                : "translate-x-0 bg-base-100",
               disabled
-                ? "bg-gray-400 dark:bg-dark-800"
+                ? "bg-base-300 bg-base-100"
                 : checked
-                  ? "bg-white"
-                  : "bg-white dark:bg-dark-50",
+                  ? "bg-base-100"
+                  : "bg-base-100",
               classNames?.thumb,
             )}
           >

@@ -184,10 +184,10 @@ const MobileTransactionsView = ({
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <h2 className="text-lg font-semibold text-base-content">
                         Transactions
                     </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-base-content/60">
                         {viewAccount === 'all' ? 'All Accounts' : getAccountName(viewAccount)}
                     </p>
                 </div>
@@ -196,13 +196,13 @@ const MobileTransactionsView = ({
                         <>
                             <button
                                 onClick={() => setIsSelectionMode(true)}
-                                className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="flex items-center gap-2 bg-base-300 hover text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                             >
                                 Select
                             </button>
                             <button
                                 onClick={() => setShowAddModal(true)}
-                                className="flex items-center gap-2 bg-info/60 hover:bg-info/70 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="flex items-center gap-2 bg-info/60 hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                             >
                                 <Plus className="w-4 h-4" />
                                 Add
@@ -212,13 +212,13 @@ const MobileTransactionsView = ({
                         <>
                             <button
                                 onClick={handleSelectAll}
-                                className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="flex items-center gap-2 bg-base-300 hover text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                             >
                                 Select All
                             </button>
                             <button
                                 onClick={handleClearSelection}
-                                className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                className="flex items-center gap-2 bg-base-300 hover text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                             >
                                 Cancel
                             </button>
@@ -229,14 +229,14 @@ const MobileTransactionsView = ({
 
             {/* Bulk Delete Bar - Only show when transactions are selected */}
             {selectedCount > 0 && (
-                <div className="bg-error-lighter/20 dark:bg-error/20 border border-error-light dark:border-error rounded-lg p-4 mb-4">
+                <div className="bg-error/10 border border-error/30 rounded-lg p-4 mb-4">
                     <div className="flex items-center justify-between">
-                        <div className="text-error-dark dark:text-error-light">
+                        <div className="text-error-dark">
                             <span className="font-medium">{selectedCount} transaction{selectedCount > 1 ? 's' : ''} selected</span>
                         </div>
                         <button
                             onClick={handleBulkDelete}
-                            className="flex items-center gap-2 bg-error hover:bg-error-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="flex items-center gap-2 bg-error hover text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                         >
                             <Trash2 className="w-4 h-4" />
                             Delete Selected
@@ -249,20 +249,20 @@ const MobileTransactionsView = ({
             <div className="space-y-4">
                 {Object.keys(groupedTransactions).length === 0 ? (
                     <div className="text-center py-12">
-                        <div className="text-gray-400 dark:text-gray-500 mb-4">
+                        <div className="text-base-content/60 mb-4">
                             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                             </svg>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        <h3 className="text-lg font-medium text-base-content mb-2">
                             No transactions yet
                         </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-4">
+                        <p className="text-base-content/60 mb-4">
                             Start by adding your first transaction
                         </p>
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="bg-info/60 hover:bg-info/70 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                            className="bg-info/60 hover text-white px-6 py-2 rounded-lg font-medium transition-colors"
                         >
                             Add Transaction
                         </button>
@@ -272,16 +272,16 @@ const MobileTransactionsView = ({
                         const dayTotal = getDayTotal(dayTransactions);
 
                         return (
-                            <div key={date} className="bg-white dark:bg-dark-800 rounded-lg shadow-sm border border-gray-200 dark:border-dark-600 overflow-hidden">
+                            <div key={date} className="bg-base-100 rounded-lg shadow-sm border border-base-300 overflow-hidden">
                                 {/* Day Header */}
-                                <div className="bg-gray-50 dark:bg-dark-750 px-4 py-3 border-b border-gray-200 dark:border-dark-600">
+                                <div className="bg-base-200 bg-base-200 px-4 py-3 border-b border-base-300">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="font-medium text-gray-900 dark:text-dark-100">
+                                        <h3 className="font-medium text-base-content">
                                             {formatDate(date)}
                                         </h3>
                                         <div className={`text-sm font-semibold ${dayTotal >= 0
-                                            ? 'text-success dark:text-success-light'
-                                            : 'text-error dark:text-error-light'
+                                            ? 'text-success'
+                                            : 'text-error'
                                             }`}>
                                             {dayTotal >= 0 ? '+' : ''}{formatCurrency(dayTotal)}
                                         </div>
@@ -289,7 +289,7 @@ const MobileTransactionsView = ({
                                 </div>
 
                                 {/* Transactions for this day */}
-                                <div className="divide-y divide-gray-200 dark:divide-dark-600">
+                                <div className="divide-y divide-gray-200">
                                     {dayTransactions.map(transaction => {
                                         const isTransfer = transaction.isTransfer || transaction.transferToAccountId;
                                         const isSplit = transaction.isSplit || (transaction.splits && transaction.splits.length > 0);
@@ -309,7 +309,7 @@ const MobileTransactionsView = ({
                                                             type="checkbox"
                                                             checked={selectedTransactions.has(transaction.id)}
                                                             onChange={() => handleToggleSelection(transaction.id)}
-                                                            className="w-5 h-5 text-info-600 bg-gray-100 border-gray-300 rounded focus:ring-info-500 dark:focus:ring-info-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                                            className="w-5 h-5 text-info bg-base-200 border-base-300 rounded focus:border-primary"
                                                         />
                                                     </div>
                                                 )}
@@ -324,20 +324,20 @@ const MobileTransactionsView = ({
                                                         >
                                                             <CheckCircle
                                                                 className={`w-5 h-5 ${isCleared
-                                                                    ? 'text-success dark:text-success-light'
-                                                                    : 'text-gray-400 dark:text-gray-500'
+                                                                    ? 'text-success'
+                                                                    : 'text-base-content/60'
                                                                     }`}
                                                             />
                                                         </button>
 
                                                         {/* Payee */}
-                                                        <div className="font-medium text-gray-900 dark:text-dark-100 truncate">
+                                                        <div className="font-medium text-base-content truncate">
                                                             {transaction.payee || 'No Payee'}
                                                         </div>
 
                                                         {/* Reconciled indicator */}
                                                         {isReconciled && (
-                                                            <div className="text-info-600 dark:text-info-400 text-xs">
+                                                            <div className="text-info text-xs">
                                                                 🔒
                                                             </div>
                                                         )}
@@ -346,22 +346,22 @@ const MobileTransactionsView = ({
                                                     {/* Memo and Category */}
                                                     <div className="space-y-1">
                                                         {transaction.memo && (
-                                                            <div className="text-sm text-gray-600 dark:text-dark-400 truncate">
+                                                            <div className="text-sm text-base-content/70 truncate">
                                                                 {transaction.memo}
                                                             </div>
                                                         )}
                                                         <div className="flex items-center gap-2">
                                                             {isTransfer ? (
-                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-info/10 dark:bg-info/20/30 text-info-700 dark:text-info-300">
+                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-info/10 text-info">
                                                                     Transfer
                                                                 </span>
                                                             ) : (
-                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 dark:bg-dark-600 text-gray-700 dark:text-dark-300">
+                                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-base-200 text-base-content/60">
                                                                     {isSplit ? 'Multiple' : getCategoryName(transaction.categoryId)}
                                                                 </span>
                                                             )}
                                                             {viewAccount === 'all' && (
-                                                                <span className="text-xs text-gray-500 dark:text-dark-400">
+                                                                <span className="text-xs text-base-content/60">
                                                                     {getAccountName(transaction.accountId)}
                                                                 </span>
                                                             )}
@@ -373,8 +373,8 @@ const MobileTransactionsView = ({
                                                 <div className="flex items-center gap-3 ml-4">
                                                     {/* Amount */}
                                                     <div className={`text-right font-semibold ${transaction.amount >= 0
-                                                        ? 'text-success dark:text-success-light'
-                                                        : 'text-error dark:text-error-light'
+                                                        ? 'text-success'
+                                                        : 'text-error'
                                                         }`}>
                                                         <div className="text-base">
                                                             {transaction.amount >= 0 ? '+' : '-'}{formatCurrency(transaction.amount)}
@@ -385,13 +385,13 @@ const MobileTransactionsView = ({
                                                     <div className="flex items-center gap-1">
                                                         <button
                                                             onClick={() => onEditTransaction(transaction)}
-                                                            className="p-2 text-gray-400 hover:text-info-600 dark:hover:text-info-400 transition-colors"
+                                                            className="p-2 text-base-content/60 hover transition-colors"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteTransaction(transaction)}
-                                                            className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                            className="p-2 text-base-content/60 hover transition-colors"
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
@@ -409,18 +409,18 @@ const MobileTransactionsView = ({
 
             {/* Add Transaction Modal - Placeholder for now */}
             {showAddModal && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40 md:items-center">
-                    <div className="bg-white dark:bg-dark-800 rounded-t-lg md:rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[85vh] overflow-hidden md:max-h-[80vh] mb-16 md:mb-0">
+                <div className="fixed inset-0 z-50 flex items-end justify-center bg-base-content/50 backdrop-blur-sm transition-opacity md:items-center">
+                    <div className="bg-base-100 rounded-t-lg md:rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[85vh] overflow-hidden md:max-h-[80vh] mb-16 md:mb-0">
                         <div className="p-4 text-center">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                            <h3 className="text-lg font-semibold text-base-content mb-4">
                                 Add Transaction
                             </h3>
-                            <p className="text-gray-600 dark:text-gray-400 mb-4">
+                            <p className="text-base-content/60 mb-4">
                                 Transaction form will be integrated here
                             </p>
                             <button
                                 onClick={() => setShowAddModal(false)}
-                                className="mt-4 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                                className="mt-4 px-4 py-2 bg-base-300 text-white rounded-lg hover transition-colors"
                             >
                                 Close
                             </button>

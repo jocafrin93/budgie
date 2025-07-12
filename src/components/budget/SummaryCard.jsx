@@ -17,22 +17,22 @@ const SummaryCard = ({
     onClick,
     className = '',
 }) => {
-    // Determine value color class using new design system
+    // Determine value color class using DaisyUI semantic colors
     const valueColorClass =
         color === 'green' ? 'text-success' :
             color === 'red' ? 'text-error' :
                 color === 'info' ? 'text-info' :
                     color === 'yellow' ? 'text-warning' :
-                        color === 'neutral' ? 'text-gray-900 dark:text-dark-50' :
+                        color === 'neutral' ? 'text-base-content' :
                             color; // Use custom color class if provided
 
-    // Determine progress color class using new design system
+    // Determine progress color class using DaisyUI semantic colors
     const progressColorClass =
         progressColor === 'green' ? 'bg-success' :
             progressColor === 'red' ? 'bg-error' :
                 progressColor === 'yellow' ? 'bg-warning' :
                     progressColor === 'info' ? 'bg-info' :
-                        progressColor === 'gradient' ? 'bg-gradient-to-r from-warning-light to-error-light' :
+                        progressColor === 'gradient' ? 'bg-gradient-to-r from-warning to-error' :
                             progressColor || 'bg-success'; // Default to success
 
     return (
@@ -41,7 +41,7 @@ const SummaryCard = ({
             onClick={onClick}
         >
             {/* Card Title */}
-            <h3 className="text-sm font-medium text-gray-600 dark:text-dark-300 mb-1">{title}</h3>
+            <h3 className="text-sm font-medium text-base-content/70 mb-1">{title}</h3>
 
             {/* Main Content */}
             <div className="flex items-center justify-between">
@@ -53,7 +53,7 @@ const SummaryCard = ({
 
                     {/* Description */}
                     {description && (
-                        <p className="text-xs text-gray-500 dark:text-dark-400">
+                        <p className="text-xs text-base-content/60">
                             {description}
                         </p>
                     )}
@@ -69,7 +69,7 @@ const SummaryCard = ({
 
             {/* Progress Bar */}
             {typeof progress === 'number' && (
-                <div className="w-full bg-gray-200 dark:bg-dark-600 rounded-full h-2 mt-2">
+                <div className="w-full bg-base-300 rounded-full h-2 mt-2">
                     <div
                         className={`h-2 rounded-full transition-all duration-300 ${progressColorClass}`}
                         style={{ width: `${Math.min(100, progress)}%` }}

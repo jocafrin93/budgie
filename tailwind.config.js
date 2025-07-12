@@ -4,84 +4,44 @@ export default {
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
-    plugins: [
-        require('daisyui'),
-    ],
-    daisyui: {
-        // Enable DaisyUI components and theming
-        base: true, // Apply DaisyUI base styles
-        styled: true, // Apply DaisyUI component styles
-        utils: true, // Apply DaisyUI utility classes
-        prefix: "", // No prefix for DaisyUI classes
-        logs: true, // Show info about DaisyUI version and config in console
-        themeRoot: ":root", // The element that receives theme color CSS variables
-        themes: [
-            // Light themes
-            "light",
-            "corporate",
-            "emerald",
-            "fantasy",
-            "lofi",
-            "pastel",
-            "cupcake",
-            "bumblebee",
-            "garden",
-            "retro",
-            "valentine",
-            "aqua",
-            "cmyk",
-            "autumn",
-            "acid",
-            "lemonade",
-            "winter",
+    theme: {
+        extend: {
+            colors: {
+                // DaisyUI-style color system
+                'primary': 'rgb(var(--color-primary) / <alpha-value>)',
+                'primary-focus': 'rgb(var(--color-primary-focus) / <alpha-value>)',
+                'primary-content': 'rgb(var(--color-primary-content) / <alpha-value>)',
 
-            // Dark themes  
-            "dark",
-            "synthwave",
-            "forest",
-            "black",
-            "night",
-            "coffee",
-            "dim",
-            "nord",
-            "sunset",
-            "cyberpunk",
-            "halloween",
-            "luxury",
-            "dracula",
-            "business",
+                'secondary': 'rgb(var(--color-secondary) / <alpha-value>)',
+                'secondary-focus': 'rgb(var(--color-secondary-focus) / <alpha-value>)',
+                'secondary-content': 'rgb(var(--color-secondary-content) / <alpha-value>)',
 
-            // Custom themes that match your current color schemes
-            {
-                "budgie-light": {
-                    "primary": "#0ea5e9", // sky-600 (your current info color)
-                    "secondary": "#e000ad", // your current secondary
-                    "accent": "#10b981", // emerald-500
-                    "neutral": "#64748b", // slate-500
-                    "base-100": "#ffffff", // white background
-                    "base-200": "#f8fafc", // slate-50
-                    "base-300": "#e2e8f0", // slate-200
-                    "info": "#0ea5e9",
-                    "success": "#10b981",
-                    "warning": "#f59200",
-                    "error": "#ff4f1a",
-                },
-            },
-            {
-                "budgie-dark": {
-                    "primary": "#0ea5e9", // sky-600
-                    "secondary": "#e000ad", // your current secondary
-                    "accent": "#10b981", // emerald-500
-                    "neutral": "#4c4f57", // cinder-400
-                    "base-100": "#2a2c32", // cinder-500 (dark background)
-                    "base-200": "#232429", // cinder-600
-                    "base-300": "#1c1d21", // cinder-700
-                    "info": "#0ea5e9",
-                    "success": "#10b981",
-                    "warning": "#f59200",
-                    "error": "#ff4f1a",
-                },
-            },
-        ],
+                'accent': 'rgb(var(--color-accent) / <alpha-value>)',
+                'accent-focus': 'rgb(var(--color-accent-focus) / <alpha-value>)',
+                'accent-content': 'rgb(var(--color-accent-content) / <alpha-value>)',
+
+                'neutral': 'rgb(var(--color-neutral) / <alpha-value>)',
+                'neutral-focus': 'rgb(var(--color-neutral-focus) / <alpha-value>)',
+                'neutral-content': 'rgb(var(--color-neutral-content) / <alpha-value>)',
+
+                'base-100': 'rgb(var(--color-base-100) / <alpha-value>)',
+                'base-200': 'rgb(var(--color-base-200) / <alpha-value>)',
+                'base-300': 'rgb(var(--color-base-300) / <alpha-value>)',
+                'base-content': 'rgb(var(--color-base-content) / <alpha-value>)',
+
+                'info': 'rgb(var(--color-info) / <alpha-value>)',
+                'info-content': 'rgb(var(--color-info-content) / <alpha-value>)',
+
+                'success': 'rgb(var(--color-success) / <alpha-value>)',
+                'success-content': 'rgb(var(--color-success-content) / <alpha-value>)',
+
+                'warning': 'rgb(var(--color-warning) / <alpha-value>)',
+                'warning-content': 'rgb(var(--color-warning-content) / <alpha-value>)',
+
+                'error': 'rgb(var(--color-error) / <alpha-value>)',
+                'error-content': 'rgb(var(--color-error-content) / <alpha-value>)',
+            }
+        },
     },
+    plugins: [],
 }

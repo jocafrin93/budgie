@@ -51,8 +51,8 @@ const CircleCheck = ({ className = "w-5 h-5", checked = false, ...props }) => (
         viewBox="0 0 24 24"
         {...props}
     >
-        <circle cx="12" cy="12" r="10" className={checked ? "text-success" : "text-gray-400"} />
-        <path d="m9 12 2 2 4-4" className={checked ? "text-success" : "text-gray-400"} />
+        <circle cx="12" cy="12" r="10" className={checked ? "text-success" : "text-base-content/60"} />
+        <path d="m9 12 2 2 4-4" className={checked ? "text-success" : "text-base-content/60"} />
     </svg>
 );
 
@@ -229,7 +229,7 @@ const PayeeAutocompleteInline = ({
     return (
         <div className="relative" ref={dropdownRef}>
             {label && (
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-base-content mb-1">
                     {label}
                     {required && <span className="text-error ml-1">*</span>}
                 </label>
@@ -246,20 +246,20 @@ const PayeeAutocompleteInline = ({
                     placeholder={placeholder}
                     required={required}
                     disabled={disabled}
-                    className={`w-full px-3 py-2 pr-10 border border-gray-400 dark:border-gray-500 rounded-lg 
-                             bg-white dark:bg-gray-800 
-                             text-gray-900 dark:text-gray-100
-                             placeholder-gray-500 dark:placeholder-gray-400
-                             focus:outline-none focus:ring-2 focus:ring-info-500 focus:border-info-500
+                    className={`w-full px-3 py-2 pr-10 border border-base-300 rounded-lg 
+                             bg-base-100 
+                             text-base-content
+                             placeholder:text-base-content/60
+                             focus:outline-none focus:border-primary
                              transition-colors
-                             ${disabled ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-700' : ''}`}
+                             ${disabled ? 'opacity-50 cursor-not-allowed bg-base-200' : ''}`}
                     {...props}
                 />
 
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-base-content/60 hover"
                 >
                     <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -269,7 +269,7 @@ const PayeeAutocompleteInline = ({
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {/* Existing payees */}
                     {filteredPayees.length > 0 && (
                         <div>
@@ -278,8 +278,8 @@ const PayeeAutocompleteInline = ({
                                     key={index}
                                     type="button"
                                     onClick={() => handleSelectPayee(payee)}
-                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 
-                                             text-gray-900 dark:text-gray-100 transition-colors
+                                    className="w-full px-3 py-2 text-left hover 
+                                             text-base-content transition-colors
                                              first:rounded-t-lg last:rounded-b-lg"
                                 >
                                     {payee}
@@ -293,9 +293,9 @@ const PayeeAutocompleteInline = ({
                         <button
                             type="button"
                             onClick={handleAddNewPayee}
-                            className="w-full px-3 py-2 text-left hover:bg-info-50 dark:hover:bg-info/20/20 
-                                     text-info-600 dark:text-info-400 transition-colors
-                                     border-t border-gray-200 dark:border-gray-600 flex items-center space-x-2"
+                            className="w-full px-3 py-2 text-left hover 
+                                     text-info transition-colors
+                                     border-t border-base-300 flex items-center space-x-2"
                         >
                             <span>+</span>
                             <span>&#34;Add {inputValue}&quot;</span>
@@ -304,7 +304,7 @@ const PayeeAutocompleteInline = ({
 
                     {/* No results */}
                     {filteredPayees.length === 0 && !showAddOption && inputValue.trim() && (
-                        <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
+                        <div className="px-3 py-2 text-base-content/60 text-sm">
                             No payees found
                         </div>
                     )}
@@ -501,7 +501,7 @@ const TransactionFormModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-content/50 backdrop-blur-sm transition-opacity">
             <Card skin="shadow" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-6">
@@ -522,7 +522,7 @@ const TransactionFormModal = ({
                                 value={formData.date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                                 required
-                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                className="border-base-300 bg-base-100 text-base-content"
                             />
 
                             <Select
@@ -530,7 +530,7 @@ const TransactionFormModal = ({
                                 value={formData.accountId}
                                 onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
                                 required
-                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                className="border-base-300 bg-base-100 text-base-content"
                             >
                                 <option value="">Select Account</option>
                                 {accounts.map(account => (
@@ -556,8 +556,8 @@ const TransactionFormModal = ({
                         {/* Transaction Type Toggle */}
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction Type</label>
-                                <label htmlFor="transactionTypeToggle" className="inline-flex items-center p-2 rounded-md cursor-pointer dark:text-gray-100">
+                                <label className="block text-sm font-medium text-base-content mb-2">Transaction Type</label>
+                                <label htmlFor="transactionTypeToggle" className="inline-flex items-center p-2 rounded-md cursor-pointer">
                                     <input
                                         id="transactionTypeToggle"
                                         type="checkbox"
@@ -565,10 +565,10 @@ const TransactionFormModal = ({
                                         checked={transactionType === 'inflow'}
                                         onChange={(e) => setTransactionType(e.target.checked ? 'inflow' : 'outflow')}
                                     />
-                                    <span className="px-4 py-2 rounded-l-md bg-error text-white peer-checked:bg-gray-300 peer-checked:text-gray-700 dark:bg-error-dark dark:peer-checked:bg-gray-700 dark:peer-checked:text-gray-300 transition-colors">
+                                    <span className="px-4 py-2 rounded-l-md bg-error text-white peer-checked peer-checked transition-colors">
                                         💸 Expense
                                     </span>
-                                    <span className="px-4 py-2 rounded-r-md bg-gray-300 text-gray-700 peer-checked:bg-success peer-checked:text-white dark:bg-gray-700 dark:text-gray-300 dark:peer-checked:bg-success-dark dark:peer-checked:text-white transition-colors">
+                                    <span className="px-4 py-2 rounded-r-md bg-base-300 text-base-content peer-checked peer-checked transition-colors">
                                         💰 Income
                                     </span>
                                 </label>
@@ -627,7 +627,7 @@ const TransactionFormModal = ({
                             value={formData.amount}
                             onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
                             required
-                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            className="border-base-300 bg-base-100 text-base-content"
 
                         />
 
@@ -637,7 +637,7 @@ const TransactionFormModal = ({
                                 label="Category"
                                 value={formData.categoryId}
                                 onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-                                className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                                className="border-base-300 bg-base-100 text-base-content"
 
                             >
                                 <option value="">Select Category</option>
@@ -653,12 +653,12 @@ const TransactionFormModal = ({
                             label="Memo"
                             value={formData.memo}
                             onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
-                            className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                            className="border-base-300 bg-base-100 text-base-content"
 
                         />
 
                         <div className="flex items-center space-x-3">
-                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
+                            <label className="text-sm font-medium text-base-content">Status</label>
                             <IconSwap
                                 isOn={formData.isCleared}
                                 onChange={(newStatus) => setFormData(prev => ({ ...prev, isCleared: newStatus }))}
@@ -666,7 +666,7 @@ const TransactionFormModal = ({
                                 offIcon={<CircleCheck className="w-5 h-5" checked={false} />}
                                 className="p-1"
                             />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                            <span className="text-sm text-base-content/60">
                                 {formData.isCleared ? 'Cleared' : 'Pending'}
                             </span>
                         </div>
@@ -689,19 +689,19 @@ const TransactionFormModal = ({
                                 {showSplits && (
                                     <div className="space-y-4">
                                         {/* Balance Indicator */}
-                                        <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <div className="bg-base-200 p-4 rounded-lg">
                                             <div className="grid grid-cols-3 gap-4 text-sm">
                                                 <div className="text-center">
-                                                    <div className="text-gray-600 dark:text-gray-400">Transaction Amount</div>
+                                                    <div className="text-base-content/60">Transaction Amount</div>
                                                     <div className="font-bold text-lg">{formatCurrency(formData.amount)}</div>
                                                 </div>
                                                 <div className="text-center">
-                                                    <div className="text-gray-600 dark:text-gray-400">Total Splits</div>
+                                                    <div className="text-base-content/60">Total Splits</div>
                                                     <div className="font-bold text-lg">{formatCurrency(splitValidation.totalSplitAmount)}</div>
                                                 </div>
                                                 <div className="text-center">
-                                                    <div className="text-gray-600 dark:text-gray-400">Remaining</div>
-                                                    <div className={`font-bold text-lg ${splitValidation.isBalanced ? 'text-green-600' : 'text-red-600'}`}>
+                                                    <div className="text-base-content/60">Remaining</div>
+                                                    <div className={`font-bold text-lg ${splitValidation.isBalanced ? 'text-success' : 'text-error'}`}>
                                                         {formatCurrency(splitValidation.remainingToAllocate)}
                                                     </div>
                                                 </div>
@@ -709,10 +709,10 @@ const TransactionFormModal = ({
 
                                             {/* Balance Status */}
                                             {!splitValidation.isBalanced && (
-                                                <div className="mt-3 p-3 bg-warning-lighter/20 dark:bg-warning/20 border border-warning-light dark:border-warning rounded-lg">
+                                                <div className="mt-3 p-3 bg-warning/20er/20 border border-warning-light rounded-lg">
                                                     <div className="flex items-center space-x-2">
-                                                        <span className="text-warning dark:text-warning-light">⚠️</span>
-                                                        <span className="text-sm text-warning-dark dark:text-warning-light">
+                                                        <span className="text-warning">⚠️</span>
+                                                        <span className="text-sm text-warning-dark">
                                                             Fix splits {splitValidation.isOverAllocated ? 'Over-allocated' : 'Under-allocated'} by {formatCurrency(Math.abs(splitValidation.remainingToAllocate))}
                                                         </span>
                                                     </div>
@@ -721,10 +721,10 @@ const TransactionFormModal = ({
 
                                             {/* Success Status */}
                                             {splitValidation.isBalanced && formData.splits.length > 0 && (
-                                                <div className="mt-3 p-3 bg-success-lighter/20 dark:bg-success/20 border border-success-light dark:border-success rounded-lg">
+                                                <div className="mt-3 p-3 bg-success-lighter/20 border border-success-light rounded-lg">
                                                     <div className="flex items-center space-x-2">
-                                                        <span className="text-success dark:text-success-light">✅</span>
-                                                        <span className="text-sm text-success-dark dark:text-success-light">
+                                                        <span className="text-success">✅</span>
+                                                        <span className="text-sm text-success-dark">
                                                             Splits are perfectly balanced!
                                                         </span>
                                                     </div>
@@ -756,7 +756,7 @@ const TransactionFormModal = ({
                                                     type="button"
                                                     onClick={clearAllSplits}
                                                     variant="outlined"
-                                                    className="w-full text-red-600 hover:text-red-700"
+                                                    className="w-full text-error hover"
                                                 >
                                                     Clear All
                                                 </Button>
@@ -787,7 +787,7 @@ const TransactionFormModal = ({
                                                     />
 
                                                     {/* Percentage Display */}
-                                                    <div className="flex items-center justify-center text-sm text-gray-600 dark:text-gray-400">
+                                                    <div className="flex items-center justify-center text-sm text-base-content/60">
                                                         {formData.amount > 0 ? `${((split.amount / formData.amount) * 100).toFixed(1)}%` : '0%'}
                                                     </div>
 
@@ -802,7 +802,7 @@ const TransactionFormModal = ({
                                                         onClick={() => removeSplit(index)}
                                                         variant="flat"
                                                         isIcon
-                                                        className="text-red-500"
+                                                        className="text-error"
                                                     >
                                                         <TbTrash />
                                                     </Button>
@@ -1090,7 +1090,7 @@ export default function TransactionsTab({
                 label: 'Amount',
                 filter: 'numberRange',
                 cell: ({ getValue }) => (
-                    <div className={`font-medium ${getValue() < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    <div className={`font-medium ${getValue() < 0 ? 'text-error' : 'text-success'}`}>
                         {getValue() < 0 ? '-' : '+'}{formatCurrency(getValue())}
                     </div>
                 ),
@@ -1117,7 +1117,7 @@ export default function TransactionsTab({
                             />
                             {isReconciled && (
                                 <div
-                                    className="text-info-600 dark:text-info-400"
+                                    className="text-info"
                                     title="This transaction has been reconciled"
                                 >
                                     🔒
@@ -1132,7 +1132,7 @@ export default function TransactionsTab({
                 header: 'Memo',
                 label: 'Memo',
                 cell: ({ getValue }) => (
-                    <div className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-32">
+                    <div className="text-sm text-base-content/60 truncate max-w-32">
                         {getValue() || '—'}
                     </div>
                 ),
@@ -1161,7 +1161,7 @@ export default function TransactionsTab({
                             variant="flat"
                             size="sm"
                             isIcon
-                            className="text-red-500"
+                            className="text-error"
                             title="Delete Transaction"
                         >
                             <TbTrash className="size-4" />
@@ -1363,10 +1363,10 @@ export default function TransactionsTab({
             {/* Header Actions */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                    <h2 className="text-xl font-semibold text-base-content">
                         Transactions
                     </h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-sm text-base-content/60">
                         Manage your financial transactions
                     </p>
                 </div>
@@ -1379,7 +1379,7 @@ export default function TransactionsTab({
                             variant="filled"
                             color="error"
                             size="sm"
-                            className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white"
+                            className="flex items-center space-x-2 bg-error hover text-white"
                         >
                             <TbTrash className="size-4" />
                             <span>Delete {selectedCount} Selected</span>
@@ -1460,7 +1460,7 @@ export default function TransactionsTab({
 
                         <TBody>
                             {table.getRowModel().rows.map((row) => (
-                                <Tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                <Tr key={row.id} className="hover">
                                     {row.getVisibleCells().map((cell) => (
                                         <Td key={cell.id}>
                                             {flexRender(
@@ -1476,7 +1476,7 @@ export default function TransactionsTab({
                 </div>
 
                 {/* Pagination */}
-                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
+                <div className="border-t border-base-300 px-4 py-3">
                     <PaginationSection table={table} />
                 </div>
             </Card>

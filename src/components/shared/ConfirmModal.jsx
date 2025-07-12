@@ -5,13 +5,13 @@ import {
   Transition,
   TransitionChild,
 } from "@headlessui/react";
-import PropTypes from "prop-types";
 import {
   ExclamationTriangleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import merge from "lodash/merge";
+import PropTypes from "prop-types";
 import { useRef } from "react";
 
 // Local Imports
@@ -54,12 +54,12 @@ export function ConfirmModal(props) {
 
   const dialogProps = confirmLoading
     ? {
-        onClose: () => {},
-        static: true,
-      }
+      onClose: () => { },
+      static: true,
+    }
     : {
-        onClose,
-      };
+      onClose,
+    };
 
   return (
     <Transition
@@ -78,7 +78,7 @@ export function ConfirmModal(props) {
         leave="ease-in duration-200"
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
-        className="absolute inset-0 bg-gray-900/50 transition-opacity dark:bg-black/40"
+        className="absolute inset-0 bg-black/50 transition-opacity"
       />
 
       <TransitionChild
@@ -90,7 +90,7 @@ export function ConfirmModal(props) {
         leaveFrom="opacity-100"
         leaveTo="opacity-0"
         className={clsx(
-          "scrollbar-sm relative flex w-full max-w-md flex-col overflow-y-auto rounded-lg bg-white px-4 py-6 text-center transition-opacity duration-300 dark:bg-dark-700 sm:px-5",
+          "scrollbar-sm relative flex w-full max-w-md flex-col overflow-y-auto rounded-lg bg-base-100 px-4 py-6 text-center transition-opacity duration-300 bg-base-100 sm:px-5",
           className,
         )}
       >
@@ -123,7 +123,7 @@ function Confirm({ onOk, state, messages, confirmLoading, onClose, focusRef }) {
         )}
       />
       <div className="mt-4">
-        <h3 className="text-xl text-gray-800 dark:text-dark-100">
+        <h3 className="text-xl text-base-content text-base-content">
           {mergedMessages[state].title}
         </h3>
         <p className="mx-auto mt-2 max-w-xs">

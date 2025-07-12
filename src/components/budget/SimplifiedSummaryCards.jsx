@@ -118,14 +118,14 @@ const SimplifiedSummaryCards = ({
                 }
             >
                 {summaryData.urgentItems > 0 && (
-                    <div className="text-xs text-gray-500 dark:text-dark-400 mt-2">
+                    <div className="text-xs text-base-content/60 mt-2">
                         {summaryData.urgentItemsList.slice(0, 2).map((item, index) => (
                             <div key={index} className="truncate">
                                 • {item.name}
                             </div>
                         ))}
                         {summaryData.urgentItemsList.length > 2 && (
-                            <div className="text-gray-600 dark:text-dark-300">
+                            <div className="text-base-content/70">
                                 +{summaryData.urgentItemsList.length - 2} more
                             </div>
                         )}

@@ -1,11 +1,11 @@
 // Import Dependencies
-import { forwardRef } from "react";
-import PropTypes from "prop-types";
 import clsx from "clsx";
+import PropTypes from "prop-types";
+import { forwardRef } from "react";
 
 // Local Imports
-import { setThisClass } from "utils/setThisClass";
 import { COLORS } from "constants/app.constant";
+import { setThisClass } from "utils/setThisClass";
 
 // ----------------------------------------------------------------------
 
@@ -17,8 +17,8 @@ const AvatarDot = forwardRef((props, ref) => {
       className={clsx(
         "avatar-dot absolute rounded-full",
         color === "neutral"
-          ? "bg-gray-300 dark:bg-dark-200"
-          : [setThisClass(color), "bg-this dark:bg-this-light"],
+          ? "bg-base-300 bg-base-100"
+          : [setThisClass(color), "bg-this"],
         className,
       )}
       {...rest}
@@ -42,3 +42,4 @@ AvatarDot.propTypes = {
 };
 
 export { AvatarDot };
+

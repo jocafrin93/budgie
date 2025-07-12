@@ -49,8 +49,8 @@ const MonthlyBudgetNavigator = ({
                     </Button>
 
                     <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                        <Calendar className="w-4 h-4 text-base-content/70" />
+                        <h3 className="text-base font-semibold text-base-content">
                             {getShortMonthName(currentBudgetMonth)}
                         </h3>
                     </div>
@@ -71,13 +71,13 @@ const MonthlyBudgetNavigator = ({
                         {monthSummary && (
                             <div className="flex items-center gap-3 text-xs">
                                 <div className="text-center">
-                                    <div className="text-gray-500 dark:text-gray-400">Allocated</div>
-                                    <div className="font-medium text-gray-900 dark:text-gray-50">
+                                    <div className="text-base-content/60">Allocated</div>
+                                    <div className="font-medium text-base-content">
                                         ${monthSummary.allocated?.toFixed(0) || '0'}
                                     </div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-gray-500 dark:text-gray-400">Remaining</div>
+                                    <div className="text-base-content/60">Remaining</div>
                                     <div className={`font-medium ${(monthSummary.remaining || 0) >= 0
                                         ? 'text-success'
                                         : 'text-error'
@@ -103,11 +103,11 @@ const MonthlyBudgetNavigator = ({
 
                 {/* Month Selector (if needed) */}
                 {availableMonths.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                    <div className="mt-2 pt-2 border-t border-base-300">
                         <select
                             value={currentBudgetMonth}
                             onChange={(e) => navigateToMonth && navigateToMonth(e.target.value)}
-                            className="w-full px-2 py-1 border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-50 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full px-2 py-1 border border-base-300 rounded bg-base-100 text-base-content text-xs focus:outline-none focus:border-primary"
                         >
                             {availableMonths.map(month => (
                                 <option key={month.value} value={month.value}>
@@ -137,8 +137,8 @@ const MonthlyBudgetNavigator = ({
                     </Button>
 
                     <div className="flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+                        <Calendar className="w-5 h-5 text-base-content/70" />
+                        <h3 className="text-lg font-semibold text-base-content">
                             {getMonthDisplayName ? getMonthDisplayName(currentBudgetMonth) : 'Current Month'}
                         </h3>
                     </div>
@@ -158,19 +158,19 @@ const MonthlyBudgetNavigator = ({
                     {monthSummary && (
                         <div className="flex items-center gap-4 text-sm">
                             <div className="text-center">
-                                <div className="text-gray-500 dark:text-gray-400">Allocated</div>
-                                <div className="font-medium text-gray-900 dark:text-gray-50">
+                                <div className="text-base-content/60">Allocated</div>
+                                <div className="font-medium text-base-content">
                                     ${monthSummary.allocated?.toFixed(2) || '0.00'}
                                 </div>
                             </div>
                             <div className="text-center">
-                                <div className="text-gray-500 dark:text-gray-400">Spent</div>
-                                <div className="font-medium text-gray-900 dark:text-gray-50">
+                                <div className="text-base-content/60">Spent</div>
+                                <div className="font-medium text-base-content">
                                     ${monthSummary.spent?.toFixed(2) || '0.00'}
                                 </div>
                             </div>
                             <div className="text-center">
-                                <div className="text-gray-500 dark:text-gray-400">Remaining</div>
+                                <div className="text-base-content/60">Remaining</div>
                                 <div className={`font-medium ${(monthSummary.remaining || 0) >= 0
                                     ? 'text-success'
                                     : 'text-error'
@@ -195,11 +195,11 @@ const MonthlyBudgetNavigator = ({
 
             {/* Month Selector Dropdown (if needed) */}
             {availableMonths.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                <div className="mt-3 pt-3 border-t border-base-300">
                     <select
                         value={currentBudgetMonth}
                         onChange={(e) => navigateToMonth && navigateToMonth(e.target.value)}
-                        className="px-3 py-1 border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="px-3 py-1 border border-base-300 rounded bg-base-100 text-base-content text-sm focus:outline-none focus:border-primary"
                     >
                         {availableMonths.map(month => (
                             <option key={month.value} value={month.value}>

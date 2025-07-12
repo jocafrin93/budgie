@@ -267,11 +267,11 @@ const GoalFieldGroup = ({ formValues, onChange, errors = {}, currentPay = 0 }) =
 
     return (
         <div className="space-y-4">
-            <h3 className="text-md font-medium mt-4 text-gray-900 dark:text-gray-100">Goal Details</h3>
+            <h3 className="text-md font-medium mt-4 text-base-content">Goal Details</h3>
 
-            <div className="bg-info-50 dark:bg-info/20/20 border border-info-200 dark:border-info-800 p-3 mb-4 rounded-md text-sm text-info-800 dark:text-info-200">
+            <div className="bg-info/10 border border-info p-3 mb-4 rounded-md text-sm text-info">
                 <div className="mt-1 text-xs">
-                    <span className="text-red-500">*</span> Required field
+                    <span className="text-error">*</span> Required field
                 </div>
                 <div className="mt-1">
                     Fill in two fields to automatically calculate the third.
@@ -280,13 +280,13 @@ const GoalFieldGroup = ({ formValues, onChange, errors = {}, currentPay = 0 }) =
 
             <div className="relative">
                 <div className="flex items-center mb-1">
-                    <label htmlFor="targetAmount" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Target Amount <span className="text-red-500">*</span>
+                    <label htmlFor="targetAmount" className="text-sm font-medium text-base-content">
+                        Target Amount <span className="text-error">*</span>
                     </label>
                     {showRecalculationOptions && (
                         <button
                             type="button"
-                            className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="ml-2 p-1 rounded focus:outline-none text-base-content hover"
                             onClick={() => handleRecalculate('targetAmount')}
                             title="Click to recalculate target amount based on monthly contribution and date"
                         >
@@ -301,19 +301,19 @@ const GoalFieldGroup = ({ formValues, onChange, errors = {}, currentPay = 0 }) =
                     hint={getFieldHint('targetAmount')}
                     onChange={(e) => handleFieldChange('targetAmount', e.target.value)}
                     hideLabel={true}
-                    className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    className="border-base-300 bg-base-100 text-base-content"
                 />
             </div>
 
             <div className="relative">
                 <div className="flex items-center mb-1">
-                    <label htmlFor="targetDate" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label htmlFor="targetDate" className="text-sm font-medium text-base-content">
                         Target Date
                     </label>
                     {showRecalculationOptions && (
                         <button
                             type="button"
-                            className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="ml-2 p-1 rounded focus:outline-none text-base-content hover"
                             onClick={() => handleRecalculate('targetDate')}
                             title="Click to recalculate target date based on monthly contribution and amount"
                         >
@@ -329,13 +329,13 @@ const GoalFieldGroup = ({ formValues, onChange, errors = {}, currentPay = 0 }) =
                     hint={getFieldHint('targetDate')}
                     onChange={(e) => handleFieldChange('targetDate', e.target.value)}
                     hideLabel={true}
-                    className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    className="border-base-300 bg-base-100 text-base-content"
                 />
             </div>
 
             {/* Enhanced Monthly Contribution with Percentage Support */}
             <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="block text-sm font-medium text-base-content">
                     How much will you save each month?
                 </label>
                 <div className="flex space-x-2">
@@ -364,13 +364,13 @@ const GoalFieldGroup = ({ formValues, onChange, errors = {}, currentPay = 0 }) =
 
             <div className="relative">
                 <div className="flex items-center mb-1">
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="text-sm font-medium text-base-content">
                         Monthly Contribution
                     </label>
                     {showRecalculationOptions && (
                         <button
                             type="button"
-                            className="ml-2 p-1 rounded focus:outline-none text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            className="ml-2 p-1 rounded focus:outline-none text-base-content hover"
                             onClick={() => handleRecalculate('monthlyContribution')}
                             title="Click to recalculate monthly contribution based on target amount and date"
                         >
@@ -399,7 +399,7 @@ const GoalFieldGroup = ({ formValues, onChange, errors = {}, currentPay = 0 }) =
                         }}
                         hideLabel={true}
                         placeholder="5.0"
-                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        className="border-base-300 bg-base-100 text-base-content"
                     />
                 ) : (
                     <CurrencyField
@@ -416,7 +416,7 @@ const GoalFieldGroup = ({ formValues, onChange, errors = {}, currentPay = 0 }) =
                             }
                         }}
                         hideLabel={true}
-                        className="border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        className="border-base-300 bg-base-100 text-base-content"
                     />
                 )}
             </div>

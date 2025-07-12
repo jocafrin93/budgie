@@ -137,13 +137,13 @@ const EnhancedBudgetTable = ({
     const getPayPeriodColor = useCallback((urgency) => {
         switch (urgency) {
             case 'current-period':
-                return 'text-error bg-error-light border border-error hover:bg-error-lighter';
+                return 'text-error bg-error/20 border border-error hover';
             case 'next-period':
-                return 'text-warning bg-warning-light border border-warning hover:bg-warning-lighter';
+                return 'text-warning bg-warning/20 border border-warning hover';
             case 'future':
-                return 'text-info bg-info-light border border-info hover:bg-info-lighter';
+                return 'text-info bg-info/20 border border-info hover';
             default:
-                return 'text-gray-600 dark:text-dark-300 bg-gray-100 dark:bg-dark-600 border border-gray-200 dark:border-dark-500 hover:bg-gray-200 dark:hover:bg-dark-500';
+                return 'text-base-content/60 bg-base-200 border border-base-300 hover';
         }
     }, []);
 
@@ -399,7 +399,7 @@ const EnhancedBudgetTable = ({
                             onClick: row.getToggleExpandedHandler(),
                             style: { cursor: 'pointer' },
                         }}
-                        className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                        className="p-1 hover rounded"
                     >
                         {row.getIsExpanded() ? (
                             <ChevronDown className="w-4 h-4" />
@@ -421,7 +421,7 @@ const EnhancedBudgetTable = ({
                         Category
                         <button
                             onClick={() => setShowAddCategory(true)}
-                            className="p-1 text-gray-400 dark:text-dark-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                            className="p-1 text-base-content/60 hover:text-base-content rounded transition-colors"
                             title="Add new category"
                             type="button"
                         >
@@ -442,11 +442,11 @@ const EnhancedBudgetTable = ({
                                         setEditingItem(item);
                                         setShowItemForm(true);
                                     }}
-                                    className="font-medium text-gray-900 dark:text-dark-50 text-sm hover:text-info-600 dark:hover:text-info-400 transition-colors text-left"
+                                    className="font-medium text-base-content text-sm hover transition-colors text-left"
                                 >
                                     {item.name}
                                 </button>
-                                <div className="text-xs text-gray-600 dark:text-dark-300">
+                                <div className="text-xs text-base-content/60">
                                     ${item.amount} {displayInfo.displayFrequency}
                                 </div>
                             </div>
@@ -454,8 +454,8 @@ const EnhancedBudgetTable = ({
                                 <button
                                     onClick={() => onToggleItemActive(item.id, !item.isActive)}
                                     className={`p-1 rounded transition-colors ${item.isActive
-                                        ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'
-                                        : 'text-gray-400 dark:text-dark-500 hover:text-gray-600 dark:hover:text-dark-300 hover:bg-gray-50 dark:hover:bg-dark-600'
+                                        ? 'text-success hover:text-success'
+                                        : 'text-base-content/60 hover:text-base-content'
                                         }`}
                                     title={item.isActive ? 'Mark as planning only' : 'Mark as active'}
                                 >
@@ -471,7 +471,7 @@ const EnhancedBudgetTable = ({
                                 </button>
                                 <button
                                     onClick={() => onDeleteItem(item)}
-                                    className="p-1 text-gray-400 dark:text-dark-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                    className="p-1 text-base-content/60 hover:text-base-content rounded transition-colors"
                                     title="Delete item"
                                 >
                                     <TbTrash className="w-3 h-3" />
@@ -488,18 +488,18 @@ const EnhancedBudgetTable = ({
                 return (
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${category.color || 'bg-gray-400 dark:bg-dark-500'} border border-gray-300 dark:border-dark-500 shadow-sm`}></div>
+                            <div className={`w-3 h-3 rounded-full ${category.color || 'bg-base-200'} border border-base-300 shadow-sm`}></div>
                             <button
                                 onClick={() => handleEditCategory(category)}
-                                className={`font-medium hover:text-info-600 dark:hover:text-info-400 transition-colors text-left ${categoryData.type === 'single' && !categoryData.isActive
-                                    ? 'text-gray-500 dark:text-dark-400'
-                                    : 'text-gray-900 dark:text-dark-50'
+                                className={`font-medium hover transition-colors text-left ${categoryData.type === 'single' && !categoryData.isActive
+                                    ? 'text-base-content/60'
+                                    : 'text-base-content'
                                     }`}
                             >
                                 {category.name}
                             </button>
                             {categoryData.type === 'multiple' && (
-                                <svg className="w-3 h-3 text-gray-400 dark:text-dark-500 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <svg className="w-3 h-3 text-base-content/60 ml-1" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clipRule="evenodd" />
                                 </svg>
                             )}
@@ -519,7 +519,7 @@ const EnhancedBudgetTable = ({
                                                 }
                                             }
                                         }}
-                                        className="p-1 text-gray-400 dark:text-dark-500 hover:text-info-600 dark:hover:text-info-400 hover:bg-info-50 dark:hover:bg-info/20/20 rounded transition-colors"
+                                        className="p-1 text-base-content/60 hover:text-base-content rounded transition-colors"
                                         title="Fund this category"
                                     >
                                         <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -529,8 +529,8 @@ const EnhancedBudgetTable = ({
                                     <button
                                         onClick={() => onToggleCategoryActive(category.id, !(category.isActive ?? true))}
                                         className={`p-1 rounded transition-colors ${(category.isActive ?? true)
-                                            ? 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20'
-                                            : 'text-gray-400 dark:text-dark-500 hover:text-gray-600 dark:hover:text-dark-300 hover:bg-gray-50 dark:hover:bg-dark-600'
+                                            ? 'text-success hover:text-success'
+                                            : 'text-base-content/60 hover:text-base-content'
                                             }`}
                                         title={(category.isActive ?? true) ? 'Mark as planning only' : 'Mark as active'}
                                     >
@@ -552,7 +552,7 @@ const EnhancedBudgetTable = ({
                                         setPreselectedCategory(category);
                                         setShowItemForm(true);
                                     }}
-                                    className="p-1 text-gray-400 dark:text-dark-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                                    className="p-1 text-base-content/60 hover:text-base-content rounded transition-colors"
                                     title="Add item"
                                 >
                                     <Plus className="w-3.5 h-3.5" />
@@ -560,7 +560,7 @@ const EnhancedBudgetTable = ({
                             )}
                             <button
                                 onClick={() => onDeleteCategory(category.id)}
-                                className="p-1 text-gray-400 dark:text-dark-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                className="p-1 text-base-content/60 hover:text-base-content rounded transition-colors"
                                 title="Delete category"
                             >
                                 <TbTrash className="w-3.5 h-3.5" />
@@ -577,7 +577,7 @@ const EnhancedBudgetTable = ({
                 if (row.original.type === 'item') {
                     const displayInfo = row.original.displayInfo;
                     return (
-                        <div className="text-right text-sm text-gray-600 dark:text-dark-300">
+                        <div className="text-right text-sm text-base-content/60">
                             ${(displayInfo.monthlyAmount || 0).toFixed(2)}
                         </div>
                     );
@@ -586,8 +586,8 @@ const EnhancedBudgetTable = ({
                 const categoryData = row.original.categoryData;
                 return (
                     <div className={`text-right font-medium ${categoryData.type === 'single' && !categoryData.isActive
-                        ? 'text-gray-500 dark:text-dark-400'
-                        : 'text-gray-900 dark:text-dark-50'
+                        ? 'text-base-content/60'
+                        : 'text-base-content'
                         }`}>
                         ${categoryData.monthlyNeed.toFixed(2)}
                     </div>
@@ -601,10 +601,10 @@ const EnhancedBudgetTable = ({
                 if (row.original.type === 'item') {
                     const displayInfo = row.original.displayInfo;
                     return (
-                        <div className="text-right text-sm text-gray-600 dark:text-dark-300">
+                        <div className="text-right text-sm text-base-content/60">
                             ${(displayInfo.perPaycheckAmount || 0).toFixed(2)}
                             {displayInfo.paychecksUntilDue && (
-                                <div className="text-xs text-gray-500 dark:text-dark-400 mt-1">
+                                <div className="text-xs text-base-content/60 mt-1">
                                     {displayInfo.paychecksUntilDue} left
                                 </div>
                             )}
@@ -615,8 +615,8 @@ const EnhancedBudgetTable = ({
                 const categoryData = row.original.categoryData;
                 return (
                     <div className={`text-right font-medium ${categoryData.type === 'single' && !categoryData.isActive
-                        ? 'text-gray-500 dark:text-dark-400'
-                        : 'text-gray-600 dark:text-dark-300'
+                        ? 'text-base-content/60'
+                        : 'text-base-content/60'
                         }`}>
                         ${categoryData.perPaycheckNeed.toFixed(2)}
                     </div>
@@ -630,7 +630,7 @@ const EnhancedBudgetTable = ({
                 if (row.original.type === 'item') {
                     const item = row.original.item;
                     return (
-                        <div className="text-right text-sm font-medium text-gray-900 dark:text-dark-50">
+                        <div className="text-right text-sm font-medium text-base-content">
                             ${(item.allocated || 0).toFixed(2)}
                         </div>
                     );
@@ -643,8 +643,8 @@ const EnhancedBudgetTable = ({
                     <div className="text-right">
                         <span
                             className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium cursor-pointer transition-all hover:opacity-80 ${isOverspent
-                                ? 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/20'
-                                : 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/20'
+                                ? 'text-error bg-error/20'
+                                : 'text-success bg-success/20'
                                 }`}
                             onClick={() => handleMoveMoneyClick(category)}
                         >
@@ -852,7 +852,7 @@ const EnhancedBudgetTable = ({
                             {table.getRowModel().rows.map((row) => (
                                 <Tr
                                     key={row.id}
-                                    className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${row.original.type === 'item' ? 'bg-gray-25 dark:bg-gray-850' : ''
+                                    className={`hover ${row.original.type === 'item' ? 'bg-base-100' : ''
                                         }`}
                                 >
                                     {row.getVisibleCells().map((cell) => (
@@ -870,7 +870,7 @@ const EnhancedBudgetTable = ({
                 </div>
 
                 {/* Pagination */}
-                <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-3">
+                <div className="border-t border-base-300 px-4 py-3">
                     <PaginationSection table={table} />
                 </div>
             </Card>

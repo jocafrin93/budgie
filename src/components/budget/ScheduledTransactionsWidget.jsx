@@ -54,16 +54,16 @@ const ScheduledTransactionsWidget = ({
     };
 
     const getUrgencyColor = (dateString) => {
-        if (!dateString) return 'text-gray-500';
+        if (!dateString) return 'text-base-content/60';
 
         const date = new Date(dateString);
         const today = new Date();
         const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
 
-        if (diffDays < 0) return 'text-error dark:text-error-light'; // Overdue
-        if (diffDays === 0) return 'text-warning dark:text-warning-light'; // Due today
-        if (diffDays <= 3) return 'text-warning-light dark:text-warning-lighter'; // Due soon
-        return 'text-info-600 dark:text-info-400'; // Future
+        if (diffDays < 0) return 'text-error'; // Overdue
+        if (diffDays === 0) return 'text-warning'; // Due today
+        if (diffDays <= 3) return 'text-warning-light'; // Due soon
+        return 'text-info'; // Future
     };
 
     const getUrgencyStats = () => {
@@ -129,29 +129,29 @@ const ScheduledTransactionsWidget = ({
     };
 
     return (
-        <div className="bg-info-50 dark:bg-dark-600 border border-info-200 dark:border-info-700 rounded-lg mb-6">
+        <div className="bg-info/10 bg-base-100 border border-info rounded-lg mb-6">
             {/* Header */}
-            <div className="p-4 border-b border-info-200 dark:border-info-700">
+            <div className="p-4 border-b border-info">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                        <Calendar className="text-info-600 dark:text-info-400" size={24} />
+                        <Calendar className="text-info" size={24} />
                         <div>
-                            <h3 className="font-semibold text-info dark:text-info">
+                            <h3 className="font-semibold text-info">
                                 Upcoming Scheduled Transactions
                                 {selectedAccountId !== 'all' && (
-                                    <span className="text-sm font-normal text-info dark:text-info-400 ml-2">
+                                    <span className="text-sm font-normal text-info ml-2">
                                         for {getSelectedAccountName()}
                                     </span>
                                 )}
                             </h3>
-                            <div className="flex items-center space-x-4 text-xs text-info-600 dark:text-info-400 mt-1">
+                            <div className="flex items-center space-x-4 text-xs text-info mt-1">
                                 {stats.overdue > 0 && (
-                                    <span className="text-error dark:text-error-light">
+                                    <span className="text-error">
                                         {stats.overdue} overdue
                                     </span>
                                 )}
                                 {stats.dueToday > 0 && (
-                                    <span className="text-warning dark:text-warning-light">
+                                    <span className="text-warning">
                                         {stats.dueToday} due today
                                     </span>
                                 )}
@@ -164,10 +164,10 @@ const ScheduledTransactionsWidget = ({
                     </div>
 
                     <div className="text-right">
-                        <div className="text-lg font-bold text-info dark:text-info">
+                        <div className="text-lg font-bold text-info">
                             {formatCurrency(totalAmount)}
                         </div>
-                        <div className="text-sm text-info-600 dark:text-info-400">
+                        <div className="text-sm text-info">
                             Total upcoming
                         </div>
                     </div>
@@ -180,7 +180,7 @@ const ScheduledTransactionsWidget = ({
                     {sortedTransactions.map((txn) => (
                         <div
                             key={txn.id}
-                            className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-3 border border-info-200 dark:border-info-700 hover:bg-info-50 dark:hover:bg-info-900/20 transition-colors"
+                            className="flex items-center justify-between bg-base-100 rounded-lg p-3 border border-info hover transition-colors"
                         >
                             {/* Transaction Info */}
                             <div className="flex items-center space-x-3 flex-1">
@@ -196,14 +196,14 @@ const ScheduledTransactionsWidget = ({
                                         <span className={`font-medium ${getUrgencyColor(txn.nextDueDate || txn.dueDate)}`}>
                                             {formatScheduledDate(txn.nextDueDate || txn.dueDate)}
                                         </span>
-                                        <span className="text-gray-400">•</span>
-                                        <span className="text-gray-700 dark:text-gray-300 truncate">
+                                        <span className="text-base-content/60">•</span>
+                                        <span className="text-base-content truncate">
                                             {txn.payee}
                                         </span>
                                     </div>
 
                                     {selectedAccountId === 'all' && (
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                        <div className="text-xs text-base-content/60 mt-1">
                                             {getAccountName(txn.accountId)}
                                         </div>
                                     )}
@@ -212,8 +212,8 @@ const ScheduledTransactionsWidget = ({
                                 {/* Amount */}
                                 <div className="flex-shrink-0">
                                     <span className={`font-bold ${txn.amount >= 0
-                                        ? 'text-success dark:text-success-light'
-                                        : 'text-error dark:text-error-light'
+                                        ? 'text-success'
+                                        : 'text-error'
                                         }`}>
                                         {formatCurrency(txn.amount)}
                                     </span>
@@ -224,7 +224,7 @@ const ScheduledTransactionsWidget = ({
                             <div className="flex items-center space-x-1 ml-3">
                                 <button
                                     onClick={(e) => handleQuickAction('skip', txn, e)}
-                                    className="p-1.5 text-gray-400 hover:text-warning hover:bg-warning-lighter/20 dark:hover:bg-warning/20 rounded transition-colors"
+                                    className="p-1.5 text-base-content/60 hover:text-base-content rounded transition-colors"
                                     title="Skip this occurrence"
                                 >
                                     <span className="text-xs">Skip</span>
@@ -232,7 +232,7 @@ const ScheduledTransactionsWidget = ({
 
                                 <button
                                     onClick={(e) => handleQuickAction('payNow', txn, e)}
-                                    className="p-1.5 text-gray-400 hover:text-success hover:bg-success-lighter/20 dark:hover:bg-success/20 rounded transition-colors"
+                                    className="p-1.5 text-base-content/60 hover:text-base-content rounded transition-colors"
                                     title="Pay now"
                                 >
                                     <span className="text-xs">Pay</span>
@@ -243,10 +243,10 @@ const ScheduledTransactionsWidget = ({
                 </div>
 
                 {/* View All Button */}
-                <div className="mt-4 pt-3 border-t border-info-200 dark:border-info-700">
+                <div className="mt-4 pt-3 border-t border-info">
                     <button
                         onClick={handleNavigateToCalendar}
-                        className="w-full flex items-center justify-center space-x-2 bg-info-600 hover:bg-info-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        className="w-full flex items-center justify-center space-x-2 bg-info hover text-white px-4 py-2 rounded-lg font-medium transition-colors"
                     >
                         <Calendar size={16} />
                         <span>View All on Calendar</span>
@@ -255,7 +255,7 @@ const ScheduledTransactionsWidget = ({
                 </div>
 
                 {/* Help Text */}
-                <div className="text-xs text-info-600 dark:text-info-400 mt-3 text-center">
+                <div className="text-xs text-info mt-3 text-center">
                     💡 <strong>Tip:</strong> Click &ldquo;View All on Calendar&rdquo; to see your complete scheduled transaction timeline
                 </div>
             </div>

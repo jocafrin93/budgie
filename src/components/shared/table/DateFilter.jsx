@@ -1,15 +1,15 @@
 // Import Dependencies
-import { useEffect } from "react";
 import { CalendarIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import PropTypes from "prop-types";
+import { useEffect } from "react";
 
 // Local Imports
-import { Button } from "components/ui";
-import { useLocaleContext } from "app/contexts/locale/context";
-import { DatePicker } from "../form/Datepicker";
 import { useBreakpointsContext } from "app/contexts/breakpoint/context";
+import { useLocaleContext } from "app/contexts/locale/context";
+import { Button } from "components/ui";
+import { DatePicker } from "../form/Datepicker";
 import { ResponsiveFilter } from "./ResponsiveFilter";
 
 // ----------------------------------------------------------------------
@@ -30,7 +30,7 @@ export function DateFilter({ column, title, config }) {
 
           {selectedValues && (
             <>
-              <div className="h-full w-px bg-gray-300 dark:bg-dark-450" />
+              <div className="h-full w-px bg-base-300 bg-base-200" />
               <span>
                 {dayjs(selectedValues[0]).locale(locale).format("DD MMM YYYY")}{" "}
                 -{" "}
@@ -45,11 +45,11 @@ export function DateFilter({ column, title, config }) {
         className={clsx(
           "mx-auto flex w-full items-center justify-between",
           smAndDown
-            ? "mb-2 mt-1 h-10 w-full max-w-xs border-b border-gray-200 py-3 dark:border-dark-500"
-            : "bg-gray-150 px-2.5 py-2 dark:bg-dark-900",
+            ? "mb-2 mt-1 h-10 w-full max-w-xs border-b border-base-300 py-3"
+            : "bg-base-200 px-2.5 py-2 bg-base-100",
         )}
       >
-        <p className="truncate text-start text-base font-medium text-gray-800 dark:text-dark-50 sm:py-1 sm:text-sm">
+        <p className="truncate text-start text-base font-medium text-base-content sm:py-1 sm">
           {title}
         </p>
         {selectedValues && (

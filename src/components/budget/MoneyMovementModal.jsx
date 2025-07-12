@@ -29,34 +29,34 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
     const maxAmount = Math.abs(amount);
 
     return (
-        <div className="fixed inset-0 bg-gray-900/50 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
-            <div className="bg-white dark:bg-dark-800 rounded-lg p-6 w-96 shadow-xl border border-gray-200 dark:border-dark-600">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+            <div className="bg-base-100 rounded-lg p-6 w-96 shadow-xl border border-base-300">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-dark-50">Move Money</h3>
+                    <h3 className="text-lg font-semibold text-base-content">Move Money</h3>
                     <button
                         onClick={onClose}
-                        className="p-1 text-gray-400 dark:text-dark-500 hover:text-gray-600 dark:hover:text-dark-300 hover:bg-gray-100 dark:hover:bg-dark-700 rounded transition-colors"
+                        className="p-1 text-base-content/60 hover:text-base-content rounded transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
                 </div>
 
                 <div className="space-y-4">
-                    <div className="p-3 bg-gray-50 dark:bg-dark-700 border border-gray-200 dark:border-dark-600 rounded-lg">
-                        <div className="text-sm text-gray-600 dark:text-dark-300">Moving from:</div>
-                        <div className="font-semibold text-gray-900 dark:text-dark-50">
+                    <div className="p-3 bg-base-200 border border-base-300 rounded-lg">
+                        <div className="text-sm text-base-content/60">Moving from:</div>
+                        <div className="font-semibold text-base-content">
                             {sourceCategory.name} (${(sourceCategory.available || 0).toFixed(2)} available)
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-900 dark:text-dark-50 mb-1">
+                        <label className="block text-sm font-medium text-base-content mb-1">
                             To Category
                         </label>
                         <select
                             value={selectedCategoryId}
                             onChange={(e) => setSelectedCategoryId(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500 dark:focus:ring-info-400"
+                            className="w-full px-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
                         >
                             <option value="">Select destination...</option>
                             <option value="ready-to-assign">Ready to Assign</option>
@@ -72,7 +72,7 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-900 dark:text-dark-50 mb-1">
+                        <label className="block text-sm font-medium text-base-content mb-1">
                             Amount
                         </label>
                         <CurrencyField
@@ -80,11 +80,11 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                             value={moveAmount}
                             onChange={(e) => setMoveAmount(e.target.value)}
                             placeholder="0.00"
-                            className="w-full border border-gray-300 dark:border-dark-600 rounded-lg bg-white dark:bg-dark-800 text-gray-900 dark:text-dark-50 focus:outline-none focus:ring-2 focus:ring-info-500 dark:focus:ring-info-400"
+                            className="w-full border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
                             hideLabel={true}
                         />
                         {maxAmount > 0 && (
-                            <div className="text-xs text-gray-600 dark:text-dark-300 mt-1">
+                            <div className="text-xs text-base-content/60 mt-1">
                                 Maximum: ${maxAmount.toFixed(2)}
                             </div>
                         )}
@@ -94,14 +94,14 @@ const MoneyMovementModal = ({ amount, sourceCategory, categories, onMove, onClos
                 <div className="flex justify-end gap-3 mt-6">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-gray-700 dark:text-dark-300 bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 rounded-lg transition-colors"
+                        className="px-4 py-2 text-base-content/60 bg-base-200 hover rounded-lg transition-colors"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleMove}
                         disabled={!selectedCategoryId || !moveAmount || parseFloat(moveAmount) <= 0}
-                        className="px-4 py-2 bg-info/60 hover:bg-info/70 dark:bg-info/50 dark:hover:bg-info/60 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-2 bg-info/60 hover text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         Move Money
                     </button>

@@ -11,6 +11,8 @@ import { useMonthlyBudgeting } from "../../../../hooks/useMonthlyBudgeting";
 import { usePaycheckManagement } from "../../../../hooks/usePaycheckManagement";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
 
+// Import DaisyUI wrapper for theme support
+
 // Dynamic imports for forms
 const UnifiedCategoryForm = React.lazy(() => import("../../../../components/budget/UnifiedCategoryForm"));
 const UnifiedItemForm = React.lazy(() => import("../../../../components/budget/UnifiedItemForm"));
@@ -724,7 +726,7 @@ export default function BudgetOverview() {
 
     return (
         <Page title="Budget Overview">
-            <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
+            <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6 bg-base-100 text-base-content min-h-screen">
                 {/* Summary Cards */}
                 <div className="mb-6">
                     <SimplifiedSummaryCards

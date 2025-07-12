@@ -31,7 +31,7 @@ export function Highlight({
             className={clsx(
               "whitespace-nowrap",
               !unstyled &&
-                "inline-block rounded-xs bg-lime-200 dark:bg-lime-300",
+                "inline-block rounded-xs bg-lime-200",
               highlightClass,
             )}
           >

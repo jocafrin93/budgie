@@ -35,7 +35,7 @@ export function CollapsibleSearch({
             isExpanded ? "w-32 lg:w-48" : "w-0",
           ),
           input: [
-            "text-end placeholder:font-light placeholder:text-gray-600 dark:placeholder:text-dark-200",
+            "text-end placeholder:font-light placeholder",
             className,
           ],
         }}

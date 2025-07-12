@@ -1,11 +1,11 @@
 // Import Dependencies
+import clsx from 'clsx';
 import PropTypes from "prop-types";
 import { forwardRef } from "react";
-import clsx from 'clsx'
 
 // Local Imports
-import { Box } from "components/ui";
 import { useThemeContext } from "app/contexts/theme/context";
+import { Box } from "components/ui";
 
 // -------------------------------------------------------------
 
@@ -20,12 +20,12 @@ const Card = forwardRef((props, ref) => {
       className={clsx(
         "card rounded-lg",
         skin &&
-          skin !== "none" && [
-            skin === "bordered" &&
-              "border border-gray-200 dark:border-dark-600 print:border-0",
-            skin === "shadow" &&
-              "bg-white shadow-soft dark:bg-dark-700 dark:shadow-none print:shadow-none",
-          ],
+        skin !== "none" && [
+          skin === "bordered" &&
+          "border border-base-300 print",
+          skin === "shadow" &&
+          "bg-base-200 shadow-soft bg-base-100 print:shadow-none",
+        ],
         className,
       )}
       {...rest}
@@ -44,3 +44,4 @@ Card.propTypes = {
 };
 
 export { Card };
+

@@ -93,20 +93,20 @@ const MobileBudgetView = ({
         <div className="w-full space-y-4">
             {/* Available to Allocate Card */}
             {availableToAllocate > 0 && (
-                <div className="bg-gradient-to-r from-success-lighter/20 to-info-lighter/20 dark:from-success/20 dark:to-info/20 rounded-lg border border-success-light dark:border-success p-4">
+                <div className="bg-gradient-to-r from-success-lighter/20 to-info-lighter/20 rounded-lg border border-success-light p-4">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center text-white text-sm">
                                 💰
                             </div>
                             <div>
-                                <h3 className="font-semibold text-success-dark dark:text-success-light">
+                                <h3 className="font-semibold text-success-dark">
                                     Available to Allocate
                                 </h3>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="text-xl font-bold text-success-dark dark:text-success-light">
+                            <div className="text-xl font-bold text-success-dark">
                                 {formatCurrency(availableToAllocate)}
                             </div>
                         </div>
@@ -125,7 +125,7 @@ const MobileBudgetView = ({
 
             {/* Header with Add Button */}
             <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <h2 className="text-xl font-bold text-base-content flex items-center gap-2">
                     <DollarSign className="w-6 h-6 text-success" />
                     Budget Categories
                 </h2>
@@ -142,7 +142,7 @@ const MobileBudgetView = ({
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <div className="flex bg-base-200 rounded-lg p-1">
                 {[
                     { key: 'all', label: 'All', count: data.length },
                     { key: 'goals', label: 'Goals', count: data.filter(c => c.planningType === 'goal').length },
@@ -152,8 +152,8 @@ const MobileBudgetView = ({
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
                         className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key
-                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                            ? 'bg-base-100 text-base-content shadow-sm'
+                            : 'text-base-content/60 hover'
                             }`}
                     >
                         {tab.label} ({tab.count})
@@ -179,7 +179,7 @@ const MobileBudgetView = ({
                     }
 
                     return (
-                        <div key={category.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                        <div key={category.id} className="bg-base-100 rounded-lg border border-base-300 overflow-hidden">
                             {/* Category Header */}
                             <div
                                 className="p-4 cursor-pointer"
@@ -189,23 +189,23 @@ const MobileBudgetView = ({
                                     <div className="flex items-center gap-3 flex-1 min-w-0">
                                         {/* Category Color & Icon */}
                                         <div className="flex items-center gap-2">
-                                            <div className={`w-3 h-3 rounded-full ${category.color} border border-gray-200`}></div>
-                                            {isGoal && <Target className="w-4 h-4 text-info-500" />}
+                                            <div className={`w-3 h-3 rounded-full ${category.color} border border-base-300`}></div>
+                                            {isGoal && <Target className="w-4 h-4 text-info" />}
                                             {isExpense && <TrendingUp className="w-4 h-4 text-warning" />}
                                             {hasSubItems && (
                                                 isExpanded ?
-                                                    <ChevronDown className="w-4 h-4 text-gray-400" /> :
-                                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                                                    <ChevronDown className="w-4 h-4 text-base-content/60" /> :
+                                                    <ChevronRight className="w-4 h-4 text-base-content/60" />
                                             )}
                                         </div>
 
                                         {/* Category Name & Details */}
                                         <div className="flex-1 min-w-0">
-                                            <h3 className="font-medium text-gray-900 dark:text-white truncate">
+                                            <h3 className="font-medium text-base-content truncate">
                                                 {category.name}
                                             </h3>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                <span className="text-sm text-base-content/60">
                                                     {formatCurrency(category.monthlyNeed)}/mo
                                                 </span>
                                                 {category.dueDate && (() => {
@@ -231,11 +231,11 @@ const MobileBudgetView = ({
                                     <div className="text-right">
                                         <div className={`text-lg font-bold ${isOverspent ? 'text-error' :
                                             hasAvailable ? 'text-success' :
-                                                'text-gray-600'
+                                                'text-base-content/60'
                                             }`}>
                                             {formatCurrency(category.available || 0)}
                                         </div>
-                                        <div className="text-xs text-gray-500">
+                                        <div className="text-xs text-base-content/60">
                                             {isOverspent ? 'Overspent' : hasAvailable ? 'Available' : 'No funds'}
                                         </div>
                                     </div>
@@ -244,21 +244,21 @@ const MobileBudgetView = ({
                                 {/* Goal Progress Bar */}
                                 {isGoal && category.targetAmount && (
                                     <div className="mt-3">
-                                        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
+                                        <div className="flex items-center justify-between text-xs text-base-content/60 mb-1">
                                             <span>Goal Progress</span>
                                             <span>{progressPercentage.toFixed(1)}%</span>
                                         </div>
-                                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                        <div className="w-full bg-base-300 rounded-full h-2">
                                             <div
                                                 className={`h-2 rounded-full transition-all duration-300 ${progressPercentage >= 100 ? 'bg-success' :
                                                     progressPercentage >= 75 ? 'bg-info' :
                                                         progressPercentage >= 50 ? 'bg-warning' :
-                                                            'bg-gray-400'
+                                                            'bg-base-300'
                                                     }`}
                                                 style={{ width: `${Math.min(100, progressPercentage)}%` }}
                                             />
                                         </div>
-                                        <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                        <div className="flex items-center justify-between text-xs text-base-content/60 mt-1">
                                             <span>${(category.alreadySaved || 0).toFixed(2)} saved</span>
                                             <span>${(category.targetAmount || 0).toFixed(2)} target</span>
                                         </div>
@@ -267,29 +267,29 @@ const MobileBudgetView = ({
 
                                 {/* Budget Allocation Summary */}
                                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                                    <div className="text-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                        <div className="font-medium text-info-600 dark:text-info-400">
+                                    <div className="text-center p-2 bg-base-200 rounded">
+                                        <div className="font-medium text-info">
                                             {formatCurrency(category.perPaycheck || 0)}
                                         </div>
-                                        <div className="text-gray-500">Per Paycheck</div>
+                                        <div className="text-base-content/60">Per Paycheck</div>
                                     </div>
-                                    <div className="text-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                        <div className="font-medium text-success dark:text-success-light">
+                                    <div className="text-center p-2 bg-base-200 rounded">
+                                        <div className="font-medium text-success">
                                             {formatCurrency(category.allocated || 0)}
                                         </div>
-                                        <div className="text-gray-500">Allocated</div>
+                                        <div className="text-base-content/60">Allocated</div>
                                     </div>
-                                    <div className="text-center p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                                        <div className="font-medium text-error dark:text-error-light">
+                                    <div className="text-center p-2 bg-base-200 rounded">
+                                        <div className="font-medium text-error">
                                             {formatCurrency(category.spent || 0)}
                                         </div>
-                                        <div className="text-gray-500">Spent</div>
+                                        <div className="text-base-content/60">Spent</div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Category Actions */}
-                            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                            <div className="px-4 py-2 bg-base-200 border-t border-base-300">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         {category.type === 'multiple' && (
@@ -298,7 +298,7 @@ const MobileBudgetView = ({
                                                     e.stopPropagation();
                                                     onAddItem({ categoryId: category.id });
                                                 }}
-                                                className="flex items-center gap-1 px-2 py-1 bg-info/10 text-info-700 rounded text-xs"
+                                                className="flex items-center gap-1 px-2 py-1 bg-info/10 text-info rounded text-xs"
                                             >
                                                 <Plus className="w-3 h-3" />
                                                 Add Item
@@ -311,18 +311,18 @@ const MobileBudgetView = ({
                                                 e.stopPropagation();
                                                 onEditCategory(category);
                                             }}
-                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                                            className="p-1 hover rounded"
                                         >
-                                            <Edit className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                            <Edit className="w-4 h-4 text-base-content/60" />
                                         </button>
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onDeleteCategory(category.id);
                                             }}
-                                            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                                            className="p-1 hover rounded"
                                         >
-                                            <Trash2 className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                            <Trash2 className="w-4 h-4 text-base-content/60" />
                                         </button>
                                     </div>
                                 </div>
@@ -330,20 +330,20 @@ const MobileBudgetView = ({
 
                             {/* Expanded Sub-Items */}
                             {isExpanded && hasSubItems && (
-                                <div className="border-t border-gray-200 dark:border-gray-600">
+                                <div className="border-t border-base-300">
                                     {category.subItems.map(subItem => (
-                                        <div key={subItem.id} className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+                                        <div key={subItem.id} className="px-4 py-3 border-b border-base-200 last">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex-1">
-                                                    <h4 className="font-medium text-gray-800 dark:text-gray-200">
+                                                    <h4 className="font-medium text-base-content">
                                                         {subItem.name}
                                                     </h4>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-sm text-gray-600 dark:text-gray-400">
+                                                        <span className="text-sm text-base-content/60">
                                                             {formatCurrency(subItem.amount || 0)}
                                                         </span>
                                                         {subItem.frequency && (
-                                                            <span className="text-xs text-gray-500 capitalize">
+                                                            <span className="text-xs text-base-content/60 capitalize">
                                                                 {subItem.frequency.replace('-', ' ')}
                                                             </span>
                                                         )}
@@ -370,18 +370,18 @@ const MobileBudgetView = ({
                                                             e.stopPropagation();
                                                             onEditItem(subItem);
                                                         }}
-                                                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                                                        className="p-1 hover rounded"
                                                     >
-                                                        <Edit className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                                                        <Edit className="w-3 h-3 text-base-content/60" />
                                                     </button>
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             onDeleteItem(subItem.id);
                                                         }}
-                                                        className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                                                        className="p-1 hover rounded"
                                                     >
-                                                        <Trash2 className="w-3 h-3 text-gray-600 dark:text-gray-400" />
+                                                        <Trash2 className="w-3 h-3 text-base-content/60" />
                                                     </button>
                                                 </div>
                                             </div>
@@ -395,20 +395,20 @@ const MobileBudgetView = ({
             </div>
 
             {/* Summary */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Summary</h3>
+            <div className="bg-base-100 rounded-lg border border-base-300 p-4">
+                <h3 className="font-semibold text-base-content mb-3">Summary</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="text-center p-3 bg-info-50 dark:bg-info/20/20 rounded-lg">
-                        <div className="font-bold text-info-600 dark:text-info-400 text-lg">
+                    <div className="text-center p-3 bg-info/10 rounded-lg">
+                        <div className="font-bold text-info text-lg">
                             {formatCurrency(data.reduce((sum, cat) => sum + (cat.monthlyNeed || 0), 0))}
                         </div>
-                        <div className="text-gray-600 dark:text-gray-400">Monthly Need</div>
+                        <div className="text-base-content/60">Monthly Need</div>
                     </div>
-                    <div className="text-center p-3 bg-success-lighter/20 dark:bg-success/20 rounded-lg">
-                        <div className="font-bold text-success dark:text-success-light text-lg">
+                    <div className="text-center p-3 bg-success-lighter/20 rounded-lg">
+                        <div className="font-bold text-success text-lg">
                             {formatCurrency(data.reduce((sum, cat) => sum + (cat.allocated || 0), 0))}
                         </div>
-                        <div className="text-gray-600 dark:text-gray-400">Total Allocated</div>
+                        <div className="text-base-content/60">Total Allocated</div>
                     </div>
                 </div>
             </div>

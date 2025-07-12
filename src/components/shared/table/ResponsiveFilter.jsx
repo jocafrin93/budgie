@@ -1,9 +1,9 @@
 // Import Dependencies
 import {
-  PopoverButton,
   Dialog,
   DialogPanel,
   Popover,
+  PopoverButton,
   PopoverPanel,
   Transition,
   TransitionChild,
@@ -51,7 +51,7 @@ function MobileView({ children, buttonContent, classNames }) {
         className={clsx(
           "h-8 gap-2 whitespace-nowrap px-2.5 text-xs",
           isOpen
-            ? "border-primary-600 ring-3 ring-primary-500/50 dark:border-primary-500"
+            ? "border-primary ring-3 ring-primary/50"
             : "border-dashed",
           classNames?.button,
         )}
@@ -74,7 +74,7 @@ function MobileView({ children, buttonContent, classNames }) {
           leave="ease-in duration-200"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
-          className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
         />
         <TransitionChild
           as={DialogPanel}
@@ -84,7 +84,7 @@ function MobileView({ children, buttonContent, classNames }) {
           leave="ease-in transform-gpu transition-transform duration-200"
           leaveFrom="translate-y-0"
           leaveTo="translate-y-full"
-          className="fixed bottom-0 left-0 flex w-full transform-gpu flex-col rounded-t-2xl bg-white transition-transform duration-200 dark:bg-dark-700"
+          className="fixed bottom-0 left-0 flex w-full transform-gpu flex-col rounded-t-2xl bg-base-100 transition-transform duration-200 bg-base-100"
         >
           {children}
         </TransitionChild>
@@ -109,7 +109,7 @@ function DesktopView({
             className={clsx(
               "h-8 gap-2 whitespace-nowrap px-2.5 text-xs",
               open
-                ? "border-primary-600 ring-3 ring-primary-500/50 dark:border-primary-500"
+                ? "border-primary ring-3 ring-primary/50"
                 : "border-dashed",
               classNames?.button,
             )}
@@ -125,7 +125,7 @@ function DesktopView({
             leaveFrom="opacity-100 translate-y-0"
             leaveTo="opacity-0 translate-y-2"
             anchor={anchor}
-            className="z-100 flex w-fit flex-col rounded-md border border-gray-300 bg-white shadow-lg shadow-gray-200/50 outline-hidden ring-primary-500/50 focus-visible:outline-hidden focus-visible:ring-3 dark:border-dark-500 dark:bg-dark-750 dark:shadow-none"
+            className="z-100 flex w-fit flex-col rounded-md border border-base-300 bg-base-100 shadow-lg shadow-gray-200/50 outline-hidden ring-primary/50 focus:outline-none focus:ring-2 focus:ring-primary bg-base-200"
           >
             <div className="flex flex-col overflow-hidden">{children}</div>
           </Transition>

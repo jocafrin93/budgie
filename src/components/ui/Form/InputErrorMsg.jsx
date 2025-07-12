@@ -8,7 +8,7 @@ export function InputErrorMsg({ when, children, className }) {
   return when ? (
     <span
       className={clsx(
-        "input-text-error mt-1 text-xs text-error dark:text-error-lighter",
+        "input-text-error mt-1 text-xs text-error",
         className,
       )}
     >

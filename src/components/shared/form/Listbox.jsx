@@ -9,8 +9,8 @@ import {
 } from "@headlessui/react";
 import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
-import { forwardRef, Fragment } from "react";
 import PropTypes from "prop-types";
+import { forwardRef, Fragment } from "react";
 
 // Local Imports
 import { Input } from "components/ui";
@@ -70,15 +70,15 @@ const CustomListbox = forwardRef(
                   {...inputProps}
                 >
                   <span className="block truncate">
-                    <span className="text-gray-600 dark:text-dark-200">
+                    <span className="text-base-content/70">
                       {!selectedValue?.[multiple ? "length" : displayField] &&
                         placeholder}
                     </span>
                     <span>
                       {multiple
                         ? selectedValue
-                            .map((item) => item[displayField])
-                            .join(", ")
+                          .map((item) => item[displayField])
+                          .join(", ")
                         : selectedValue?.[displayField]}
                     </span>
                   </span>
@@ -94,20 +94,20 @@ const CustomListbox = forwardRef(
                 >
                   <ListboxOptions
                     anchor={{ to: "bottom end", gap: 8 }}
-                    className="absolute z-100 max-h-60 w-(--button-width) overflow-auto rounded-lg border border-gray-300 bg-white py-1 shadow-lg shadow-gray-200/50 outline-hidden focus-visible:outline-hidden dark:border-dark-500 dark:bg-dark-750 dark:shadow-none"
+                    className="absolute z-100 max-h-60 w-full overflow-auto rounded-lg border border-base-300 bg-base-100 py-1 shadow-lg shadow-gray-200/50 outline-hidden focus:outline-none bg-base-200"
                   >
                     {data.map((item, i) => (
                       <ListboxOption
                         key={i}
-                        className={({ selected, focus }) =>
+                        className={({ selected, focused }) =>
                           clsx(
                             "relative cursor-pointer select-none py-2 pl-4 pr-10 outline-hidden transition-colors rtl:pl-10 rtl:pr-4",
-                            focus &&
-                              !selected &&
-                              "bg-gray-100 dark:bg-dark-600",
+                            focused &&
+                            !selected &&
+                            "bg-base-200",
                             selected
-                              ? "bg-primary-600 text-white dark:bg-primary-500"
-                              : "text-gray-800 dark:text-dark-100",
+                              ? "bg-primary text-white"
+                              : "text-base-content",
                           )
                         }
                         value={item}
@@ -157,3 +157,4 @@ CustomListbox.propTypes = {
 };
 
 export { CustomListbox as Listbox };
+

@@ -14,9 +14,9 @@ import {
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
+import PropTypes from "prop-types";
 import { Fragment, useState } from "react";
 import { CiViewTable } from "react-icons/ci";
-import PropTypes from "prop-types";
 
 // Local Imports
 import { Button, GhostSpinner } from "components/ui";
@@ -43,7 +43,7 @@ export function SelectedRowsActions({ table, height }) {
 
   return (
     <div
-      className="absolute top-0 w-full rounded-t-lg bg-gray-800 text-gray-100 dark:bg-dark-100 dark:text-dark-900"
+      className="absolute top-0 w-full rounded-t-lg bg-base-300 text-base-content bg-base-100"
       style={{ height }}
     >
       <div className="flex h-full items-center justify-between rounded-t-lg px-4 sm:px-5">
@@ -97,14 +97,14 @@ export function SelectedRowsActions({ table, height }) {
               leaveFrom="opacity-100 translate-y-0"
               leaveTo="opacity-0 translate-y-2"
             >
-              <MenuItems className="absolute z-100 mt-1.5 min-w-[10rem] rounded-lg border border-gray-300 bg-white py-1 text-xs-plus text-gray-600 shadow-soft outline-hidden focus-visible:outline-hidden dark:border-dark-500 dark:bg-dark-750 dark:text-dark-200 dark:shadow-none ltr:right-0 rtl:left-0">
+              <MenuItems className="absolute z-100 mt-1.5 min-w-[10rem] rounded-lg border border-base-300 bg-base-100 py-1 text-xs-plus text-base-content/60 shadow-soft outline-hidden focus:outline-none bg-base-200 ltr:right-0 rtl:left-0">
                 <MenuItem>
-                  {({ focus }) => (
+                  {({ focused }) => (
                     <button
                       className={clsx(
                         "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
-                        focus &&
-                          "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
+                        focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&
+                        "bg-base-200 text-base-content",
                       )}
                     >
                       <ArrowUpTrayIcon className="size-4.5" />
@@ -113,12 +113,12 @@ export function SelectedRowsActions({ table, height }) {
                   )}
                 </MenuItem>
                 <MenuItem>
-                  {({ focus }) => (
+                  {({ focused }) => (
                     <button
                       className={clsx(
                         "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
-                        focus &&
-                          "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
+                        focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&
+                        "bg-base-200 text-base-content",
                       )}
                     >
                       <ArrowUpTrayIcon className="size-4.5" />
@@ -127,12 +127,12 @@ export function SelectedRowsActions({ table, height }) {
                   )}
                 </MenuItem>
                 <MenuItem>
-                  {({ focus }) => (
+                  {({ focused }) => (
                     <button
                       className={clsx(
                         "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
-                        focus &&
-                          "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
+                        focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&
+                        "bg-base-200 text-base-content",
                       )}
                     >
                       <CiViewTable className="size-4.5" />
@@ -141,12 +141,12 @@ export function SelectedRowsActions({ table, height }) {
                   )}
                 </MenuItem>
                 <MenuItem>
-                  {({ focus }) => (
+                  {({ focused }) => (
                     <button
                       className={clsx(
                         "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
-                        focus &&
-                          "bg-gray-100 text-gray-800 dark:bg-dark-600 dark:text-dark-100",
+                        focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&
+                        "bg-base-200 text-base-content",
                       )}
                     >
                       <PrinterIcon className="size-4.5" />

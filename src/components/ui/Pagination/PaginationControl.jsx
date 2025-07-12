@@ -1,7 +1,7 @@
 // Import Dependencies
+import clsx from "clsx";
 import PropTypes from "prop-types";
 import { forwardRef } from "react";
-import clsx from "clsx";
 
 // Local Imports
 import { usePaginationContext } from "./Pagination.context";
@@ -26,12 +26,12 @@ const PaginationControl = forwardRef((props, ref) => {
         "pagination-control cursor-pointer",
         [
           active
-            ? "active this:primary bg-this text-white disabled:cursor-not-allowed disabled:bg-this-light disabled:opacity-60 dark:bg-this-light dark:disabled:bg-this-darker"
+            ? "active this:primary bg-this text-white disabled:cursor-not-allowed disabled disabled:opacity-60"
             : [
-                disabled
-                  ? "disabled:cursor-not-allowed disabled:opacity-60"
-                  : "hover:bg-gray-300 focus-visible:bg-gray-300 active:bg-gray-300/80 dark:hover:bg-surface-1 dark:focus-visible:bg-surface-1 dark:active:bg-surface-1/90",
-              ],
+              disabled
+                ? "disabled:cursor-not-allowed disabled:opacity-60"
+                : "hover:bg-base-200 focus:bg-base-200 active",
+            ],
         ],
         ctx.classNames?.control,
         className,
@@ -53,3 +53,4 @@ PaginationControl.propTypes = {
 PaginationControl.displayName = "PaginationControl";
 
 export { PaginationControl };
+

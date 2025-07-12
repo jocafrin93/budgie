@@ -1,141 +1,102 @@
-import { useThemeContext } from 'app/contexts/theme/context';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
 
-export function DaisyThemeSwitcher() {
-    const {
-        themeMode,
-        currentTheme,
-        lightTheme,
-        darkTheme,
-        lightThemes,
-        darkThemes,
-        isDark,
-        setThemeMode,
-        setTheme,
-        resetTheme,
-    } = useThemeContext();
+const DAISY_THEMES = [
+    { name: 'light', label: 'Light', description: 'Clean and bright' },
+    { name: 'dark', label: 'Dark', description: 'Easy on the eyes' },
+    { name: 'cupcake', label: 'Cupcake', description: 'Sweet and pastel' },
+    { name: 'corporate', label: 'Corporate', description: 'Professional blue' },
+    { name: 'synthwave', label: 'Synthwave', description: 'Neon and retro' },
+    { name: 'retro', label: 'Retro', description: 'Warm and nostalgic' },
+    { name: 'cyberpunk', label: 'Cyberpunk', description: 'Neon green future' },
+    { name: 'valentine', label: 'Valentine', description: 'Romantic pink' },
+    { name: 'forest', label: 'Forest', description: 'Natural green' },
+    { name: 'aqua', label: 'Aqua', description: 'Ocean blue' },
+];
 
-    const handleThemeModeChange = (mode) => {
-        setThemeMode(mode);
-    };
+export default function DaisyThemeSwitcher({ currentTheme, onThemeChange, className = '' }) {
+    const [isOpen, setIsOpen] = useState(false);
 
-    const handleThemeChange = (themeName, themeType) => {
-        console.log('🎨 Theme change button clicked:', { themeName, themeType });
-        setTheme(themeName, themeType);
+    const currentThemeData = DAISY_THEMES.find(theme => theme.name === currentTheme) || DAISY_THEMES[0];
+
+    const handleThemeSelect = (themeName) => {
+        onThemeChange(themeName);
+        setIsOpen(false);
     };
 
     return (
-        <div className="relative">
-            {/* Theme Mode Toggle */}
-            <div className="flex items-center gap-2 mb-4">
-                <span className="text-sm font-medium">Theme Mode:</span>
-                <div className="flex gap-1">
-                    {['light', 'dark', 'system'].map((mode) => (
-                        <button
-                            key={mode}
-                            onClick={() => {
-                                console.log('🎨 Theme mode button clicked:', mode);
-                                handleThemeModeChange(mode);
-                            }}
-                            className={`px-3 py-1 text-xs rounded-md capitalize transition-colors ${themeMode === mode
-                                ? 'bg-primary text-primary-content'
-                                : 'bg-base-200 hover:bg-base-300'
-                                }`}
-                        >
-                            {mode}
-                        </button>
-                    ))}
-                </div>
-            </div>
-
-            {/* Current Theme Display */}
-            <div className="mb-4 p-3 bg-base-200 rounded-lg">
-                <div className="text-sm">
-                    <div><strong>Current:</strong> {currentTheme}</div>
-                    <div><strong>Mode:</strong> {isDark ? 'Dark' : 'Light'}</div>
-                </div>
-            </div>
-
-            {/* Theme Selectors */}
-            <div className="space-y-4">
-                {/* Light Theme Selector */}
-                <div>
-                    <h4 className="text-sm font-medium mb-2">Light Theme:</h4>
-                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                        {lightThemes.map((theme) => (
-                            <button
-                                key={theme.name}
-                                onClick={() => handleThemeChange(theme.name, 'light')}
-                                className={`p-2 text-xs rounded border text-left transition-colors ${lightTheme === theme.name
-                                    ? 'border-primary bg-primary/10'
-                                    : 'border-base-300 hover:border-primary/50'
-                                    }`}
-                            >
-                                {theme.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Dark Theme Selector */}
-                <div>
-                    <h4 className="text-sm font-medium mb-2">Dark Theme:</h4>
-                    <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                        {darkThemes.map((theme) => (
-                            <button
-                                key={theme.name}
-                                onClick={() => handleThemeChange(theme.name, 'dark')}
-                                className={`p-2 text-xs rounded border text-left transition-colors ${darkTheme === theme.name
-                                    ? 'border-primary bg-primary/10'
-                                    : 'border-base-300 hover:border-primary/50'
-                                    }`}
-                            >
-                                {theme.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Reset Button */}
+        <div className={`relative ${className}`}>
+            {/* Theme Selector Button */}
             <button
-                onClick={resetTheme}
-                className="mt-4 w-full px-3 py-2 text-sm bg-base-300 hover:bg-base-400 rounded-md transition-colors"
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center justify-between w-full px-4 py-2 text-sm font-medium bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 focus:outline-none focus:border-primary transition-colors"
             >
-                Reset to Default
+                <div className="flex items-center space-x-3">
+                    {/* Theme Preview Circle */}
+                    <div className="flex space-x-1">
+                        <div className="w-3 h-3 rounded-full bg-primary"></div>
+                        <div className="w-3 h-3 rounded-full bg-secondary"></div>
+                        <div className="w-3 h-3 rounded-full bg-accent"></div>
+                    </div>
+                    <div className="text-left">
+                        <div className="text-base-content font-medium">{currentThemeData.label}</div>
+                        <div className="text-base-content/60 text-xs">{currentThemeData.description}</div>
+                    </div>
+                </div>
+                <ChevronDownIcon
+                    className={`w-4 h-4 text-base-content/60 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                />
             </button>
 
-            {/* Color Preview */}
-            <div className="mt-4 p-3 bg-base-100 border border-base-300 rounded-lg">
-                <h5 className="text-sm font-medium mb-2">Color Preview:</h5>
-                <div className="grid grid-cols-4 gap-2">
-                    <div className="h-8 bg-primary rounded flex items-center justify-center">
-                        <span className="text-xs text-primary-content">Primary</span>
-                    </div>
-                    <div className="h-8 bg-secondary rounded flex items-center justify-center">
-                        <span className="text-xs text-secondary-content">Secondary</span>
-                    </div>
-                    <div className="h-8 bg-accent rounded flex items-center justify-center">
-                        <span className="text-xs text-accent-content">Accent</span>
-                    </div>
-                    <div className="h-8 bg-neutral rounded flex items-center justify-center">
-                        <span className="text-xs text-neutral-content">Neutral</span>
+            {/* Dropdown Menu */}
+            {isOpen && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                    <div className="p-2">
+                        <div className="text-xs font-medium text-base-content/60 px-2 py-1 mb-2">
+                            Choose Theme
+                        </div>
+                        {DAISY_THEMES.map((theme) => (
+                            <button
+                                key={theme.name}
+                                onClick={() => handleThemeSelect(theme.name)}
+                                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-md text-left hover transition-colors ${currentTheme === theme.name ? 'bg-primary/10 border border-primary/20' : ''
+                                    }`}
+                            >
+                                {/* Theme Preview */}
+                                <div
+                                    className="flex space-x-1 flex-shrink-0"
+                                    data-theme={theme.name}
+                                >
+                                    <div className="w-3 h-3 rounded-full bg-primary"></div>
+                                    <div className="w-3 h-3 rounded-full bg-secondary"></div>
+                                    <div className="w-3 h-3 rounded-full bg-accent"></div>
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium text-base-content">
+                                        {theme.label}
+                                    </div>
+                                    <div className="text-xs text-base-content/60">
+                                        {theme.description}
+                                    </div>
+                                </div>
+
+                                {currentTheme === theme.name && (
+                                    <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0"></div>
+                                )}
+                            </button>
+                        ))}
                     </div>
                 </div>
-                <div className="grid grid-cols-4 gap-2 mt-2">
-                    <div className="h-6 bg-info rounded flex items-center justify-center">
-                        <span className="text-xs text-info-content">Info</span>
-                    </div>
-                    <div className="h-6 bg-success rounded flex items-center justify-center">
-                        <span className="text-xs text-success-content">Success</span>
-                    </div>
-                    <div className="h-6 bg-warning rounded flex items-center justify-center">
-                        <span className="text-xs text-warning-content">Warning</span>
-                    </div>
-                    <div className="h-6 bg-error rounded flex items-center justify-center">
-                        <span className="text-xs text-error-content">Error</span>
-                    </div>
-                </div>
-            </div>
+            )}
+
+            {/* Overlay to close dropdown */}
+            {isOpen && (
+                <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsOpen(false)}
+                ></div>
+            )}
         </div>
     );
 }

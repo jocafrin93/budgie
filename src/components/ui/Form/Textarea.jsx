@@ -1,7 +1,7 @@
 // Import Dependencies
+import clsx from "clsx";
 import PropTypes from "prop-types";
 import { forwardRef } from "react";
-import clsx from "clsx";
 
 // Local Imports
 import { useId } from "hooks";
@@ -57,12 +57,12 @@ const Textarea = forwardRef(
               !unstyled && [
                 "form-textarea",
                 error
-                  ? "border-error dark:border-error-lighter"
+                  ? "border-error"
                   : [
-                      disabled
-                        ? "cursor-not-allowed border-gray-300 bg-gray-150 opacity-60 dark:border-dark-500 dark:bg-dark-600"
-                        : "peer border-gray-300 hover:border-gray-400 focus:border-primary-600 dark:border-dark-450 dark:hover:border-dark-400 dark:focus:border-primary-500",
-                    ],
+                    disabled
+                      ? "cursor-not-allowed border-base-300 bg-base-200 opacity-60 bg-base-100"
+                      : "peer border-base-300 hover:bg-base-200 focus:bg-base-200",
+                  ],
               ],
               className,
               classNames?.input,
@@ -82,7 +82,7 @@ const Textarea = forwardRef(
         {description && (
           <span
             className={clsx(
-              "input-description mt-1 text-xs text-gray-400 dark:text-dark-300",
+              "input-description mt-1 text-xs text-base-content/60",
               classNames?.description,
             )}
           >
@@ -111,3 +111,4 @@ Textarea.propTypes = {
 };
 
 export { Textarea };
+

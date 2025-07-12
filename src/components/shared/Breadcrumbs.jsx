@@ -1,8 +1,8 @@
 // Import Dependencies
-import PropTypes from "prop-types";
-import { NavLink } from "react-router";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
+import PropTypes from "prop-types";
+import { NavLink } from "react-router";
 
 // Local Imports
 import { useLocaleContext } from "app/contexts/locale/context";
@@ -25,7 +25,7 @@ function Breadcrumbs({ items = [], className, ...rest }) {
             <>
               <NavLink
                 to={item.path}
-                className="tracking-wide text-primary-600 transition-colors hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-500"
+                className="tracking-wide text-primary transition-colors hover text-primary"
               >
                 {item.title}
               </NavLink>
@@ -46,3 +46,4 @@ Breadcrumbs.propTypes = {
 };
 
 export { Breadcrumbs };
+

@@ -283,7 +283,7 @@ const TransferModal = ({
             case 'error':
                 return <AlertTriangle className="w-4 h-4 text-error" />;
             case 'info':
-                return <Info className="w-4 h-4 text-info-600" />;
+                return <Info className="w-4 h-4 text-info" />;
             default:
                 return null;
         }
@@ -292,15 +292,15 @@ const TransferModal = ({
     const getAlertStyles = (type) => {
         switch (type) {
             case 'success':
-                return 'bg-success-50 border-success-200 text-success-800';
+                return 'bg-success/10 border-success text-success';
             case 'warning':
-                return 'bg-warning-50 border-warning-200 text-warning-800';
+                return 'bg-warning/10 border-warning text-warning';
             case 'error':
-                return 'bg-error-50 border-error-200 text-error-800';
+                return 'bg-error/10 border-error text-error';
             case 'info':
-                return 'bg-info-50 border-info-200 text-info-800';
+                return 'bg-info/10 border-info text-info';
             default:
-                return 'bg-gray-50 border-gray-200 text-gray-800';
+                return 'bg-base-200 border-base-300 text-base-content';
         }
     };
 
@@ -314,16 +314,16 @@ const TransferModal = ({
         !alerts.some(alert => alert.type === 'error');
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40">
-            <div className="bg-white dark:bg-dark-800 rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-content/50 backdrop-blur-sm transition-opacity">
+            <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-md mx-4">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-dark-600">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <div className="flex items-center justify-between p-6 border-b border-base-300">
+                    <h3 className="text-lg font-semibold text-base-content">
                         Transfer Money
                     </h3>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        className="text-base-content/60 hover transition-colors"
                     >
                         <X className="w-5 h-5" />
                     </button>
@@ -333,28 +333,28 @@ const TransferModal = ({
                 <div className="p-6 space-y-4">
                     {/* From Source - Display only */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-base-content mb-2">
                             FROM
                         </label>
-                        <div className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-750 text-gray-900 dark:text-gray-100 rounded-lg">
+                        <div className="w-full px-3 py-2 border border-base-300 bg-base-200 text-base-content rounded-lg">
                             {targetCategory?.name || 'Unknown Category'} (${(targetCategory?.available || 0).toFixed(2)} available)
                         </div>
                     </div>
 
                     {/* Transfer Arrow */}
                     <div className="flex justify-center">
-                        <ArrowRight className="w-5 h-5 text-gray-400" />
+                        <ArrowRight className="w-5 h-5 text-base-content/60" />
                     </div>
 
                     {/* To Category */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-base-content mb-2">
                             MOVE TO
                         </label>
                         <select
                             value={toCategory}
                             onChange={(e) => setToCategory(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-info-500 focus:border-transparent"
+                            className="w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-lg focus:border-primary"
                         >
                             <option value="">Select destination...</option>
                             {destinationOptions.map(option => (
@@ -367,11 +367,11 @@ const TransferModal = ({
 
                     {/* Amount */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-base-content mb-2">
                             AMOUNT
                         </label>
                         <div className="relative">
-                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">
                                 $
                             </span>
                             <input
@@ -382,16 +382,16 @@ const TransferModal = ({
                                 min="0"
                                 max={maxAmount}
                                 step="0.01"
-                                className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-info-500 focus:border-transparent"
+                                className="w-full pl-8 pr-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-lg focus:border-primary"
                             />
                         </div>
                         {maxAmount > 0 && (
-                            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <div className="mt-1 text-xs text-base-content/60">
                                 Maximum: ${maxAmount.toFixed(2)}
                                 <button
                                     type="button"
                                     onClick={() => setAmount(maxAmount.toString())}
-                                    className="ml-2 text-info-600 dark:text-info-400 hover:underline"
+                                    className="ml-2 text-info hover:underline"
                                 >
                                     Use max
                                 </button>
@@ -416,10 +416,10 @@ const TransferModal = ({
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-dark-600">
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-base-300">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                        className="px-4 py-2 text-base-content bg-base-200 rounded-lg hover transition-colors"
                     >
                         Cancel
                     </button>
@@ -427,8 +427,8 @@ const TransferModal = ({
                         onClick={handleTransfer}
                         disabled={!canTransfer}
                         className={`px-4 py-2 rounded-lg transition-colors ${canTransfer
-                            ? 'bg-primary-600 hover:bg-primary-700 text-white'
-                            : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                            ? 'bg-primary hover text-white'
+                            : 'bg-base-300 text-base-content/60 cursor-not-allowed'
                             }`}
                     >
                         Transfer Money

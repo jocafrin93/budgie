@@ -10,7 +10,7 @@ export function DropIndicator({ edge, gap = "0px" }) {
   return (
     <div
       className={clsx(
-        "absolute bg-primary-600 before:absolute before:size-2.5 before:rounded-full before:border-2 before:border-primary-600",
+        "absolute bg-primary before:absolute before:size-2.5 before:rounded-full before before",
         (edge === "top" || edge === "bottom") &&
           "inset-x-0 h-0.5 w-full before:-left-2.5 before:-translate-y-1/2",
         (edge === "left" || edge === "right") &&

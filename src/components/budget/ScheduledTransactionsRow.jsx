@@ -89,32 +89,32 @@ const ScheduledTransactionsRow = ({
     };
 
     return (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg mb-4">
+        <div className="bg-warning/10 border border-warning rounded-lg mb-4">
             {/* Header Row */}
             <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors"
+                className="flex items-center justify-between p-4 cursor-pointer hover transition-colors"
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <div className="flex items-center space-x-3">
-                    <button className="text-yellow-600 dark:text-yellow-400">
+                    <button className="text-warning">
                         {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                     </button>
                     <span className="text-2xl">📅</span>
                     <div>
-                        <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">
+                        <h3 className="font-semibold text-warning">
                             Scheduled Transactions
                         </h3>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                        <p className="text-sm text-warning">
                             {scheduledTransactions.length} upcoming transaction{scheduledTransactions.length !== 1 ? 's' : ''}
                         </p>
                     </div>
                 </div>
 
                 <div className="text-right">
-                    <div className="text-lg font-bold text-yellow-800 dark:text-yellow-200">
+                    <div className="text-lg font-bold text-warning">
                         {formatCurrency(scheduledTransactions.reduce((sum, txn) => sum + Math.abs(txn.amount), 0))}
                     </div>
-                    <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                    <div className="text-sm text-warning">
                         Total upcoming
                     </div>
                 </div>
@@ -122,41 +122,41 @@ const ScheduledTransactionsRow = ({
 
             {/* Expanded Content */}
             {isExpanded && (
-                <div className="border-t border-yellow-200 dark:border-yellow-700 bg-yellow-25 dark:bg-yellow-900/10">
+                <div className="border-t border-warning bg-warning/10">
                     <div className="p-4 space-y-3">
                         {scheduledTransactions.map((scheduledTxn) => (
                             <div
                                 key={scheduledTxn.id}
-                                className="flex items-center justify-between bg-white dark:bg-gray-800 rounded-lg p-3 border border-yellow-200 dark:border-yellow-700"
+                                className="flex items-center justify-between bg-base-100 rounded-lg p-3 border border-warning"
                             >
                                 {/* Transaction Info */}
                                 <div className="flex-1">
                                     <div className="flex items-center space-x-3">
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-2">
-                                                <span className="font-medium text-gray-900 dark:text-gray-100">
+                                                <span className="font-medium text-base-content">
                                                     {formatScheduledDate(scheduledTxn.nextDueDate || scheduledTxn.dueDate)}
                                                 </span>
-                                                <span className="text-gray-500 dark:text-gray-400">•</span>
-                                                <span className="text-gray-700 dark:text-gray-300">
+                                                <span className="text-base-content/60">•</span>
+                                                <span className="text-base-content">
                                                     {scheduledTxn.payee}
                                                 </span>
                                             </div>
                                             <div className="flex items-center space-x-2 mt-1">
-                                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                                <span className="text-sm text-base-content/60">
                                                     {getAccountName(scheduledTxn.accountId)}
                                                 </span>
                                                 {scheduledTxn.recurringPattern && (
                                                     <>
-                                                        <span className="text-gray-400">•</span>
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                                                        <span className="text-base-content/60">•</span>
+                                                        <span className="text-xs text-base-content/60">
                                                             {getOccurrenceInfo(scheduledTxn)}
                                                         </span>
                                                     </>
                                                 )}
                                             </div>
                                             {scheduledTxn.memo && (
-                                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                <div className="text-sm text-base-content/60 mt-1">
                                                     {scheduledTxn.memo}
                                                 </div>
                                             )}
@@ -165,8 +165,8 @@ const ScheduledTransactionsRow = ({
                                         {/* Amount */}
                                         <div className="text-right">
                                             <div className={`text-lg font-bold ${scheduledTxn.amount >= 0
-                                                ? 'text-green-600 dark:text-green-400'
-                                                : 'text-red-600 dark:text-red-400'
+                                                ? 'text-success'
+                                                : 'text-error'
                                                 }`}>
                                                 {formatCurrency(scheduledTxn.amount)}
                                             </div>
@@ -178,7 +178,7 @@ const ScheduledTransactionsRow = ({
                                 <div className="flex items-center space-x-2 ml-4">
                                     <button
                                         onClick={(e) => handleEditClick(scheduledTxn, e)}
-                                        className="p-2 text-gray-500 hover:text-info-600 hover:bg-info-50 dark:hover:bg-info/20/20 rounded transition-colors"
+                                        className="p-2 text-base-content/60 hover:text-base-content rounded transition-colors"
                                         title="Edit scheduled transaction"
                                     >
                                         <Edit size={16} />
@@ -186,7 +186,7 @@ const ScheduledTransactionsRow = ({
 
                                     <button
                                         onClick={(e) => handleSkipClick(scheduledTxn, e)}
-                                        className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded transition-colors"
+                                        className="p-2 text-base-content/60 hover:text-base-content rounded transition-colors"
                                         title="Skip this occurrence"
                                     >
                                         <SkipForward size={16} />
@@ -194,7 +194,7 @@ const ScheduledTransactionsRow = ({
 
                                     <button
                                         onClick={(e) => handlePayNowClick(scheduledTxn, e)}
-                                        className="p-2 text-gray-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                                        className="p-2 text-base-content/60 hover:text-base-content rounded transition-colors"
                                         title="Pay now (activate early)"
                                     >
                                         <Play size={16} />
@@ -202,7 +202,7 @@ const ScheduledTransactionsRow = ({
 
                                     <button
                                         onClick={(e) => handleDeleteClick(scheduledTxn, e)}
-                                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                        className="p-2 text-base-content/60 hover:text-base-content rounded transition-colors"
                                         title="Delete scheduled transaction"
                                     >
                                         <Trash2 size={16} />
@@ -214,7 +214,7 @@ const ScheduledTransactionsRow = ({
 
                     {/* Help Text */}
                     <div className="px-4 pb-4">
-                        <div className="text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 rounded p-2">
+                        <div className="text-xs text-warning bg-warning/20 rounded p-2">
                             <strong>💡 Tip:</strong> Scheduled transactions will automatically become real transactions on their due date.
                             Use &quot;Pay Now&quot; to activate early, &quot;Skip&quot; to skip an occurrence, or &quot;Edit&quot; to modify details.
                         </div>

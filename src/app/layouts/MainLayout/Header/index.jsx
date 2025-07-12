@@ -5,12 +5,11 @@ import clsx from "clsx";
 // Local Imports
 import SearchIcon from "assets/dualicons/search.svg?react";
 import { SidebarToggleBtn } from "components/shared/SidebarToggleBtn";
-import { Button } from "components/ui";
+import { LanguageSelector } from "components/template/LaguageSelector";
 import { Notifications } from "components/template/Notifications";
 import { RightSidebar } from "components/template/RightSidebar";
-import { LanguageSelector } from "components/template/LaguageSelector";
 import { Search } from "components/template/Search";
-import { useThemeContext } from "app/contexts/theme/context";
+import { Button } from "components/ui";
 
 // ----------------------------------------------------------------------
 
@@ -35,13 +34,10 @@ function SlashIcon(props) {
 }
 
 export function Header() {
-  const { cardSkin } = useThemeContext();
-
   return (
     <header
       className={clsx(
-        "app-header transition-content sticky top-0 z-20 flex h-[65px] shrink-0 items-center justify-between border-b border-gray-200 bg-white/80 px-(--margin-x) backdrop-blur-sm backdrop-saturate-150 dark:border-dark-600",
-        cardSkin === "shadow" ? "dark:bg-dark-750/80" : "dark:bg-dark-900/80",
+        "app-header transition-content sticky top-0 z-20 flex h-[65px] shrink-0 items-center justify-between border-b border-base-300 bg-base-100/80 px-(--margin-x) backdrop-blur-sm backdrop-saturate-150",
       )}
     >
       <SidebarToggleBtn />
@@ -53,11 +49,11 @@ export function Header() {
               <Button
                 onClick={open}
                 unstyled
-                className="h-8 w-64 justify-between gap-2 rounded-full border border-gray-200 px-3 text-xs-plus hover:border-gray-400 dark:border-dark-500 dark:hover:border-dark-400 max-sm:hidden"
+                className="h-8 w-64 justify-between gap-2 rounded-full border border-base-300 px-3 text-xs-plus hover:border-base-content/20 max-sm:hidden"
               >
                 <div className="flex items-center gap-2">
                   <MagnifyingGlassIcon className="size-4" />
-                  <span className="text-gray-400 dark:text-dark-300">
+                  <span className="text-base-content/60">
                     Search here...
                   </span>
                 </div>
@@ -70,7 +66,7 @@ export function Header() {
                 isIcon
                 className="relative size-9 rounded-full sm:hidden"
               >
-                <SearchIcon className="size-6 text-gray-900 dark:text-dark-100" />
+                <SearchIcon className="size-6 text-base-content" />
               </Button>
             </>
           )}
