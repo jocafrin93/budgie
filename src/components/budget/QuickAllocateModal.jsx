@@ -316,7 +316,7 @@ const QuickAllocateModal = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between p-6 border-t border-base-300 bg-base-200 bg-base-200">
+                    <div className="flex items-center justify-between p-6 border-t border-base-300 bg-base-200">
                         <div className="text-sm text-base-content/70">
                             💡 This will create a pending transfer reminder
                         </div>
@@ -361,7 +361,7 @@ const QuickAllocateModal = ({
                     </div>
 
                     {/* Summary Bar */}
-                    <div className="px-6 py-4 bg-base-200 bg-base-200 border-b border-base-300">
+                    <div className="px-6 py-4 bg-base-200 border-b border-base-300">
                         {/* View Mode Toggle */}
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
@@ -604,7 +604,7 @@ const QuickAllocateModal = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between p-6 border-t border-base-300 bg-base-200 bg-base-200">
+                    <div className="flex items-center justify-between p-6 border-t border-base-300 bg-base-200">
                         <div className="flex items-center gap-4">
                             <div className="text-sm text-base-content/70">
                                 {Object.keys(allocations).filter(id => parseFloat(allocations[id]) > 0).length} categories selected
@@ -630,7 +630,7 @@ const QuickAllocateModal = ({
                                     ? needsCrossAccountTransfer
                                         ? 'bg-warning hover text-white'
                                         : 'bg-success hover text-white'
-                                    : 'bg-base-300 bg-base-100 text-base-content/60 cursor-not-allowed'
+                                    : 'bg-base-300 text-base-content/60 cursor-not-allowed'
                                     }`}
                             >
                                 {needsCrossAccountTransfer ? (

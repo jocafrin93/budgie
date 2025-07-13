@@ -115,6 +115,27 @@
     color: rgb(var(--color-base-content));
 }
 
+/* Text opacity modifiers for base-content */
+.text-base-content\/80 {
+    color: rgb(var(--color-base-content) / 0.8);
+}
+
+.text-base-content\/70 {
+    color: rgb(var(--color-base-content) / 0.7);
+}
+
+.text-base-content\/60 {
+    color: rgb(var(--color-base-content) / 0.6);
+}
+
+.text-base-content\/50 {
+    color: rgb(var(--color-base-content) / 0.5);
+}
+
+.text-base-content\/40 {
+    color: rgb(var(--color-base-content) / 0.4);
+}
+
 .text-info {
     color: rgb(var(--color-info));
 }

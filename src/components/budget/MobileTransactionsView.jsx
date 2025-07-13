@@ -178,10 +178,10 @@ const MobileTransactionForm = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-base-content/50 backdrop-blur-sm">
-            <div className="bg-base-100 rounded-t-xl shadow-xl w-full max-h-[85vh] overflow-hidden animate-in slide-in-from-bottom duration-300 flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity p-4">
+            <div className="bg-base-100 rounded-xl shadow-xl w-full max-w-lg max-h-[85vh] overflow-y-auto">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-base-300 bg-base-200 flex-shrink-0">
+                <div className="flex items-center justify-between p-4 border-b border-base-300 bg-base-200 sticky top-0 z-10">
                     <h2 className="text-lg font-semibold text-base-content">Add Transaction</h2>
                     <button
                         onClick={onClose}
@@ -191,357 +191,352 @@ const MobileTransactionForm = ({
                     </button>
                 </div>
 
-                {/* Form - Scrollable content */}
-                <div className="flex-1 overflow-y-auto">
-                    <form id="mobile-transaction-form" onSubmit={handleSubmit} className="p-4 space-y-4">
-                        {/* Transaction Type Toggle */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-base-content">Transaction Type</label>
-                            <div className="flex rounded-lg overflow-hidden border border-base-300">
-                                <button
-                                    type="button"
-                                    onClick={() => setTransactionType('outflow')}
-                                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'outflow'
-                                        ? 'bg-error text-white'
-                                        : 'bg-base-200 text-base-content hover:bg-base-300'
-                                        }`}
-                                >
-                                    💸 Expense
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setTransactionType('inflow')}
-                                    className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'inflow'
-                                        ? 'bg-success text-white'
-                                        : 'bg-base-200 text-base-content hover:bg-base-300'
-                                        }`}
-                                >
-                                    💰 Income
-                                </button>
-                            </div>
+                {/* Form */}
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                    {/* Transaction Type Toggle */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-base-content">Transaction Type</label>
+                        <div className="flex rounded-lg overflow-hidden border border-base-300">
+                            <button
+                                type="button"
+                                onClick={() => setTransactionType('outflow')}
+                                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'outflow'
+                                    ? 'bg-error text-white'
+                                    : 'bg-base-200 text-base-content hover:bg-base-300'
+                                    }`}
+                            >
+                                💸 Expense
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setTransactionType('inflow')}
+                                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'inflow'
+                                    ? 'bg-success text-white'
+                                    : 'bg-base-200 text-base-content hover:bg-base-300'
+                                    }`}
+                            >
+                                💰 Income
+                            </button>
                         </div>
+                    </div>
 
-                        {/* Date */}
+                    {/* Date */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-base-content">
+                            Date <span className="text-error">*</span>
+                        </label>
+                        <input
+                            type="date"
+                            value={formData.date}
+                            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                            required
+                            className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                        />
+                    </div>
+
+                    {/* Account */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-base-content">
+                            Account <span className="text-error">*</span>
+                        </label>
+                        <select
+                            value={formData.accountId}
+                            onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
+                            required
+                            className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                        >
+                            <option value="">Select Account</option>
+                            {accounts.map(account => (
+                                <option key={account.id} value={account.id}>
+                                    {account.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Transfer Toggle */}
+                    <div className="flex items-center space-x-3">
+                        <input
+                            type="checkbox"
+                            id="isTransfer"
+                            checked={formData.isTransfer}
+                            onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                isTransfer: e.target.checked,
+                                payee: e.target.checked ? '' : prev.payee
+                            }))}
+                            className="form-checkbox-rounded this:info"
+                        />
+                        <label htmlFor="isTransfer" className="text-sm font-medium text-base-content">
+                            This is a transfer
+                        </label>
+                    </div>
+
+                    {/* Transfer To Account */}
+                    {formData.isTransfer && (
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-base-content">
-                                Date <span className="text-error">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                value={formData.date}
-                                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                                required
-                                className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
-                            />
-                        </div>
-
-                        {/* Account */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-base-content">
-                                Account <span className="text-error">*</span>
+                                Transfer To Account <span className="text-error">*</span>
                             </label>
                             <select
-                                value={formData.accountId}
-                                onChange={(e) => setFormData(prev => ({ ...prev, accountId: e.target.value }))}
+                                value={formData.transferToAccountId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, transferToAccountId: e.target.value }))}
                                 required
                                 className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
                             >
                                 <option value="">Select Account</option>
-                                {accounts.map(account => (
+                                {accounts.filter(acc => acc.id !== formData.accountId).map(account => (
                                     <option key={account.id} value={account.id}>
                                         {account.name}
                                     </option>
                                 ))}
                             </select>
                         </div>
+                    )}
 
-                        {/* Transfer Toggle */}
-                        <div className="flex items-center space-x-3">
-                            <input
-                                type="checkbox"
-                                id="isTransfer"
-                                checked={formData.isTransfer}
-                                onChange={(e) => setFormData(prev => ({
-                                    ...prev,
-                                    isTransfer: e.target.checked,
-                                    payee: e.target.checked ? '' : prev.payee
-                                }))}
-                                className="form-checkbox-rounded this:info"
-                            />
-                            <label htmlFor="isTransfer" className="text-sm font-medium text-base-content">
-                                This is a transfer
-                            </label>
-                        </div>
-
-                        {/* Transfer To Account */}
-                        {formData.isTransfer && (
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-base-content">
-                                    Transfer To Account <span className="text-error">*</span>
-                                </label>
-                                <select
-                                    value={formData.transferToAccountId}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, transferToAccountId: e.target.value }))}
-                                    required
-                                    className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
-                                >
-                                    <option value="">Select Account</option>
-                                    {accounts.filter(acc => acc.id !== formData.accountId).map(account => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        {/* Payee - Only show for non-transfers */}
-                        {!formData.isTransfer && (
-                            <div className="space-y-2 relative">
-                                <label className="block text-sm font-medium text-base-content">
-                                    Payee <span className="text-error">*</span>
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        ref={payeeInputRef}
-                                        type="text"
-                                        value={formData.payee}
-                                        onChange={(e) => {
-                                            setFormData(prev => ({ ...prev, payee: e.target.value }));
-                                            setShowPayeeDropdown(true);
-                                        }}
-                                        onFocus={() => setShowPayeeDropdown(true)}
-                                        onBlur={() => setTimeout(() => setShowPayeeDropdown(false), 200)}
-                                        placeholder="Enter payee name..."
-                                        required
-                                        className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
-                                    />
-
-                                    {/* Payee Dropdown */}
-                                    {showPayeeDropdown && (
-                                        <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                                            {filteredPayees.length > 0 && (
-                                                <div>
-                                                    {filteredPayees.map((payee, index) => (
-                                                        <button
-                                                            key={index}
-                                                            type="button"
-                                                            onClick={() => handlePayeeSelect(payee)}
-                                                            className="w-full px-3 py-2 text-left hover:bg-base-200 text-base-content transition-colors first:rounded-t-lg last:rounded-b-lg"
-                                                        >
-                                                            {payee}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            {showAddPayeeOption && (
-                                                <button
-                                                    type="button"
-                                                    onClick={handleAddNewPayee}
-                                                    className="w-full px-3 py-2 text-left hover:bg-base-200 text-info transition-colors border-t border-base-300 flex items-center space-x-2"
-                                                >
-                                                    <span>+</span>
-                                                    <span>Add &#34;{formData.payee}&#34;</span>
-                                                </button>
-                                            )}
-
-                                            {filteredPayees.length === 0 && !showAddPayeeOption && formData.payee.trim() && (
-                                                <div className="px-3 py-2 text-base-content/60 text-sm">
-                                                    No payees found
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Amount */}
-                        <div className="space-y-2">
+                    {/* Payee - Only show for non-transfers */}
+                    {!formData.isTransfer && (
+                        <div className="space-y-2 relative">
                             <label className="block text-sm font-medium text-base-content">
-                                Amount <span className="text-error">*</span>
+                                Payee <span className="text-error">*</span>
                             </label>
                             <div className="relative">
-                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">$</span>
                                 <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={formData.amount}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                                    placeholder="0.00"
+                                    ref={payeeInputRef}
+                                    type="text"
+                                    value={formData.payee}
+                                    onChange={(e) => {
+                                        setFormData(prev => ({ ...prev, payee: e.target.value }));
+                                        setShowPayeeDropdown(true);
+                                    }}
+                                    onFocus={() => setShowPayeeDropdown(true)}
+                                    onBlur={() => setTimeout(() => setShowPayeeDropdown(false), 200)}
+                                    placeholder="Enter payee name..."
                                     required
-                                    className="w-full pl-8 pr-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                    className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
                                 />
+
+                                {/* Payee Dropdown */}
+                                {showPayeeDropdown && (
+                                    <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                        {filteredPayees.length > 0 && (
+                                            <div>
+                                                {filteredPayees.map((payee, index) => (
+                                                    <button
+                                                        key={index}
+                                                        type="button"
+                                                        onClick={() => handlePayeeSelect(payee)}
+                                                        className="w-full px-3 py-2 text-left hover:bg-base-200 text-base-content transition-colors first:rounded-t-lg last:rounded-b-lg"
+                                                    >
+                                                        {payee}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {showAddPayeeOption && (
+                                            <button
+                                                type="button"
+                                                onClick={handleAddNewPayee}
+                                                className="w-full px-3 py-2 text-left hover:bg-base-200 text-info transition-colors border-t border-base-300 flex items-center space-x-2"
+                                            >
+                                                <span>+</span>
+                                                <span>Add &#34;{formData.payee}&#34;</span>
+                                            </button>
+                                        )}
+
+                                        {filteredPayees.length === 0 && !showAddPayeeOption && formData.payee.trim() && (
+                                            <div className="px-3 py-2 text-base-content/60 text-sm">
+                                                No payees found
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
+                    )}
 
-                        {/* Category - Only show for non-transfers */}
-                        {!formData.isTransfer && (
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-base-content">Category</label>
-                                <select
-                                    value={formData.categoryId}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
-                                    className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
-                                >
-                                    <option value="">Select Category</option>
-                                    {categories.map(category => (
-                                        <option key={category.id} value={category.id}>
-                                            {category.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        {/* Memo */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-base-content">Memo</label>
+                    {/* Amount */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-base-content">
+                            Amount <span className="text-error">*</span>
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">$</span>
                             <input
-                                type="text"
-                                value={formData.memo}
-                                onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
-                                placeholder="Optional memo..."
-                                className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={formData.amount}
+                                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                                placeholder="0.00"
+                                required
+                                className="w-full pl-8 pr-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
                             />
                         </div>
+                    </div>
 
-                        {/* Cleared Status */}
+                    {/* Category - Only show for non-transfers */}
+                    {!formData.isTransfer && (
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-base-content">Category</label>
+                            <select
+                                value={formData.categoryId}
+                                onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                                className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                            >
+                                <option value="">Select Category</option>
+                                {categories.map(category => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Memo */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-medium text-base-content">Memo</label>
+                        <input
+                            type="text"
+                            value={formData.memo}
+                            onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
+                            placeholder="Optional memo..."
+                            className="w-full px-3 py-3 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                        />
+                    </div>
+
+                    {/* Cleared Status */}
+                    <div className="flex items-center space-x-3">
+                        <input
+                            type="checkbox"
+                            id="isCleared"
+                            checked={formData.isCleared}
+                            onChange={(e) => setFormData(prev => ({ ...prev, isCleared: e.target.checked }))}
+                            className="form-checkbox-rounded this:success"
+                        />
+                        <label htmlFor="isCleared" className="text-sm font-medium text-base-content">
+                            Mark as cleared
+                        </label>
+                    </div>
+
+                    {/* Split Transaction Toggle - Only show for non-transfers */}
+                    {!formData.isTransfer && (
                         <div className="flex items-center space-x-3">
                             <input
                                 type="checkbox"
-                                id="isCleared"
-                                checked={formData.isCleared}
-                                onChange={(e) => setFormData(prev => ({ ...prev, isCleared: e.target.checked }))}
-                                className="form-checkbox-rounded this:success"
+                                id="showSplits"
+                                checked={showSplits}
+                                onChange={(e) => {
+                                    setShowSplits(e.target.checked);
+                                    if (!e.target.checked) {
+                                        setFormData(prev => ({ ...prev, splits: [] }));
+                                    }
+                                }}
+                                className="form-checkbox-rounded this:warning"
                             />
-                            <label htmlFor="isCleared" className="text-sm font-medium text-base-content">
-                                Mark as cleared
+                            <label htmlFor="showSplits" className="text-sm font-medium text-base-content">
+                                Split transaction across categories
                             </label>
                         </div>
+                    )}
 
-                        {/* Split Transaction Toggle - Only show for non-transfers */}
-                        {!formData.isTransfer && (
-                            <div className="flex items-center space-x-3">
-                                <input
-                                    type="checkbox"
-                                    id="showSplits"
-                                    checked={showSplits}
-                                    onChange={(e) => {
-                                        setShowSplits(e.target.checked);
-                                        if (!e.target.checked) {
-                                            setFormData(prev => ({ ...prev, splits: [] }));
-                                        }
-                                    }}
-                                    className="form-checkbox-rounded this:warning"
-                                />
-                                <label htmlFor="showSplits" className="text-sm font-medium text-base-content">
-                                    Split transaction across categories
-                                </label>
+                    {/* Split Transaction Section */}
+                    {showSplits && !formData.isTransfer && (
+                        <div className="space-y-4 border-t border-base-300 pt-4">
+                            {/* Split Balance Indicator */}
+                            <div className="bg-base-200 p-3 rounded-lg">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-base-content/60">Transaction Amount:</span>
+                                    <span className="font-semibold">${parseFloat(formData.amount) || 0}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-base-content/60">Split Total:</span>
+                                    <span className="font-semibold">${splitTotal}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-base-content/60">Remaining:</span>
+                                    <span className={`font-semibold ${isBalanced ? 'text-success' : 'text-error'}`}>
+                                        ${remaining}
+                                    </span>
+                                </div>
+                                {!isBalanced && (
+                                    <div className="mt-2 text-xs text-warning">
+                                        ⚠️ Splits must equal transaction amount
+                                    </div>
+                                )}
                             </div>
-                        )}
 
-                        {/* Split Transaction Section */}
-                        {showSplits && !formData.isTransfer && (
-                            <div className="space-y-4 border-t border-base-300 pt-4">
-                                {/* Split Balance Indicator */}
-                                <div className="bg-base-200 p-3 rounded-lg">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-base-content/60">Transaction Amount:</span>
-                                        <span className="font-semibold">${parseFloat(formData.amount) || 0}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-base-content/60">Split Total:</span>
-                                        <span className="font-semibold">${splitTotal}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-base-content/60">Remaining:</span>
-                                        <span className={`font-semibold ${isBalanced ? 'text-success' : 'text-error'}`}>
-                                            ${remaining}
-                                        </span>
-                                    </div>
-                                    {!isBalanced && (
-                                        <div className="mt-2 text-xs text-warning">
-                                            ⚠️ Splits must equal transaction amount
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Split Rows */}
-                                <div className="space-y-3">
-                                    {formData.splits.map((split, index) => (
-                                        <div key={index} className="bg-base-100 border border-base-300 rounded-lg p-3 space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-sm font-medium text-base-content">Split {index + 1}</span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeSplit(index)}
-                                                    className="p-1 text-error hover:bg-error/10 rounded transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-
-                                            <select
-                                                value={split.categoryId}
-                                                onChange={(e) => updateSplit(index, 'categoryId', e.target.value)}
-                                                className="w-full px-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                            {/* Split Rows */}
+                            <div className="space-y-3">
+                                {formData.splits.map((split, index) => (
+                                    <div key={index} className="bg-base-100 border border-base-300 rounded-lg p-3 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-medium text-base-content">Split {index + 1}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeSplit(index)}
+                                                className="p-1 text-error hover:bg-error/10 rounded transition-colors"
                                             >
-                                                <option value="">Select Category</option>
-                                                {categories.map(category => (
-                                                    <option key={category.id} value={category.id}>
-                                                        {category.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">$</span>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0"
-                                                    value={split.amount}
-                                                    onChange={(e) => updateSplit(index, 'amount', parseFloat(e.target.value) || 0)}
-                                                    placeholder="0.00"
-                                                    className="w-full pl-8 pr-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
-                                                />
-                                            </div>
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
                                         </div>
-                                    ))}
-                                </div>
 
-                                {/* Split Actions */}
-                                <div className="flex space-x-2">
+                                        <select
+                                            value={split.categoryId}
+                                            onChange={(e) => updateSplit(index, 'categoryId', e.target.value)}
+                                            className="w-full px-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                        >
+                                            <option value="">Select Category</option>
+                                            {categories.map(category => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
+                                        </select>
+
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">$</span>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={split.amount}
+                                                onChange={(e) => updateSplit(index, 'amount', parseFloat(e.target.value) || 0)}
+                                                placeholder="0.00"
+                                                className="w-full pl-8 pr-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Split Actions */}
+                            <div className="flex space-x-2">
+                                <button
+                                    type="button"
+                                    onClick={addSplit}
+                                    className="flex-1 py-2 px-3 bg-base-300 text-base-content rounded-lg text-sm font-medium hover:bg-base-200 transition-colors flex items-center justify-center space-x-2"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span>Add Split</span>
+                                </button>
+                                {formData.splits.length > 0 && (
                                     <button
                                         type="button"
-                                        onClick={addSplit}
-                                        className="flex-1 py-2 px-3 bg-base-300 text-base-content rounded-lg text-sm font-medium hover:bg-base-200 transition-colors flex items-center justify-center space-x-2"
+                                        onClick={autoDistribute}
+                                        className="flex-1 py-2 px-3 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
                                     >
-                                        <Plus className="w-4 h-4" />
-                                        <span>Add Split</span>
+                                        Auto-Distribute
                                     </button>
-                                    {formData.splits.length > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={autoDistribute}
-                                            className="flex-1 py-2 px-3 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-                                        >
-                                            Auto-Distribute
-                                        </button>
-                                    )}
-                                </div>
+                                )}
                             </div>
-                        )}
+                        </div>
+                    )}
 
-                    </form>
-                </div>
-
-                {/* Fixed Action Buttons - Always visible at bottom */}
-                <div className="flex-shrink-0 p-4 border-t border-base-300 bg-base-100">
-                    <div className="flex space-x-3">
+                    {/* Form Actions */}
+                    <div className="flex space-x-3 pt-6 pb-4 border-t border-base-300">
                         <button
                             type="button"
                             onClick={onClose}
@@ -551,13 +546,12 @@ const MobileTransactionForm = ({
                         </button>
                         <button
                             type="submit"
-                            form="mobile-transaction-form"
                             className="flex-1 py-3 px-4 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
                         >
                             Add Transaction
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     );
@@ -790,7 +784,7 @@ const MobileTransactionsView = ({
 
             {/* Bulk Delete Bar - Only show when transactions are selected */}
             {selectedCount > 0 && (
-                <div className="bg-error/10 border border-error/30 rounded-lg p-4 mb-4">
+                <div className="bg-error-lighter/20 border border-error rounded-lg p-4 mb-4">
                     <div className="flex items-center justify-between">
                         <div className="text-error">
                             <span className="font-medium">{selectedCount} transaction{selectedCount > 1 ? 's' : ''} selected</span>

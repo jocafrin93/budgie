@@ -4,4 +4,8 @@ export default {
     "plugins": [
         "prettier-plugin-tailwindcss"
     ],
+    "organizeImportsSkipDestructiveCodeActions": true,
+    "importOrder": [],
+    "importOrderSeparation": false,
+    "importOrderSortSpecifiers": false
 }

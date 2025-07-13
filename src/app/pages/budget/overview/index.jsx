@@ -216,8 +216,11 @@ export default function BudgetOverview() {
                     item.categoryId === category.id // Show ALL items (active and inactive)
                 );
 
-                // Calculate totals for the category from planning items
+                // Calculate totals for the category from planning items (only active items)
                 monthlyNeed = categoryItems.reduce((sum, item) => {
+                    // Only include active items in calculations
+                    if (item.isActive === false) return sum;
+
                     if (item.type === 'savings-goal') {
                         return sum + (item.monthlyContribution || 0);
                     } else {
@@ -260,7 +263,7 @@ export default function BudgetOverview() {
                         dueDate: item.dueDate || null,
                         paychecksUntilDue,
                         isSubItem: true,
-                        isActive: item.isActive || true,
+                        isActive: item.isActive !== false, // Default to true only if undefined, preserve false
                         type: item.type
                     };
                 });

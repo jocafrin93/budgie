@@ -117,7 +117,7 @@ export default function AccountBalanceSidebar({
     const activeAccounts = accounts.filter(account => account.isActive !== false);
 
     return (
-        <div className={`bg-base-200 border-r border-base-300 ${className}`}>
+        <div className={`bg-base-200 border-r border-b border-base-300 rounded-lg ${className}`}>
             {/* Header */}
             <div className="p-4 border-b border-base-300">
                 <div className="flex items-center justify-between">
@@ -139,13 +139,13 @@ export default function AccountBalanceSidebar({
                 </div>
 
                 {/* Total Balance - Always visible */}
-                <div className="mt-3 p-3 bg-base-200 rounded-lg">
+                <div className="mt-3 p-3 bg-base-300 rounded-lg">
                     <div className="text-center">
                         <div className={`text-lg font-bold ${totalWorkingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                             {formatCurrency(totalWorkingBalance)}
                         </div>
                         {!isCollapsed && (
-                            <div className="text-xs text-base-content/60">
+                            <div className="text-s text-secondary-content/60">
                                 Total Working Balance
                             </div>
                         )}

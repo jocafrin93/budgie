@@ -18,6 +18,8 @@ import {
     Edit,
     Plus,
     Search,
+    ToggleLeft,
+    ToggleRight,
     Trash2
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -41,8 +43,7 @@ const BudgetCategoriesTable = ({
     onEditItem,
     onDeleteItem,
     onDataUpdate, // New callback to update parent component's data
-    // onToggleItemActive,
-    // onToggleCategoryActive
+    onToggleItemActive
 }) => {
     const [sorting, setSorting] = useState([]);
     const [globalFilter, setGlobalFilter] = useState('');
@@ -295,19 +296,6 @@ const BudgetCategoriesTable = ({
                     });
                 }
 
-                // Only add "Add Item" row for multiple categories (not single categories)
-                if (category.type === 'multiple') {
-                    result.push({
-                        id: `add-item-${category.id}`,
-                        uniqueId: `add-item-${category.id}`,
-                        name: `Add Item to ${category.name}`,
-                        isAddRow: true,
-                        originalIndex: index,
-                        isParent: false,
-                        depth: 1,
-                        parentCategory: category,
-                    });
-                }
             }
         });
         return result;
@@ -409,10 +397,10 @@ const BudgetCategoriesTable = ({
 
                     if (item.isAddRow) {
                         return (
-                            <div style={{ marginLeft: item.depth * 20 + 16 }}>
+                            <div style={{ marginLeft: item.depth * 12 + 8 }}>
                                 <button
                                     onClick={() => onAddItem && onAddItem({ categoryId: item.parentCategory.id })}
-                                    className="flex items-center gap-2 text-sm text-primary hover border-l-2 border-base-300 pl-4"
+                                    className="flex items-center gap-2 text-sm text-primary hover border-l-2 border-base-300 pl-3"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Add Item to {item.parentCategory.name}
@@ -487,15 +475,51 @@ const BudgetCategoriesTable = ({
                         );
                     } else if (item.isParent) {
                         return (
-                            <div className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-full ${item.color} border border-base-300`}></div>
-                                {item.type === 'multiple' && (
-                                    <Box className="w-4 h-4 text-base-content/60" fill="none" stroke="currentColor">
-                                    </Box>
+                            <div className="flex items-center justify-between group">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-3 h-3 rounded-full ${item.color} border border-base-300`}></div>
+                                    {item.type === 'multiple' && (
+                                        <Box className="w-4 h-4 text-base-content/60" fill="none" stroke="currentColor">
+                                        </Box>
+                                    )}
+                                    <div className="font-medium text-base-content">{item.name}</div>
+                                </div>
 
-                                )}
-                                <div className="font-medium text-base-content">{item.name}</div>
-
+                                {/* Hover actions */}
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {item.type === 'multiple' && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onAddItem && onAddItem({ categoryId: item.id });
+                                            }}
+                                            className="p-1 hover rounded transition-colors"
+                                            title="Add Item"
+                                        >
+                                            <Plus className="w-4 h-4 text-base-content/60" />
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditCategory && onEditCategory(item);
+                                        }}
+                                        className="p-1 hover rounded transition-colors"
+                                        title="Edit Category"
+                                    >
+                                        <Edit className="w-4 h-4 text-base-content/60" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteCategory && onDeleteCategory(item.id);
+                                        }}
+                                        className="p-1 hover rounded transition-colors"
+                                        title="Delete Category"
+                                    >
+                                        <Trash2 className="w-4 h-4 text-base-content/60" />
+                                    </button>
+                                </div>
                             </div>
                         );
                     } else {
@@ -503,10 +527,62 @@ const BudgetCategoriesTable = ({
                         const amountWithFrequency = formatAmountWithFrequency(item.amount, item.frequency);
 
                         return (
-                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-base-300 pl-4">
-                                <div className="font-medium text-base-content/80">{item.name}</div>
-                                <div className="text-sm text-base-content/60">
-                                    {amountWithFrequency}
+                            <div style={{ marginLeft: item.depth * 12 + 2 }} className="border-l-2 border-base-300 pl-3">
+                                <div className="flex items-center justify-between group">
+                                    <div className="flex items-center gap-2">
+                                        {/* Active/Inactive Toggle */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                // Ensure itemId is passed as the correct type (number)
+                                                const itemId = parseInt(item.id, 10);
+                                                // Simple toggle: if currently false, make true; otherwise make false
+                                                const newActiveState = item.isActive === false ? true : false;
+                                                onToggleItemActive && onToggleItemActive(itemId, newActiveState);
+                                            }}
+                                            className="w-6 h-4 rounded transition-all duration-200 flex items-center justify-center bg-transparent hover:bg-base-200/50"
+                                            title={item.isActive !== false ? 'Active - counting towards budget' : 'Inactive - planning only'}
+                                        >
+                                            {item.isActive !== false ? (
+                                                <ToggleRight className={`w-4 h-4 text-success hover:text-success/80 transition-colors`} />
+                                            ) : (
+                                                <ToggleLeft className={`w-4 h-4 text-base-content/60 hover:text-base-content/80 transition-colors`} />
+                                            )}
+                                        </button>
+
+                                        <div>
+                                            <div className={`font-medium ${item.isActive !== false ? 'text-base-content' : 'text-base-content/60'}`}>
+                                                {item.name}
+                                            </div>
+                                            <div className={`text-sm ${item.isActive !== false ? 'text-base-content/70' : 'text-base-content/50'}`}>
+                                                {amountWithFrequency}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Hover actions for sub-items */}
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onEditItem && onEditItem(item);
+                                            }}
+                                            className="p-1 hover rounded transition-colors"
+                                            title="Edit Item"
+                                        >
+                                            <Edit className="w-3 h-3 text-base-content/60" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteItem && onDeleteItem(item.id);
+                                            }}
+                                            className="p-1 hover rounded transition-colors"
+                                            title="Delete Item"
+                                        >
+                                            <Trash2 className="w-3 h-3 text-base-content/60" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -591,9 +667,7 @@ const BudgetCategoriesTable = ({
                                             ♾️
                                         </span>
                                     </div>
-                                    <div className="text-xs text-base-content/60">
-                                        ongoing
-                                    </div>
+
                                 </div>
                             );
                         }
@@ -760,47 +834,6 @@ const BudgetCategoriesTable = ({
                 size: 140,
             }),
 
-            // Actions
-            columnHelper.display({
-                id: 'actions',
-                header: 'Actions',
-                cell: ({ row }) => {
-                    if (row.original.isAddRow) return null;
-                    const isSubItem = !row.original.isParent;
-
-                    return (
-                        <div className="flex items-center justify-center gap-1">
-                            <button
-                                onClick={() => {
-                                    if (isSubItem) {
-                                        onEditItem && onEditItem(row.original);
-                                    } else {
-                                        onEditCategory && onEditCategory(row.original);
-                                    }
-                                }}
-                                className="p-2 hover rounded transition-colors"
-                                title={isSubItem ? "Edit Item" : "Edit Category"}
-                            >
-                                <Edit className="w-4 h-4 text-base-content/60" />
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (isSubItem) {
-                                        onDeleteItem && onDeleteItem(row.original.id);
-                                    } else {
-                                        onDeleteCategory && onDeleteCategory(row.original.id);
-                                    }
-                                }}
-                                className="p-2 hover rounded transition-colors"
-                                title={isSubItem ? "Delete Item" : "Delete Category"}
-                            >
-                                <Trash2 className="w-4 h-4 text-base-content/60" />
-                            </button>
-                        </div>
-                    );
-                },
-                size: 100,
-            }),
         ],
         [
             columnHelper,
@@ -816,6 +849,7 @@ const BudgetCategoriesTable = ({
             onDeleteItem,
             onEditCategory,
             onEditItem,
+            onToggleItemActive,
             upcomingPaychecks,
             handleTransferClick
         ]

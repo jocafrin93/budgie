@@ -488,7 +488,7 @@ const UnifiedEnvelopeBudgetView = ({
                 return (
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${category.color || 'bg-base-300 bg-base-100'} border border-base-300 shadow-sm`}></div>
+                            <div className={`w-3 h-3 rounded-full ${category.color || 'bg-base-300'} border border-base-300 shadow-sm`}></div>
                             <button
                                 onClick={() => handleEditCategory(category)}
                                 className={`font-medium hover transition-colors text-left ${categoryData.type === 'single' && !categoryData.isActive

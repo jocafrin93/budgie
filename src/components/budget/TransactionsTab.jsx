@@ -556,28 +556,36 @@ const TransactionFormModal = ({
                         <div className="space-y-3">
                             <div>
                                 <label className="block text-sm font-medium text-base-content mb-2">Transaction Type</label>
-                                <label htmlFor="transactionTypeToggle" className="inline-flex items-center p-2 rounded-md cursor-pointer">
-                                    <input
-                                        id="transactionTypeToggle"
-                                        type="checkbox"
-                                        className="hidden peer"
-                                        checked={transactionType === 'inflow'}
-                                        onChange={(e) => setTransactionType(e.target.checked ? 'inflow' : 'outflow')}
-                                    />
-                                    <span className="px-4 py-2 rounded-l-md bg-error text-white peer-checked peer-checked transition-colors">
+                                <div className="flex rounded-lg overflow-hidden border border-base-300">
+                                    <button
+                                        type="button"
+                                        onClick={() => setTransactionType('outflow')}
+                                        className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'outflow'
+                                            ? 'bg-error text-white'
+                                            : 'bg-base-200 text-base-content hover:bg-base-300'
+                                            }`}
+                                    >
                                         💸 Expense
-                                    </span>
-                                    <span className="px-4 py-2 rounded-r-md bg-base-300 text-base-content peer-checked peer-checked transition-colors">
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTransactionType('inflow')}
+                                        className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'inflow'
+                                            ? 'bg-success text-white'
+                                            : 'bg-base-200 text-base-content hover:bg-base-300'
+                                            }`}
+                                    >
                                         💰 Income
-                                    </span>
-                                </label>
+                                    </button>
+                                </div>
+
                             </div>
 
                             {/* Transfer Toggle */}
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center space-x-3">
                                 <input
                                     type="checkbox"
-                                    className="form-checkbox-rounded this:info"
+                                    id="isTransfer"
                                     checked={isTransfer}
                                     onChange={(e) => {
                                         const isTransferChecked = e.target.checked;
@@ -588,254 +596,259 @@ const TransactionFormModal = ({
                                             payee: isTransferChecked ? '' : prev.payee // Clear payee when transfer is selected
                                         }));
                                     }}
+                                    className="form-checkbox-rounded this:info"
                                 />
-                                <label>This is a transfer</label>
+                                <label htmlFor="isTransfer" className="text-sm font-medium text-base-content">
+                                    This is a transfer
+                                </label>
                             </div>
-                        </div>
 
-                        {/* Transfer To Account */}
-                        {isTransfer && (
-                            <Select
-                                label="Transfer To Account"
-                                value={formData.transferToAccountId}
-                                onChange={(e) => setFormData(prev => ({ ...prev, transferToAccountId: e.target.value }))}
+                            {/* Transfer To Account */}
+                            {isTransfer && (
+                                <Select
+                                    label="Transfer To Account"
+                                    value={formData.transferToAccountId}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, transferToAccountId: e.target.value }))}
+                                    required
+                                >
+                                    <option value="">Select Account</option>
+                                    {accounts.filter(acc => {
+                                        // Enhanced filtering with type coercion and debugging
+                                        const isFiltered = String(acc.id) !== String(formData.accountId);
+                                        console.log('🔍 Transfer Account Filter:', {
+                                            accountId: acc.id,
+                                            accountName: acc.name,
+                                            sourceAccountId: formData.accountId,
+                                            isFiltered,
+                                            accountIdType: typeof acc.id,
+                                            sourceAccountIdType: typeof formData.accountId
+                                        });
+                                        return isFiltered;
+                                    }).map(account => (
+                                        <option key={account.id} value={account.id}>
+                                            {account.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            )}
+
+                            {/* Amount */}
+                            <CurrencyField
+                                label="Amount"
+                                value={formData.amount}
+                                onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
                                 required
-                            >
-                                <option value="">Select Account</option>
-                                {accounts.filter(acc => {
-                                    // Enhanced filtering with type coercion and debugging
-                                    const isFiltered = String(acc.id) !== String(formData.accountId);
-                                    console.log('🔍 Transfer Account Filter:', {
-                                        accountId: acc.id,
-                                        accountName: acc.name,
-                                        sourceAccountId: formData.accountId,
-                                        isFiltered,
-                                        accountIdType: typeof acc.id,
-                                        sourceAccountIdType: typeof formData.accountId
-                                    });
-                                    return isFiltered;
-                                }).map(account => (
-                                    <option key={account.id} value={account.id}>
-                                        {account.name}
-                                    </option>
-                                ))}
-                            </Select>
-                        )}
-
-                        {/* Amount */}
-                        <CurrencyField
-                            label="Amount"
-                            value={formData.amount}
-                            onChange={(e) => setFormData(prev => ({ ...prev, amount: parseFloat(e.target.value) || 0 }))}
-                            required
-                            className="border-base-300 bg-base-100 text-base-content"
-
-                        />
-
-                        {/* Category (not for transfers) */}
-                        {!isTransfer && (
-                            <Select
-                                label="Category"
-                                value={formData.categoryId}
-                                onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
                                 className="border-base-300 bg-base-100 text-base-content"
-
-                            >
-                                <option value="">Select Category</option>
-                                {categories.map(category => (
-                                    <option key={category.id} value={category.id}>
-                                        {category.name}
-                                    </option>
-                                ))}
-                            </Select>
-                        )}
-
-                        <Input
-                            label="Memo"
-                            value={formData.memo}
-                            onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
-                            className="border-base-300 bg-base-100 text-base-content"
-
-                        />
-
-                        <div className="flex items-center space-x-3">
-                            <label className="text-sm font-medium text-base-content">Status</label>
-                            <IconSwap
-                                isOn={formData.isCleared}
-                                onChange={(newStatus) => setFormData(prev => ({ ...prev, isCleared: newStatus }))}
-                                onIcon={<CircleCheck className="w-5 h-5" checked={true} />}
-                                offIcon={<CircleCheck className="w-5 h-5" checked={false} />}
-                                className="p-1"
                             />
-                            <span className="text-sm text-base-content/60">
-                                {formData.isCleared ? 'Cleared' : 'Pending'}
-                            </span>
-                        </div>
 
-                        {/* Split Transaction Section */}
-                        {!isTransfer && (
-                            <div className="border-t pt-4">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-medium">Split Transaction</h3>
-                                    <Button
-                                        type="button"
-                                        onClick={() => setShowSplits(!showSplits)}
-                                        variant="flat"
-                                        size="sm"
-                                    >
-                                        {showSplits ? 'Hide Splits' : 'Add Splits'}
-                                    </Button>
-                                </div>
+                            {/* Category (not for transfers) */}
+                            {!isTransfer && (
+                                <Select
+                                    label="Category"
+                                    value={formData.categoryId}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
+                                    className="border-base-300 bg-base-100 text-base-content"
+                                >
+                                    <option value="">Select Category</option>
+                                    {categories.map(category => (
+                                        <option key={category.id} value={category.id}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            )}
 
-                                {showSplits && (
-                                    <div className="space-y-4">
-                                        {/* Balance Indicator */}
-                                        <div className="bg-base-200 p-4 rounded-lg">
-                                            <div className="grid grid-cols-3 gap-4 text-sm">
-                                                <div className="text-center">
-                                                    <div className="text-base-content/60">Transaction Amount</div>
-                                                    <div className="font-bold text-lg">{formatCurrency(formData.amount)}</div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className="text-base-content/60">Total Splits</div>
-                                                    <div className="font-bold text-lg">{formatCurrency(splitValidation.totalSplitAmount)}</div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className="text-base-content/60">Remaining</div>
-                                                    <div className={`font-bold text-lg ${splitValidation.isBalanced ? 'text-success' : 'text-error'}`}>
-                                                        {formatCurrency(splitValidation.remainingToAllocate)}
-                                                    </div>
-                                                </div>
-                                            </div>
+                            <Input
+                                label="Memo"
+                                value={formData.memo}
+                                onChange={(e) => setFormData(prev => ({ ...prev, memo: e.target.value }))}
+                                className="border-base-300 bg-base-100 text-base-content"
+                            />
 
-                                            {/* Balance Status */}
-                                            {!splitValidation.isBalanced && (
-                                                <div className="mt-3 p-3 bg-warning/20er/20 border border-warning-light rounded-lg">
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-warning">⚠️</span>
-                                                        <span className="text-sm text-warning-dark">
-                                                            Fix splits {splitValidation.isOverAllocated ? 'Over-allocated' : 'Under-allocated'} by {formatCurrency(Math.abs(splitValidation.remainingToAllocate))}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )}
+                            <div className="flex items-center space-x-3">
+                                <label className="text-sm font-medium text-base-content">Status</label>
+                                <IconSwap
+                                    isOn={formData.isCleared}
+                                    onChange={(newStatus) => setFormData(prev => ({ ...prev, isCleared: newStatus }))}
+                                    onIcon={<CircleCheck className="w-5 h-5" checked={true} />}
+                                    offIcon={<CircleCheck className="w-5 h-5" checked={false} />}
+                                    className="p-1"
+                                />
+                                <span className="text-sm text-base-content/60">
+                                    {formData.isCleared ? 'Cleared' : 'Pending'}
+                                </span>
+                            </div>
 
-                                            {/* Success Status */}
-                                            {splitValidation.isBalanced && formData.splits.length > 0 && (
-                                                <div className="mt-3 p-3 bg-success-lighter/20 border border-success-light rounded-lg">
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-success">✅</span>
-                                                        <span className="text-sm text-success-dark">
-                                                            Splits are perfectly balanced!
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Auto-Balance Actions - Outside the callout */}
-                                        {formData.splits.length > 0 && (
-                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 justify-center">
-                                                <Button
-                                                    type="button"
-                                                    onClick={distributeEvenly}
-                                                    variant="filled"
-                                                    color="primary"
-                                                    className="w-full"
-                                                >
-                                                    Auto-Distribute Evenly
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    onClick={adjustTransactionAmount}
-                                                    variant="outlined"
-                                                    className="w-full"
-                                                >
-                                                    Adjust Transaction Amount
-                                                </Button>
-                                                <Button
-                                                    type="button"
-                                                    onClick={clearAllSplits}
-                                                    variant="outlined"
-                                                    className="w-full text-error hover"
-                                                >
-                                                    Clear All
-                                                </Button>
-                                            </div>
-                                        )}
-
-                                        {/* Split Rows */}
-                                        <div className="space-y-3">
-                                            {formData.splits.map((split, index) => (
-                                                <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 p-3 border rounded">
-                                                    <Select
-                                                        value={split.categoryId}
-                                                        onChange={(e) => updateSplit(index, 'categoryId', e.target.value)}
-                                                        placeholder="Category"
-                                                    >
-                                                        <option value="">Select Category</option>
-                                                        {categories.map(category => (
-                                                            <option key={category.id} value={category.id}>
-                                                                {category.name}
-                                                            </option>
-                                                        ))}
-                                                    </Select>
-
-                                                    <CurrencyField
-                                                        value={split.amount}
-                                                        onChange={(e) => updateSplit(index, 'amount', parseFloat(e.target.value) || 0)}
-                                                        placeholder="Amount"
-                                                    />
-
-                                                    {/* Percentage Display */}
-                                                    <div className="flex items-center justify-center text-sm text-base-content/60">
-                                                        {formData.amount > 0 ? `${((split.amount / formData.amount) * 100).toFixed(1)}%` : '0%'}
-                                                    </div>
-
-                                                    <Input
-                                                        value={split.memo}
-                                                        onChange={(e) => updateSplit(index, 'memo', e.target.value)}
-                                                        placeholder="Memo"
-                                                    />
-
-                                                    <Button
-                                                        type="button"
-                                                        onClick={() => removeSplit(index)}
-                                                        variant="flat"
-                                                        isIcon
-                                                        className="text-error"
-                                                    >
-                                                        <TbTrash />
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-
+                            {/* Split Transaction Section */}
+                            {!isTransfer && (
+                                <div className="border-t pt-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="font-medium">Split Transaction</h3>
                                         <Button
                                             type="button"
-                                            onClick={addSplit}
+                                            onClick={() => setShowSplits(!showSplits)}
                                             variant="flat"
                                             size="sm"
-                                            className="w-full"
                                         >
-                                            <TbPlus className="mr-2" />
-                                            Add Split
+                                            {showSplits ? 'Hide Splits' : 'Add Splits'}
                                         </Button>
                                     </div>
-                                )}
-                            </div>
-                        )}
 
-                        {/* Form Actions */}
-                        <div className="flex justify-end space-x-3 pt-4 border-t">
-                            <Button type="button" onClick={onClose} variant="filled" color="secondary">
-                                Cancel
-                            </Button>
-                            <Button type="submit"
-                                variant="filled"
-                                color="primary">
-                                {isEdit ? 'Update' : 'Save'} Transaction
-                            </Button>
+                                    {showSplits && (
+                                        <div className="space-y-4">
+                                            {/* Balance Indicator */}
+                                            <div className="bg-base-200 p-4 rounded-lg">
+                                                <div className="grid grid-cols-3 gap-4 text-sm">
+                                                    <div className="text-center">
+                                                        <div className="text-base-content/60">Transaction Amount</div>
+                                                        <div className="font-bold text-lg">{formatCurrency(formData.amount)}</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="text-base-content/60">Total Splits</div>
+                                                        <div className="font-bold text-lg">{formatCurrency(splitValidation.totalSplitAmount)}</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="text-base-content/60">Remaining</div>
+                                                        <div className={`font-bold text-lg ${splitValidation.isBalanced ? 'text-success' : 'text-error'}`}>
+                                                            {formatCurrency(splitValidation.remainingToAllocate)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Balance Status */}
+                                                {!splitValidation.isBalanced && (
+                                                    <div className="mt-3 p-3 bg-warning/20er/20 border border-warning-light rounded-lg">
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-warning">⚠️</span>
+                                                            <span className="text-sm text-warning-dark">
+                                                                Fix splits {splitValidation.isOverAllocated ? 'Over-allocated' : 'Under-allocated'} by {formatCurrency(Math.abs(splitValidation.remainingToAllocate))}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Success Status */}
+                                                {splitValidation.isBalanced && formData.splits.length > 0 && (
+                                                    <div className="mt-3 p-3 bg-success-lighter/20 border border-success-light rounded-lg">
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-success">✅</span>
+                                                            <span className="text-sm text-success-dark">
+                                                                Splits are perfectly balanced!
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Auto-Balance Actions - Outside the callout */}
+                                            {formData.splits.length > 0 && (
+                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 justify-center">
+                                                    <Button
+                                                        type="button"
+                                                        onClick={distributeEvenly}
+                                                        variant="filled"
+                                                        color="primary"
+                                                        className="w-full"
+                                                    >
+                                                        Auto-Distribute Evenly
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={adjustTransactionAmount}
+                                                        variant="outlined"
+                                                        className="w-full"
+                                                    >
+                                                        Adjust Transaction Amount
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        onClick={clearAllSplits}
+                                                        variant="outlined"
+                                                        className="w-full text-error hover"
+                                                    >
+                                                        Clear All
+                                                    </Button>
+                                                </div>
+                                            )}
+
+                                            {/* Split Rows */}
+                                            <div className="space-y-3">
+                                                {formData.splits.map((split, index) => (
+                                                    <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 p-3 border rounded">
+                                                        <Select
+                                                            value={split.categoryId}
+                                                            onChange={(e) => updateSplit(index, 'categoryId', e.target.value)}
+                                                            placeholder="Category"
+                                                        >
+                                                            <option value="">Select Category</option>
+                                                            {categories.map(category => (
+                                                                <option key={category.id} value={category.id}>
+                                                                    {category.name}
+                                                                </option>
+                                                            ))}
+                                                        </Select>
+
+                                                        <CurrencyField
+                                                            value={split.amount}
+                                                            onChange={(e) => updateSplit(index, 'amount', parseFloat(e.target.value) || 0)}
+                                                            placeholder="Amount"
+                                                        />
+
+                                                        {/* Percentage Display */}
+                                                        <div className="flex items-center justify-center text-sm text-base-content/60">
+                                                            {formData.amount > 0 ? `${((split.amount / formData.amount) * 100).toFixed(1)}%` : '0%'}
+                                                        </div>
+
+                                                        <Input
+                                                            value={split.memo}
+                                                            onChange={(e) => updateSplit(index, 'memo', e.target.value)}
+                                                            placeholder="Memo"
+                                                        />
+
+                                                        <Button
+                                                            type="button"
+                                                            onClick={() => removeSplit(index)}
+                                                            variant="flat"
+                                                            isIcon
+                                                            className="text-error"
+                                                        >
+                                                            <TbTrash />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            <Button
+                                                type="button"
+                                                onClick={addSplit}
+                                                variant="flat"
+                                                size="sm"
+                                                className="w-full"
+                                            >
+                                                <TbPlus className="mr-2" />
+                                                Add Split
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Form Actions */}
+                            <div className="flex justify-end space-x-3 pt-4 border-t">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="btn btn-outline-secondary btn-sm"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary btn-sm"
+                                >
+                                    {isEdit ? 'Update' : 'Save'} Transaction
+                                </button>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -1387,7 +1400,7 @@ export default function TransactionsTab({
                             className="flex items-center space-x-2 bg-error hover text-white"
                         >
                             <TbTrash className="size-4" />
-                            <span>Delete {selectedCount} Selected</span>
+                            <span> {selectedCount} </span>
                         </Button>
                     )}
                     <Button
@@ -1399,17 +1412,14 @@ export default function TransactionsTab({
                         <svg className={`size-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                         </svg>
-                        <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
                     </Button>
-                    <Button
+                    <button
                         onClick={() => setShowModal(true)}
-                        variant="filled"
-                        size="sm"
-                        className="flex items-center space-x-2"
+                        className="btn btn-primary btn-sm flex items-center gap-2"
                     >
                         <TbPlus className="size-4" />
-                        <span>Add Transaction</span>
-                    </Button>
+
+                    </button>
                 </div>
             </div>
 

@@ -152,7 +152,7 @@ const MobileBudgetView = ({
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
                         className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key
-                            ? 'bg-base-100 text-base-content shadow-sm'
+                            ? 'bg-secondary text-base-content shadow-sm'
                             : 'text-base-content/60 hover'
                             }`}
                     >
@@ -179,7 +179,7 @@ const MobileBudgetView = ({
                     }
 
                     return (
-                        <div key={category.id} className="bg-base-100 rounded-lg border border-base-300 overflow-hidden">
+                        <div key={category.id} className="bg-base-200 rounded-lg border border-base-300 overflow-hidden">
                             {/* Category Header */}
                             <div
                                 className="p-4 cursor-pointer"
@@ -267,29 +267,29 @@ const MobileBudgetView = ({
 
                                 {/* Budget Allocation Summary */}
                                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                                    <div className="text-center p-2 bg-base-200 rounded">
+                                    <div className="text-center p-2 bg-base-300 rounded">
                                         <div className="font-medium text-info">
                                             {formatCurrency(category.perPaycheck || 0)}
                                         </div>
-                                        <div className="text-base-content/60">Per Paycheck</div>
+                                        <div className="text-primary">Per Paycheck</div>
                                     </div>
-                                    <div className="text-center p-2 bg-base-200 rounded">
+                                    <div className="text-center p-2 bg-base-300 rounded">
                                         <div className="font-medium text-success">
                                             {formatCurrency(category.allocated || 0)}
                                         </div>
-                                        <div className="text-base-content/60">Allocated</div>
+                                        <div className="text-primary">Allocated</div>
                                     </div>
-                                    <div className="text-center p-2 bg-base-200 rounded">
+                                    <div className="text-center p-2 bg-base-300 rounded">
                                         <div className="font-medium text-error">
                                             {formatCurrency(category.spent || 0)}
                                         </div>
-                                        <div className="text-base-content/60">Spent</div>
+                                        <div className="text-primary">Spent</div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Category Actions */}
-                            <div className="px-4 py-2 bg-base-200 border-t border-base-300">
+                            <div className="px-4 py-2 bg-base-300 border-t border-base-300">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         {category.type === 'multiple' && (
@@ -298,10 +298,10 @@ const MobileBudgetView = ({
                                                     e.stopPropagation();
                                                     onAddItem({ categoryId: category.id });
                                                 }}
-                                                className="flex items-center gap-1 px-2 py-1 bg-info/10 text-info rounded text-xs"
+                                                className="p-1 bg-info/10 text-info rounded hover:bg-info/20 transition-colors"
+                                                title="Add Item"
                                             >
-                                                <Plus className="w-3 h-3" />
-                                                Add Item
+                                                <Plus className="w-4 h-4" />
                                             </button>
                                         )}
                                     </div>
@@ -395,14 +395,14 @@ const MobileBudgetView = ({
             </div>
 
             {/* Summary */}
-            <div className="bg-base-100 rounded-lg border border-base-300 p-4">
+            <div className="bg-base-200 rounded-lg border border-base-300 p-4">
                 <h3 className="font-semibold text-base-content mb-3">Summary</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="text-center p-3 bg-info/10 rounded-lg">
+                    <div className="text-center p-3 bg-info-lighter/20 rounded-lg">
                         <div className="font-bold text-info text-lg">
                             {formatCurrency(data.reduce((sum, cat) => sum + (cat.monthlyNeed || 0), 0))}
                         </div>
-                        <div className="text-base-content/60">Monthly Need</div>
+                        <div className="text-base-content">Monthly Need</div>
                     </div>
                     <div className="text-center p-3 bg-success-lighter/20 rounded-lg">
                         <div className="font-bold text-success text-lg">

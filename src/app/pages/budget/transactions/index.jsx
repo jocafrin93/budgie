@@ -210,156 +210,9 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
     );
 };
 
-// Inline PendingTransfersAlert Component (NEW - Smart Cross-Account Allocation)
-const PendingTransfersAlert = ({ accounts, onCreateTransfers, className = "" }) => {
-    // Mock pending transfers for demonstration (replace with actual hook integration)
-    const mockPendingTransfers = [
-        {
-            id: 'transfer-1',
-            fromAccountId: 2,
-            toAccountId: 1,
-            amount: 300,
-            reason: 'Allocation to Groceries category',
-            categoryId: 'groceries',
-            createdAt: '2025-01-07T19:50:00Z',
-            status: 'pending'
-        }
-    ];
-
-    const getPendingTransfers = () => mockPendingTransfers;
-    const getTotalPendingTransferAmount = () => mockPendingTransfers.reduce((sum, t) => sum + t.amount, 0);
-    const cancelPendingTransfer = (transferId) => {
-        console.log('Cancelling transfer:', transferId);
-    };
-
-    const [showDetails, setShowDetails] = useState(false);
-    const pendingTransfers = getPendingTransfers();
-    const totalAmount = getTotalPendingTransferAmount();
-
-    // Don't show if no pending transfers
-    if (pendingTransfers.length === 0) {
-        return null;
-    }
-
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-        }).format(amount);
-    };
-
-    const getAccountName = (accountId) => {
-        const account = accounts.find(acc => acc.id === accountId);
-        return account?.name || `Account ${accountId}`;
-    };
-
-    const handleCreateAllTransfers = () => {
-        if (onCreateTransfers) {
-            onCreateTransfers(pendingTransfers);
-        }
-    };
-
-    const handleReviewDetails = () => {
-        setShowDetails(!showDetails);
-    };
-
-    const handleCancelTransfer = (transferId) => {
-        cancelPendingTransfer(transferId);
-    };
-
-    return (
-        <div className={`bg-warning dark:bg-dark-600 border border-warning dark:border-warning rounded-lg p-4 mb-6 ${className}`}>
-            {/* Main Alert Header */}
-            <div className="flex items-center gap-3 mb-3">
-                <span className="text-2xl">🔄</span>
-                <div className="flex-1">
-                    <h3 className="font-semibold text-warning-800 dark:text-warning">
-                        Pending Account Transfers
-                    </h3>
-                    <p className="text-warning-700 dark:text-warning-300 text-sm">
-                        You have allocated funds that require {pendingTransfers.length} account transfer{pendingTransfers.length !== 1 ? 's' : ''}
-                    </p>
-                </div>
-                <div className="text-right">
-                    <div className="text-lg font-bold text-warning dark:text-warning">
-                        {formatCurrency(totalAmount)}
-                    </div>
-                    <div className="text-sm text-warning-600 dark:text-warning-400">
-                        Total transfer amount
-                    </div>
-                </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 mb-3">
-                <button
-                    onClick={handleCreateAllTransfers}
-                    className="flex items-center gap-2 bg-warning-600 hover:bg-warning-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                    <span>💸</span>
-                    Create All Transfers
-                </button>
-                <button
-                    onClick={handleReviewDetails}
-                    className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                    <span>📋</span>
-                    {showDetails ? 'Hide Details' : 'Review Details'}
-                </button>
-            </div>
-
-            {/* Transfer Details (Expandable) */}
-            {showDetails && (
-                <div className="border-t border-warning-200 dark:border-warning-700 pt-3">
-                    <h4 className="font-medium text-warning-800 dark:text-warning-200 mb-3">
-                        Transfer Details:
-                    </h4>
-                    <div className="space-y-2">
-                        {pendingTransfers.map((transfer) => (
-                            <div
-                                key={transfer.id}
-                                className="flex items-center justify-between bg-warning-100 dark:bg-warning-900/30 rounded-lg p-3"
-                            >
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <span className="font-medium text-warning-800 dark:text-warning-200">
-                                            {getAccountName(transfer.fromAccountId)}
-                                        </span>
-                                        <span className="text-warning-600 dark:text-warning-400">→</span>
-                                        <span className="font-medium text-warning-800 dark:text-warning-200">
-                                            {getAccountName(transfer.toAccountId)}
-                                        </span>
-                                    </div>
-                                    <div className="text-xs text-warning-600 dark:text-warning-400 mt-1">
-                                        {transfer.reason}
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-bold text-warning-800 dark:text-warning-200">
-                                        {formatCurrency(transfer.amount)}
-                                    </span>
-                                    <button
-                                        onClick={() => handleCancelTransfer(transfer.id)}
-                                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 text-sm"
-                                        title="Cancel this transfer"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Help Text */}
-            <div className="text-xs text-warning-600 dark:text-warning-400 mt-3 border-t border-warning-200 dark:border-warning-700 pt-2">
-                💡 <strong>Tip:</strong> These transfers were created when you allocated money to categories funded by accounts with insufficient funds.
-                Creating the transfers will move money between your accounts to support the allocations.
-            </div>
-        </div>
-    );
-};
+// Import the proper PendingTransfersAlert component
+import PendingTransfersAlert from "../../../../components/budget/PendingTransfersAlert";
+import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
 
 export default function BudgetTransactions() {
     // Breakpoint context for responsive design
@@ -379,6 +232,13 @@ export default function BudgetTransactions() {
         updateTransaction,
         deleteTransaction
     } = useTransactionManagement(accounts, setAccounts, categories, setCategories);
+
+    // Initialize envelope budgeting hook for pending transfers
+    const envelopeBudgeting = useEnvelopeBudgeting({
+        categories,
+        accounts,
+        transactions
+    });
 
     // Load scheduled transactions component dynamically
     const [ScheduledTransactionsRow, setScheduledTransactionsRow] = useState(null);
@@ -486,17 +346,64 @@ export default function BudgetTransactions() {
     const handleAddTransaction = (transactionData) => {
         console.log("Raw transaction data received:", transactionData);
 
-        const processedData = {
-            ...transactionData,
-            accountId: parseInt(transactionData.accountId),
-            categoryId: transactionData.categoryId ? parseInt(transactionData.categoryId) : null,
-            amount: parseFloat(transactionData.amount) || 0,
-            transferAccountId: transactionData.transferAccountId ? parseInt(transactionData.transferAccountId) : undefined
-        };
+        // Check if this is a transfer and create inverse transaction
+        if (transactionData.isTransfer && transactionData.transferToAccountId) {
+            // Enhanced account lookup with type coercion
+            const sourceAccount = accounts.find(acc => String(acc.id) === String(transactionData.accountId));
+            const destinationAccount = accounts.find(acc => String(acc.id) === String(transactionData.transferToAccountId));
 
-        console.log("Processed transaction:", processedData);
-        addTransaction(processedData);
-        console.log("Transaction added successfully");
+            // Debug account lookup
+            console.log('🔍 Transfer Debug:', {
+                sourceAccountId: transactionData.accountId,
+                destinationAccountId: transactionData.transferToAccountId,
+                sourceAccount,
+                destinationAccount,
+                allAccounts: accounts,
+                accountsStructure: accounts.map(acc => ({ id: acc.id, name: acc.name, type: typeof acc.id }))
+            });
+
+            // Update main transaction to have destination account as payee
+            const mainTransaction = {
+                ...transactionData,
+                accountId: parseInt(transactionData.accountId),
+                categoryId: 'transfer', // Use 'transfer' as category identifier
+                amount: parseFloat(transactionData.amount) || 0,
+                payee: destinationAccount?.name || destinationAccount?.accountName || `Account ${transactionData.transferToAccountId}`,
+                transferToAccountId: parseInt(transactionData.transferToAccountId)
+            };
+
+            console.log("Processed main transfer transaction:", mainTransaction);
+            addTransaction(mainTransaction);
+
+            // Create the inverse transaction for the destination account
+            const inverseTransaction = {
+                ...transactionData,
+                id: `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique ID
+                accountId: parseInt(transactionData.transferToAccountId),
+                transferToAccountId: parseInt(transactionData.accountId),
+                amount: -(parseFloat(transactionData.amount) || 0), // Opposite sign
+                payee: sourceAccount?.name || sourceAccount?.accountName || `Account ${transactionData.accountId}`, // Source account as payee
+                categoryId: 'transfer', // Use 'transfer' as category identifier
+                isTransfer: true
+            };
+
+            console.log("Processed inverse transfer transaction:", inverseTransaction);
+            // Add the inverse transaction
+            addTransaction(inverseTransaction);
+        } else {
+            // Regular transaction
+            const processedData = {
+                ...transactionData,
+                accountId: parseInt(transactionData.accountId),
+                categoryId: transactionData.categoryId ? parseInt(transactionData.categoryId) : null,
+                amount: parseFloat(transactionData.amount) || 0,
+                transferAccountId: transactionData.transferAccountId ? parseInt(transactionData.transferAccountId) : undefined
+            };
+
+            console.log("Processed regular transaction:", processedData);
+            addTransaction(processedData);
+        }
+        console.log("Transaction(s) added successfully");
     };
 
     const handleEditTransaction = (updatedTransaction) => {
@@ -547,11 +454,54 @@ export default function BudgetTransactions() {
                     <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6 h-full">
                         {/* Pending Transfers Alert */}
                         <PendingTransfersAlert
-                            accounts={accounts}
                             onCreateTransfers={(transfers) => {
                                 console.log('Creating transfers:', transfers);
-                                // TODO: Integrate with transaction creation
-                                alert(`Would create ${transfers.length} transfer transactions totaling $${transfers.reduce((sum, t) => sum + t.amount, 0)}`);
+
+                                // Create both outgoing and incoming transactions for each transfer
+                                transfers.forEach(transfer => {
+                                    const sourceAccount = accounts.find(acc => acc.id === transfer.fromAccountId);
+                                    const destinationAccount = accounts.find(acc => acc.id === transfer.toAccountId);
+
+                                    if (sourceAccount && destinationAccount) {
+                                        // Create outgoing transaction (negative amount)
+                                        const outgoingTransaction = {
+                                            date: new Date().toISOString().split('T')[0],
+                                            accountId: transfer.fromAccountId,
+                                            transferToAccountId: transfer.toAccountId,
+                                            amount: -Math.abs(transfer.amount), // Negative for outgoing
+                                            payee: destinationAccount.name,
+                                            memo: transfer.reason || 'Account transfer',
+                                            categoryId: 'transfer',
+                                            isTransfer: true,
+                                            isCleared: false
+                                        };
+
+                                        // Create incoming transaction (positive amount)
+                                        const incomingTransaction = {
+                                            date: new Date().toISOString().split('T')[0],
+                                            accountId: transfer.toAccountId,
+                                            transferToAccountId: transfer.fromAccountId,
+                                            amount: Math.abs(transfer.amount), // Positive for incoming
+                                            payee: sourceAccount.name,
+                                            memo: transfer.reason || 'Account transfer',
+                                            categoryId: 'transfer',
+                                            isTransfer: true,
+                                            isCleared: false
+                                        };
+
+                                        // Add both transactions
+                                        addTransaction(outgoingTransaction);
+                                        addTransaction(incomingTransaction);
+
+                                        // Mark the pending transfer as completed
+                                        envelopeBudgeting.completePendingTransfer(transfer.id);
+                                    }
+                                });
+
+                                console.log(`✅ Created ${transfers.length * 2} transfer transactions (${transfers.length} pairs)`);
+                            }}
+                            onReviewDetails={(transfers) => {
+                                console.log('Reviewing transfer details:', transfers);
                             }}
                         />
 
