@@ -97,7 +97,7 @@ export default function BudgetSettings() {
                                 <React.Suspense fallback={<div className="p-4 text-center">Loading theme selector...</div>}>
                                     <div className="space-y-4">
                                         <DaisyThemeSwitcher />
-                                        <div className="pt-4 border-t border-base-300">
+                                        {/* <div className="pt-4 border-t border-base-300">
                                             <p className="text-sm text-base-content/60 mb-2">
                                                 Want to see all available themes and test them out?
                                             </p>
@@ -109,7 +109,7 @@ export default function BudgetSettings() {
                                             >
                                                 🎨 Theme Preview & Test Page
                                             </a>
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </React.Suspense>
                             );
