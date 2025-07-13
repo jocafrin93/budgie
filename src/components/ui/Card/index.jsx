@@ -23,8 +23,8 @@ const Card = forwardRef((props, ref) => {
         skin !== "none" && [
           skin === "bordered" &&
           "border border-base-300 print",
-          skin === "shadow" &&
-          "bg-base-200 shadow-soft bg-base-100 print:shadow-none",
+          (skin === "shadow" || skin === "shadowed") &&
+          "bg-base-200 shadow-soft print:shadow-none",
         ],
         className,
       )}
@@ -44,4 +44,3 @@ Card.propTypes = {
 };
 
 export { Card };
-

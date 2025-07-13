@@ -81,7 +81,7 @@ const SimplifiedSummaryCards = ({
     };
 
     return (
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${className}`}>
             {/* Available to Allocate Card */}
             <SummaryCard
                 title="Available to Allocate"
@@ -92,7 +92,7 @@ const SimplifiedSummaryCards = ({
             />
 
             {/* Budget Progress Card */}
-            <SummaryCard
+            {/* <SummaryCard
                 title="Budget Progress"
                 value={`${Math.round(summaryData.budgetProgress)}%`}
                 description="of income planned"
@@ -103,7 +103,7 @@ const SimplifiedSummaryCards = ({
                         summaryData.budgetProgress > 90 ? 'yellow' :
                             'gradient'
                 }
-            />
+            /> */}
 
             {/* Needs Attention Card */}
             <SummaryCard

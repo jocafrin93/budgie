@@ -23,10 +23,10 @@ export default function Home() {
       <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
         <div className="min-w-0 space-y-6">
           <div>
-            <h2 className="truncate text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">
+            <h2 className="truncate text-xl font-medium tracking-wide text-primary">
               Budget Overview
             </h2>
-            <p className="text-sm text-gray-600 dark:text-dark-300 mt-1">
+            <p className="text-sm text-base-contentmt-1">
               Your financial snapshot at a glance
             </p>
           </div>

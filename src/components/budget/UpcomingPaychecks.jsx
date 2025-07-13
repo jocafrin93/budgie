@@ -184,7 +184,7 @@ const UpcomingPaychecks = ({
     }
 
     return (
-        <Card className="p-6 bg-base-100">
+        <Card className="p-6 bg-base-200">
             {showHeader && (
                 <div className="flex justify-between items-center mb-6">
                     <div>
