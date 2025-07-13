@@ -12,7 +12,6 @@ import { Checkbox } from '../ui/Form/Checkbox.jsx';
  */
 const PaycheckManager = ({
     accounts = [],
-    onStartPaydayWorkflow // Callback to start the payday workflow
 }) => {
     const {
         paychecks,
@@ -21,7 +20,6 @@ const PaycheckManager = ({
         deletePaycheck,
         togglePaycheckActive,
         getFrequencyOptions,
-        generatePaycheckDates
     } = usePaycheckManagement(accounts);
 
     // Ref for form container to enable auto-scroll
@@ -66,8 +64,8 @@ const PaycheckManager = ({
         useMultipleAccounts: false // New flag for distribution mode
     });
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-    const [showDates, setShowDates] = useState(null);
-    const [nextDates, setNextDates] = useState([]);
+    const [showDates] = useState(null);
+    const [nextDates] = useState([]);
 
     // Frequency options
     const frequencyOptions = getFrequencyOptions();
@@ -368,16 +366,6 @@ const PaycheckManager = ({
         }
     };
 
-    // Show next paycheck dates
-    const handleShowDates = (paycheckId) => {
-        if (showDates === paycheckId) {
-            setShowDates(null);
-            setNextDates([]);
-        } else {
-            setShowDates(paycheckId);
-            setNextDates(generatePaycheckDates(paycheckId, 6));
-        }
-    };
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -471,7 +459,7 @@ const PaycheckManager = ({
     }, [accounts]);
 
     return (
-        <Card className="p-6">
+        <Card className="p-6 bg-base-300">
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-6 gap-4">
                 <div>
                     <h3 className="text-lg font-bold mb-2 text-base-content">Paychecks</h3>
@@ -481,16 +469,7 @@ const PaycheckManager = ({
                 </div>
 
                 {/* Start Payday Workflow Button */}
-                {onStartPaydayWorkflow && (
-                    <Button
-                        onClick={onStartPaydayWorkflow}
-                        color="success"
-                        variant="filled"
-                        className="flex items-center gap-2 w-full lg:w-auto justify-center lg:justify-start"
-                    >
-                        💰 Start Payday Workflow
-                    </Button>
-                )}
+
             </div>
 
             {/* Paycheck List */}
@@ -506,7 +485,7 @@ const PaycheckManager = ({
                         <div
                             key={paycheck.id}
                             className={`p-4 border rounded-lg ${paycheck.isActive ?
-                                'bg-success/10 border-success/30' :
+                                'bg-primary-200 border-primary-300' :
                                 'bg-base-200 border-base-300'}`}
                         >
                             <div className="flex justify-between items-start">
@@ -545,13 +524,7 @@ const PaycheckManager = ({
                                 </div>
 
                                 <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handleShowDates(paycheck.id)}
-                                        className="p-1 text-xs rounded hover"
-                                        title="Show next paycheck dates"
-                                    >
-                                        📅
-                                    </button>
+
                                     <button
                                         onClick={() => togglePaycheckActive(paycheck.id)}
                                         className="p-1 text-xs rounded hover"

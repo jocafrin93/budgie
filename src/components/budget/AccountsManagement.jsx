@@ -533,29 +533,27 @@ export default function AccountsManagement({
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="p-4">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-base-content">
-                            {accounts.length}
-                        </div>
-                        <div className="text-sm text-base-content/60">
-                            Total Accounts
-                        </div>
+                <Card className="p-4 bg-base-300">                    <div className="text-center">
+                    <div className="text-2xl font-bold text-base-content">
+                        {accounts.length}
                     </div>
+                    <div className="text-sm text-base-content/60">
+                        Total Accounts
+                    </div>
+                </div>
                 </Card>
 
-                <Card className="p-4">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-success">
-                            {activeAccounts.length}
-                        </div>
-                        <div className="text-sm text-base-content/60">
-                            Active Accounts
-                        </div>
+                <Card className="p-4 bg-base-300">                    <div className="text-center">
+                    <div className="text-2xl font-bold text-success">
+                        {activeAccounts.length}
                     </div>
+                    <div className="text-sm text-base-content/60">
+                        Active Accounts
+                    </div>
+                </div>
                 </Card>
 
-                <Card className="p-4">
+                <Card className="p-4 bg-base-300">
                     <div className="text-center">
                         <div className={`text-2xl font-bold ${totalWorkingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                             {formatCurrency(totalWorkingBalance)}
@@ -570,11 +568,11 @@ export default function AccountsManagement({
             {/* Accounts List - Responsive Design */}
 
             {/* Desktop Table View */}
-            <div className="hidden lg:block">
+            <div className="hidden bg-base-300 lg:block">
                 <Card className="overflow-hidden">
                     <div className="overflow-x-auto">
                         <Table hoverable className="min-w-full">
-                            <THead>
+                            <THead className="bg-base-300">
                                 <Tr>
                                     <Th>Account</Th>
                                     <Th>Type</Th>

@@ -1,5 +1,6 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
+import { useDaisyThemeContext } from '../../app/contexts/theme/DaisyContext';
 
 const DAISY_THEMES = [
     { name: 'light', label: 'Light', description: 'Clean and bright' },
@@ -16,13 +17,14 @@ const DAISY_THEMES = [
     { name: 'abyss', label: 'Abyss', description: 'Deep blue with green accents' },
 ];
 
-export default function DaisyThemeSwitcher({ currentTheme, onThemeChange, className = '' }) {
+export default function DaisyThemeSwitcher({ className = '' }) {
     const [isOpen, setIsOpen] = useState(false);
+    const { currentTheme, changeTheme } = useDaisyThemeContext();
 
     const currentThemeData = DAISY_THEMES.find(theme => theme.name === currentTheme) || DAISY_THEMES[0];
 
     const handleThemeSelect = (themeName) => {
-        onThemeChange(themeName);
+        changeTheme(themeName);
         setIsOpen(false);
     };
 

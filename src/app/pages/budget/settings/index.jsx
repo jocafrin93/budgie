@@ -81,6 +81,41 @@ export default function BudgetSettings() {
                         })()}
                     </div>
 
+                    {/* Theme Settings Section */}
+                    <div className="bg-base-200 rounded-lg p-6 shadow-sm border border-base-300">
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-base-content mb-2">
+                                Theme & Appearance
+                            </h3>
+                            <p className="text-sm text-base-content/60">
+                                Customize the visual appearance of your budget interface
+                            </p>
+                        </div>
+                        {(() => {
+                            const DaisyThemeSwitcher = React.lazy(() => import("../../../../components/shared/DaisyThemeSwitcher"));
+                            return (
+                                <React.Suspense fallback={<div className="p-4 text-center">Loading theme selector...</div>}>
+                                    <div className="space-y-4">
+                                        <DaisyThemeSwitcher />
+                                        <div className="pt-4 border-t border-base-300">
+                                            <p className="text-sm text-base-content/60 mb-2">
+                                                Want to see all available themes and test them out?
+                                            </p>
+                                            <a
+                                                href="/daisy-theme-test"
+                                                className="btn btn-outline btn-sm"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                🎨 Theme Preview & Test Page
+                                            </a>
+                                        </div>
+                                    </div>
+                                </React.Suspense>
+                            );
+                        })()}
+                    </div>
+
                     {/* Account Management Section */}
                     <div className="bg-base-200 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">

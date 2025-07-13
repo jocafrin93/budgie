@@ -49,15 +49,6 @@ export const navigation = [
         transKey: 'nav.settings.settings',
         Icon: SettingIcon,
     },
-    {
-        id: 'daisy-theme-test',
-        path: '/settings/daisy-theme-test',
-        type: NAV_TYPE_ITEM,
-        title: 'Theme Guide',
-        transKey: 'nav.settings.theme-guide',
-        Icon: CogIcon,
-    },
 ]
 
 export { baseNavigation } from './baseNavigation';
-

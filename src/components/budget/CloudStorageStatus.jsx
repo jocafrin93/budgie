@@ -10,7 +10,7 @@ const CloudStorageStatus = () => {
 
     if (isDevelopment) {
         return (
-            <div className="bg-info/10 border border-info/30 rounded-lg p-4">
+            <div className="bg-info/10 border border-info rounded-lg p-4">
                 <div className="flex items-center">
                     <div className="flex-shrink-0">
                         <svg className="h-5 w-5 text-info" viewBox="0 0 20 20" fill="currentColor">

@@ -47,7 +47,7 @@ const PayeeManagement = ({ payees = [], onAddPayee, onEditPayee, onDeletePayee }
     };
 
     return (
-        <Card className="p-6">
+        <Card className="p-6 bg-base-300">
             <div className="space-y-6">
                 {/* Header */}
                 <div>
@@ -189,9 +189,9 @@ const PayeeManagement = ({ payees = [], onAddPayee, onEditPayee, onDeletePayee }
                 </div>
 
                 {/* Usage Info */}
-                <div className="bg-info/10 border border-info/30 rounded-lg p-4">
+                <div className="bg-info/10 border border-info rounded-lg p-4">
                     <div className="flex items-start space-x-3">
-                        <div className="text-info mt-0.5">
+                        <div className="text-info-content mt-0.5">
                             💡
                         </div>
                         <div className="text-sm text-info">
