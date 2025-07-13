@@ -130,6 +130,21 @@ export default function BudgetOverview() {
         migrateCategoriesWithTypes(planningItems);
     }, [migrateCategoriesWithTypes, planningItems]);
 
+    // Initialize sortOrder for existing categories that don't have it
+    useEffect(() => {
+        const needsSortOrderInit = categories.some(cat => typeof cat.sortOrder !== 'number');
+
+        if (needsSortOrderInit) {
+            console.log('🔄 Initializing sortOrder for existing categories');
+            categories.forEach((category, index) => {
+                if (typeof category.sortOrder !== 'number') {
+                    console.log(`🔄 Setting sortOrder ${index} for category ${category.name}`);
+                    updateCategory(category.id, { sortOrder: index });
+                }
+            });
+        }
+    }, [categories, updateCategory]);
+
     // Conservative paycheck info (from EnhancedBudgetTable)
     const getConservativePaycheckInfo = useCallback((payFreq) => {
         switch (payFreq) {
@@ -192,7 +207,20 @@ export default function BudgetOverview() {
 
     // Transform data for the budget table
     const transformDataForBudgetTable = useCallback((categories = [], planningItems = []) => {
-        return categories.map(category => {
+        // Sort categories by sortOrder first, then by ID for consistent ordering
+        const sortedCategories = [...categories].sort((a, b) => {
+            // If both have sortOrder, use that
+            if (typeof a.sortOrder === 'number' && typeof b.sortOrder === 'number') {
+                return a.sortOrder - b.sortOrder;
+            }
+            // If only one has sortOrder, prioritize it
+            if (typeof a.sortOrder === 'number') return -1;
+            if (typeof b.sortOrder === 'number') return 1;
+            // If neither has sortOrder, sort by ID
+            return a.id - b.id;
+        });
+
+        return sortedCategories.map((category, index) => {
             let monthlyNeed = 0;
             let subItems = [];
             let categoryDueDate = null;
@@ -316,7 +344,10 @@ export default function BudgetOverview() {
                 // Expense-specific properties
                 amount: category.amount,
                 frequency: category.frequency,
-                isRecurring: category.isRecurring
+                isRecurring: category.isRecurring,
+                // CRITICAL: Preserve sortOrder field for drag & drop functionality
+                // Initialize sortOrder if not present (for existing categories)
+                sortOrder: typeof category.sortOrder === 'number' ? category.sortOrder : index
             };
         });
     }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateCategorySpent]);
@@ -846,22 +877,59 @@ export default function BudgetOverview() {
                         getAllUpcomingPaycheckDates={getAllUpcomingPaycheckDates} // Pass paycheck function for account-specific countdown
                         currentBudgetMonth={currentBudgetMonth}
                         monthlyBudgetingHook={monthlyBudgetingHook}
-                        onDataUpdate={(updatedTableData) => {
+                        onDataUpdate={(updatedTableData, options) => {
+                            console.log('🎯 PARENT COMPONENT: onDataUpdate callback triggered!');
                             console.log('🔄 BudgetOverview: Received data update from BudgetCategoriesTable');
                             console.log('📊 Updated table data:', updatedTableData);
+                            console.log('🎯 Update options:', options);
+                            console.log('🔍 Options type check:', options?.type);
+                            console.log('🔍 Options preserveAllFields check:', options?.preserveAllFields);
 
-                            // Update the categories based on the updated table data
-                            updatedTableData.forEach(updatedCategory => {
-                                if (updatedCategory.isParent) {
-                                    // Update the category in the categories state
-                                    updateCategory(updatedCategory.id, {
-                                        allocated: updatedCategory.allocated,
-                                        available: updatedCategory.available,
-                                        spent: updatedCategory.spent
-                                    });
-                                    console.log(`✅ Updated category ${updatedCategory.name}: allocated=${updatedCategory.allocated}, available=${updatedCategory.available}`);
-                                }
-                            });
+                            // Check if this is a reorder operation
+                            if (options && options.type === 'reorder' && options.preserveAllFields) {
+                                console.log('🔄 REORDER OPERATION DETECTED - Preserving all fields including sortOrder');
+                                console.log('📋 Categories to update:', updatedTableData.filter(cat => cat.isParent).map(cat => ({ id: cat.id, name: cat.name, sortOrder: cat.sortOrder })));
+
+                                // For reorder operations, do a bulk update that preserves all fields
+                                updatedTableData.forEach((updatedCategory, index) => {
+                                    if (updatedCategory.isParent) {
+                                        console.log(`🔄 [${index}] Updating category ${updatedCategory.name} (ID: ${updatedCategory.id}) with sortOrder ${updatedCategory.sortOrder}`);
+                                        console.log(`🔍 [${index}] Full category data:`, updatedCategory);
+
+                                        // Update with ALL fields, including sortOrder
+                                        const updateData = {
+                                            ...updatedCategory,
+                                            // Ensure we preserve the sortOrder field
+                                            sortOrder: updatedCategory.sortOrder
+                                        };
+                                        console.log(`🔍 [${index}] Update data being sent:`, updateData);
+
+                                        updateCategory(updatedCategory.id, updateData);
+                                        console.log(`✅ [${index}] updateCategory called for ${updatedCategory.name}`);
+                                    }
+                                });
+
+                                console.log('✅ REORDER UPDATE COMPLETE - sortOrder fields preserved');
+                            } else {
+                                console.log('🔄 REGULAR UPDATE - Only updating allocated/available/spent');
+                                console.log('🔍 Reason for regular update:');
+                                if (!options) console.log('  - No options provided');
+                                if (options && options.type !== 'reorder') console.log('  - Type is not reorder:', options.type);
+                                if (options && !options.preserveAllFields) console.log('  - preserveAllFields is false');
+
+                                // Regular update - only update financial fields
+                                updatedTableData.forEach(updatedCategory => {
+                                    if (updatedCategory.isParent) {
+                                        // Update the category in the categories state
+                                        updateCategory(updatedCategory.id, {
+                                            allocated: updatedCategory.allocated,
+                                            available: updatedCategory.available,
+                                            spent: updatedCategory.spent
+                                        });
+                                        console.log(`✅ Updated category ${updatedCategory.name}: allocated=${updatedCategory.allocated}, available=${updatedCategory.available}`);
+                                    }
+                                });
+                            }
 
                             console.log('🔄 BudgetOverview: Category updates complete');
                         }}

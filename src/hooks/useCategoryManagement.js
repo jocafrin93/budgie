@@ -189,7 +189,7 @@ export const useCategoryManagement = () => {
             return updatedCategory;
           }
 
-          // Normal update - include planning data for single categories
+          // Normal update - preserve ALL fields including sortOrder
           const updatedCategory = {
             ...cat,
             ...categoryData,
@@ -204,6 +204,10 @@ export const useCategoryManagement = () => {
               targetDate: categoryData.targetDate !== undefined ? categoryData.targetDate : cat.targetDate,
               monthlyContribution: categoryData.monthlyContribution !== undefined ? categoryData.monthlyContribution : cat.monthlyContribution,
               alreadySaved: categoryData.alreadySaved !== undefined ? categoryData.alreadySaved : cat.alreadySaved
+            }),
+            // CRITICAL: Preserve sortOrder field for drag & drop functionality
+            ...(categoryData.sortOrder !== undefined && {
+              sortOrder: categoryData.sortOrder
             })
           };
           console.log('Updated category (normal update):', updatedCategory);

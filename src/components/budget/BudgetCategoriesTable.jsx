@@ -7,6 +7,22 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
@@ -18,6 +34,7 @@ import {
     ChevronRight,
     DollarSign,
     Edit,
+    GripVertical,
     Plus,
     Search,
     Target,
@@ -25,7 +42,7 @@ import {
     ToggleRight,
     Trash2
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
     calculateMonthlyAmount,
     calculatePaychecksUntilDue,
@@ -35,6 +52,76 @@ import { getGradientStyle } from '../../utils/gradientUtils';
 import { Button } from '../ui/Button';
 import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
+
+// Sortable Row Component
+const SortableRow = ({ row, children }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: row.original.id.toString(),
+        disabled: !row.original.isParent || row.original.isAddRow,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    // Only apply sortable to parent category rows
+    if (!row.original.isParent || row.original.isAddRow) {
+        return (
+            <tr
+                className={`transition-colors ${row.original.isAddRow
+                    ? 'bg-primary/10 hover'
+                    : !row.original.isParent && !row.original.isAddRow
+                        ? 'bg-base-100 hover bg-base-200'
+                        : row.original.isParent && !row.original.isActive
+                            ? 'bg-base-200 bg-base-200 opacity-60'
+                            : 'hover'
+                    }`}
+            >
+                {children}
+            </tr>
+        );
+    }
+
+    // For sortable rows, we need to clone the children and add drag listeners to the first cell
+    const childrenArray = Array.isArray(children) ? children : [children];
+
+    return (
+        <tr
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            className={`transition-colors ${row.original.isAddRow
+                ? 'bg-primary/10 hover'
+                : !row.original.isParent && !row.original.isAddRow
+                    ? 'bg-base-100 hover bg-base-200'
+                    : row.original.isParent && !row.original.isActive
+                        ? 'bg-base-200 bg-base-200 opacity-60'
+                        : 'hover'
+                }`}
+        >
+            {childrenArray.map((child, index) => {
+                // Add drag listeners to the first cell (drag handle column)
+                if (index === 0 && row.original.isParent && !row.original.isAddRow) {
+                    return React.cloneElement(child, {
+                        ...child.props,
+                        ...listeners,
+                        key: child.key || index
+                    });
+                }
+                return child;
+            })}
+        </tr>
+    );
+};
 
 const BudgetCategoriesTable = ({
     data = [],
@@ -55,15 +142,124 @@ const BudgetCategoriesTable = ({
     const [rowSelection, setRowSelection] = useState({});
     const [transferModal, setTransferModal] = useState({ isOpen: false, targetCategory: null });
     const [quickAllocateModal, setQuickAllocateModal] = useState({ isOpen: false });
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Drag & Drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8, // Require 8px movement before drag starts
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    // Get only parent categories for drag & drop (no sub-items)
+    const parentCategories = useMemo(() => {
+        return data.filter(category => category.isParent !== false);
+    }, [data]);
+
+    // Handle drag end
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        setIsDragging(false);
+
+        console.log('🎯 DRAG & DROP DEBUG - handleDragEnd called');
+        console.log('📋 Active ID:', active?.id);
+        console.log('📋 Over ID:', over?.id);
+        console.log('📋 Event details:', { active, over });
+
+        if (!over || active.id === over.id) {
+            console.log('❌ No drop target or same position - exiting');
+            return;
+        }
+
+        console.log('🔄 Processing drag & drop reorder...');
+
+        // Clear any existing sorting to allow manual ordering
+        console.log('📊 Current sorting before clear:', sorting);
+        setSorting([]);
+        console.log('✅ Sorting cleared');
+
+        // Find the old and new indices
+        console.log('📋 Parent categories:', parentCategories.map(c => ({ id: c.id, name: c.name, sortOrder: c.sortOrder })));
+
+        // Convert IDs to ensure proper comparison (handle both string and number IDs)
+        const activeId = active.id.toString();
+        const overId = over.id.toString();
+
+        console.log('🔍 Looking for activeId:', activeId, 'overId:', overId);
+
+        const oldIndex = parentCategories.findIndex(cat => cat.id.toString() === activeId);
+        const newIndex = parentCategories.findIndex(cat => cat.id.toString() === overId);
+
+        console.log('📍 Old index:', oldIndex);
+        console.log('📍 New index:', newIndex);
+
+        if (oldIndex === -1 || newIndex === -1) {
+            console.log('❌ Invalid indices - exiting');
+            return;
+        }
+
+        // Reorder the categories
+        console.log('🔄 Before arrayMove:', parentCategories.map(c => c.name));
+        const reorderedCategories = arrayMove(parentCategories, oldIndex, newIndex);
+        console.log('🔄 After arrayMove:', reorderedCategories.map(c => c.name));
+
+        // Add sortOrder field to maintain the new order
+        const reorderedWithSortOrder = reorderedCategories.map((category, index) => ({
+            ...category,
+            sortOrder: index
+        }));
+        console.log('📊 Reordered with sortOrder:', reorderedWithSortOrder.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
+
+        // Update the full data array, not just parent categories
+        console.log('📋 Original data length:', data.length);
+        const updatedData = data.map(category => {
+            const reorderedCategory = reorderedWithSortOrder.find(rc => rc.id === category.id);
+            if (reorderedCategory) {
+                console.log(`🔄 Updating category ${category.name} with sortOrder ${reorderedCategory.sortOrder}`);
+            }
+            return reorderedCategory || category;
+        });
+        console.log('📋 Updated data length:', updatedData.length);
+        console.log('📊 Updated data sortOrders:', updatedData.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
+
+        // Update the data through the parent component
+        console.log('🔄 Calling onDataUpdate with updated data...');
+        console.log('🔍 onDataUpdate callback exists?', !!onDataUpdate);
+        console.log('🔍 onDataUpdate callback type:', typeof onDataUpdate);
+
+        if (onDataUpdate) {
+            console.log('🚀 ABOUT TO CALL onDataUpdate - this should trigger parent logs');
+            // Pass a special flag to indicate this is a reorder operation
+            onDataUpdate(updatedData, { type: 'reorder', preserveAllFields: true });
+            console.log('✅ onDataUpdate called successfully with reorder flag');
+        } else {
+            console.log('❌ onDataUpdate callback not provided!');
+        }
+
+        // Note: The parent component should handle the data update through onDataUpdate callback
+        console.log('✅ Drag & drop reorder complete - data sent to parent component');
+    };
+
+    const handleDragStart = (event) => {
+        console.log('🚀 DRAG START - handleDragStart called');
+        console.log('📋 Drag start event:', event);
+        console.log('📋 Active item:', event.active);
+        setIsDragging(true);
+    };
 
     // Handle transfer button click
-    const handleTransferClick = (category) => {
+    const handleTransferClick = useCallback((category) => {
         setTransferModal({
             isOpen: true,
             targetCategory: category,
             mode: 'transfer-into'
         });
-    };
+    }, []);
 
     // Get upcoming paychecks for countdown calculations - memoize to prevent infinite re-renders
     const upcomingPaychecks = useMemo(() => {
@@ -74,12 +270,12 @@ const BudgetCategoriesTable = ({
     }, [getAllUpcomingPaycheckDates]); // Depend on the passed function
 
     // Helper functions
-    const formatCurrency = (amount) => {
+    const formatCurrency = useCallback((amount) => {
         const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
         return `$${numAmount.toFixed(2)}`;
-    };
+    }, []);
 
-    const formatDueDate = (dateString) => {
+    const formatDueDate = useCallback((dateString) => {
         if (!dateString) return '—';
 
         // Handle date string properly to avoid timezone issues
@@ -100,10 +296,10 @@ const BudgetCategoriesTable = ({
         // For other date formats, use standard parsing
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    };
+    }, []);
 
     // Calculate earliest due date and count for multi-item categories
-    const getCategoryDateInfo = (category) => {
+    const getCategoryDateInfo = useCallback((category) => {
         if (!category.subItems || category.subItems.length === 0) {
             // Single category - use its own due date
             return {
@@ -141,10 +337,10 @@ const BudgetCategoriesTable = ({
             additionalCount: itemsWithDates.length - 1,
             sortValue: itemsWithDates[0].dateObj
         };
-    };
+    }, []);
 
     // Format category due date with count badge
-    const formatCategoryDueDate = (category) => {
+    const formatCategoryDueDate = useCallback((category) => {
         const dateInfo = getCategoryDateInfo(category);
 
         if (!dateInfo.earliestDate) {
@@ -158,9 +354,9 @@ const BudgetCategoriesTable = ({
         }
 
         return formattedDate;
-    };
+    }, [getCategoryDateInfo, formatDueDate]);
 
-    const getDueDateUrgency = (dateString) => {
+    const getDueDateUrgency = useCallback((dateString) => {
         if (!dateString) return 'none';
 
         let dueDate;
@@ -182,9 +378,9 @@ const BudgetCategoriesTable = ({
         if (daysUntil <= 7) return 'urgent';
         if (daysUntil <= 30) return 'soon';
         return 'future';
-    };
+    }, []);
 
-    const getUrgencyStyles = (urgency) => {
+    const getUrgencyStyles = useCallback((urgency) => {
         switch (urgency) {
             case 'overdue':
                 return 'bg-error-lighter/20 text-error border-error';
@@ -197,12 +393,34 @@ const BudgetCategoriesTable = ({
             default:
                 return 'bg-base-200 text-base-content/60 border-base-300';
         }
-    };
+    }, []);
 
     // Transform data to include sub-items as separate rows
     const flattenedData = useMemo(() => {
         const result = [];
-        data.forEach((category, index) => {
+
+        console.log('🔍 TABLE COMPONENT DATA DEBUG:');
+        console.log('📊 Data prop received by table:', data.map(c => ({ id: c.id, name: c.name, sortOrder: c.sortOrder })));
+        console.log('📊 Data prop length:', data.length);
+        console.log('📊 First category full data:', data[0]);
+
+        // Sort data by sortOrder if no other sorting is applied, otherwise use original order
+        const sortedData = sorting.length === 0
+            ? [...data].sort((a, b) => {
+                // Use sortOrder if available, otherwise fall back to original index
+                const orderA = typeof a.sortOrder === 'number' ? a.sortOrder : data.indexOf(a);
+                const orderB = typeof b.sortOrder === 'number' ? b.sortOrder : data.indexOf(b);
+                console.log(`🔍 SORT COMPARISON: ${a.name} (sortOrder: ${a.sortOrder}, orderA: ${orderA}) vs ${b.name} (sortOrder: ${b.sortOrder}, orderB: ${orderB}) = ${orderA - orderB}`);
+                return orderA - orderB;
+            })
+            : data;
+
+        console.log('🔍 FLATTENED DATA SORT DEBUG:');
+        console.log('📊 Original data order:', data.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
+        console.log('📊 Sorted data order:', sortedData.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
+        console.log('📊 Sorting state:', sorting);
+
+        sortedData.forEach((category, index) => {
             // Add the main category
             result.push({
                 ...category,
@@ -303,7 +521,7 @@ const BudgetCategoriesTable = ({
             }
         });
         return result;
-    }, [data, expanded, upcomingPaychecks]);
+    }, [data, expanded, upcomingPaychecks, sorting]);
 
     // Custom header component with sorting
     const SortableHeader = ({ column, children }) => {
@@ -332,6 +550,29 @@ const BudgetCategoriesTable = ({
     // Table columns definition
     const columns = useMemo(
         () => [
+            // Drag handle column (only for parent categories)
+            columnHelper.display({
+                id: 'dragHandle',
+                header: '',
+                cell: ({ row }) => {
+                    // Only show drag handle for parent categories
+                    if (!row.original.isParent || row.original.isAddRow) return null;
+
+                    return (
+                        <div className="flex items-center justify-center">
+                            <button
+                                className={`p-1 hover:bg-base-200 rounded transition-colors cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+                                title="Drag to reorder"
+                            >
+                                <GripVertical className="w-4 h-4 text-base-content/60" />
+                            </button>
+                        </div>
+                    );
+                },
+                size: 32,
+                enableSorting: false, // Disable sorting for drag handle column
+            }),
+
             // Row selection checkbox
             columnHelper.display({
                 id: 'select',
@@ -701,9 +942,7 @@ const BudgetCategoriesTable = ({
 
                     // Don't show allocated amounts for sub-items - funds are allocated to categories, not individual items
                     if (isSubItem) return (
-                        <div className="text-center">
-                            <CalendarOff className="w-4 h-4 text-base-content/60" />
-                        </div>
+                        '—'
                     );
 
                     const value = getValue();
@@ -725,9 +964,7 @@ const BudgetCategoriesTable = ({
 
                     // Don't show spent amounts for sub-items - spending is tracked at category level
                     if (isSubItem) return (
-                        <div className="text-center">
-                            <CalendarOff className="w-4 h-4 text-base-content/60" />
-                        </div>
+                        '—'
                     );
 
                     const value = getValue();
@@ -748,10 +985,8 @@ const BudgetCategoriesTable = ({
                     const isSubItem = !row.original.isParent;
 
                     // Don't show available amounts for sub-items - only categories have available funds
-                    if (isSubItem) return (
-                        <div className="text-center">
-                            <CalendarOff className="w-4 h-4 text-base-content/60" />
-                        </div>
+                    if (isSubItem) return ('—'
+
                     );
 
                     const value = getValue();
@@ -787,6 +1022,7 @@ const BudgetCategoriesTable = ({
                 },
                 size: 120,
             }),
+
 
             // Due date
             columnHelper.accessor('dueDate', {
@@ -880,7 +1116,8 @@ const BudgetCategoriesTable = ({
             onEditItem,
             onToggleItemActive,
             upcomingPaychecks,
-            handleTransferClick
+            handleTransferClick,
+            isDragging
         ]
     );
 
@@ -1064,276 +1301,392 @@ const BudgetCategoriesTable = ({
             })()}
 
             {/* Table */}
-            <div className="bg-base-100 rounded-lg border border-base-300 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-base-200 border-b border-base-300">
-                            {table.getHeaderGroups().map(headerGroup => (
-                                <tr key={headerGroup.id}>
-                                    {headerGroup.headers.map(header => (
-                                        <th
-                                            key={header.id}
-                                            className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
-                                            style={{ width: header.getSize() }}
-                                        >
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(header.column.columnDef.header, header.getContext())
-                                            }
-                                        </th>
-                                    ))}
-                                </tr>
-                            ))}
-                        </thead>
-                        <tbody className="bg-base-100 divide-y divide-gray-200">
-                            {table.getRowModel().rows.map(row => {
-                                const isSubItem = !row.original.isParent && !row.original.isAddRow;
-                                const isAddRow = row.original.isAddRow;
-                                const isInactive = row.original.isParent && !row.original.isActive;
-                                const isGoalProgress = row.original.isGoalProgress;
-                                const isExpenseDetails = row.original.isExpenseDetails;
+            <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+            >
+                <div className="bg-base-100 rounded-lg border border-base-300 overflow-hidden shadow-sm">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-base-200 border-b border-base-300">
+                                {table.getHeaderGroups().map(headerGroup => (
+                                    <tr key={headerGroup.id}>
+                                        {headerGroup.headers.map(header => (
+                                            <th
+                                                key={header.id}
+                                                className="px-4 py-3 text-left text-xs font-medium text-base-content/60 uppercase tracking-wider"
+                                                style={{ width: header.getSize() }}
+                                            >
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(header.column.columnDef.header, header.getContext())
+                                                }
+                                            </th>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </thead>
+                            <SortableContext
+                                items={parentCategories.map(cat => cat.id.toString())}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <tbody className="bg-base-100 divide-y divide-gray-200">
+                                    {table.getRowModel().rows.map(row => {
+                                        const isGoalProgress = row.original.isGoalProgress;
+                                        const isExpenseDetails = row.original.isExpenseDetails;
 
-                                // Special handling for goal progress and expense details rows
-                                if (isGoalProgress) {
-                                    const item = row.original;
-                                    const progressColor = item.progressPercentage >= 100 ? 'success' :
-                                        item.progressPercentage >= 75 ? 'primary' :
-                                            item.progressPercentage >= 50 ? 'warning' : 'neutral';
+                                        // Special handling for goal progress and expense details rows
+                                        if (isGoalProgress) {
+                                            const item = row.original;
+                                            const progressColor = item.progressPercentage >= 100 ? 'success' :
+                                                item.progressPercentage >= 75 ? 'primary' :
+                                                    item.progressPercentage >= 50 ? 'warning' : 'neutral';
 
-                                    return (
-                                        <tr key={row.id} className="bg-success-lighter/20">
-                                            <td colSpan={columns.length} className="px-4 py-2">
-                                                <div className="bg-success-lighter/20 rounded p-3 border border-success-light">
-                                                    <div className="space-y-2">
-                                                        {/* Progress header */}
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-lg">🎯</span>
-                                                                <span className="text-sm font-semibold text-success-dark">Goal Progress</span>
-                                                            </div>
-                                                            <div className="text-sm font-bold text-success-dark">
-                                                                {item.progressPercentage.toFixed(1)}%
-                                                            </div>
-                                                        </div>
+                                            return (
+                                                <tr key={row.id} className="bg-success-lighter/20">
+                                                    <td colSpan={columns.length} className="px-4 py-2">
+                                                        <div className="bg-success-lighter/20 rounded p-3 border border-success-light">
+                                                            <div className="space-y-2">
+                                                                {/* Progress header */}
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-lg">🎯</span>
+                                                                        <span className="text-sm font-semibold text-success-dark">Goal Progress</span>
+                                                                    </div>
+                                                                    <div className="text-sm font-bold text-success-dark">
+                                                                        {item.progressPercentage.toFixed(1)}%
+                                                                    </div>
+                                                                </div>
 
-                                                        {/* Progress bar */}
-                                                        <div className="w-full bg-base-300 rounded-full h-2">
-                                                            <div
-                                                                className={`h-2 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-success' :
-                                                                    progressColor === 'primary' ? 'bg-info/50' :
-                                                                        progressColor === 'warning' ? 'bg-warning' :
-                                                                            'bg-base-300'
-                                                                    }`}
-                                                                style={{ width: `${Math.min(100, item.progressPercentage)}%` }}
-                                                            />
-                                                        </div>
+                                                                {/* Progress bar */}
+                                                                <div className="w-full bg-base-300 rounded-full h-2">
+                                                                    <div
+                                                                        className={`h-2 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-success' :
+                                                                            progressColor === 'primary' ? 'bg-info/50' :
+                                                                                progressColor === 'warning' ? 'bg-warning' :
+                                                                                    'bg-base-300'
+                                                                            }`}
+                                                                        style={{ width: `${Math.min(100, item.progressPercentage)}%` }}
+                                                                    />
+                                                                </div>
 
-                                                        {/* Goal details grid */}
-                                                        <div className="grid grid-cols-4 gap-4 text-xs">
-                                                            <div className="text-center">
-                                                                <div className="text-base-content/60">Saved</div>
-                                                                <div className="font-bold text-success">
-                                                                    ${(parseFloat(item.currentAmount) || 0).toFixed(2)}
+                                                                {/* Goal details grid */}
+                                                                <div className="grid grid-cols-4 gap-4 text-xs">
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Saved</div>
+                                                                        <div className="font-bold text-success">
+                                                                            ${(parseFloat(item.currentAmount) || 0).toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Target</div>
+                                                                        <div className="font-bold text-base-content">
+                                                                            ${(parseFloat(item.targetAmount) || 0).toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Per Paycheck</div>
+                                                                        <div className="font-bold text-info">
+                                                                            ${(parseFloat(item.perPaycheckContribution) || 0).toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">
+                                                                            {item.daysUntilTarget !== null ? (
+                                                                                item.daysUntilTarget > 0 ? 'Days Left' :
+                                                                                    item.daysUntilTarget === 0 ? 'Due Today' : 'Overdue'
+                                                                            ) : 'Target Date'}
+                                                                        </div>
+                                                                        <div className={`font-bold ${item.daysUntilTarget !== null ? (
+                                                                            item.daysUntilTarget > 30 ? 'text-base-content/60' :
+                                                                                item.daysUntilTarget > 7 ? 'text-warning' :
+                                                                                    item.daysUntilTarget >= 0 ? 'text-error' :
+                                                                                        'text-error-dark'
+                                                                        ) : 'text-base-content/60'
+                                                                            }`}>
+                                                                            {item.daysUntilTarget !== null ? (
+                                                                                item.daysUntilTarget > 0 ? `${item.daysUntilTarget} days` :
+                                                                                    item.daysUntilTarget === 0 ? 'Today!' :
+                                                                                        `${Math.abs(item.daysUntilTarget)} days ago`
+                                                                            ) : (
+                                                                                item.targetDate ? new Date(item.targetDate).toLocaleDateString() : 'Not set'
+                                                                            )}
+                                                                        </div>
+                                                                        {item.targetDate && (
+                                                                            <div className="text-xs text-base-content/60 mt-1">
+                                                                                ({new Date(item.targetDate).toLocaleDateString()})
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                            <div className="text-center">
-                                                                <div className="text-base-content/60">Target</div>
-                                                                <div className="font-bold text-base-content">
-                                                                    ${(parseFloat(item.targetAmount) || 0).toFixed(2)}
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-center">
-                                                                <div className="text-base-content/60">Per Paycheck</div>
-                                                                <div className="font-bold text-info">
-                                                                    ${(parseFloat(item.perPaycheckContribution) || 0).toFixed(2)}
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-center">
-                                                                <div className="text-base-content/60">
-                                                                    {item.daysUntilTarget !== null ? (
-                                                                        item.daysUntilTarget > 0 ? 'Days Left' :
-                                                                            item.daysUntilTarget === 0 ? 'Due Today' : 'Overdue'
-                                                                    ) : 'Target Date'}
-                                                                </div>
-                                                                <div className={`font-bold ${item.daysUntilTarget !== null ? (
-                                                                    item.daysUntilTarget > 30 ? 'text-base-content/60' :
-                                                                        item.daysUntilTarget > 7 ? 'text-warning' :
-                                                                            item.daysUntilTarget >= 0 ? 'text-error' :
-                                                                                'text-error-dark'
-                                                                ) : 'text-base-content/60'
-                                                                    }`}>
-                                                                    {item.daysUntilTarget !== null ? (
-                                                                        item.daysUntilTarget > 0 ? `${item.daysUntilTarget} days` :
-                                                                            item.daysUntilTarget === 0 ? 'Today!' :
-                                                                                `${Math.abs(item.daysUntilTarget)} days ago`
-                                                                    ) : (
-                                                                        item.targetDate ? new Date(item.targetDate).toLocaleDateString() : 'Not set'
-                                                                    )}
-                                                                </div>
-                                                                {item.targetDate && (
-                                                                    <div className="text-xs text-base-content/60 mt-1">
-                                                                        ({new Date(item.targetDate).toLocaleDateString()})
+
+                                                                {/* Remaining amount - inline */}
+                                                                {item.progressPercentage < 100 && (
+                                                                    <div className="text-center text-xs pt-1 border-t border-success-light">
+                                                                        <span className="text-base-content/60">Still need: </span>
+                                                                        <span className="font-bold text-warning">
+                                                                            ${(item.targetAmount - item.currentAmount).toFixed(2)}
+                                                                        </span>
                                                                     </div>
                                                                 )}
                                                             </div>
                                                         </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
 
-                                                        {/* Remaining amount - inline */}
-                                                        {item.progressPercentage < 100 && (
-                                                            <div className="text-center text-xs pt-1 border-t border-success-light">
-                                                                <span className="text-base-content/60">Still need: </span>
-                                                                <span className="font-bold text-warning">
-                                                                    ${(item.targetAmount - item.currentAmount).toFixed(2)}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                }
-
-                                if (isExpenseDetails) {
-                                    const item = row.original;
-                                    return (
-                                        <tr key={row.id} className="bg-info/10">
-                                            <td colSpan={columns.length} className="px-4 py-2">
-                                                <div className="bg-info/10 rounded p-3 border border-info">
-                                                    <div className="space-y-2">
-                                                        {/* Expense header */}
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-lg">💸</span>
-                                                                <span className="text-sm font-semibold text-info">Expense Details</span>
-                                                            </div>
-                                                            {item.paychecksLeft !== null && (
-                                                                <div className="text-sm font-bold text-info">
-                                                                    {item.paychecksLeft === 0 ? 'Due Now!' :
-                                                                        item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
+                                        if (isExpenseDetails) {
+                                            const item = row.original;
+                                            return (
+                                                <tr key={row.id} className="bg-info/10">
+                                                    <td colSpan={columns.length} className="px-4 py-2">
+                                                        <div className="bg-info/10 rounded p-3 border border-info">
+                                                            <div className="space-y-2">
+                                                                {/* Expense header */}
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-lg">💸</span>
+                                                                        <span className="text-sm font-semibold text-info">Expense Details</span>
+                                                                    </div>
+                                                                    {item.paychecksLeft !== null && (
+                                                                        <div className="text-sm font-bold text-info">
+                                                                            {item.paychecksLeft === 0 ? 'Due Now!' :
+                                                                                item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
-                                                            )}
+
+                                                                {/* Expense details grid */}
+                                                                <div className="grid grid-cols-3 gap-4 text-xs">
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Amount</div>
+                                                                        <div className="font-bold text-info">
+                                                                            ${(parseFloat(item.amount) || 0).toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Frequency</div>
+                                                                        <div className="font-bold text-base-content capitalize">
+                                                                            {(item.frequency || 'monthly').replace('-', ' ')}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Type</div>
+                                                                        <div className="font-bold text-base-content">
+                                                                            {item.isRecurring ? 'Recurring' : 'One-time'}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {/* Due date info - inline */}
+                                                                {item.dueDate && (
+                                                                    <div className="text-center text-xs pt-1 border-t border-info">
+                                                                        <div className="text-base-content/60">Due Date</div>
+                                                                        <div className="font-bold text-warning">
+                                                                            {formatDueDate(item.dueDate)}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
 
-                                                        {/* Expense details grid */}
-                                                        <div className="grid grid-cols-3 gap-4 text-xs">
-                                                            <div className="text-center">
-                                                                <div className="text-base-content/60">Amount</div>
-                                                                <div className="font-bold text-info">
-                                                                    ${(parseFloat(item.amount) || 0).toFixed(2)}
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-center">
-                                                                <div className="text-base-content/60">Frequency</div>
-                                                                <div className="font-bold text-base-content capitalize">
-                                                                    {(item.frequency || 'monthly').replace('-', ' ')}
-                                                                </div>
-                                                            </div>
-                                                            <div className="text-center">
-                                                                <div className="text-base-content/60">Type</div>
-                                                                <div className="font-bold text-base-content">
-                                                                    {item.isRecurring ? 'Recurring' : 'One-time'}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Due date info - inline */}
-                                                        {item.dueDate && (
-                                                            <div className="text-center text-xs pt-1 border-t border-info">
-                                                                <div className="text-base-content/60">Due Date</div>
-                                                                <div className="font-bold text-warning">
-                                                                    {formatDueDate(item.dueDate)}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                }
-
-                                return (
-                                    <tr
-                                        key={row.id}
-                                        className={`transition-colors ${isAddRow
-                                            ? 'bg-primary/10 hover'
-                                            : isSubItem
-                                                ? 'bg-base-100 hover bg-base-200'
-                                                : isInactive
-                                                    ? 'bg-base-200 bg-base-200 opacity-60'
-                                                    : 'hover'
-                                            }`}
-                                    >
-                                        {row.getVisibleCells().map(cell => (
-                                            <td
-                                                key={cell.id}
-                                                className="px-4 py-2 whitespace-nowrap"
-                                                style={{ width: cell.column.getSize() }}
+                                        return (
+                                            <SortableRow
+                                                key={row.id}
+                                                row={row}
+                                                isDragging={isDragging}
                                             >
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+                                                {row.getVisibleCells().map(cell => (
+                                                    <td
+                                                        key={cell.id}
+                                                        className="px-4 py-2 whitespace-nowrap"
+                                                        style={{ width: cell.column.getSize() }}
+                                                    >
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </td>
+                                                ))}
+                                            </SortableRow>
+                                        );
+                                    })}
+                                </tbody>
+                            </SortableContext>
+                        </table>
+                    </div>
 
-                {/* Summary footer */}
-                <div className="bg-base-200 border-t border-base-300 px-4 py-3">
-                    <div className="flex items-center justify-between text-sm">
-                        <div className="text-base-content/60">
-                            {data.length} categories • {data.reduce((sum, cat) => sum + (cat.subItems?.length || 0), 0)} total items
-                        </div>
-                        <div className="flex items-center gap-6 text-right">
-                            <div>
-                                <span className="text-base-content/60">Total Monthly Need: </span>
-                                <span className="font-medium text-base-content">
-                                    {formatCurrency(data.reduce((sum, cat) => sum + cat.monthlyNeed, 0))}
-                                </span>
+                    {/* Summary footer */}
+                    <div className="bg-base-200 border-t border-base-300 px-4 py-3">
+                        <div className="flex items-center justify-between text-sm">
+                            <div className="text-base-content/60">
+                                {data.length} categories • {data.reduce((sum, cat) => sum + (cat.subItems?.length || 0), 0)} total items
                             </div>
-                            <div>
-                                <span className="text-base-content/60">Total Allocated: </span>
-                                <span className="font-medium text-success">
-                                    {formatCurrency(data.reduce((sum, cat) => sum + cat.allocated, 0))}
-                                </span>
-                            </div>
-                            <div>
-                                <span className="text-base-content/60">Total Available: </span>
-                                <span className="font-medium text-info">
-                                    {formatCurrency(data.reduce((sum, cat) => sum + cat.available, 0))}
-                                </span>
+                            <div className="flex items-center gap-6 text-right">
+                                <div>
+                                    <span className="text-base-content/60">Total Monthly Need: </span>
+                                    <span className="font-medium text-base-content">
+                                        {formatCurrency(data.reduce((sum, cat) => sum + cat.monthlyNeed, 0))}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-base-content/60">Total Allocated: </span>
+                                    <span className="font-medium text-success">
+                                        {formatCurrency(data.reduce((sum, cat) => sum + cat.allocated, 0))}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-base-content/60">Total Available: </span>
+                                    <span className="font-medium text-info">
+                                        {formatCurrency(data.reduce((sum, cat) => sum + cat.available, 0))}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Transfer Modal */}
-            <TransferModal
-                isOpen={transferModal.isOpen}
-                onClose={() => setTransferModal({ isOpen: false, targetCategory: null })}
-                targetCategory={transferModal.targetCategory}
-                categories={data}
-                activeBudgetAllocations={[]} // This would come from props
-                onTransferComplete={(transferData) => {
-                    console.log('🎯 BudgetCategoriesTable: Transfer completed callback received');
-                    console.log('📊 Transfer data received:', transferData);
-                    console.log('📋 Current categories data before update:', data);
+                {/* Transfer Modal */}
+                <TransferModal
+                    isOpen={transferModal.isOpen}
+                    onClose={() => setTransferModal({ isOpen: false, targetCategory: null })}
+                    targetCategory={transferModal.targetCategory}
+                    categories={data}
+                    activeBudgetAllocations={[]} // This would come from props
+                    onTransferComplete={(transferData) => {
+                        console.log('🎯 BudgetCategoriesTable: Transfer completed callback received');
+                        console.log('📊 Transfer data received:', transferData);
+                        console.log('📋 Current categories data before update:', data);
 
-                    // Handle the transfer completion here
-                    if (transferData.type === 'allocation') {
-                        // Allocation from "to be allocated" to a category
-                        console.log('💰 Processing allocation from unallocated funds');
-                        console.log(`📤 Adding $${transferData.amount} to category ${transferData.toCategory}`);
+                        // Handle the transfer completion here
+                        if (transferData.type === 'allocation') {
+                            // Allocation from "to be allocated" to a category
+                            console.log('💰 Processing allocation from unallocated funds');
+                            console.log(`📤 Adding $${transferData.amount} to category ${transferData.toCategory}`);
 
-                        // Find and update the target category
+                            // Find and update the target category
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.toCategory) {
+                                    const newAvailable = (category.available || 0) + transferData.amount;
+                                    const newAllocated = (category.allocated || 0) + transferData.amount;
+                                    console.log(`✅ Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
+                                    return {
+                                        ...category,
+                                        available: newAvailable,
+                                        allocated: newAllocated
+                                    };
+                                }
+                                return category;
+                            });
+
+                            console.log('📋 Updated categories data:', updatedData);
+
+                            // Notify parent component to update its data and re-render
+                            if (onDataUpdate) {
+                                console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                                onDataUpdate(updatedData);
+                            } else {
+                                console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                            }
+
+                        } else if (transferData.type === 'deallocate') {
+                            // Transfer from category back to "to be allocated"
+                            console.log('💸 Processing deallocation back to unallocated funds');
+                            console.log(`📤 Removing $${transferData.amount} from category ${transferData.fromCategory}`);
+
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.fromCategory) {
+                                    const newAvailable = (category.available || 0) - transferData.amount;
+                                    const newAllocated = (category.allocated || 0) - transferData.amount;
+                                    console.log(`📉 Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
+                                    return {
+                                        ...category,
+                                        available: newAvailable,
+                                        allocated: newAllocated
+                                    };
+                                }
+                                return category;
+                            });
+
+                            console.log('📋 Updated categories data:', updatedData);
+
+                            // Notify parent component to update its data and re-render
+                            if (onDataUpdate) {
+                                console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                                onDataUpdate(updatedData);
+                            } else {
+                                console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                            }
+
+                        } else if (transferData.type === 'transfer') {
+                            // Category-to-category transfer
+                            console.log('🔄 Processing category-to-category transfer');
+                            console.log(`📤 Moving $${transferData.amount} from category ${transferData.fromCategory} to category ${transferData.toCategory}`);
+
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.fromCategory) {
+                                    const newAvailable = (category.available || 0) - transferData.amount;
+                                    console.log(`📉 Source category ${category.name}: available ${category.available} → ${newAvailable}`);
+                                    return {
+                                        ...category,
+                                        available: newAvailable
+                                    };
+                                } else if (category.id === transferData.toCategory) {
+                                    const newAvailable = (category.available || 0) + transferData.amount;
+                                    console.log(`📈 Target category ${category.name}: available ${category.available} → ${newAvailable}`);
+                                    return {
+                                        ...category,
+                                        available: newAvailable
+                                    };
+                                }
+                                return category;
+                            });
+
+                            console.log('📋 Updated categories data:', updatedData);
+
+                            // Notify parent component to update its data and re-render
+                            if (onDataUpdate) {
+                                console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                                onDataUpdate(updatedData);
+                            } else {
+                                console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                            }
+                        }
+
+                        setTransferModal({ isOpen: false, targetCategory: null });
+                    }}
+                />
+
+                {/* Quick Allocate Modal */}
+                <QuickAllocateModal
+                    isOpen={quickAllocateModal.isOpen}
+                    onClose={() => setQuickAllocateModal({ isOpen: false })}
+                    availableToAllocate={(() => {
+                        const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
+                            const accountTransactions = [];
+                            const startingBalance = account.startingBalance || account.balance || 0;
+                            const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+                            return sum + workingBalance;
+                        }, 0);
+                        const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
+                        return totalWorkingBalance - totalAllocated;
+                    })()}
+                    categories={data}
+                    accounts={accounts}
+                    onBulkAllocate={(allocations) => {
+                        console.log('🚀 BudgetCategoriesTable: Bulk allocation received');
+                        console.log('📊 Allocations:', allocations);
+
+                        // Apply all allocations to the categories
                         const updatedData = data.map(category => {
-                            if (category.id === transferData.toCategory) {
-                                const newAvailable = (category.available || 0) + transferData.amount;
-                                const newAllocated = (category.allocated || 0) + transferData.amount;
+                            const allocation = allocations.find(a => a.categoryId === category.id);
+                            if (allocation) {
+                                const newAvailable = (category.available || 0) + allocation.amount;
+                                const newAllocated = (category.allocated || 0) + allocation.amount;
                                 console.log(`✅ Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
                                 return {
                                     ...category,
@@ -1354,123 +1707,10 @@ const BudgetCategoriesTable = ({
                             console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
                         }
 
-                    } else if (transferData.type === 'deallocate') {
-                        // Transfer from category back to "to be allocated"
-                        console.log('💸 Processing deallocation back to unallocated funds');
-                        console.log(`📤 Removing $${transferData.amount} from category ${transferData.fromCategory}`);
-
-                        const updatedData = data.map(category => {
-                            if (category.id === transferData.fromCategory) {
-                                const newAvailable = (category.available || 0) - transferData.amount;
-                                const newAllocated = (category.allocated || 0) - transferData.amount;
-                                console.log(`📉 Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
-                                return {
-                                    ...category,
-                                    available: newAvailable,
-                                    allocated: newAllocated
-                                };
-                            }
-                            return category;
-                        });
-
-                        console.log('📋 Updated categories data:', updatedData);
-
-                        // Notify parent component to update its data and re-render
-                        if (onDataUpdate) {
-                            console.log('🔄 Calling onDataUpdate to trigger parent re-render');
-                            onDataUpdate(updatedData);
-                        } else {
-                            console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
-                        }
-
-                    } else if (transferData.type === 'transfer') {
-                        // Category-to-category transfer
-                        console.log('🔄 Processing category-to-category transfer');
-                        console.log(`📤 Moving $${transferData.amount} from category ${transferData.fromCategory} to category ${transferData.toCategory}`);
-
-                        const updatedData = data.map(category => {
-                            if (category.id === transferData.fromCategory) {
-                                const newAvailable = (category.available || 0) - transferData.amount;
-                                console.log(`📉 Source category ${category.name}: available ${category.available} → ${newAvailable}`);
-                                return {
-                                    ...category,
-                                    available: newAvailable
-                                };
-                            } else if (category.id === transferData.toCategory) {
-                                const newAvailable = (category.available || 0) + transferData.amount;
-                                console.log(`📈 Target category ${category.name}: available ${category.available} → ${newAvailable}`);
-                                return {
-                                    ...category,
-                                    available: newAvailable
-                                };
-                            }
-                            return category;
-                        });
-
-                        console.log('📋 Updated categories data:', updatedData);
-
-                        // Notify parent component to update its data and re-render
-                        if (onDataUpdate) {
-                            console.log('🔄 Calling onDataUpdate to trigger parent re-render');
-                            onDataUpdate(updatedData);
-                        } else {
-                            console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
-                        }
-                    }
-
-                    setTransferModal({ isOpen: false, targetCategory: null });
-                }}
-            />
-
-            {/* Quick Allocate Modal */}
-            <QuickAllocateModal
-                isOpen={quickAllocateModal.isOpen}
-                onClose={() => setQuickAllocateModal({ isOpen: false })}
-                availableToAllocate={(() => {
-                    const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
-                        const accountTransactions = [];
-                        const startingBalance = account.startingBalance || account.balance || 0;
-                        const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-                        return sum + workingBalance;
-                    }, 0);
-                    const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
-                    return totalWorkingBalance - totalAllocated;
-                })()}
-                categories={data}
-                accounts={accounts}
-                onBulkAllocate={(allocations) => {
-                    console.log('🚀 BudgetCategoriesTable: Bulk allocation received');
-                    console.log('📊 Allocations:', allocations);
-
-                    // Apply all allocations to the categories
-                    const updatedData = data.map(category => {
-                        const allocation = allocations.find(a => a.categoryId === category.id);
-                        if (allocation) {
-                            const newAvailable = (category.available || 0) + allocation.amount;
-                            const newAllocated = (category.allocated || 0) + allocation.amount;
-                            console.log(`✅ Category ${category.name}: available ${category.available} → ${newAvailable}, allocated ${category.allocated} → ${newAllocated}`);
-                            return {
-                                ...category,
-                                available: newAvailable,
-                                allocated: newAllocated
-                            };
-                        }
-                        return category;
-                    });
-
-                    console.log('📋 Updated categories data:', updatedData);
-
-                    // Notify parent component to update its data and re-render
-                    if (onDataUpdate) {
-                        console.log('🔄 Calling onDataUpdate to trigger parent re-render');
-                        onDataUpdate(updatedData);
-                    } else {
-                        console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
-                    }
-
-                    setQuickAllocateModal({ isOpen: false });
-                }}
-            />
+                        setQuickAllocateModal({ isOpen: false });
+                    }}
+                />
+            </DndContext>
         </div>
     );
 };

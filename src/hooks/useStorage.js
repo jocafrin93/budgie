@@ -9,7 +9,7 @@ export const useStorage = (key, defaultValue) => {
 
     // ALWAYS prioritize cloud storage when authenticated (dev AND production)
     if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
-        console.log(`☁️ STORAGE (${key}) - Using CLOUD STORAGE (authenticated)`);
+        // console.log(`☁️ STORAGE (${key}) - Using CLOUD STORAGE (authenticated)`);
         return cloudStorageResult;
     }
 
@@ -29,7 +29,7 @@ export const useStorage = (key, defaultValue) => {
     }
 
     // Fallback to localStorage only when cloud storage is not authenticated
-    console.log(`💾 STORAGE (${key}) - Using localStorage fallback (not authenticated)`);
+    // console.log(`💾 STORAGE (${key}) - Using localStorage fallback (not authenticated)`);
     return [
         localStorageResult[0],
         localStorageResult[1],

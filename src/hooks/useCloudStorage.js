@@ -359,7 +359,7 @@ export const useCloudStorage = (key, defaultValue) => {
     // Save data when value changes (debounced)
     useEffect(() => {
         if (isLoading || !isAuthenticated) {
-            console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: loading=${isLoading}, authenticated=${isAuthenticated}`);
+            // console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: loading=${isLoading}, authenticated=${isAuthenticated}`);
             return;
         }
 

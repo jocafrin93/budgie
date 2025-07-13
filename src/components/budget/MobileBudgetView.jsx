@@ -531,9 +531,8 @@ const MobileBudgetView = ({
                         setTransferModal({ isOpen: false, targetCategory: null });
                     }}
                 />
-            )
-            }
-        </div >
+            )}
+        </div>
     );
 };
 

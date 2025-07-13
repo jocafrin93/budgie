@@ -323,7 +323,8 @@ const TransactionFormModal = ({
     payees = [],
     onAddPayee,
     onSave,
-    isEdit = false
+    isEdit = false,
+    viewAccount = 'all'
 }) => {
     // Get today's date in local timezone to avoid timezone issues
     const getTodayLocalDate = () => {
@@ -360,13 +361,14 @@ const TransactionFormModal = ({
             setTransactionType(transaction.amount >= 0 ? 'inflow' : 'outflow');
             setShowSplits(transaction.isSplit || (transaction.splits && transaction.splits.length > 0));
         } else {
-            // New transaction - reset to clean defaults
+            // New transaction - reset to clean defaults with account defaulting
+            const defaultAccountId = viewAccount && viewAccount !== 'all' ? viewAccount : '';
             const cleanDefaults = {
                 date: getTodayLocalDate(),
                 payee: '',
                 amount: '',
                 categoryId: '',
-                accountId: '',
+                accountId: defaultAccountId,
                 memo: '',
                 isCleared: false,
                 splits: [],
@@ -378,7 +380,7 @@ const TransactionFormModal = ({
             setTransactionType('outflow');
             setShowSplits(false);
         }
-    }, [transaction, isOpen]); // Add isOpen dependency to reset when modal opens
+    }, [transaction, isOpen, viewAccount]); // Add viewAccount dependency
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -1750,6 +1752,7 @@ export default function TransactionsTab({
                 onAddPayee={onAddPayee}
                 onSave={handleSaveTransaction}
                 isEdit={!!editingTransaction}
+                viewAccount={viewAccount}
             />
         </div>
     );
