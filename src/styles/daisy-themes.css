@@ -600,3 +600,123 @@
     --color-error-content: 255 255 255;
     /* white */
 }
+
+/* Dracula Theme (Classic Dark with Vibrant Colors) */
+[data-theme="dracula"] {
+    --color-primary: 255 121 198;
+    /* #ff79c6 */
+    --color-primary-focus: 255 101 178;
+    /* darker version of primary */
+    --color-primary-content: 45 10 29;
+    /* #2d0a1d */
+
+    --color-secondary: 189 147 249;
+    /* #bd93f9 */
+    --color-secondary-focus: 169 127 229;
+    /* darker version of secondary */
+    --color-secondary-content: 36 23 56;
+    /* #241738 */
+
+    --color-accent: 241 250 140;
+    /* #f1fa8c */
+    --color-accent-focus: 221 230 120;
+    /* darker version of accent */
+    --color-accent-content: 42 45 15;
+    /* #2a2d0f */
+
+    --color-neutral: 98 114 164;
+    /* #6272a4 */
+    --color-neutral-focus: 78 94 144;
+    /* darker version of neutral */
+    --color-neutral-content: 230 230 230;
+    /* #e6e6e6 */
+
+    --color-base-100: 68 71 90;
+    /* #44475a */
+    --color-base-200: 61 64 82;
+    /* #3d4052 */
+    --color-base-300: 54 57 74;
+    /* #36394a */
+    --color-base-content: 248 248 242;
+    /* #f8f8f2 */
+
+    --color-info: 139 233 253;
+    /* #8be9fd */
+    --color-info-content: 13 45 53;
+    /* #0d2d35 */
+
+    --color-success: 80 250 123;
+    /* #50fa7b */
+    --color-success-content: 13 45 23;
+    /* #0d2d17 */
+
+    --color-warning: 255 184 108;
+    /* #ffb86c */
+    --color-warning-content: 51 38 18;
+    /* #332612 */
+
+    --color-error: 255 85 85;
+    /* #ff5555 */
+    --color-error-content: 45 11 11;
+    /* #2d0b0b */
+}
+
+/* Abyss Theme (Deep Blue with Green Accents) */
+[data-theme="abyss"] {
+    --color-primary: 184 245 205;
+    /* #b8f5cd */
+    --color-primary-focus: 164 235 185;
+    /* darker version of primary */
+    --color-primary-content: 45 122 68;
+    /* #2d7a44 */
+
+    --color-secondary: 228 197 247;
+    /* #e4c5f7 */
+    --color-secondary-focus: 208 177 227;
+    /* darker version of secondary */
+    --color-secondary-content: 122 77 147;
+    /* #7a4d93 */
+
+    --color-accent: 110 110 110;
+    /* #6e6e6e */
+    --color-accent-focus: 90 90 90;
+    /* darker version of accent */
+    --color-accent-content: 250 250 250;
+    /* #fafafa */
+
+    --color-neutral: 42 51 68;
+    /* #2a3344 */
+    --color-neutral-focus: 32 41 58;
+    /* darker version of neutral */
+    --color-neutral-content: 232 213 163;
+    /* #e8d5a3 */
+
+    --color-base-100: 26 31 46;
+    /* #1a1f2e */
+    --color-base-200: 21 25 37;
+    /* #151925 */
+    --color-base-300: 16 20 28;
+    /* #10141c */
+    --color-base-content: 232 213 163;
+    /* #e8d5a3 */
+
+    --color-info: 125 179 255;
+    /* #7db3ff */
+    --color-info-content: 30 58 95;
+    /* #1e3a5f */
+
+    --color-success: 92 230 92;
+    /* #5ce65c */
+    --color-success-content: 26 77 26;
+    /* #1a4d1a */
+
+    --color-warning: 255 217 102;
+    /* #ffd966 */
+    --color-warning-content: 204 136 0;
+    /* #cc8800 */
+
+    --color-error: 255 128 128;
+    /* #ff8080 */
+    --color-error-content: 102 26 26;
+    /* #661a1a */
+}

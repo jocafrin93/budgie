@@ -12,6 +12,8 @@ const DAISY_THEMES = [
     { name: 'valentine', label: 'Valentine', description: 'Romantic pink' },
     { name: 'forest', label: 'Forest', description: 'Natural green' },
     { name: 'aqua', label: 'Aqua', description: 'Ocean blue' },
+    { name: 'dracula', label: 'Dracula', description: 'Classic dark with vibrant colors' },
+    { name: 'abyss', label: 'Abyss', description: 'Deep blue with green accents' },
 ];
 
 export default function DaisyThemeSwitcher({ currentTheme, onThemeChange, className = '' }) {
