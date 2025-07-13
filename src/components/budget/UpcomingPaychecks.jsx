@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { usePaycheckManagement } from '../../hooks/usePaycheckManagement';
 import { useScheduledTransactions } from '../../hooks/useScheduledTransactions';
-import { Button } from '../ui/Button/index.jsx';
 import { Card } from '../ui/Card/index.jsx';
 import { Timeline, TimelineItem } from '../ui/Timeline/index.jsx';
 
@@ -311,14 +310,12 @@ const UpcomingPaychecks = ({
 
                                             {/* Payday Action Button */}
                                             {onStartPaydayWorkflow && item.type === 'paycheck' && isNext && (item.daysUntil || 0) <= 1 && (
-                                                <Button
+                                                <button
                                                     onClick={() => onStartPaydayWorkflow(item)}
-                                                    color="success"
-                                                    variant="filled"
-                                                    size="sm"
+                                                    className="btn btn-success btn-sm"
                                                 >
                                                     💰 Start Payday
-                                                </Button>
+                                                </button>
                                             )}
                                         </div>
 

@@ -94,7 +94,7 @@ const MobileBudgetView = ({
     };
 
     return (
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-4 border border-base-300">
             {/* Available to Allocate Card */}
             {availableToAllocate > 0 && (
                 <div className="bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg border border-base-300 overflow-hidden shadow-sm p-4">

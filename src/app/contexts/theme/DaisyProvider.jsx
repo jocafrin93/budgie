@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DaisyThemeContext } from './DaisyContext';
 import { useThemeContext } from './context';
 
-const DEFAULT_THEME = 'light';
+const DEFAULT_THEME = 'dracula';
 
 // Map DaisyUI themes to light/dark for Tailux theme system
 const THEME_MODE_MAP = {

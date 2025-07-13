@@ -1,6 +1,5 @@
 import { useBreakpointsContext } from 'app/contexts/breakpoint/context';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 
 const MonthlyBudgetNavigator = ({
@@ -39,14 +38,12 @@ const MonthlyBudgetNavigator = ({
             <Card className="p-3">
                 {/* Top row: Month navigation */}
                 <div className="flex items-center justify-between mb-3">
-                    <Button
+                    <button
                         onClick={navigateToPrevMonth}
-                        variant="secondary"
-                        size="sm"
-                        className="p-2"
+                        className="btn btn-secondary btn-sm p-2"
                     >
                         <ChevronLeft className="w-4 h-4" />
-                    </Button>
+                    </button>
 
                     <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-base-content/70" />
@@ -55,14 +52,12 @@ const MonthlyBudgetNavigator = ({
                         </h3>
                     </div>
 
-                    <Button
+                    <button
                         onClick={navigateToNextMonth}
-                        variant="secondary"
-                        size="sm"
-                        className="p-2"
+                        className="btn btn-secondary btn-sm p-2"
                     >
                         <ChevronRight className="w-4 h-4" />
-                    </Button>
+                    </button>
                 </div>
 
                 {/* Bottom row: Summary and action */}
@@ -89,14 +84,12 @@ const MonthlyBudgetNavigator = ({
                         )}
 
                         {onCarryForward && (
-                            <Button
+                            <button
                                 onClick={onCarryForward}
-                                variant="primary"
-                                size="sm"
-                                className="text-xs px-2 py-1"
+                                className="btn btn-primary btn-sm text-xs px-2 py-1"
                             >
                                 Carry
-                            </Button>
+                            </button>
                         )}
                     </div>
                 )}
@@ -127,14 +120,12 @@ const MonthlyBudgetNavigator = ({
             <div className="flex items-center justify-between">
                 {/* Left: Navigation */}
                 <div className="flex items-center gap-2">
-                    <Button
+                    <button
                         onClick={navigateToPrevMonth}
-                        variant="secondary"
-                        size="sm"
-                        className="p-2"
+                        className="btn btn-secondary btn-sm p-2"
                     >
                         <ChevronLeft className="w-4 h-4" />
-                    </Button>
+                    </button>
 
                     <div className="flex items-center gap-2">
                         <Calendar className="w-5 h-5 text-base-content/70" />
@@ -143,14 +134,12 @@ const MonthlyBudgetNavigator = ({
                         </h3>
                     </div>
 
-                    <Button
+                    <button
                         onClick={navigateToNextMonth}
-                        variant="secondary"
-                        size="sm"
-                        className="p-2"
+                        className="btn btn-secondary btn-sm p-2"
                     >
                         <ChevronRight className="w-4 h-4" />
-                    </Button>
+                    </button>
                 </div>
 
                 {/* Right: Month Summary & Actions */}
