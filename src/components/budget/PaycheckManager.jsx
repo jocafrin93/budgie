@@ -2,7 +2,6 @@
 import React, { useRef, useState } from 'react';
 import { usePaycheckManagement } from '../../hooks/usePaycheckManagement';
 import { CurrencyField } from '../form';
-import { Button } from '../ui/Button/index.jsx';
 import { Card } from '../ui/Card/index.jsx';
 import { Checkbox } from '../ui/Form/Checkbox.jsx';
 
