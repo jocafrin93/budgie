@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { formatCurrency } from '../../utils/formatUtils';
+import { getGradientStyle } from '../../utils/gradientUtils';
 import MobileTransferModal from './MobileTransferModal';
 
 const MobileBudgetView = ({
@@ -195,7 +196,10 @@ const MobileBudgetView = ({
                                     <div className="flex items-center gap-3 flex-1 min-w-0">
                                         {/* Category Color & Icon */}
                                         <div className="flex items-center gap-2">
-                                            <div className={`w-6 h-6 rounded-full ${category.color} border border-base-300`}></div>
+                                            <div
+                                                className={`w-4 h-4 rotate-45 rounded-sm ${category.color} border border-base-300`}
+                                                style={getGradientStyle(category.color)}
+                                            ></div>
                                             {isExpense && <TrendingUp className="w-4 h-4 text-warning" />}
                                             <button
                                                 onClick={(e) => {
@@ -333,97 +337,95 @@ const MobileBudgetView = ({
                             </div>
 
                             {/* Expanded Details Section - Combined budget details and sub-items */}
-                            {
-                                isExpanded && (
-                                    <div className="border-t border-base-300">
-                                        {/* Budget Details */}
-                                        <div className="px-4 py-3 bg-base-100">
-                                            <div className="grid grid-cols-3 gap-2 text-xs">
-                                                <div className="text-center p-2 bg-base-300 rounded">
-                                                    <div className="font-medium text-info">
-                                                        {formatCurrency(category.perPaycheck || 0)}
-                                                    </div>
-                                                    <div className="text-base-content/60">Per Paycheck</div>
+                            {isExpanded && (
+                                <div className="border-t border-base-300">
+                                    {/* Budget Details */}
+                                    <div className="px-4 py-3 bg-base-100">
+                                        <div className="grid grid-cols-3 gap-2 text-xs">
+                                            <div className="text-center p-2 bg-base-300 rounded">
+                                                <div className="font-medium text-info">
+                                                    {formatCurrency(category.perPaycheck || 0)}
                                                 </div>
-                                                <div className="text-center p-2 bg-base-300 rounded">
-                                                    <div className="font-medium text-success">
-                                                        {formatCurrency(category.allocated || 0)}
-                                                    </div>
-                                                    <div className="text-base-content/60">Allocated</div>
+                                                <div className="text-base-content/60">Per Paycheck</div>
+                                            </div>
+                                            <div className="text-center p-2 bg-base-300 rounded">
+                                                <div className="font-medium text-success">
+                                                    {formatCurrency(category.allocated || 0)}
                                                 </div>
-                                                <div className="text-center p-2 bg-base-300 rounded">
-                                                    <div className="font-medium text-error">
-                                                        {formatCurrency(category.spent || 0)}
-                                                    </div>
-                                                    <div className="text-base-content/60">Spent</div>
+                                                <div className="text-base-content/60">Allocated</div>
+                                            </div>
+                                            <div className="text-center p-2 bg-base-300 rounded">
+                                                <div className="font-medium text-error">
+                                                    {formatCurrency(category.spent || 0)}
                                                 </div>
+                                                <div className="text-base-content/60">Spent</div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        {/* Sub-Items */}
-                                        {hasSubItems && (
-                                            <div className="border-t border-base-300">
-                                                {category.subItems.map(subItem => (
-                                                    <div key={subItem.id} className="px-4 py-3 border-b border-base-200 last:border-b-0">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex-1">
-                                                                <h4 className="font-medium text-base-content">
-                                                                    {subItem.name}
-                                                                </h4>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <span className="text-sm text-base-content/60">
-                                                                        {formatCurrency(subItem.amount || 0)}
+                                    {/* Sub-Items */}
+                                    {hasSubItems && (
+                                        <div className="border-t border-base-300">
+                                            {category.subItems.map(subItem => (
+                                                <div key={subItem.id} className="px-4 py-3 border-b border-base-200 last:border-b-0">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex-1">
+                                                            <h4 className="font-medium text-base-content">
+                                                                {subItem.name}
+                                                            </h4>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="text-sm text-base-content/60">
+                                                                    {formatCurrency(subItem.amount || 0)}
+                                                                </span>
+                                                                {subItem.frequency && (
+                                                                    <span className="text-xs text-base-content/60 capitalize">
+                                                                        {subItem.frequency.replace('-', ' ')}
                                                                     </span>
-                                                                    {subItem.frequency && (
-                                                                        <span className="text-xs text-base-content/60 capitalize">
-                                                                            {subItem.frequency.replace('-', ' ')}
-                                                                        </span>
-                                                                    )}
-                                                                    {subItem.dueDate && (() => {
-                                                                        const urgency = getDueDateUrgency(subItem.dueDate);
-                                                                        const badgeColor = urgency === 'overdue' ? 'error' :
-                                                                            urgency === 'urgent' ? 'warning' :
-                                                                                urgency === 'soon' ? 'warning' : 'info';
-                                                                        return (
-                                                                            <Badge
-                                                                                variant="soft"
-                                                                                color={badgeColor}
-                                                                                className="text-xs"
-                                                                            >
-                                                                                {formatDueDate(subItem.dueDate)}
-                                                                            </Badge>
-                                                                        );
-                                                                    })()}
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex items-center gap-1">
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        onEditItem(subItem);
-                                                                    }}
-                                                                    className="p-1 hover:bg-base-200 rounded transition-colors"
-                                                                >
-                                                                    <Edit className="w-3 h-3 text-base-content/60" />
-                                                                </button>
-                                                                <button
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        onDeleteItem(subItem.id);
-                                                                    }}
-                                                                    className="p-1 hover:bg-base-200 rounded transition-colors"
-                                                                >
-                                                                    <Trash2 className="w-3 h-3 text-base-content/60" />
-                                                                </button>
+                                                                )}
+                                                                {subItem.dueDate && (() => {
+                                                                    const urgency = getDueDateUrgency(subItem.dueDate);
+                                                                    const badgeColor = urgency === 'overdue' ? 'error' :
+                                                                        urgency === 'urgent' ? 'warning' :
+                                                                            urgency === 'soon' ? 'warning' : 'info';
+                                                                    return (
+                                                                        <Badge
+                                                                            variant="soft"
+                                                                            color={badgeColor}
+                                                                            className="text-xs"
+                                                                        >
+                                                                            {formatDueDate(subItem.dueDate)}
+                                                                        </Badge>
+                                                                    );
+                                                                })()}
                                                             </div>
                                                         </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onEditItem(subItem);
+                                                                }}
+                                                                className="p-1 hover:bg-base-200 rounded transition-colors"
+                                                            >
+                                                                <Edit className="w-3 h-3 text-base-content/60" />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onDeleteItem(subItem.id);
+                                                                }}
+                                                                className="p-1 hover:bg-base-200 rounded transition-colors"
+                                                            >
+                                                                <Trash2 className="w-3 h-3 text-base-content/60" />
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            }
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     );
                 })}

@@ -31,6 +31,7 @@ import {
     calculatePaychecksUntilDue,
     formatAmountWithFrequency
 } from '../../utils/budgetDisplayUtils';
+import { getGradientStyle } from '../../utils/gradientUtils';
 import { Button } from '../ui/Button';
 import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
@@ -480,7 +481,10 @@ const BudgetCategoriesTable = ({
                         return (
                             <div className="flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-3 h-3 rounded-full ${item.color} border border-base-300`}></div>
+                                    <div
+                                        className="w-4 h-4 rotate-45 rounded-sm border border-base-300"
+                                        style={getGradientStyle(item.color)}
+                                    ></div>
                                     {item.type === 'multiple' && (
                                         <Box className="w-4 h-4 text-base-content/40" fill="none" stroke="currentColor">
                                         </Box>

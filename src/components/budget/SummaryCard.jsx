@@ -32,7 +32,7 @@ const SummaryCard = ({
             progressColor === 'red' ? 'bg-error' :
                 progressColor === 'yellow' ? 'bg-warning' :
                     progressColor === 'info' ? 'bg-info' :
-                        progressColor === 'gradient' ? 'bg-gradient-to-r from-warning to-error' :
+                        progressColor === 'gradient' ? 'bg-warning' :
                             progressColor || 'bg-success'; // Default to success
 
     return (

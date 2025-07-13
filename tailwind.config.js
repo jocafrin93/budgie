@@ -4,6 +4,9 @@ export default {
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
+    safelist: [
+        // No gradient classes needed - using inline styles with hex codes
+    ],
     theme: {
         extend: {
             colors: {
@@ -40,6 +43,45 @@ export default {
 
                 'error': 'rgb(var(--color-error) / <alpha-value>)',
                 'error-content': 'rgb(var(--color-error-content) / <alpha-value>)',
+
+                // Standard Tailwind colors for gradients
+                'purple': {
+                    '500': '#8b5cf6',
+                    '600': '#7c3aed',
+                },
+                'pink': {
+                    '500': '#ec4899',
+                },
+                'green': {
+                    '500': '#10b981',
+                    '600': '#059669',
+                },
+                'yellow': {
+                    '500': '#eab308',
+                },
+                'red': {
+                    '500': '#ef4444',
+                },
+                'indigo': {
+                    '500': '#6366f1',
+                    '600': '#4f46e5',
+                },
+                'blue': {
+                    '500': '#3b82f6',
+                },
+                'orange': {
+                    '500': '#f97316',
+                },
+                'teal': {
+                    '500': '#14b8a6',
+                    '600': '#0d9488',
+                },
+                'cyan': {
+                    '500': '#06b6d4',
+                },
+                'emerald': {
+                    '500': '#10b981',
+                },
             }
         },
     },

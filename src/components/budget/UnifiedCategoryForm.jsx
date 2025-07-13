@@ -2,6 +2,7 @@ import { RefreshCcw, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from '../../hooks/useForm';
 import { formatDate } from '../../utils/dateUtils';
+import { getGradientOptions, getRandomGradientId } from '../../utils/gradientUtils';
 import { dollarToPercentage, percentageToDollar } from '../../utils/moneyUtils';
 import { CurrencyField } from '../form';
 import { Input, Select, Textarea } from '../ui';
@@ -24,17 +25,6 @@ const frequencyOptions = [
     { value: 'per-paycheck', label: 'Per Paycheck (Direct)' }
 ];
 
-// Color options for category selection
-const colorOptions = [
-    { value: 'bg-info/50', label: 'info', color: '#3B82F6' },
-    { value: 'bg-success', label: 'Green', color: '#10B981' },
-    { value: 'bg-warning', label: 'Orange', color: '#F59E0B' },
-    { value: 'bg-error', label: 'Red', color: '#EF4444' },
-    { value: 'bg-secondary', label: 'Purple', color: '#8B5CF6' },
-    { value: 'bg-accent', label: 'Pink', color: '#EC4899' },
-    { value: 'bg-info', label: 'Teal', color: '#14B8A6' },
-    { value: 'bg-lime-500', label: 'Lime', color: '#84CC16' },
-];
 
 // PayeeAutocomplete component with info theme styling
 const PayeeAutocompleteinfo = ({ value, onChange, payees, onAddPayee, placeholder }) => {
@@ -511,6 +501,8 @@ const UnifiedCategoryForm = ({
     accounts = [],
     currentPay = 0,
 }) => {
+    // Use centralized gradient colors
+    const categoryColors = getGradientOptions();
     // Payee management - use localStorage fallback for build compatibility
     const [payees, setPayees] = useState(() => {
         try {
@@ -555,6 +547,11 @@ const UnifiedCategoryForm = ({
     const isGoal = category?.targetAmount !== undefined;
     const initialType = isGoal ? 'goal' : 'expense';
 
+    // Helper function to get a random gradient ID
+    const getRandomGradientColor = () => {
+        return getRandomGradientId();
+    };
+
     // Initialize form with useForm hook
     const initialValues = {
         // Basic category info
@@ -578,8 +575,8 @@ const UnifiedCategoryForm = ({
         status: category?.status || 'active',
         priority: category?.priority || 'medium',
 
-        // Visual and advanced
-        color: category?.color || 'bg-info/50',
+        // Visual and advanced - randomly select gradient for new categories
+        color: category?.color || getRandomGradientColor(),
         autoFunding: category?.autoFunding?.enabled || category?.autoFunding || false,
         description: category?.description || '',
 
@@ -936,7 +933,7 @@ const UnifiedCategoryForm = ({
 
         // Reset form by recreating the initial values
         setTimeout(() => {
-            // Create new initial values with preserved context
+            // Create new initial values with preserved context and new random gradient
             const newInitialValues = {
                 name: '',
                 type: currentType,
@@ -950,7 +947,7 @@ const UnifiedCategoryForm = ({
                 accountId: currentAccountId,
                 status: currentStatus,
                 priority: currentPriority,
-                color: 'neutral',
+                color: getRandomGradientColor(), // New random gradient for each new category
                 autoFunding: false,
                 description: '',
                 // Goal fields
@@ -1322,16 +1319,17 @@ const UnifiedCategoryForm = ({
                                     Color
                                 </label>
                                 <div className="flex flex-wrap gap-2">
-                                    {colorOptions.map(option => (
+                                    {categoryColors.map((colorOption) => (
                                         <button
-                                            key={option.value}
+                                            key={colorOption.id}
                                             type="button"
-                                            onClick={() => form.setFieldValue('color', option.value)}
-                                            className={`w-8 h-8 rounded-full border-2 ${form.values.color === option.value
-                                                ? 'border-base-content'
+                                            onClick={() => form.setFieldValue('color', colorOption.id)}
+                                            style={colorOption.style}
+                                            className={`w-8 h-8 rounded-lg border-2 ${form.values.color === colorOption.id
+                                                ? 'border-primary border-2'
                                                 : 'border-base-300'
-                                                } ${option.value}`}
-                                            title={option.label}
+                                                } hover:scale-110 transition-transform`}
+                                            title={colorOption.name}
                                         />
                                     ))}
                                 </div>
