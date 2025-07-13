@@ -51,7 +51,7 @@ export default function Home() {
           />
 
           {/* Additional dashboard content */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-dark-700 rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-medium text-gray-800 dark:text-dark-50 mb-4">
                 Recent Activity
@@ -69,7 +69,7 @@ export default function Home() {
                 Quick budget actions and shortcuts will appear here.
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </Page>

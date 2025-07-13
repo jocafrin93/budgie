@@ -4,7 +4,7 @@ import {
     CogIcon,
     HomeIcon
 } from '@heroicons/react/24/outline';
-import SettingIcon from 'assets/dualicons/setting.svg?react';
+// import SettingIcon from 'assets/dualicons/setting.svg?react';
 import { NAV_TYPE_ITEM } from 'constants/app.constant';
 
 // Flattened navigation structure
@@ -41,14 +41,14 @@ export const navigation = [
         transKey: 'nav.budget.settings',
         Icon: CogIcon,
     },
-    {
-        id: 'settings',
-        path: '/settings/appearance',
-        type: NAV_TYPE_ITEM,
-        title: 'Settings',
-        transKey: 'nav.settings.settings',
-        Icon: SettingIcon,
-    },
+    // {
+    //     id: 'settings',
+    //     path: '/settings/appearance',
+    //     type: NAV_TYPE_ITEM,
+    //     title: 'Settings',
+    //     transKey: 'nav.settings.settings',
+    //     Icon: SettingIcon,
+    // },
 ]
 
 export { baseNavigation } from './baseNavigation';

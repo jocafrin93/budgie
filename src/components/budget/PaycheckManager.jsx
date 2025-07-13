@@ -556,19 +556,18 @@ const PaycheckManager = ({
                                         Are you sure you want to delete this paycheck? This action cannot be undone.
                                     </p>
                                     <div className="flex justify-end gap-2">
-                                        <Button
+                                        <button
                                             onClick={() => setShowDeleteConfirm(null)}
-                                            variant="outlined"
+                                            className="btn btn-outline"
                                         >
                                             Cancel
-                                        </Button>
-                                        <Button
+                                        </button>
+                                        <button
                                             onClick={() => handleDeleteConfirm(paycheck.id)}
-                                            color="error"
-                                            variant="filled"
+                                            className="btn btn-error"
                                         >
                                             Delete
-                                        </Button>
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -579,16 +578,12 @@ const PaycheckManager = ({
 
             {/* Add New Paycheck Button */}
             <div className="mt-4">
-                <Button
+                <button
                     onClick={handleAddNewPaycheck}
-                    color="primary"
-                    variant="filled"
-                    className="flex items-center gap-2 w-full lg:w-auto justify-center lg:justify-start"
-
+                    className="btn btn-primary flex items-center gap-2 w-full lg:w-auto justify-center lg:justify-start"
                 >
                     + Add New Paycheck
-
-                </Button>
+                </button>
             </div>
 
             {/* Add/Edit Form */}
@@ -870,7 +865,7 @@ const PaycheckManager = ({
 
                         {/* Action Buttons */}
                         <div className="flex justify-end gap-3 pt-4">
-                            <Button
+                            <button
                                 onClick={() => {
                                     setEditingPaycheck(null);
                                     setShowAddForm(false);
@@ -883,17 +878,16 @@ const PaycheckManager = ({
                                         accountDistribution: []
                                     });
                                 }}
-                                variant="outlined"
+                                className="btn btn-outline"
                             >
                                 Cancel
-                            </Button>
-                            <Button
+                            </button>
+                            <button
                                 onClick={handleSavePaycheck}
-                                color="primary"
-                                variant="filled"
+                                className="btn btn-primary"
                             >
                                 {editingPaycheck ? 'Update Paycheck' : 'Add Paycheck'}
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </div>
