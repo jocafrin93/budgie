@@ -342,6 +342,19 @@ export default function BudgetTransactions() {
         }
     };
 
+    // Listen for account filter changes from mobile view
+    useEffect(() => {
+        const handleAccountFilterChange = (event) => {
+            const { accountId } = event.detail;
+            setSelectedAccountId(accountId);
+        };
+
+        window.addEventListener('accountFilterChange', handleAccountFilterChange);
+        return () => {
+            window.removeEventListener('accountFilterChange', handleAccountFilterChange);
+        };
+    }, []);
+
     // Handlers for transaction operations
     const handleAddTransaction = (transactionData) => {
         console.log("Raw transaction data received:", transactionData);
@@ -531,6 +544,11 @@ export default function BudgetTransactions() {
                                     onEditTransaction={handleEditTransaction}
                                     onDeleteTransaction={handleDeleteTransaction}
                                     viewAccount={selectedAccountId}
+                                    scheduledTransactions={upcomingScheduledTransactions}
+                                    onEditScheduledTransaction={scheduledTransactionsHook.editScheduledTransaction}
+                                    onSkipScheduledTransaction={scheduledTransactionsHook.skipScheduledTransaction}
+                                    onActivateScheduledTransactionEarly={scheduledTransactionsHook.activateScheduledTransactionEarly}
+                                    onDeleteScheduledTransaction={scheduledTransactionsHook.deleteScheduledTransaction}
                                 />
                             </React.Suspense>
                         ) : (
@@ -544,6 +562,11 @@ export default function BudgetTransactions() {
                                 onEditTransaction={handleEditTransaction}
                                 onDeleteTransaction={handleDeleteTransaction}
                                 viewAccount={selectedAccountId}
+                                scheduledTransactions={upcomingScheduledTransactions}
+                                onEditScheduledTransaction={scheduledTransactionsHook.editScheduledTransaction}
+                                onSkipScheduledTransaction={scheduledTransactionsHook.skipScheduledTransaction}
+                                onActivateScheduledTransactionEarly={scheduledTransactionsHook.activateScheduledTransactionEarly}
+                                onDeleteScheduledTransaction={scheduledTransactionsHook.deleteScheduledTransaction}
                             />
                         )}
                     </div>

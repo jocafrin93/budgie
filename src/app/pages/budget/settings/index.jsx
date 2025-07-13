@@ -50,24 +50,24 @@ export default function BudgetSettings() {
 
     return (
         <Page title="Budget Settings">
-            <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
+            <div className="transition-content w-full px-4 pt-5 lg:pt-6">
                 <div className="min-w-0">
-                    <h2 className="truncate text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">
+                    <h2 className="truncate text-xl font-medium tracking-wide text-base-content">
                         Budget Settings
                     </h2>
-                    <p className="text-sm text-gray-600 dark:text-dark-300 mt-1">
+                    <p className="text-base-content/70 mt-1">
                         Configure your budget preferences and settings
                     </p>
                 </div>
 
                 <div className="mt-6 space-y-8">
                     {/* Cloud Storage Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Cloud Storage & Sync
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-base-content/60">
                                 Connect with Google Drive to sync your budget data across devices
                             </p>
                         </div>
@@ -82,12 +82,12 @@ export default function BudgetSettings() {
                     </div>
 
                     {/* Account Management Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Account Management
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-base-content/60">
                                 Manage your financial accounts, balances, and reconciliation settings
                             </p>
                         </div>
@@ -194,12 +194,12 @@ export default function BudgetSettings() {
                     </div>
 
                     {/* Payee Management Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Payee Management
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-base-content/60">
                                 Manage your list of payees for quick transaction entry
                             </p>
                         </div>
@@ -212,12 +212,12 @@ export default function BudgetSettings() {
                     </div>
 
                     {/* Paycheck Management Section */}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Paycheck Management
                             </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-base-content/60">
                                 Configure your paycheck schedule and automatic budget allocation
                             </p>
                         </div>

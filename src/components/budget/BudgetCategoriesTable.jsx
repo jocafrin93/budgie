@@ -183,11 +183,11 @@ const BudgetCategoriesTable = ({
     const getUrgencyStyles = (urgency) => {
         switch (urgency) {
             case 'overdue':
-                return 'bg-error/20 text-error border-error';
+                return 'bg-error-lighter/20 text-error border-error';
             case 'urgent':
-                return 'bg-warning/20 text-warning border-warning';
+                return 'bg-warning-lighter/20 text-warning border-warning';
             case 'soon':
-                return 'bg-warning/20 text-warning border-warning';
+                return 'bg-warning-lighter/20 text-warning border-warning';
             case 'future':
                 return 'bg-info/10 text-info border-info';
             default:
@@ -741,7 +741,7 @@ const BudgetCategoriesTable = ({
                             <div className="text-right">
                                 <button
                                     onClick={() => handleTransferClick(row.original)}
-                                    className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:border-primary focus:outline-none bg-success/20 text-success border-success hover"
+                                    className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:border-primary focus:outline-none bg-success-lighter/20 text-success border-success hover"
                                     title="Click to move money out of this category"
                                 >
                                     <span className="mr-1">💰</span>
@@ -960,6 +960,15 @@ const BudgetCategoriesTable = ({
 
                 const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
                 const availableToAllocate = totalWorkingBalance - totalAllocated;
+
+                // Debug logging
+                console.log('🔍 Quick Allocate Debug:');
+                console.log('📊 Accounts:', accounts);
+                console.log('💰 Total Working Balance:', totalWorkingBalance);
+                console.log('📋 Categories data:', data);
+                console.log('💸 Total Allocated:', totalAllocated);
+                console.log('✨ Available to Allocate:', availableToAllocate);
+                console.log('👀 Should show Quick Allocate?', availableToAllocate > 0);
 
                 if (availableToAllocate > 0) {
                     return (

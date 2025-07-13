@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { formatCurrency } from '../../utils/formatUtils';
+import MobileTransferModal from './MobileTransferModal';
 
 const MobileBudgetView = ({
     data = [],
@@ -23,9 +24,11 @@ const MobileBudgetView = ({
     onEditItem,
     onDeleteItem,
     onQuickAllocate,
+    onDataUpdate,
 }) => {
     const [expandedCategories, setExpandedCategories] = useState({});
     const [activeTab, setActiveTab] = useState('all'); // all, goals, expenses
+    const [transferModal, setTransferModal] = useState({ isOpen: false, targetCategory: null });
 
     // Helper functions
     const formatDueDate = (dateString) => {
@@ -64,7 +67,6 @@ const MobileBudgetView = ({
         return 'future';
     };
 
-
     // Calculate available to allocate
     const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
         const startingBalance = account.startingBalance || account.balance || 0;
@@ -93,20 +95,20 @@ const MobileBudgetView = ({
         <div className="w-full space-y-4">
             {/* Available to Allocate Card */}
             {availableToAllocate > 0 && (
-                <div className="bg-gradient-to-r from-success-lighter/20 to-info-lighter/20 rounded-lg border border-success-light p-4">
+                <div className="bg-gradient-to-r from-success/20 to-info/20 rounded-lg border border-success p-4">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 bg-success rounded-full flex items-center justify-center text-white text-sm">
                                 💰
                             </div>
                             <div>
-                                <h3 className="font-semibold text-success-dark">
+                                <h3 className="font-semibold text-success">
                                     Available to Allocate
                                 </h3>
                             </div>
                         </div>
                         <div className="text-right">
-                            <div className="text-xl font-bold text-success-dark">
+                            <div className="text-xl font-bold text-success">
                                 {formatCurrency(availableToAllocate)}
                             </div>
                         </div>
@@ -115,7 +117,6 @@ const MobileBudgetView = ({
                         onClick={onQuickAllocate}
                         variant="filled"
                         color="success"
-                        isGlow={true}
                         className="w-full"
                     >
                         Quick Allocate
@@ -153,7 +154,7 @@ const MobileBudgetView = ({
                         onClick={() => setActiveTab(tab.key)}
                         className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeTab === tab.key
                             ? 'bg-secondary text-base-content shadow-sm'
-                            : 'text-base-content/60 hover'
+                            : 'text-base-content/60 hover:bg-base-300'
                             }`}
                     >
                         {tab.label} ({tab.count})
@@ -180,11 +181,8 @@ const MobileBudgetView = ({
 
                     return (
                         <div key={category.id} className="bg-base-200 rounded-lg border border-base-300 overflow-hidden">
-                            {/* Category Header */}
-                            <div
-                                className="p-4 cursor-pointer"
-                                onClick={() => toggleCategory(category.id)}
-                            >
+                            {/* Category Header - Simplified */}
+                            <div className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3 flex-1 min-w-0">
                                         {/* Category Color & Icon */}
@@ -192,11 +190,18 @@ const MobileBudgetView = ({
                                             <div className={`w-3 h-3 rounded-full ${category.color} border border-base-300`}></div>
                                             {isGoal && <Target className="w-4 h-4 text-info" />}
                                             {isExpense && <TrendingUp className="w-4 h-4 text-warning" />}
-                                            {hasSubItems && (
-                                                isExpanded ?
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleCategory(category.id);
+                                                }}
+                                                className="p-1 hover:bg-base-300 rounded transition-colors"
+                                            >
+                                                {isExpanded ?
                                                     <ChevronDown className="w-4 h-4 text-base-content/60" /> :
                                                     <ChevronRight className="w-4 h-4 text-base-content/60" />
-                                            )}
+                                                }
+                                            </button>
                                         </div>
 
                                         {/* Category Name & Details */}
@@ -227,16 +232,30 @@ const MobileBudgetView = ({
                                         </div>
                                     </div>
 
-                                    {/* Available Amount */}
+                                    {/* Available Amount - Clickable Badge */}
                                     <div className="text-right">
-                                        <div className={`text-lg font-bold ${isOverspent ? 'text-error' :
-                                            hasAvailable ? 'text-success' :
-                                                'text-base-content/60'
-                                            }`}>
-                                            {formatCurrency(category.available || 0)}
-                                        </div>
-                                        <div className="text-xs text-base-content/60">
-                                            {isOverspent ? 'Overspent' : hasAvailable ? 'Available' : 'No funds'}
+                                        {hasAvailable ? (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setTransferModal({
+                                                        isOpen: true,
+                                                        targetCategory: category
+                                                    });
+                                                }}
+                                                className="inline-flex items-center px-3 py-2 rounded-full text-sm font-bold border transition-colors hover:opacity-80 focus:border-primary focus:outline-none bg-success-lighter/20 text-success border-success"
+                                                title="Click to move money out of this category"
+                                            >
+                                                <span className="mr-1">💰</span>
+                                                {formatCurrency(category.available || 0)}
+                                            </button>
+                                        ) : (
+                                            <div className={`text-lg font-bold ${isOverspent ? 'text-error' : 'text-base-content/60'}`}>
+                                                {formatCurrency(category.available || 0)}
+                                            </div>
+                                        )}
+                                        <div className="text-xs text-base-content/60 mt-1">
+                                            {isOverspent ? 'Overspent' : hasAvailable ? 'Tap to move' : 'No funds'}
                                         </div>
                                     </div>
                                 </div>
@@ -265,53 +284,31 @@ const MobileBudgetView = ({
                                     </div>
                                 )}
 
-                                {/* Budget Allocation Summary */}
-                                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                                    <div className="text-center p-2 bg-base-300 rounded">
-                                        <div className="font-medium text-info">
-                                            {formatCurrency(category.perPaycheck || 0)}
-                                        </div>
-                                        <div className="text-primary">Per Paycheck</div>
-                                    </div>
-                                    <div className="text-center p-2 bg-base-300 rounded">
-                                        <div className="font-medium text-success">
-                                            {formatCurrency(category.allocated || 0)}
-                                        </div>
-                                        <div className="text-primary">Allocated</div>
-                                    </div>
-                                    <div className="text-center p-2 bg-base-300 rounded">
-                                        <div className="font-medium text-error">
-                                            {formatCurrency(category.spent || 0)}
-                                        </div>
-                                        <div className="text-primary">Spent</div>
-                                    </div>
-                                </div>
                             </div>
 
                             {/* Category Actions */}
                             <div className="px-4 py-2 bg-base-300 border-t border-base-300">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-end">
+                                    <div className="flex items-center gap-1">
+                                        {/* Add Item Button - Moved to align with edit/delete */}
                                         {category.type === 'multiple' && (
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     onAddItem({ categoryId: category.id });
                                                 }}
-                                                className="p-1 bg-info/10 text-info rounded hover:bg-info/20 transition-colors"
+                                                className="p-1 hover:bg-base-200 rounded transition-colors"
                                                 title="Add Item"
                                             >
-                                                <Plus className="w-4 h-4" />
+                                                <Plus className="w-4 h-4 text-info" />
                                             </button>
                                         )}
-                                    </div>
-                                    <div className="flex items-center gap-1">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onEditCategory(category);
                                             }}
-                                            className="p-1 hover rounded"
+                                            className="p-1 hover:bg-base-200 rounded transition-colors"
                                         >
                                             <Edit className="w-4 h-4 text-base-content/60" />
                                         </button>
@@ -320,7 +317,7 @@ const MobileBudgetView = ({
                                                 e.stopPropagation();
                                                 onDeleteCategory(category.id);
                                             }}
-                                            className="p-1 hover rounded"
+                                            className="p-1 hover:bg-base-200 rounded transition-colors"
                                         >
                                             <Trash2 className="w-4 h-4 text-base-content/60" />
                                         </button>
@@ -328,65 +325,94 @@ const MobileBudgetView = ({
                                 </div>
                             </div>
 
-                            {/* Expanded Sub-Items */}
-                            {isExpanded && hasSubItems && (
+                            {/* Expanded Details Section - Combined budget details and sub-items */}
+                            {isExpanded && (
                                 <div className="border-t border-base-300">
-                                    {category.subItems.map(subItem => (
-                                        <div key={subItem.id} className="px-4 py-3 border-b border-base-200 last">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex-1">
-                                                    <h4 className="font-medium text-base-content">
-                                                        {subItem.name}
-                                                    </h4>
-                                                    <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-sm text-base-content/60">
-                                                            {formatCurrency(subItem.amount || 0)}
-                                                        </span>
-                                                        {subItem.frequency && (
-                                                            <span className="text-xs text-base-content/60 capitalize">
-                                                                {subItem.frequency.replace('-', ' ')}
-                                                            </span>
-                                                        )}
-                                                        {subItem.dueDate && (() => {
-                                                            const urgency = getDueDateUrgency(subItem.dueDate);
-                                                            const badgeColor = urgency === 'overdue' ? 'error' :
-                                                                urgency === 'urgent' ? 'warning' :
-                                                                    urgency === 'soon' ? 'warning' : 'info';
-                                                            return (
-                                                                <Badge
-                                                                    variant="soft"
-                                                                    color={badgeColor}
-                                                                    className="text-xs"
-                                                                >
-                                                                    {formatDueDate(subItem.dueDate)}
-                                                                </Badge>
-                                                            );
-                                                        })()}
-                                                    </div>
+                                    {/* Budget Details */}
+                                    <div className="px-4 py-3 bg-base-100">
+                                        <div className="grid grid-cols-3 gap-2 text-xs">
+                                            <div className="text-center p-2 bg-base-300 rounded">
+                                                <div className="font-medium text-info">
+                                                    {formatCurrency(category.perPaycheck || 0)}
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onEditItem(subItem);
-                                                        }}
-                                                        className="p-1 hover rounded"
-                                                    >
-                                                        <Edit className="w-3 h-3 text-base-content/60" />
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            onDeleteItem(subItem.id);
-                                                        }}
-                                                        className="p-1 hover rounded"
-                                                    >
-                                                        <Trash2 className="w-3 h-3 text-base-content/60" />
-                                                    </button>
+                                                <div className="text-base-content/60">Per Paycheck</div>
+                                            </div>
+                                            <div className="text-center p-2 bg-base-300 rounded">
+                                                <div className="font-medium text-success">
+                                                    {formatCurrency(category.allocated || 0)}
                                                 </div>
+                                                <div className="text-base-content/60">Allocated</div>
+                                            </div>
+                                            <div className="text-center p-2 bg-base-300 rounded">
+                                                <div className="font-medium text-error">
+                                                    {formatCurrency(category.spent || 0)}
+                                                </div>
+                                                <div className="text-base-content/60">Spent</div>
                                             </div>
                                         </div>
-                                    ))}
+                                    </div>
+
+                                    {/* Sub-Items */}
+                                    {hasSubItems && (
+                                        <div className="border-t border-base-300">
+                                            {category.subItems.map(subItem => (
+                                                <div key={subItem.id} className="px-4 py-3 border-b border-base-200 last:border-b-0">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex-1">
+                                                            <h4 className="font-medium text-base-content">
+                                                                {subItem.name}
+                                                            </h4>
+                                                            <div className="flex items-center gap-2 mt-1">
+                                                                <span className="text-sm text-base-content/60">
+                                                                    {formatCurrency(subItem.amount || 0)}
+                                                                </span>
+                                                                {subItem.frequency && (
+                                                                    <span className="text-xs text-base-content/60 capitalize">
+                                                                        {subItem.frequency.replace('-', ' ')}
+                                                                    </span>
+                                                                )}
+                                                                {subItem.dueDate && (() => {
+                                                                    const urgency = getDueDateUrgency(subItem.dueDate);
+                                                                    const badgeColor = urgency === 'overdue' ? 'error' :
+                                                                        urgency === 'urgent' ? 'warning' :
+                                                                            urgency === 'soon' ? 'warning' : 'info';
+                                                                    return (
+                                                                        <Badge
+                                                                            variant="soft"
+                                                                            color={badgeColor}
+                                                                            className="text-xs"
+                                                                        >
+                                                                            {formatDueDate(subItem.dueDate)}
+                                                                        </Badge>
+                                                                    );
+                                                                })()}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onEditItem(subItem);
+                                                                }}
+                                                                className="p-1 hover:bg-base-200 rounded transition-colors"
+                                                            >
+                                                                <Edit className="w-3 h-3 text-base-content/60" />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onDeleteItem(subItem.id);
+                                                                }}
+                                                                className="p-1 hover:bg-base-200 rounded transition-colors"
+                                                            >
+                                                                <Trash2 className="w-3 h-3 text-base-content/60" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -398,13 +424,13 @@ const MobileBudgetView = ({
             <div className="bg-base-200 rounded-lg border border-base-300 p-4">
                 <h3 className="font-semibold text-base-content mb-3">Summary</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="text-center p-3 bg-info-lighter/20 rounded-lg">
+                    <div className="text-center p-3 bg-info/20 rounded-lg">
                         <div className="font-bold text-info text-lg">
                             {formatCurrency(data.reduce((sum, cat) => sum + (cat.monthlyNeed || 0), 0))}
                         </div>
                         <div className="text-base-content">Monthly Need</div>
                     </div>
-                    <div className="text-center p-3 bg-success-lighter/20 rounded-lg">
+                    <div className="text-center p-3 bg-success rounded-lg">
                         <div className="font-bold text-success text-lg">
                             {formatCurrency(data.reduce((sum, cat) => sum + (cat.allocated || 0), 0))}
                         </div>
@@ -412,6 +438,89 @@ const MobileBudgetView = ({
                     </div>
                 </div>
             </div>
+
+            {/* Transfer Modal */}
+            {transferModal.isOpen && (
+                <MobileTransferModal
+                    isOpen={transferModal.isOpen}
+                    onClose={() => setTransferModal({ isOpen: false, targetCategory: null })}
+                    targetCategory={transferModal.targetCategory}
+                    categories={data}
+                    availableToAllocate={availableToAllocate}
+                    onTransferComplete={(transferData) => {
+                        console.log('🔄 MobileBudgetView: Transfer completed callback received');
+                        console.log('📊 Transfer data received:', transferData);
+
+                        // Handle the transfer completion here
+                        if (transferData.type === 'allocation') {
+                            // Allocation from "to be allocated" to a category
+                            console.log('💰 Processing allocation from unallocated funds');
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.toCategory) {
+                                    const newAvailable = (category.available || 0) + transferData.amount;
+                                    const newAllocated = (category.allocated || 0) + transferData.amount;
+                                    return {
+                                        ...category,
+                                        available: newAvailable,
+                                        allocated: newAllocated
+                                    };
+                                }
+                                return category;
+                            });
+
+                            if (onDataUpdate) {
+                                onDataUpdate(updatedData);
+                            }
+
+                        } else if (transferData.type === 'deallocate') {
+                            // Transfer from category back to "to be allocated"
+                            console.log('💸 Processing deallocation back to unallocated funds');
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.fromCategory) {
+                                    const newAvailable = (category.available || 0) - transferData.amount;
+                                    const newAllocated = (category.allocated || 0) - transferData.amount;
+                                    return {
+                                        ...category,
+                                        available: newAvailable,
+                                        allocated: newAllocated
+                                    };
+                                }
+                                return category;
+                            });
+
+                            if (onDataUpdate) {
+                                onDataUpdate(updatedData);
+                            }
+
+                        } else if (transferData.type === 'transfer') {
+                            // Category-to-category transfer
+                            console.log('🔄 Processing category-to-category transfer');
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.fromCategory) {
+                                    const newAvailable = (category.available || 0) - transferData.amount;
+                                    return {
+                                        ...category,
+                                        available: newAvailable
+                                    };
+                                } else if (category.id === transferData.toCategory) {
+                                    const newAvailable = (category.available || 0) + transferData.amount;
+                                    return {
+                                        ...category,
+                                        available: newAvailable
+                                    };
+                                }
+                                return category;
+                            });
+
+                            if (onDataUpdate) {
+                                onDataUpdate(updatedData);
+                            }
+                        }
+
+                        setTransferModal({ isOpen: false, targetCategory: null });
+                    }}
+                />
+            )}
         </div>
     );
 };

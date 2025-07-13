@@ -566,12 +566,19 @@ const MobileTransactionsView = ({
     onAddTransaction,
     onEditTransaction,
     onDeleteTransaction,
-    viewAccount = 'all'
+    viewAccount = 'all',
+    // Scheduled transactions props
+    scheduledTransactions = [],
+    onEditScheduledTransaction,
+    onSkipScheduledTransaction,
+    onActivateScheduledTransactionEarly,
+    onDeleteScheduledTransaction
 }) => {
     const { mdAndDown } = useBreakpointsContext();
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedTransactions, setSelectedTransactions] = useState(new Set());
     const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [showScheduledTransactions, setShowScheduledTransactions] = useState(true);
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -655,7 +662,7 @@ const MobileTransactionsView = ({
         // Filter transactions by account if specified
         const filteredTransactions = viewAccount === 'all'
             ? transactions
-            : transactions.filter(t => t.accountId === viewAccount);
+            : transactions.filter(t => String(t.accountId) === String(viewAccount));
 
         // Sort transactions by date (newest first)
         const sortedTransactions = [...filteredTransactions].sort((a, b) =>
@@ -737,48 +744,77 @@ const MobileTransactionsView = ({
     return (
         <div className="space-y-4">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div>
-                    <h2 className="text-lg font-semibold text-base-content">
-                        Transactions
-                    </h2>
-                    <p className="text-sm text-base-content/60">
-                        {viewAccount === 'all' ? 'All Accounts' : getAccountName(viewAccount)}
-                    </p>
+            <div className="space-y-4 mb-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold text-base-content">
+                            Transactions
+                        </h2>
+                        <p className="text-sm text-base-content/60">
+                            {viewAccount === 'all' ? 'All Accounts' : getAccountName(viewAccount)}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {!isSelectionMode ? (
+                            <>
+                                <button
+                                    onClick={() => setIsSelectionMode(true)}
+                                    className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    Select
+                                </button>
+                                <button
+                                    onClick={() => setShowAddModal(true)}
+                                    className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    onClick={handleSelectAll}
+                                    className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    Select All
+                                </button>
+                                <button
+                                    onClick={handleClearSelection}
+                                    className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {!isSelectionMode ? (
-                        <>
-                            <button
-                                onClick={() => setIsSelectionMode(true)}
-                                className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                            >
-                                Select
-                            </button>
-                            <button
-                                onClick={() => setShowAddModal(true)}
-                                className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Add
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button
-                                onClick={handleSelectAll}
-                                className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                            >
-                                Select All
-                            </button>
-                            <button
-                                onClick={handleClearSelection}
-                                className="flex items-center gap-2 bg-base-300 hover:bg-base-200 text-base-content px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                            >
-                                Cancel
-                            </button>
-                        </>
-                    )}
+
+                {/* Account Filter */}
+                <div className="flex items-center gap-3">
+                    <label className="text-sm font-medium text-base-content flex-shrink-0">
+                        Filter by Account:
+                    </label>
+                    <select
+                        value={viewAccount}
+                        onChange={(e) => {
+                            // Since this component doesn't control viewAccount directly,
+                            // we need to emit an event or call a callback
+                            // For now, we'll use a custom event that the parent can listen to
+                            const event = new CustomEvent('accountFilterChange', {
+                                detail: { accountId: e.target.value }
+                            });
+                            window.dispatchEvent(event);
+                        }}
+                        className="flex-1 px-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:border-primary text-sm"
+                    >
+                        <option value="all">All Accounts</option>
+                        {accounts.map(account => (
+                            <option key={account.id} value={account.id}>
+                                {account.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
             </div>
 
@@ -797,6 +833,156 @@ const MobileTransactionsView = ({
                             Delete Selected
                         </button>
                     </div>
+                </div>
+            )}
+
+            {/* Scheduled Transactions Section */}
+            {scheduledTransactions && scheduledTransactions.length > 0 && (
+                <div className="bg-base-100 rounded-lg shadow-sm border border-base-300 overflow-hidden">
+                    {/* Scheduled Header */}
+                    <div className="bg-warning/10 border-b border-base-300">
+                        <button
+                            onClick={() => setShowScheduledTransactions(!showScheduledTransactions)}
+                            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-warning/20 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="text-warning">
+                                    ⏰
+                                </div>
+                                <div>
+                                    <h3 className="font-medium text-base-content">
+                                        Scheduled Transactions
+                                    </h3>
+                                    <p className="text-sm text-base-content/60">
+                                        {scheduledTransactions.length} upcoming transaction{scheduledTransactions.length > 1 ? 's' : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="text-base-content/60">
+                                {showScheduledTransactions ? '▼' : '▶'}
+                            </div>
+                        </button>
+                    </div>
+
+                    {/* Scheduled Transactions List */}
+                    {showScheduledTransactions && (
+                        <div className="divide-y divide-base-300">
+                            {scheduledTransactions.map(scheduledTxn => {
+                                const dueDate = new Date(scheduledTxn.nextDueDate || scheduledTxn.dueDate);
+                                const isOverdue = dueDate < new Date();
+                                const daysDiff = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
+
+                                return (
+                                    <div
+                                        key={scheduledTxn.id}
+                                        className={`relative flex items-center p-4 ${isOverdue ? 'border-l-4 border-l-error bg-error/5' : 'border-l-4 border-l-warning bg-warning/5'}`}
+                                    >
+                                        {/* Left side - Transaction details */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3 mb-1">
+                                                {/* Schedule indicator */}
+                                                <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${isOverdue ? 'bg-error text-white' : 'bg-warning text-white'}`}>
+                                                    ⏰
+                                                </div>
+
+                                                {/* Payee */}
+                                                <div className="font-medium text-base-content truncate">
+                                                    {scheduledTxn.payee || 'No Payee'}
+                                                </div>
+
+                                                {/* Due status */}
+                                                <div className={`text-xs px-2 py-1 rounded-full ${isOverdue
+                                                    ? 'bg-error/20 text-error'
+                                                    : daysDiff === 0
+                                                        ? 'bg-warning/20 text-warning'
+                                                        : 'bg-info/20 text-info'
+                                                    }`}>
+                                                    {isOverdue
+                                                        ? 'Overdue'
+                                                        : daysDiff === 0
+                                                            ? 'Due Today'
+                                                            : `Due in ${daysDiff} day${daysDiff > 1 ? 's' : ''}`
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            {/* Memo and Category */}
+                                            <div className="space-y-1">
+                                                {scheduledTxn.memo && (
+                                                    <div className="text-sm text-base-content/70 truncate">
+                                                        {scheduledTxn.memo}
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-2">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-base-200 text-base-content/60">
+                                                        {getCategoryName(scheduledTxn.categoryId)}
+                                                    </span>
+                                                    <span className="text-xs text-base-content/60">
+                                                        {getAccountName(scheduledTxn.accountId)}
+                                                    </span>
+                                                    <span className="text-xs text-base-content/60">
+                                                        • {scheduledTxn.frequency}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Right side - Amount and actions */}
+                                        <div className="flex items-center gap-3 ml-4">
+                                            {/* Amount */}
+                                            <div className={`text-right font-semibold ${scheduledTxn.amount >= 0
+                                                ? 'text-success'
+                                                : 'text-error'
+                                                }`}>
+                                                <div className="text-base">
+                                                    {scheduledTxn.amount >= 0 ? '+' : '-'}{formatCurrency(scheduledTxn.amount)}
+                                                </div>
+                                            </div>
+
+                                            {/* Action buttons */}
+                                            <div className="flex items-center gap-1">
+                                                {/* Activate Early */}
+                                                <button
+                                                    onClick={() => onActivateScheduledTransactionEarly?.(scheduledTxn.id)}
+                                                    className="p-2 text-success hover:bg-success/10 rounded transition-colors"
+                                                    title="Activate Now"
+                                                >
+                                                    ▶
+                                                </button>
+
+                                                {/* Skip */}
+                                                <button
+                                                    onClick={() => onSkipScheduledTransaction?.(scheduledTxn.id)}
+                                                    className="p-2 text-warning hover:bg-warning/10 rounded transition-colors"
+                                                    title="Skip This Occurrence"
+                                                >
+                                                    ⏭
+                                                </button>
+
+                                                {/* Edit */}
+                                                <button
+                                                    onClick={() => onEditScheduledTransaction?.(scheduledTxn.id, scheduledTxn)}
+                                                    className="p-2 text-base-content/60 hover:text-base-content transition-colors"
+                                                    title="Edit Schedule"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </button>
+
+                                                {/* Delete */}
+                                                <button
+                                                    onClick={() => onDeleteScheduledTransaction?.(scheduledTxn.id)}
+                                                    className="p-2 text-base-content/60 hover:text-error transition-colors"
+                                                    title="Delete Schedule"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 
