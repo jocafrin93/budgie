@@ -1,6 +1,5 @@
 import {
     BanknotesIcon,
-    CalendarIcon,
     ChartBarIcon,
     CogIcon,
     HomeIcon
@@ -33,14 +32,6 @@ export const navigation = [
         title: 'Transactions',
         transKey: 'nav.budget.transactions',
         Icon: BanknotesIcon,
-    },
-    {
-        id: 'calendar',
-        path: '/budget/calendar',
-        type: NAV_TYPE_ITEM,
-        title: 'Calendar',
-        transKey: 'nav.budget.calendar',
-        Icon: CalendarIcon,
     },
     {
         id: 'budget-settings',

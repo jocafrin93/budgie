@@ -59,12 +59,6 @@ const protectedRoutes = {
               }),
             },
             {
-              path: "calendar",
-              lazy: async () => ({
-                Component: (await import("app/pages/budget/calendar")).default,
-              }),
-            },
-            {
               path: "settings",
               lazy: async () => ({
                 Component: (await import("app/pages/budget/settings")).default,

@@ -10,14 +10,17 @@ import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
+    BanknoteArrowDown,
     Box,
     Calendar,
+    CalendarOff,
     ChevronDown,
     ChevronRight,
     DollarSign,
     Edit,
     Plus,
     Search,
+    Target,
     ToggleLeft,
     ToggleRight,
     Trash2
@@ -144,7 +147,7 @@ const BudgetCategoriesTable = ({
         const dateInfo = getCategoryDateInfo(category);
 
         if (!dateInfo.earliestDate) {
-            return '—';
+            return <CalendarOff className="w-4 h-4 text-base-content/60" />;
         }
 
         const formattedDate = formatDueDate(dateInfo.earliestDate);
@@ -479,10 +482,13 @@ const BudgetCategoriesTable = ({
                                 <div className="flex items-center gap-3">
                                     <div className={`w-3 h-3 rounded-full ${item.color} border border-base-300`}></div>
                                     {item.type === 'multiple' && (
-                                        <Box className="w-4 h-4 text-base-content/60" fill="none" stroke="currentColor">
+                                        <Box className="w-4 h-4 text-base-content/40" fill="none" stroke="currentColor">
                                         </Box>
                                     )}
-                                    <div className="font-medium text-base-content">{item.name}</div>
+                                    {item.planningType === 'goal' && (
+                                        <Target className="w-4 h-4 text-base-content/40" />
+                                    )}
+                                    <div className="font-medium text-base-content/60">{item.name}</div>
                                 </div>
 
                                 {/* Hover actions */}
@@ -690,7 +696,11 @@ const BudgetCategoriesTable = ({
                     const isSubItem = !row.original.isParent;
 
                     // Don't show allocated amounts for sub-items - funds are allocated to categories, not individual items
-                    if (isSubItem) return <div className="text-right text-base-content/60">—</div>;
+                    if (isSubItem) return (
+                        <div className="text-center">
+                            <CalendarOff className="w-4 h-4 text-base-content/60" />
+                        </div>
+                    );
 
                     const value = getValue();
                     return (
@@ -710,7 +720,11 @@ const BudgetCategoriesTable = ({
                     const isSubItem = !row.original.isParent;
 
                     // Don't show spent amounts for sub-items - spending is tracked at category level
-                    if (isSubItem) return <div className="text-right text-base-content/60">—</div>;
+                    if (isSubItem) return (
+                        <div className="text-center">
+                            <CalendarOff className="w-4 h-4 text-base-content/60" />
+                        </div>
+                    );
 
                     const value = getValue();
                     return (
@@ -730,7 +744,11 @@ const BudgetCategoriesTable = ({
                     const isSubItem = !row.original.isParent;
 
                     // Don't show available amounts for sub-items - only categories have available funds
-                    if (isSubItem) return <div className="text-right text-base-content/60">—</div>;
+                    if (isSubItem) return (
+                        <div className="text-center">
+                            <CalendarOff className="w-4 h-4 text-base-content/60" />
+                        </div>
+                    );
 
                     const value = getValue();
                     const isOverspent = value < 0;
@@ -744,7 +762,6 @@ const BudgetCategoriesTable = ({
                                     className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:border-primary focus:outline-none bg-success-lighter/20 text-success border-success hover"
                                     title="Click to move money out of this category"
                                 >
-                                    <span className="mr-1">💰</span>
                                     {formatCurrency(value)}
                                 </button>
                             </div>
@@ -783,7 +800,11 @@ const BudgetCategoriesTable = ({
                     if (isSubItem) {
                         // Sub-item: show its own due date
                         const dueDate = getValue();
-                        if (!dueDate) return <span className="text-base-content/60">—</span>;
+                        if (!dueDate) return (
+                            <div className="text-center">
+                                <CalendarOff className="w-4 h-4 text-base-content/60 mx-auto" />
+                            </div>
+                        );
 
                         const urgency = getDueDateUrgency(dueDate);
                         return (
@@ -799,7 +820,11 @@ const BudgetCategoriesTable = ({
                         const dateInfo = getCategoryDateInfo(item);
 
                         if (!dateInfo.earliestDate) {
-                            return <span className="text-base-content/60">—</span>;
+                            return (
+                                <div className="text-center">
+                                    <CalendarOff className="w-4 h-4 text-base-content/60 mx-auto" />
+                                </div>
+                            );
                         }
 
                         const urgency = getDueDateUrgency(dateInfo.earliestDate);
@@ -972,13 +997,11 @@ const BudgetCategoriesTable = ({
 
                 if (availableToAllocate > 0) {
                     return (
-                        <div className="mb-4 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-lg border border-success-light overflow-hidden shadow-sm">
+                        <div className="mb-4 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg hover:from-success/20 hover:to-success/35 transition-all duration-300">
                             <div className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 bg-success rounded-full flex items-center justify-center text-white text-xl">
-                                            💰
-                                        </div>
+                                        <BanknoteArrowDown className="w-14 h-14 rounded-full flex items-center justify-center text-primary" />
                                         <div>
                                             <h3 className="text-lg font-semibold text-success-dark">
                                                 Available to Allocate
@@ -1005,7 +1028,7 @@ const BudgetCategoriesTable = ({
                                         onClick={() => setQuickAllocateModal({ isOpen: true })}
                                         variant="outlined-primary"
                                         isGlow={true}
-                                        className="flex items-center gap-2"
+                                        className="flex items-center gap-2 hover:scale-105 hover:shadow-lg transition-all duration-200"
                                     >
                                         <span>⚡</span>
                                         Quick Allocate
@@ -1023,7 +1046,7 @@ const BudgetCategoriesTable = ({
                                         variant="filled"
                                         color="primary"
                                         isGlow={true}
-                                        className="flex items-center gap-2"
+                                        className="flex items-center gap-2 hover:scale-105 hover:shadow-lg transition-all duration-200"
                                     >
                                         <span>🎯</span>
                                         Single Category

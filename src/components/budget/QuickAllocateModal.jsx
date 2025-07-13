@@ -370,7 +370,7 @@ const QuickAllocateModal = ({
                                     <button
                                         onClick={() => setViewMode('total')}
                                         className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'total'
-                                            ? 'bg-info/50 text-white'
+                                            ? 'bg-info-lighter/50 text-base-content'
                                             : 'text-base-content/70 hover'
                                             }`}
                                     >
@@ -379,7 +379,7 @@ const QuickAllocateModal = ({
                                     <button
                                         onClick={() => setViewMode('by-account')}
                                         className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === 'by-account'
-                                            ? 'bg-info/50 text-white'
+                                            ? 'bg-info-lighter/50 text-base-content'
                                             : 'text-base-content/70 hover'
                                             }`}
                                     >
@@ -390,13 +390,13 @@ const QuickAllocateModal = ({
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={applySuggestions}
-                                    className="px-3 py-1 text-sm bg-info/10 text-info rounded-lg hover transition-colors"
+                                    className="px-3 py-1 text-sm bg-info/10 text-info rounded-lg hover:bg-info/20 hover:text-info hover:scale-105 transition-all duration-200"
                                 >
                                     Use Suggestions
                                 </button>
                                 <button
                                     onClick={clearAll}
-                                    className="px-3 py-1 text-sm bg-base-200 text-base-content/60 rounded-lg hover transition-colors"
+                                    className="px-3 py-1 text-sm bg-base-200 text-base-content/60 rounded-lg hover:bg-base-300 hover:text-base-content hover:scale-105 transition-all duration-200"
                                 >
                                     Clear All
                                 </button>
@@ -583,7 +583,7 @@ const QuickAllocateModal = ({
                                             {suggested > 0 && (
                                                 <button
                                                     onClick={() => handleAllocationChange(category.id, suggested)}
-                                                    className="px-2 py-1 text-xs bg-info/10 text-info rounded hover transition-colors"
+                                                    className="px-2 py-1 text-xs bg-info/10 text-info rounded hover:bg-info/20 hover:text-info hover:scale-105 transition-all duration-200"
                                                     title="Use suggested amount"
                                                 >
                                                     Suggested
@@ -591,7 +591,7 @@ const QuickAllocateModal = ({
                                             )}
                                             <button
                                                 onClick={() => handleAllocationChange(category.id, category.perPaycheck || 0)}
-                                                className="px-2 py-1 text-xs bg-base-200 text-base-content/60 rounded hover transition-colors"
+                                                className="px-2 py-1 text-xs bg-base-200 text-base-content/60 rounded hover:bg-base-300 hover:text-base-content hover:scale-105 transition-all duration-200"
                                                 title="Use full per-paycheck amount"
                                             >
                                                 Full
@@ -619,17 +619,17 @@ const QuickAllocateModal = ({
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover transition-colors"
+                                className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 hover:text-base-content hover:border-base-400 transition-all duration-200"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleBulkAllocate}
                                 disabled={!canAllocate}
-                                className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-colors ${canAllocate
+                                className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-all duration-200 ${canAllocate
                                     ? needsCrossAccountTransfer
-                                        ? 'bg-warning hover text-white'
-                                        : 'bg-success hover text-white'
+                                        ? 'bg-warning hover:bg-warning/90 hover:scale-105 text-white shadow-lg hover:shadow-xl'
+                                        : 'bg-success hover:bg-success/90 hover:scale-105 text-white shadow-lg hover:shadow-xl'
                                     : 'bg-base-300 text-base-content/60 cursor-not-allowed'
                                     }`}
                             >
