@@ -13,7 +13,7 @@ import { TbCoins, TbUser } from "react-icons/tb";
 import { Link } from "react-router";
 
 // Local Imports
-import { Avatar, AvatarDot, Button } from "components/ui";
+import { Avatar, AvatarDot } from "components/ui";
 
 // ----------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ const links = [
 
 export function Profile() {
   return (
-    <Popover className="relative">
+    <Popover className="relative hidden">
       <PopoverButton
         as={Avatar}
         size={12}
@@ -119,10 +119,10 @@ export function Profile() {
                   </Link>
                 ))}
                 <div className="px-4 pt-4">
-                  <Button className="w-full gap-2">
+                  <button className="btn btn-primary w-full gap-2">
                     <ArrowLeftStartOnRectangleIcon className="size-4.5" />
                     <span>Logout</span>
-                  </Button>
+                  </button>
                 </div>
               </div>
             </>
