@@ -49,7 +49,7 @@ import {
     formatAmountWithFrequency
 } from '../../utils/budgetDisplayUtils';
 import { getGradientStyle } from '../../utils/gradientUtils';
-import { Button } from '../ui/Button';
+// import { Button } from '../ui/Button';
 import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
 
@@ -77,13 +77,13 @@ const SortableRow = ({ row, children }) => {
     if (!row.original.isParent || row.original.isAddRow) {
         return (
             <tr
-                className={`transition-colors ${row.original.isAddRow
-                    ? 'bg-primary/10 hover'
+                className={`${row.original.isAddRow
+                    ? 'bg-primary/10'
                     : !row.original.isParent && !row.original.isAddRow
-                        ? 'bg-base-100 hover bg-base-200'
+                        ? 'bg-base-100'
                         : row.original.isParent && !row.original.isActive
-                            ? 'bg-base-200 bg-base-200 opacity-60'
-                            : 'hover'
+                            ? 'bg-base-200 opacity-60'
+                            : ''
                     }`}
             >
                 {children}
@@ -99,13 +99,13 @@ const SortableRow = ({ row, children }) => {
             ref={setNodeRef}
             style={style}
             {...attributes}
-            className={`transition-colors ${row.original.isAddRow
-                ? 'bg-primary/10 hover'
+            className={`${row.original.isAddRow
+                ? 'bg-primary/10'
                 : !row.original.isParent && !row.original.isAddRow
-                    ? 'bg-base-100 hover bg-base-200'
+                    ? 'bg-base-100'
                     : row.original.isParent && !row.original.isActive
-                        ? 'bg-base-200 bg-base-200 opacity-60'
-                        : 'hover'
+                        ? 'bg-base-200 opacity-60'
+                        : ''
                 }`}
         >
             {childrenArray.map((child, index) => {
@@ -1164,7 +1164,7 @@ const BudgetCategoriesTable = ({
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-6 bg-base-100">
+        <div className="w-full max-w-7xl mx-auto p-6 bg-base-200 rounded-lg border-base-300">
             {/* Header */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -1238,7 +1238,7 @@ const BudgetCategoriesTable = ({
 
                 if (availableToAllocate > 0) {
                     return (
-                        <div className="mb-4 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg hover:from-success/20 hover:to-success/35 transition-all duration-300">
+                        <div className="mb-4 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
                             <div className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -1264,17 +1264,14 @@ const BudgetCategoriesTable = ({
 
                                 {/* Action Buttons */}
                                 <div className="flex items-center gap-3 mt-4">
-                                    <Button
-                                        color="primary"
+                                    <button
                                         onClick={() => setQuickAllocateModal({ isOpen: true })}
-                                        variant="outlined-primary"
-                                        isGlow={true}
-                                        className="flex items-center gap-2 hover:scale-105 hover:shadow-lg transition-all duration-200"
+                                        className="btn btn-primary btn-outline flex items-center gap-2 hover:scale-105 transition-all duration-200"
                                     >
                                         <span>⚡</span>
                                         Quick Allocate
-                                    </Button>
-                                    <Button
+                                    </button>
+                                    <button
                                         onClick={() => setTransferModal({
                                             isOpen: true,
                                             targetCategory: {
@@ -1284,14 +1281,11 @@ const BudgetCategoriesTable = ({
                                             },
                                             mode: 'allocate-from'
                                         })}
-                                        variant="filled"
-                                        color="primary"
-                                        isGlow={true}
-                                        className="flex items-center gap-2 hover:scale-105 hover:shadow-lg transition-all duration-200"
+                                        className="btn btn-primary flex items-center gap-2 hover:scale-105 transition-all duration-200"
                                     >
                                         <span>🎯</span>
                                         Single Category
-                                    </Button>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1310,7 +1304,7 @@ const BudgetCategoriesTable = ({
                 <div className="bg-base-100 rounded-lg border border-base-300 overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-base-200 border-b border-base-300">
+                            <thead className="bg-base-300 border-b border-base-300">
                                 {table.getHeaderGroups().map(headerGroup => (
                                     <tr key={headerGroup.id}>
                                         {headerGroup.headers.map(header => (
@@ -1332,7 +1326,7 @@ const BudgetCategoriesTable = ({
                                 items={parentCategories.map(cat => cat.id.toString())}
                                 strategy={verticalListSortingStrategy}
                             >
-                                <tbody className="bg-base-100 divide-y divide-gray-200">
+                                <tbody className="bg-base-100">
                                     {table.getRowModel().rows.map(row => {
                                         const isGoalProgress = row.original.isGoalProgress;
                                         const isExpenseDetails = row.original.isExpenseDetails;
@@ -1506,7 +1500,7 @@ const BudgetCategoriesTable = ({
                                                 {row.getVisibleCells().map(cell => (
                                                     <td
                                                         key={cell.id}
-                                                        className="px-4 py-2 whitespace-nowrap"
+                                                        className="px-4 py-2 whitespace-nowrap border-b border-base-300"
                                                         style={{ width: cell.column.getSize() }}
                                                     >
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -1521,7 +1515,7 @@ const BudgetCategoriesTable = ({
                     </div>
 
                     {/* Summary footer */}
-                    <div className="bg-base-200 border-t border-base-300 px-4 py-3">
+                    <div className="bg-base-300 border-t border-base-300 px-4 py-3">
                         <div className="flex items-center justify-between text-sm">
                             <div className="text-base-content/60">
                                 {data.length} categories • {data.reduce((sum, cat) => sum + (cat.subItems?.length || 0), 0)} total items

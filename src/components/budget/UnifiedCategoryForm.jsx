@@ -6,7 +6,6 @@ import { getGradientOptions, getRandomGradientId } from '../../utils/gradientUti
 import { dollarToPercentage, percentageToDollar } from '../../utils/moneyUtils';
 import { CurrencyField } from '../form';
 import { Input, Select, Textarea } from '../ui';
-import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 
 // Frequency options for recurring expenses
@@ -1000,13 +999,12 @@ const UnifiedCategoryForm = ({
                     <h2 className="text-xl font-semibold text-base-content">
                         {category ? 'Edit Category' : 'Add New Category'}
                     </h2>
-                    <Button
+                    <button
                         onClick={onCancel}
-                        variant="flat"
-                        isIcon
+                        className="btn btn-ghost btn-sm"
                     >
                         <X className="w-5 h-5" />
-                    </Button>
+                    </button>
                 </div>
 
                 <div className="p-6">
@@ -1430,18 +1428,17 @@ const UnifiedCategoryForm = ({
                                 Cancel
                             </button>
                             {!category && (
-                                <Button
+                                <button
                                     type="button"
                                     onClick={handleSubmitAnother}
-                                    variant="outlined"
-                                    color="primary"
+                                    className="btn btn-primary btn-outline"
                                 >
                                     Save & Add Another
-                                </Button>
+                                </button>
                             )}
-                            <Button type="submit" variant="filled" color="primary">
+                            <button type="submit" className="btn btn-primary">
                                 {category ? 'Update' : 'Save'} Category
-                            </Button>
+                            </button>
                         </div>
                     </form>
                 </div>

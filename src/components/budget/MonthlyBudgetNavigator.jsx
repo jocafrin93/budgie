@@ -182,13 +182,12 @@ const MonthlyBudgetNavigator = ({
                     )}
 
                     {onCarryForward && (
-                        <Button
+                        <button
                             onClick={onCarryForward}
-                            variant="primary"
-                            size="sm"
+                            className="btn btn-primary btn-sm"
                         >
-                            Carry Forward
-                        </Button>
+                            Rollover
+                        </button>
                     )}
                 </div>
             </div>

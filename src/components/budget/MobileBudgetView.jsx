@@ -1,5 +1,4 @@
 import { Badge } from 'components/ui/Badge';
-import { Button } from 'components/ui/Button';
 import {
     BanknoteArrowDown,
     Box,
@@ -120,16 +119,13 @@ const MobileBudgetView = ({
                             </div>
                         </div>
                     </div>
-                    <Button
+                    <button
                         onClick={onQuickAllocate}
-                        variant="outlined-primary"
-                        color="primary"
-                        isGlow={true}
-                        className="w-full flex items-center gap-2 hover:scale-105 hover:shadow-lg transition-all duration-200"
+                        className="btn btn-primary btn-outline w-full flex items-center gap-2 hover:scale-105 transition-all duration-200"
                     >
                         <span>⚡</span>
                         Quick Allocate
-                    </Button>
+                    </button>
                 </div>
             )}
 
@@ -139,16 +135,13 @@ const MobileBudgetView = ({
                     <DollarSign className="w-6 h-6 text-success" />
                     Budget Categories
                 </h2>
-                <Button
+                <button
                     onClick={onAddCategory}
-                    variant="filled"
-                    color="primary"
-                    size="sm"
-                    className="flex items-center gap-1"
+                    className="btn btn-primary btn-sm flex items-center gap-1"
                 >
                     <Plus className="w-4 h-4" />
                     Add
-                </Button>
+                </button>
             </div>
 
             {/* Filter Tabs */}

@@ -16,7 +16,9 @@ const THEME_MODE_MAP = {
     'cyberpunk': 'dark',
     'valentine': 'light',
     'forest': 'dark',
-    'aqua': 'light'
+    'aqua': 'light',
+    'dracula': 'dark',
+    'abyss': 'dark'
 };
 
 export function DaisyThemeProvider({ children }) {
@@ -67,7 +69,9 @@ export function DaisyThemeProvider({ children }) {
             'cyberpunk',
             'valentine',
             'forest',
-            'aqua'
+            'aqua',
+            'dracula',
+            'abyss'
         ]
     };
 

@@ -5,7 +5,6 @@ import { frequencyOptions } from '../../utils/constants';
 import { formatDate } from '../../utils/dateUtils';
 import { dollarToPercentage, percentageToDollar } from '../../utils/moneyUtils';
 import { CurrencyField } from '../form';
-import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input, Select } from '../ui/Form';
 
@@ -548,13 +547,12 @@ const UnifiedItemForm = ({
                         <h2 className="text-xl font-semibold text-base-content">
                             {item ? 'Edit Item' : 'Add New Item'}
                         </h2>
-                        <Button
+                        <button
                             onClick={onCancel}
-                            variant="flat"
-                            isIcon
+                            className="btn btn-ghost btn-sm"
                         >
                             <X className="w-5 h-5" />
-                        </Button>
+                        </button>
                     </div>
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
@@ -920,24 +918,22 @@ const UnifiedItemForm = ({
                                 Cancel
                             </button>
                             {!item && (
-                                <Button
+                                <button
                                     type="button"
                                     onClick={handleSubmitAnother}
-                                    variant="outlined"
-                                    color="primary"
                                     disabled={!form.isValid}
+                                    className="btn btn-primary btn-outline"
                                 >
                                     Save & Add Another
-                                </Button>
+                                </button>
                             )}
-                            <Button
+                            <button
                                 type="submit"
-                                variant="filled"
-                                color="primary"
                                 disabled={!form.isValid}
+                                className="btn btn-primary"
                             >
                                 {item ? 'Update' : 'Save'} Item
-                            </Button>
+                            </button>
                         </div>
                     </form>
                 </div>

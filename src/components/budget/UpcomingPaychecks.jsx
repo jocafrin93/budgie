@@ -231,7 +231,7 @@ const UpcomingPaychecks = ({
                             {calendarData.flat().map((dayData, index) => (
                                 <div
                                     key={index}
-                                    className={`min-h-[80px] p-1 border border-alert ${dayData ? 'bg-base-100' : 'bg-base-300'
+                                    className={`min-h-[80px] p-1 border border-secondary ${dayData ? 'bg-base-100' : 'bg-base-300'
                                         }`}
                                     style={dayData?.isToday ? {
                                         borderWidth: '2px',
