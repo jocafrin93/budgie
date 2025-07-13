@@ -682,15 +682,26 @@ const TransactionFormModal = ({
                             {/* Split Transaction Section */}
                             {!isTransfer && (
                                 <div className="border-t pt-4">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h3 className="font-medium">Split Transaction</h3>
+                                    <div className="flex items-center gap2 mb-4">
                                         <Button
                                             type="button"
-                                            onClick={() => setShowSplits(!showSplits)}
-                                            variant="flat"
+                                            variant="outlined"
+                                            color="primary"
+                                            onClick={() => {
+                                                const newShowSplits = !showSplits;
+                                                setShowSplits(newShowSplits);
+                                                // Automatically add first split when enabling splits
+                                                if (newShowSplits && formData.splits.length === 0) {
+                                                    setFormData(prev => ({
+                                                        ...prev,
+                                                        splits: [{ categoryId: '', amount: 0, memo: '' }]
+                                                    }));
+                                                }
+                                            }}
+
                                             size="sm"
                                         >
-                                            {showSplits ? 'Hide Splits' : 'Add Splits'}
+                                            {showSplits ? 'Hide Splits' : 'Split Transaction'}
                                         </Button>
                                     </div>
 
@@ -750,7 +761,7 @@ const TransactionFormModal = ({
                                                         color="primary"
                                                         className="w-full"
                                                     >
-                                                        Auto-Distribute Evenly
+                                                        Auto-Distribute
                                                     </Button>
                                                     <Button
                                                         type="button"
@@ -758,7 +769,7 @@ const TransactionFormModal = ({
                                                         variant="outlined"
                                                         className="w-full"
                                                     >
-                                                        Adjust Transaction Amount
+                                                        Adjust Total
                                                     </Button>
                                                     <Button
                                                         type="button"
@@ -774,60 +785,77 @@ const TransactionFormModal = ({
                                             {/* Split Rows */}
                                             <div className="space-y-3">
                                                 {formData.splits.map((split, index) => (
-                                                    <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-2 p-3 border rounded">
-                                                        <Select
-                                                            value={split.categoryId}
-                                                            onChange={(e) => updateSplit(index, 'categoryId', e.target.value)}
-                                                            placeholder="Category"
-                                                        >
-                                                            <option value="">Select Category</option>
-                                                            {categories.map(category => (
-                                                                <option key={category.id} value={category.id}>
-                                                                    {category.name}
-                                                                </option>
-                                                            ))}
-                                                        </Select>
+                                                    <div key={index} className="grid grid-cols-12 gap-3 p-3 border rounded items-center">
+                                                        {/* Category - 4 columns */}
+                                                        <div className="col-span-4">
+                                                            <Select
+                                                                value={split.categoryId}
+                                                                onChange={(e) => updateSplit(index, 'categoryId', e.target.value)}
+                                                                placeholder="Category"
+                                                                className="w-full"
+                                                            >
+                                                                <option value="">Select Category</option>
+                                                                {categories.map(category => (
+                                                                    <option key={category.id} value={category.id}>
+                                                                        {category.name}
+                                                                    </option>
+                                                                ))}
+                                                            </Select>
+                                                        </div>
 
-                                                        <CurrencyField
-                                                            value={split.amount}
-                                                            onChange={(e) => updateSplit(index, 'amount', parseFloat(e.target.value) || 0)}
-                                                            placeholder="Amount"
-                                                        />
+                                                        {/* Amount - 2 columns */}
+                                                        <div className="col-span-2">
+                                                            <CurrencyField
+                                                                value={split.amount}
+                                                                onChange={(e) => updateSplit(index, 'amount', parseFloat(e.target.value) || 0)}
+                                                                placeholder="Amount"
+                                                                className="w-full"
+                                                            />
+                                                        </div>
 
-                                                        {/* Percentage Display */}
-                                                        <div className="flex items-center justify-center text-sm text-base-content/60">
+                                                        {/* Percentage Display - 1 column */}
+                                                        <div className="col-span-1 flex items-center justify-center text-sm text-base-content/60">
                                                             {formData.amount > 0 ? `${((split.amount / formData.amount) * 100).toFixed(1)}%` : '0%'}
                                                         </div>
 
-                                                        <Input
-                                                            value={split.memo}
-                                                            onChange={(e) => updateSplit(index, 'memo', e.target.value)}
-                                                            placeholder="Memo"
-                                                        />
+                                                        {/* Memo - 4 columns */}
+                                                        <div className="col-span-4">
+                                                            <Input
+                                                                value={split.memo}
+                                                                onChange={(e) => updateSplit(index, 'memo', e.target.value)}
+                                                                placeholder="Memo"
+                                                                className="w-full bg-base-100"
+                                                            />
+                                                        </div>
 
-                                                        <Button
-                                                            type="button"
-                                                            onClick={() => removeSplit(index)}
-                                                            variant="flat"
-                                                            isIcon
-                                                            className="text-error"
-                                                        >
-                                                            <TbTrash />
-                                                        </Button>
+                                                        {/* Delete Button - 1 column */}
+                                                        <div className="col-span-1 flex justify-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeSplit(index)}
+                                                                className="p-1 text-error hover:bg-error/10 rounded transition-colors"
+                                                                title="Remove split"
+                                                            >
+                                                                <TbTrash className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
 
-                                            <Button
-                                                type="button"
-                                                onClick={addSplit}
-                                                variant="flat"
-                                                size="sm"
-                                                className="w-full"
-                                            >
-                                                <TbPlus className="mr-2" />
-                                                Add Split
-                                            </Button>
+                                            <div className="flex justify-end">
+                                                <Button
+                                                    type="button"
+                                                    onClick={addSplit}
+                                                    variant="outlined"
+                                                    color="primary"
+                                                    size="sm"
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    <TbPlus className="w-4 h-4" />
+                                                    Add Split
+                                                </Button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

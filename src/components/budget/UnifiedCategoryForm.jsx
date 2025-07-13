@@ -1121,13 +1121,12 @@ const UnifiedCategoryForm = ({
                         {/* Expense-specific fields - Only show for single categories */}
                         {form.values.type === 'single' && form.values.planningType === 'expense' && (
                             <div className="space-y-4 p-4 bg-primary/20 bg-base-200 border border-primary rounded-lg">
-                                <h3 className="font-medium text-info">Expense Configuration</h3>
 
                                 {/* Amount and Due Date Row */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {/* Amount Field */}
                                     <div>
-                                        <div className="flex items-center space-x-2 mb-2">
+                                        {/* <div className="flex items-center space-x-2 mb-2">
                                             <input
                                                 type="checkbox"
                                                 className="form-checkbox-rounded this:success"
@@ -1137,7 +1136,7 @@ const UnifiedCategoryForm = ({
                                             <label className="text-sm font-medium text-base-content">
                                                 Use percentage of pay
                                             </label>
-                                        </div>
+                                        </div> */}
 
                                         {form.values.usePercentage ? (
                                             <Input
@@ -1210,7 +1209,7 @@ const UnifiedCategoryForm = ({
 
                                 {/* Scheduled Transactions Option - Only show if due date AND recurring AND frequency are filled */}
                                 {form.values.dueDate && form.values.isRecurring && form.values.frequency && (
-                                    <div className="space-y-3 pt-4 border-t border-info">
+                                    <div className="space-y-3 pt-4 border-t border-primary">
                                         <div className="flex items-center space-x-2">
                                             <input
                                                 type="checkbox"
@@ -1218,7 +1217,7 @@ const UnifiedCategoryForm = ({
                                                 checked={form.values.createScheduledTransactions}
                                                 onChange={(e) => form.setFieldValue('createScheduledTransactions', e.target.checked)}
                                             />
-                                            <label className="text-sm font-medium text-info">
+                                            <label className="text-sm font-medium text-primary">
                                                 Create scheduled transactions for this expense
                                             </label>
                                         </div>
@@ -1397,7 +1396,7 @@ const UnifiedCategoryForm = ({
                         </div>
 
                         {/* Advanced Options */}
-                        <div className="space-y-3">
+                        {/* <div className="space-y-3">
                             <div className="flex items-center space-x-2">
                                 <input
                                     type="checkbox"
@@ -1409,7 +1408,7 @@ const UnifiedCategoryForm = ({
                                     Enable auto-funding
                                 </label>
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Description */}
                         <Textarea

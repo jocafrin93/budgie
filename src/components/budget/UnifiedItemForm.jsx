@@ -215,8 +215,9 @@ const UnifiedItemForm = ({
         }
     };
     // Determine if we're editing an expense or a goal
-    const isGoal = item?.targetAmount !== undefined;
-    const initialType = isGoal ? 'goal' : 'expense';
+    // const isGoal = item?.targetAmount !== undefined;
+    // const initialType = isGoal ? 'goal' : 'expense';
+    const initialType = 'expense'; // Only expenses for now
 
     console.log('DEBUG - UnifiedItemForm rendering with categories:', categories);
     console.log('DEBUG - UnifiedItemForm rendering with preselectedCategory:', preselectedCategory);
@@ -558,35 +559,39 @@ const UnifiedItemForm = ({
 
                     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
                         {/* Type Selection - Only show if not editing */}
+                        {/* COMMENTED OUT - Only expenses for now
                         {!item && (
                             <div className="space-y-2">
                                 <label className="block text-sm font-medium text-base-content">
                                     What are you adding?
                                 </label>
                                 <div className="flex space-x-2">
-                                    <Button
+                                    <button
                                         type="button"
                                         onClick={() => form.setFieldValue('type', 'expense')}
-                                        variant={form.values.type === 'expense' ? 'filled' : 'outlined'}
-                                        color={form.values.type === 'expense' ? 'primary' : 'neutral'}
-                                        className="flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm"
+                                        className={`flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm rounded-lg border transition-colors ${form.values.type === 'expense'
+                                            ? 'bg-primary text-white border-primary'
+                                            : 'bg-base-100 text-base-content border-base-300 hover:bg-base-200'
+                                            }`}
                                     >
                                         <span>💸</span>
                                         <span>Expense</span>
-                                    </Button>
-                                    <Button
+                                    </button>
+                                    <button
                                         type="button"
                                         onClick={() => form.setFieldValue('type', 'goal')}
-                                        variant={form.values.type === 'goal' ? 'filled' : 'outlined'}
-                                        color={form.values.type === 'goal' ? 'success' : 'neutral'}
-                                        className="flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm"
+                                        className={`flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm rounded-lg border transition-colors ${form.values.type === 'goal'
+                                            ? 'bg-success text-white border-success'
+                                            : 'bg-base-100 text-base-content border-base-300 hover:bg-base-200'
+                                            }`}
                                     >
                                         <span>🎯</span>
                                         <span>Goal</span>
-                                    </Button>
+                                    </button>
                                 </div>
                             </div>
                         )}
+                        */}
 
                         {/* Show current type when editing (read-only) */}
                         {item && (
@@ -646,13 +651,13 @@ const UnifiedItemForm = ({
                         {form.values.type === 'expense' ? (
                             // Expense-specific fields
                             <>
-                                {/* Amount Type Selection */}
+                                {/* Amount Type Selection
                                 <div className="space-y-3">
                                     <label className="block text-sm font-medium text-base-content">
                                         How do you want to set the amount?
                                     </label>
                                     <div className="flex space-x-3">
-                                        <Button
+                                        <button
                                             type="button"
                                             onClick={() => {
                                                 // Convert percentage to dollar if switching from percentage mode
@@ -662,14 +667,15 @@ const UnifiedItemForm = ({
                                                 }
                                                 form.setFieldValue('usePercentage', false);
                                             }}
-                                            variant={!form.values.usePercentage ? 'filled' : 'outlined'}
-                                            color={!form.values.usePercentage ? 'primary' : 'neutral'}
-                                            className="flex-1 py-2 px-3 text-sm"
+                                            className={`flex-1 py-2 px-3 text-sm rounded-lg border transition-colors ${!form.values.usePercentage
+                                                ? 'bg-primary text-white border-primary'
+                                                : 'bg-base-100 text-base-content border-base-300 hover:bg-base-200'
+                                                }`}
                                         >
                                             <span className="mr-1">💰</span>
                                             Dollar Amount
-                                        </Button>
-                                        <Button
+                                        </button>
+                                        <button
                                             type="button"
                                             onClick={() => {
                                                 // Convert dollar to percentage if switching from dollar mode
@@ -679,18 +685,33 @@ const UnifiedItemForm = ({
                                                 }
                                                 form.setFieldValue('usePercentage', true);
                                             }}
-                                            variant={form.values.usePercentage ? 'filled' : 'outlined'}
-                                            color={form.values.usePercentage ? 'success' : 'neutral'}
-                                            className="flex-1 py-2 px-3 text-sm"
+                                            className={`flex-1 py-2 px-3 text-sm rounded-lg border transition-colors ${form.values.usePercentage
+                                                ? 'bg-success text-white border-success'
+                                                : 'bg-base-100 text-base-content border-base-300 hover:bg-base-200'
+                                                }`}
                                         >
                                             <span className="mr-1">📊</span>
                                             % of Paycheck
-                                        </Button>
+                                        </button>
                                     </div>
-                                </div>
+                                </div> */}
 
                                 {/* Amount Field */}
-                                {form.values.usePercentage ? (
+                                <CurrencyField
+                                    name="amount"
+                                    label="Amount"
+                                    value={form.values.amount ? form.values.amount.toString() : ''}
+                                    onChange={(e) => {
+                                        const numericValue = parseFloat(e.target.value) || 0;
+                                        form.setFieldValue('amount', numericValue);
+                                    }}
+                                    placeholder="0.00"
+                                    error={form.errors.amount}
+                                    description={currentPay > 0 ? `Approx. ${dollarToPercentage(form.values.amount || 0, currentPay).toFixed(1)}% of income` : ''}
+                                    className="border-base-300 bg-base-100 text-base-content"
+
+                                />
+                                {/* {form.values.usePercentage ? (
                                     <div>
                                         <Input
                                             name="percentageAmount"
@@ -719,8 +740,10 @@ const UnifiedItemForm = ({
                                         placeholder="0.00"
                                         error={form.errors.amount}
                                         description={currentPay > 0 ? `Approx. ${dollarToPercentage(form.values.amount || 0, currentPay).toFixed(1)}% of income` : ''}
+                                        className="border-base-300 bg-base-100 text-base-content"
+
                                     />
-                                )}
+                                )} */}
 
                                 {/* Due Date - Always show */}
                                 <Input
@@ -860,36 +883,30 @@ const UnifiedItemForm = ({
                                 )}
                             </>
                         ) : (
-                            // Goal-specific fields
+                            // Goal-specific fields - COMMENTED OUT FOR NOW
                             <>
-                                {/* Target Amount */}
+                                {/* Target Amount
                                 <CurrencyField
                                     {...form.getFieldProps('targetAmount')}
                                     label="Target Amount"
                                     placeholder="0.00"
                                 />
 
-                                {/* Target Date */}
+                                Target Date
                                 <Input
                                     {...form.getFieldProps('targetDate')}
                                     label="Target Date"
                                     type="date"
                                 />
 
-                                {/* Monthly Contribution */}
+                                Monthly Contribution
                                 <CurrencyField
                                     {...form.getFieldProps('monthlyContribution')}
                                     label="Monthly Contribution"
                                     placeholder="0.00"
                                 />
+                                */}
 
-                                {/* Already Saved */}
-                                <CurrencyField
-                                    {...form.getFieldProps('alreadySaved')}
-                                    label="Already Saved"
-                                    placeholder="0.00"
-                                    description={form.values.targetAmount ? `${(((parseFloat(form.values.alreadySaved) || 0) / (parseFloat(form.values.targetAmount) || 1)) * 100).toFixed(1)}% funded` : ''}
-                                />
                             </>
                         )}
 

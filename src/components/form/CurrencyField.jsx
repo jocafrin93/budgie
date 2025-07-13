@@ -79,7 +79,7 @@ const CurrencyField = forwardRef(({
     };
 
     const baseClasses = `
-        px-3 py-2 border rounded-lg border-base-300 focus:outline-none focus:border-primary bg-base-100 text-base-content
+        px-3 py-2 border rounded-lg focus:outline-none focus:border-primary bg-base-100 text-base-content
         ${className}
     `.trim();
 
