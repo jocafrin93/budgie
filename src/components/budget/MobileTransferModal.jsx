@@ -300,7 +300,7 @@ const MobileTransferModal = ({
                 <div className="flex items-center gap-3 p-4 border-t border-base-300 sticky bottom-0 bg-base-300">
                     <button
                         onClick={onClose}
-                        className="btn btn-outline btn-secondary flex-1"
+                        className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 hover:text-base-content hover:border-base-400 transition-all duration-200 flex-1"
                     >
                         Cancel
                     </button>

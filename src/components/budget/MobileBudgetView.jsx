@@ -451,88 +451,87 @@ const MobileBudgetView = ({
             </div>
 
             {/* Transfer Modal */}
-            {
-                transferModal.isOpen && (
-                    <MobileTransferModal
-                        isOpen={transferModal.isOpen}
-                        onClose={() => setTransferModal({ isOpen: false, targetCategory: null })}
-                        targetCategory={transferModal.targetCategory}
-                        categories={data}
-                        availableToAllocate={availableToAllocate}
-                        onTransferComplete={(transferData) => {
-                            console.log('🔄 MobileBudgetView: Transfer completed callback received');
-                            console.log('📊 Transfer data received:', transferData);
+            {transferModal.isOpen && (
+                <MobileTransferModal
+                    isOpen={transferModal.isOpen}
+                    onClose={() => setTransferModal({ isOpen: false, targetCategory: null })}
+                    targetCategory={transferModal.targetCategory}
+                    categories={data}
+                    availableToAllocate={availableToAllocate}
+                    onTransferComplete={(transferData) => {
+                        console.log('🔄 MobileBudgetView: Transfer completed callback received');
+                        console.log('📊 Transfer data received:', transferData);
 
-                            // Handle the transfer completion here
-                            if (transferData.type === 'allocation') {
-                                // Allocation from "to be allocated" to a category
-                                console.log('💰 Processing allocation from unallocated funds');
-                                const updatedData = data.map(category => {
-                                    if (category.id === transferData.toCategory) {
-                                        const newAvailable = (category.available || 0) + transferData.amount;
-                                        const newAllocated = (category.allocated || 0) + transferData.amount;
-                                        return {
-                                            ...category,
-                                            available: newAvailable,
-                                            allocated: newAllocated
-                                        };
-                                    }
-                                    return category;
-                                });
-
-                                if (onDataUpdate) {
-                                    onDataUpdate(updatedData);
+                        // Handle the transfer completion here
+                        if (transferData.type === 'allocation') {
+                            // Allocation from "to be allocated" to a category
+                            console.log('💰 Processing allocation from unallocated funds');
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.toCategory) {
+                                    const newAvailable = (category.available || 0) + transferData.amount;
+                                    const newAllocated = (category.allocated || 0) + transferData.amount;
+                                    return {
+                                        ...category,
+                                        available: newAvailable,
+                                        allocated: newAllocated
+                                    };
                                 }
+                                return category;
+                            });
 
-                            } else if (transferData.type === 'deallocate') {
-                                // Transfer from category back to "to be allocated"
-                                console.log('💸 Processing deallocation back to unallocated funds');
-                                const updatedData = data.map(category => {
-                                    if (category.id === transferData.fromCategory) {
-                                        const newAvailable = (category.available || 0) - transferData.amount;
-                                        const newAllocated = (category.allocated || 0) - transferData.amount;
-                                        return {
-                                            ...category,
-                                            available: newAvailable,
-                                            allocated: newAllocated
-                                        };
-                                    }
-                                    return category;
-                                });
-
-                                if (onDataUpdate) {
-                                    onDataUpdate(updatedData);
-                                }
-
-                            } else if (transferData.type === 'transfer') {
-                                // Category-to-category transfer
-                                console.log('🔄 Processing category-to-category transfer');
-                                const updatedData = data.map(category => {
-                                    if (category.id === transferData.fromCategory) {
-                                        const newAvailable = (category.available || 0) - transferData.amount;
-                                        return {
-                                            ...category,
-                                            available: newAvailable
-                                        };
-                                    } else if (category.id === transferData.toCategory) {
-                                        const newAvailable = (category.available || 0) + transferData.amount;
-                                        return {
-                                            ...category,
-                                            available: newAvailable
-                                        };
-                                    }
-                                    return category;
-                                });
-
-                                if (onDataUpdate) {
-                                    onDataUpdate(updatedData);
-                                }
+                            if (onDataUpdate) {
+                                onDataUpdate(updatedData);
                             }
 
-                            setTransferModal({ isOpen: false, targetCategory: null });
-                        }}
-                    />
-                )
+                        } else if (transferData.type === 'deallocate') {
+                            // Transfer from category back to "to be allocated"
+                            console.log('💸 Processing deallocation back to unallocated funds');
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.fromCategory) {
+                                    const newAvailable = (category.available || 0) - transferData.amount;
+                                    const newAllocated = (category.allocated || 0) - transferData.amount;
+                                    return {
+                                        ...category,
+                                        available: newAvailable,
+                                        allocated: newAllocated
+                                    };
+                                }
+                                return category;
+                            });
+
+                            if (onDataUpdate) {
+                                onDataUpdate(updatedData);
+                            }
+
+                        } else if (transferData.type === 'transfer') {
+                            // Category-to-category transfer
+                            console.log('🔄 Processing category-to-category transfer');
+                            const updatedData = data.map(category => {
+                                if (category.id === transferData.fromCategory) {
+                                    const newAvailable = (category.available || 0) - transferData.amount;
+                                    return {
+                                        ...category,
+                                        available: newAvailable
+                                    };
+                                } else if (category.id === transferData.toCategory) {
+                                    const newAvailable = (category.available || 0) + transferData.amount;
+                                    return {
+                                        ...category,
+                                        available: newAvailable
+                                    };
+                                }
+                                return category;
+                            });
+
+                            if (onDataUpdate) {
+                                onDataUpdate(updatedData);
+                            }
+                        }
+
+                        setTransferModal({ isOpen: false, targetCategory: null });
+                    }}
+                />
+            )
             }
         </div >
     );

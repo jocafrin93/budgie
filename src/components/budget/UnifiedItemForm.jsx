@@ -128,7 +128,7 @@ const PayeeAutocompleteComponent = ({ value, onChange, payees, onAddPayee, place
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-base-100 border border-info rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {/* Existing payees */}
                     {filteredPayees.length > 0 && (
                         <div>
@@ -556,20 +556,20 @@ const UnifiedItemForm = ({
                         </Button>
                     </div>
 
-                    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
+                    <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
                         {/* Type Selection - Only show if not editing */}
                         {!item && (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <label className="block text-sm font-medium text-base-content">
                                     What are you adding?
                                 </label>
-                                <div className="flex space-x-3">
+                                <div className="flex space-x-2">
                                     <Button
                                         type="button"
                                         onClick={() => form.setFieldValue('type', 'expense')}
                                         variant={form.values.type === 'expense' ? 'filled' : 'outlined'}
                                         color={form.values.type === 'expense' ? 'primary' : 'neutral'}
-                                        className="flex-1 py-3 px-4 flex items-center justify-center space-x-2"
+                                        className="flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm"
                                     >
                                         <span>💸</span>
                                         <span>Expense</span>
@@ -579,7 +579,7 @@ const UnifiedItemForm = ({
                                         onClick={() => form.setFieldValue('type', 'goal')}
                                         variant={form.values.type === 'goal' ? 'filled' : 'outlined'}
                                         color={form.values.type === 'goal' ? 'success' : 'neutral'}
-                                        className="flex-1 py-3 px-4 flex items-center justify-center space-x-2"
+                                        className="flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm"
                                     >
                                         <span>🎯</span>
                                         <span>Goal</span>
@@ -590,17 +590,17 @@ const UnifiedItemForm = ({
 
                         {/* Show current type when editing (read-only) */}
                         {item && (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <label className="block text-sm font-medium text-base-content">
                                     Item Type
                                 </label>
-                                <div className={`py-3 px-4 rounded-lg border ${form.values.type === 'expense'
+                                <div className={`py-2 px-3 rounded-lg border ${form.values.type === 'expense'
                                     ? 'bg-primary/10 border-primary'
                                     : 'bg-success/10 border-success'
                                     }`}>
                                     <div className="flex items-center space-x-2">
                                         <span>{form.values.type === 'expense' ? '💸' : '🎯'}</span>
-                                        <span className="font-medium text-base-content">
+                                        <span className="font-medium text-base-content text-sm">
                                             {form.values.type === 'expense' ? 'Expense' : 'Savings Goal'}
                                         </span>
                                     </div>
@@ -608,38 +608,40 @@ const UnifiedItemForm = ({
                             </div>
                         )}
 
-                        {/* Name Field */}
-                        <Input
-                            {...form.getFieldProps('name')}
-                            label="Name"
-                            placeholder={form.values.type === 'expense' ? "Expense name (e.g., 'Rent')" : "Goal name (e.g., 'New Car')"}
-                            autoFocus
-                            className="border-base-300 bg-base-100 text-base-content"
-                        />
+                        {/* Basic Info Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input
+                                {...form.getFieldProps('name')}
+                                label="Name"
+                                placeholder={form.values.type === 'expense' ? "Expense name (e.g., 'Rent')" : "Goal name (e.g., 'New Car')"}
+                                autoFocus
+                                className="border-base-300 bg-base-100 text-base-content"
+                            />
 
-                        {/* Category Field */}
-                        <Select
-                            {...form.getFieldProps('categoryId')}
-                            label="Category"
-                            data={categoryOptions}
-                            className="border-base-300 bg-base-100 text-base-content"
-                        />
+                            <Select
+                                {...form.getFieldProps('priorityState')}
+                                label="Status"
+                                data={priorityStateOptions}
+                                className="border-base-300 bg-base-100 text-base-content"
+                            />
+                        </div>
 
-                        {/* Account Field */}
-                        <Select
-                            {...form.getFieldProps('accountId')}
-                            label="Funding Account"
-                            data={accountOptions}
-                            className="border-base-300 bg-base-100 text-base-content"
-                        />
+                        {/* Category and Account Row */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Select
+                                {...form.getFieldProps('categoryId')}
+                                label="Category"
+                                data={categoryOptions}
+                                className="border-base-300 bg-base-100 text-base-content"
+                            />
 
-                        {/* Priority State Field */}
-                        <Select
-                            {...form.getFieldProps('priorityState')}
-                            label="Status"
-                            data={priorityStateOptions}
-                            className="border-base-300 bg-base-100 text-base-content"
-                        />
+                            <Select
+                                {...form.getFieldProps('accountId')}
+                                label="Funding Account"
+                                data={accountOptions}
+                                className="border-base-300 bg-base-100 text-base-content"
+                            />
+                        </div>
 
                         {form.values.type === 'expense' ? (
                             // Expense-specific fields
@@ -728,17 +730,34 @@ const UnifiedItemForm = ({
                                     className="border-base-300 bg-base-100 text-base-content"
                                 />
 
-                                {/* Frequency - Always show */}
-                                <Select
-                                    {...form.getFieldProps('frequency')}
-                                    label="Frequency"
-                                    data={formFrequencyOptions}
-                                    className="border-base-300 bg-base-100 text-base-content"
-                                />
+                                {/* Recurring Expense Checkbox - Only show if due date is filled */}
+                                {form.values.dueDate && (
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="checkbox"
+                                            className="form-checkbox-rounded this:success"
+                                            checked={form.values.isRecurring}
+                                            onChange={(e) => form.setFieldValue('isRecurring', e.target.checked)}
+                                        />
+                                        <label className="text-sm font-medium text-base-content">
+                                            This is a recurring expense
+                                        </label>
+                                    </div>
+                                )}
 
-                                {/* Scheduled Transactions Option - Only show if due date AND frequency are filled */}
-                                {form.values.dueDate && form.values.frequency && (
-                                    <div className="space-y-3 pt-4 border-t border-info">
+                                {/* Frequency - Only show if recurring */}
+                                {form.values.dueDate && form.values.isRecurring && (
+                                    <Select
+                                        {...form.getFieldProps('frequency')}
+                                        label="Frequency"
+                                        data={formFrequencyOptions}
+                                        className="border-base-300 bg-base-100 text-base-content"
+                                    />
+                                )}
+
+                                {/* Scheduled Transactions Option - Only show if due date AND recurring AND frequency are filled */}
+                                {form.values.dueDate && form.values.isRecurring && form.values.frequency && (
+                                    <div className="space-y-3 pt-4 border-t border-base-300">
                                         <div className="flex items-center space-x-2">
                                             <input
                                                 type="checkbox"
@@ -876,9 +895,13 @@ const UnifiedItemForm = ({
 
                         {/* Form Actions */}
                         <div className="flex justify-end space-x-3 pt-4 border-t border-base-300">
-                            <Button type="button" onClick={onCancel} variant="filled" color="secondary">
+                            <button
+                                type="button"
+                                onClick={onCancel}
+                                className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover transition-colors"
+                            >
                                 Cancel
-                            </Button>
+                            </button>
                             {!item && (
                                 <Button
                                     type="button"

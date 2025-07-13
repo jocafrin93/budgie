@@ -229,9 +229,9 @@ const QuickAllocateModal = ({
 
         return (
             <div className="fixed inset-0 z-60 flex items-center justify-center bg-base-content/50 backdrop-blur-sm transition-opacity">
-                <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-2xl mx-4">
+                <div className="bg-base-200 rounded-lg shadow-xl w-full max-w-2xl mx-4">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-base-300">
+                    <div className="flex items-center justify-between p-6 border-b border-base-300 bg-base-300">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-warning rounded-full flex items-center justify-center text-white">
                                 🔄
@@ -322,7 +322,7 @@ const QuickAllocateModal = ({
                         </div>
                         <button
                             onClick={() => setShowSourceAccountModal(false)}
-                            className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover transition-colors"
+                            className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 hover:text-base-content hover:border-base-400 transition-all duration-200"
                         >
                             Cancel
                         </button>
@@ -338,10 +338,10 @@ const QuickAllocateModal = ({
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-content/50 backdrop-blur-sm transition-opacity">
                 <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b border-base-300">
+                    <div className="flex items-center justify-between p-6 border-b border-base-300 bg-base-300">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center text-white">
-                                <Zap className="w-5 h-5" />
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white">
+                                <Zap className="w-10 h-10 text-primary" />
                             </div>
                             <div>
                                 <h3 className="text-xl font-semibold text-base-content">
@@ -488,7 +488,7 @@ const QuickAllocateModal = ({
                                 return (
                                     <div
                                         key={category.id}
-                                        className="flex items-center gap-4 p-4 border border-base-300 rounded-lg hover transition-colors"
+                                        className="flex items-center gap-4 p-4 border bg-base-200 border-base-300 rounded-lg hover transition-colors"
                                     >
                                         {/* Category Info */}
                                         <div className="flex-1 min-w-0">

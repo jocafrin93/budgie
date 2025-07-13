@@ -419,7 +419,7 @@ const TransferModal = ({
                 <div className="flex items-center justify-end gap-3 p-6 border-t border-base-300">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-base-content bg-base-200 rounded-lg hover transition-colors"
+                        className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 hover:text-base-content hover:border-base-400 transition-all duration-200"
                     >
                         Cancel
                     </button>
