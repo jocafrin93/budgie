@@ -107,7 +107,7 @@ const CloudStorageStatus = () => {
 
     if (!isAuthenticated) {
         return (
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+            <div className="bg-warning/10 border border-warning rounded-lg p-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
