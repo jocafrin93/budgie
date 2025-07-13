@@ -88,13 +88,13 @@ const CloudStorageStatus = () => {
                         <div className="mt-3 space-x-2">
                             <button
                                 onClick={() => window.location.reload()}
-                                className="text-sm bg-error/20 text-error px-3 py-1 rounded-md hover transition-colors"
+                                className="btn btn-error btn-outline btn-sm"
                             >
                                 Retry
                             </button>
                             <button
                                 onClick={() => console.log('Google API Debug:', { error, gapi: window.gapi, env: import.meta.env })}
-                                className="text-sm bg-error/20 text-error px-3 py-1 rounded-md hover transition-colors"
+                                className="btn btn-error btn-outline btn-sm"
                             >
                                 Log Debug Info
                             </button>
@@ -127,7 +127,7 @@ const CloudStorageStatus = () => {
                     <div className="ml-4">
                         <button
                             onClick={signIn}
-                            className="bg-info hover text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
+                            className="btn btn-info flex items-center gap-2"
                         >
                             <svg className="w-4 h-4" viewBox="0 0 24 24">
                                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -164,7 +164,7 @@ const CloudStorageStatus = () => {
                 <div className="ml-4">
                     <button
                         onClick={signOut}
-                        className="bg-error hover text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center space-x-1"
+                        className="btn btn-error btn-sm flex items-center gap-1"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

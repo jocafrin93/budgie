@@ -527,21 +527,21 @@ const PaycheckManager = ({
 
                                     <button
                                         onClick={() => togglePaycheckActive(paycheck.id)}
-                                        className="p-1 text-xs rounded hover"
+                                        className="btn btn-ghost btn-xs"
                                         title={paycheck.isActive ? "Disable paycheck" : "Enable paycheck"}
                                     >
                                         {paycheck.isActive ? '✅' : '❌'}
                                     </button>
                                     <button
                                         onClick={() => handleEditPaycheck(paycheck)}
-                                        className="p-1 text-xs rounded hover"
+                                        className="btn btn-ghost btn-xs"
                                         title="Edit paycheck"
                                     >
                                         ✏️
                                     </button>
                                     <button
                                         onClick={() => setShowDeleteConfirm(paycheck.id)}
-                                        className="p-1 text-xs rounded hover"
+                                        className="btn btn-ghost btn-xs"
                                         title="Delete paycheck"
                                     >
                                         🗑️
@@ -787,7 +787,7 @@ const PaycheckManager = ({
                                                     {formValues.accountDistribution.length > 1 && (
                                                         <button
                                                             onClick={() => handleRemoveAccount(index)}
-                                                            className="text-error hover p-1"
+                                                            className="btn btn-ghost btn-xs text-error"
                                                             title="Remove account"
                                                         >
                                                             ✕
@@ -802,7 +802,7 @@ const PaycheckManager = ({
                                     {formValues.accountDistribution.length < accounts.length && (
                                         <button
                                             onClick={handleAddAccount}
-                                            className="mt-2 text-sm text-info hover"
+                                            className="btn btn-ghost btn-sm text-info mt-2"
                                         >
                                             + Add Another Account
                                         </button>
