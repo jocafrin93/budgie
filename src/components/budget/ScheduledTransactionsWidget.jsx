@@ -16,15 +16,15 @@ const ScheduledTransactionsWidget = ({
     // Filter transactions based on selected account
     const filteredTransactions = selectedAccountId === 'all'
         ? scheduledTransactions
-        : scheduledTransactions.filter(txn => txn.accountId === selectedAccountId);
+        : scheduledTransactions.filter(txn => String(txn.accountId) === String(selectedAccountId));
 
     if (filteredTransactions.length === 0) {
         return null;
     }
 
     const getAccountName = (accountId) => {
-        const account = accounts.find(acc => acc.id === accountId);
-        return account?.name || `Account ${accountId}`;
+        const account = accounts.find(acc => String(acc.id) === String(accountId));
+        return account?.name || account?.accountName || `Unknown Account (ID: ${accountId})`;
     };
 
     const formatScheduledDate = (dateString) => {
