@@ -384,12 +384,32 @@ const UnifiedItemForm = ({
     const handleSubmit = () => {
         console.log('DEBUG - Form submit button clicked');
 
-        // Find the full objects from the arrays
-        const selectedCategory = categories.find(cat => cat.id === form.values.categoryId);
-        const selectedAccount = accounts.find(acc => acc.id === form.values.accountId);
+        // Ensure accountId is always a number for consistency
+        const accountId = Number(form.values.accountId);
+        const categoryId = Number(form.values.categoryId);
 
-        console.log('DEBUG - selectedCategory:', selectedCategory);
-        console.log('DEBUG - selectedAccount:', selectedAccount);
+        // Find the full objects from the arrays using numeric IDs
+        const selectedCategory = categories.find(cat => cat.id === categoryId);
+        const selectedAccount = accounts.find(acc => acc.id === accountId);
+
+        console.log('DEBUG - Account ID Conversion:', {
+            originalAccountId: form.values.accountId,
+            originalAccountIdType: typeof form.values.accountId,
+            convertedAccountId: accountId,
+            convertedAccountIdType: typeof accountId,
+            selectedAccount,
+            selectedAccountFound: !!selectedAccount
+        });
+
+        console.log('DEBUG - Category ID Conversion:', {
+            originalCategoryId: form.values.categoryId,
+            originalCategoryIdType: typeof form.values.categoryId,
+            convertedCategoryId: categoryId,
+            convertedCategoryIdType: typeof categoryId,
+            selectedCategory,
+            selectedCategoryFound: !!selectedCategory
+        });
+
         console.log('DEBUG - Form values before submit:', form.values);
         console.log('DEBUG - Form errors:', form.errors);
         console.log('DEBUG - Form isValid:', form.isValid);
@@ -400,13 +420,13 @@ const UnifiedItemForm = ({
             return;
         }
 
-        // Prepare the data with full objects
+        // Prepare the data with full objects - ensure IDs are always numbers
         const commonData = {
             name: form.values.name,
             category: selectedCategory,
-            categoryId: form.values.categoryId,
+            categoryId: categoryId, // Use the converted numeric categoryId
             account: selectedAccount,
-            accountId: form.values.accountId,
+            accountId: accountId, // Use the converted numeric accountId
             priorityState: form.values.priorityState,
         };
 

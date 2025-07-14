@@ -1052,10 +1052,10 @@ export default function TransactionsTab({
             return account ? account.name : 'Unknown';
         };
 
-        // Get category name
+        // Get category name - ensure numeric comparison
         const getCategoryName = (categoryId) => {
             if (!categoryId) return 'Uncategorized';
-            const category = categories.find(cat => cat.id === categoryId);
+            const category = categories.find(cat => Number(cat.id) === Number(categoryId));
             return category ? category.name : 'Unknown';
         };
 
@@ -1227,10 +1227,10 @@ export default function TransactionsTab({
         ];
     }, [accounts, categories, onDeleteTransaction, handleToggleCleared]);
 
-    // Filter transactions by account if specified
+    // Filter transactions by account if specified - ensure numeric comparison
     const filteredTransactions = useMemo(() => {
         if (viewAccount === 'all') return transactions;
-        return transactions.filter(t => t.accountId === viewAccount);
+        return transactions.filter(t => Number(t.accountId) === Number(viewAccount));
     }, [transactions, viewAccount]);
 
     // Initialize table
@@ -1474,12 +1474,8 @@ export default function TransactionsTab({
                                         const getCategoryName = (categoryId) => {
                                             if (!categoryId) return 'Uncategorized';
 
-                                            // Regular category lookup using categoryId
-                                            const category = categories.find(cat =>
-                                                cat.id === categoryId ||
-                                                String(cat.id) === String(categoryId) ||
-                                                parseInt(cat.id) === parseInt(categoryId)
-                                            );
+                                            // Regular category lookup using numeric comparison
+                                            const category = categories.find(cat => Number(cat.id) === Number(categoryId));
 
                                             return category ? category.name : 'Unknown';
                                         };

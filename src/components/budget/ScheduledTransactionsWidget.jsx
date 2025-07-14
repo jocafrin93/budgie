@@ -21,10 +21,10 @@ const ScheduledTransactionsWidget = ({
         selectedAccountId
     });
 
-    // Filter transactions based on selected account
+    // Filter transactions based on selected account - ensure numeric comparison
     const filteredTransactions = selectedAccountId === 'all'
         ? scheduledTransactions
-        : scheduledTransactions.filter(txn => String(txn.accountId) === String(selectedAccountId));
+        : scheduledTransactions.filter(txn => Number(txn.accountId) === Number(selectedAccountId));
 
     console.log('🔍 FILTERED TRANSACTIONS DEBUG:', {
         originalLength: scheduledTransactions.length,
@@ -47,16 +47,42 @@ const ScheduledTransactionsWidget = ({
                 idType: typeof acc.id,
                 name: acc.name,
                 accountName: acc.accountName
+            })),
+            stringComparison: accounts.map(acc => ({
+                accountId: acc.id,
+                stringAccountId: String(acc.id),
+                lookingFor: String(accountId),
+                matches: String(acc.id) === String(accountId)
             }))
         });
 
-        const account = accounts.find(acc => String(acc.id) === String(accountId));
+        // Try multiple lookup strategies to handle data type mismatches
+        let account = accounts.find(acc => String(acc.id) === String(accountId));
+
+        // If not found with string comparison, try numeric comparison
+        if (!account) {
+            account = accounts.find(acc => Number(acc.id) === Number(accountId));
+        }
+
+        // If still not found, try direct equality
+        if (!account) {
+            account = accounts.find(acc => acc.id === accountId);
+        }
 
         console.log('🔍 ACCOUNT LOOKUP RESULT:', {
             accountId,
             foundAccount: account,
-            accountName: account?.name || account?.accountName || `Unknown Account (ID: ${accountId})`
+            accountName: account?.name || account?.accountName || `Unknown Account (ID: ${accountId})`,
+            lookupStrategy: account ? 'found' : 'not_found'
         });
+
+        if (!account) {
+            console.warn('⚠️ ACCOUNT NOT FOUND:', {
+                searchingFor: accountId,
+                availableAccountIds: accounts.map(acc => acc.id),
+                possibleIssue: 'Account ID mismatch or non-existent account'
+            });
+        }
 
         return account?.name || account?.accountName || `Unknown Account (ID: ${accountId})`;
     };

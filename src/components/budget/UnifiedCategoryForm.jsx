@@ -775,27 +775,36 @@ const UnifiedCategoryForm = ({
             return;
         }
 
-        // Find the full objects from the arrays
-        const selectedAccount = accounts.find(acc => acc.id === form.values.accountId);
+        // Ensure accountId is always a number for consistency
+        const accountId = Number(form.values.accountId);
+
+        // Find the account using numeric ID
+        const selectedAccount = accounts.find(acc => acc.id === accountId);
 
         console.log('🔥 CATEGORY FORM DEBUG - Account Selection:', {
-            formAccountId: form.values.accountId,
-            formAccountIdType: typeof form.values.accountId,
-            availableAccounts: accounts.map(acc => ({
-                id: acc.id,
-                idType: typeof acc.id,
-                name: acc.name
-            })),
+            originalFormAccountId: form.values.accountId,
+            originalFormAccountIdType: typeof form.values.accountId,
+            convertedAccountId: accountId,
+            convertedAccountIdType: typeof accountId,
             selectedAccount,
-            selectedAccountFound: !!selectedAccount
+            selectedAccountFound: !!selectedAccount,
+            selectedAccountName: selectedAccount?.name
         });
 
-        // Prepare the data with full objects
+        if (!selectedAccount) {
+            console.warn('⚠️ CATEGORY FORM - ACCOUNT NOT FOUND:', {
+                searchingFor: accountId,
+                availableAccountIds: accounts.map(acc => acc.id),
+                possibleIssue: 'Account ID not found in accounts array'
+            });
+        }
+
+        // Prepare the data with full objects - ensure accountId is always a number
         const commonData = {
             name: form.values.name,
             type: form.values.type,
             account: selectedAccount,
-            accountId: form.values.accountId,
+            accountId: accountId, // Use the converted numeric accountId
             status: form.values.status,
             priority: form.values.priority,
             color: form.values.color,
