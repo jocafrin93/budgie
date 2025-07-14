@@ -244,35 +244,42 @@ export default function BudgetTransactions() {
     const [ScheduledTransactionsRow, setScheduledTransactionsRow] = useState(null);
 
     // Use localStorage-based scheduled transactions (build-compatible fallback)
+    const [scheduledTransactionsState, setScheduledTransactionsState] = useState([]);
+
+    // Load scheduled transactions from localStorage on mount
+    useEffect(() => {
+        const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
+        const scheduledTransactions = stored ? JSON.parse(stored) : [];
+        setScheduledTransactionsState(scheduledTransactions);
+    }, []);
+
     const scheduledTransactionsHook = React.useMemo(() => {
         const getUpcomingScheduledTransactions = (days = 30) => {
-            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-            const scheduledTransactions = stored ? JSON.parse(stored) : [];
-
-            console.log('🔍 DEBUGGING - localStorage scheduled transactions:', scheduledTransactions);
-
             const today = new Date();
             const futureDate = new Date();
             futureDate.setDate(today.getDate() + days);
 
-            return scheduledTransactions
+            return scheduledTransactionsState
                 .filter(txn => !txn.isActivated && new Date(txn.scheduledDate || txn.nextDueDate || txn.dueDate) <= futureDate)
                 .sort((a, b) => new Date(a.scheduledDate || a.nextDueDate || a.dueDate) - new Date(b.scheduledDate || b.nextDueDate || b.dueDate));
         };
 
+        const updateScheduledTransactionsStorage = (updatedTransactions) => {
+            localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updatedTransactions));
+            setScheduledTransactionsState(updatedTransactions);
+        };
+
         const editScheduledTransaction = (id, updates) => {
-            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-            const scheduledTransactions = stored ? JSON.parse(stored) : [];
-            const updated = scheduledTransactions.map(txn =>
+            console.log('🔧 EDIT SCHEDULED TRANSACTION:', { id, updates });
+            const updated = scheduledTransactionsState.map(txn =>
                 txn.id === id ? { ...txn, ...updates } : txn
             );
-            localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updated));
+            updateScheduledTransactionsStorage(updated);
         };
 
         const activateScheduledTransactionEarly = (id) => {
-            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-            const scheduledTransactions = stored ? JSON.parse(stored) : [];
-            const transaction = scheduledTransactions.find(txn => txn.id === id);
+            console.log('▶️ ACTIVATE SCHEDULED TRANSACTION EARLY:', id);
+            const transaction = scheduledTransactionsState.find(txn => txn.id === id);
             if (transaction) {
                 const actualTransaction = {
                     ...transaction,
@@ -281,30 +288,53 @@ export default function BudgetTransactions() {
                     scheduledTransactionId: transaction.id,
                     date: new Date().toISOString().split('T')[0]
                 };
+
+                console.log('✅ Creating actual transaction:', actualTransaction);
                 addTransaction(actualTransaction);
-                editScheduledTransaction(id, {
-                    isActivated: true,
-                    activatedAt: new Date().toISOString(),
-                    activatedEarly: true
-                });
+
+                // Mark as activated
+                const updated = scheduledTransactionsState.map(txn =>
+                    txn.id === id ? {
+                        ...txn,
+                        isActivated: true,
+                        activatedAt: new Date().toISOString(),
+                        activatedEarly: true
+                    } : txn
+                );
+                updateScheduledTransactionsStorage(updated);
+
+                console.log('✅ Scheduled transaction activated early');
             }
         };
 
+        const skipScheduledTransaction = (id) => {
+            console.log('⏭️ SKIP SCHEDULED TRANSACTION:', id);
+            const updated = scheduledTransactionsState.map(txn =>
+                txn.id === id ? {
+                    ...txn,
+                    isSkipped: true,
+                    skippedAt: new Date().toISOString()
+                } : txn
+            );
+            updateScheduledTransactionsStorage(updated);
+            console.log('✅ Scheduled transaction skipped');
+        };
+
         const deleteScheduledTransaction = (id) => {
-            const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-            const scheduledTransactions = stored ? JSON.parse(stored) : [];
-            const filtered = scheduledTransactions.filter(txn => txn.id !== id);
-            localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(filtered));
+            console.log('🗑️ DELETE SCHEDULED TRANSACTION:', id);
+            const filtered = scheduledTransactionsState.filter(txn => txn.id !== id);
+            updateScheduledTransactionsStorage(filtered);
+            console.log('✅ Scheduled transaction deleted');
         };
 
         return {
             getUpcomingScheduledTransactions,
             editScheduledTransaction,
-            skipScheduledTransaction: (id) => editScheduledTransaction(id, { isSkipped: true, skippedAt: new Date().toISOString() }),
+            skipScheduledTransaction,
             activateScheduledTransactionEarly,
             deleteScheduledTransaction
         };
-    }, [addTransaction]);
+    }, [scheduledTransactionsState, addTransaction]);
 
     // Load scheduled transactions component dynamically
     useEffect(() => {
