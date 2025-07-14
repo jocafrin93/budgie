@@ -5,6 +5,7 @@ import AccountBalanceSidebar from "../../../../components/budget/AccountBalanceS
 import TransactionsTab from "../../../../components/budget/TransactionsTab";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
 import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
+import { useScheduledTransactions } from "../../../../hooks/useScheduledTransactions";
 import { useStorage } from "../../../../hooks/useStorage";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
 
@@ -243,98 +244,84 @@ export default function BudgetTransactions() {
     // Load scheduled transactions component dynamically
     const [ScheduledTransactionsRow, setScheduledTransactionsRow] = useState(null);
 
-    // Use localStorage-based scheduled transactions (build-compatible fallback)
-    const [scheduledTransactionsState, setScheduledTransactionsState] = useState([]);
+    // Use proper cloud storage-based scheduled transactions hook
+    const scheduledTransactionsHook = useScheduledTransactions(addTransaction);
 
-    // Load scheduled transactions from localStorage on mount
+    // Create some test scheduled transactions if none exist (for production testing)
     useEffect(() => {
-        const stored = localStorage.getItem('budgetCalc_scheduledTransactions');
-        const scheduledTransactions = stored ? JSON.parse(stored) : [];
-        setScheduledTransactionsState(scheduledTransactions);
-    }, []);
+        if (scheduledTransactionsHook.scheduledTransactions.length === 0) {
+            console.log('🔧 CREATING TEST SCHEDULED TRANSACTIONS FOR PRODUCTION');
 
-    const scheduledTransactionsHook = React.useMemo(() => {
-        const getUpcomingScheduledTransactions = (days = 30) => {
-            const today = new Date();
-            const futureDate = new Date();
-            futureDate.setDate(today.getDate() + days);
+            // Get first available account and category IDs
+            const firstAccount = accounts[0];
+            const firstCategory = categories[0];
 
-            return scheduledTransactionsState
-                .filter(txn => !txn.isActivated && new Date(txn.scheduledDate || txn.nextDueDate || txn.dueDate) <= futureDate)
-                .sort((a, b) => new Date(a.scheduledDate || a.nextDueDate || a.dueDate) - new Date(b.scheduledDate || b.nextDueDate || b.dueDate));
-        };
+            if (firstAccount && firstCategory) {
+                const testScheduledTransactions = [
+                    {
+                        id: 'test_1',
+                        payee: 'Electric Company',
+                        amount: -150,
+                        categoryId: firstCategory.id,
+                        accountId: firstAccount.id,
+                        frequency: 'monthly',
+                        scheduledDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 5 days from now
+                        nextDueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        memo: 'Monthly electric bill',
+                        isActivated: false,
+                        isSkipped: false,
+                        recurringPattern: {
+                            frequency: 'monthly',
+                            interval: 1,
+                            endCondition: 'indefinite'
+                        }
+                    },
+                    {
+                        id: 'test_2',
+                        payee: 'Rent Payment',
+                        amount: -1200,
+                        categoryId: firstCategory.id,
+                        accountId: firstAccount.id,
+                        frequency: 'monthly',
+                        scheduledDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days from now
+                        nextDueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        memo: 'Monthly rent payment',
+                        isActivated: false,
+                        isSkipped: false,
+                        recurringPattern: {
+                            frequency: 'monthly',
+                            interval: 1,
+                            endCondition: 'indefinite'
+                        }
+                    },
+                    {
+                        id: 'test_3',
+                        payee: 'Salary Deposit',
+                        amount: 3000,
+                        categoryId: firstCategory.id,
+                        accountId: firstAccount.id,
+                        frequency: 'bi-weekly',
+                        scheduledDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 days from now
+                        nextDueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        memo: 'Bi-weekly salary',
+                        isActivated: false,
+                        isSkipped: false,
+                        recurringPattern: {
+                            frequency: 'bi-weekly',
+                            interval: 1,
+                            endCondition: 'indefinite'
+                        }
+                    }
+                ];
 
-        const updateScheduledTransactionsStorage = (updatedTransactions) => {
-            localStorage.setItem('budgetCalc_scheduledTransactions', JSON.stringify(updatedTransactions));
-            setScheduledTransactionsState(updatedTransactions);
-        };
-
-        const editScheduledTransaction = (id, updates) => {
-            console.log('🔧 EDIT SCHEDULED TRANSACTION:', { id, updates });
-            const updated = scheduledTransactionsState.map(txn =>
-                txn.id === id ? { ...txn, ...updates } : txn
-            );
-            updateScheduledTransactionsStorage(updated);
-        };
-
-        const activateScheduledTransactionEarly = (id) => {
-            console.log('▶️ ACTIVATE SCHEDULED TRANSACTION EARLY:', id);
-            const transaction = scheduledTransactionsState.find(txn => txn.id === id);
-            if (transaction) {
-                const actualTransaction = {
-                    ...transaction,
-                    id: undefined,
-                    isScheduled: false,
-                    scheduledTransactionId: transaction.id,
-                    date: new Date().toISOString().split('T')[0]
-                };
-
-                console.log('✅ Creating actual transaction:', actualTransaction);
-                addTransaction(actualTransaction);
-
-                // Mark as activated
-                const updated = scheduledTransactionsState.map(txn =>
-                    txn.id === id ? {
-                        ...txn,
-                        isActivated: true,
-                        activatedAt: new Date().toISOString(),
-                        activatedEarly: true
-                    } : txn
-                );
-                updateScheduledTransactionsStorage(updated);
-
-                console.log('✅ Scheduled transaction activated early');
+                scheduledTransactionsHook.addScheduledTransactions(testScheduledTransactions);
+                console.log('✅ TEST SCHEDULED TRANSACTIONS CREATED FOR PRODUCTION:', testScheduledTransactions);
             }
-        };
-
-        const skipScheduledTransaction = (id) => {
-            console.log('⏭️ SKIP SCHEDULED TRANSACTION:', id);
-            const updated = scheduledTransactionsState.map(txn =>
-                txn.id === id ? {
-                    ...txn,
-                    isSkipped: true,
-                    skippedAt: new Date().toISOString()
-                } : txn
-            );
-            updateScheduledTransactionsStorage(updated);
-            console.log('✅ Scheduled transaction skipped');
-        };
-
-        const deleteScheduledTransaction = (id) => {
-            console.log('🗑️ DELETE SCHEDULED TRANSACTION:', id);
-            const filtered = scheduledTransactionsState.filter(txn => txn.id !== id);
-            updateScheduledTransactionsStorage(filtered);
-            console.log('✅ Scheduled transaction deleted');
-        };
-
-        return {
-            getUpcomingScheduledTransactions,
-            editScheduledTransaction,
-            skipScheduledTransaction,
-            activateScheduledTransactionEarly,
-            deleteScheduledTransaction
-        };
-    }, [scheduledTransactionsState, addTransaction]);
+        }
+    }, [scheduledTransactionsHook, accounts, categories]);
 
     // Load scheduled transactions component dynamically
     useEffect(() => {
@@ -349,10 +336,34 @@ export default function BudgetTransactions() {
         loadScheduledTransactionsComponent();
     }, []);
 
-    // Get upcoming scheduled transactions for display
-    const upcomingScheduledTransactions = scheduledTransactionsHook
-        ? scheduledTransactionsHook.getUpcomingScheduledTransactions(30)
-        : [];
+    // Get upcoming scheduled transactions for display with debugging
+    const upcomingScheduledTransactions = React.useMemo(() => {
+        if (!scheduledTransactionsHook) {
+            console.log('🔍 SCHEDULED TRANSACTIONS DEBUG: No hook available');
+            return [];
+        }
+
+        const upcoming = scheduledTransactionsHook.getUpcomingScheduledTransactions();
+
+        console.log('🔍 SCHEDULED TRANSACTIONS DEBUG:', {
+            allScheduledTransactions: scheduledTransactionsHook.scheduledTransactions,
+            allScheduledTransactionsLength: scheduledTransactionsHook.scheduledTransactions.length,
+            upcomingScheduledTransactions: upcoming,
+            upcomingLength: upcoming.length,
+            today: new Date(),
+            futureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        });
+
+        return upcoming;
+    }, [scheduledTransactionsHook]);
+
+    // Debug log to see if scheduled transactions are being passed to components
+    console.log('🔍 PASSING TO COMPONENTS:', {
+        upcomingScheduledTransactions,
+        upcomingLength: upcomingScheduledTransactions.length,
+        ScheduledTransactionsRowExists: !!ScheduledTransactionsRow,
+        scheduledTransactionsHookExists: !!scheduledTransactionsHook
+    });
 
     // Payee management - use cloud storage
     const [payees, setPayees] = useStorage('budgetCalc_payees', [
