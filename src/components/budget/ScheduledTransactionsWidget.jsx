@@ -91,19 +91,27 @@ const ScheduledTransactionsWidget = ({
         if (!dateString) return 'No date';
 
         try {
-            const date = new Date(dateString);
+            // Use local timezone parsing like the rest of the app
+            const date = new Date(dateString + 'T00:00:00');
 
             if (isNaN(date.getTime())) {
                 return 'Invalid date';
             }
 
+            // Get today in local timezone consistently
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset to start of day
+
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
 
-            if (date.toDateString() === today.toDateString()) {
+            // Reset date to start of day for comparison
+            const dateToCompare = new Date(date);
+            dateToCompare.setHours(0, 0, 0, 0);
+
+            if (dateToCompare.getTime() === today.getTime()) {
                 return 'Today';
-            } else if (date.toDateString() === tomorrow.toDateString()) {
+            } else if (dateToCompare.getTime() === tomorrow.getTime()) {
                 return 'Tomorrow';
             } else {
                 return formatDate(date);
@@ -116,8 +124,11 @@ const ScheduledTransactionsWidget = ({
     const getUrgencyColor = (dateString) => {
         if (!dateString) return 'text-base-content/60';
 
-        const date = new Date(dateString);
+        // Use local timezone parsing like the rest of the app
+        const date = new Date(dateString + 'T00:00:00');
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset to start of day
+
         const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
 
         if (diffDays < 0) return 'text-error'; // Overdue
@@ -128,6 +139,8 @@ const ScheduledTransactionsWidget = ({
 
     const getUrgencyStats = () => {
         const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset to start of day
+
         const stats = {
             overdue: 0,
             dueToday: 0,
@@ -136,7 +149,8 @@ const ScheduledTransactionsWidget = ({
         };
 
         filteredTransactions.forEach(txn => {
-            const date = new Date(txn.scheduledDate || txn.nextDueDate || txn.dueDate);
+            // Use local timezone parsing like the rest of the app
+            const date = new Date((txn.scheduledDate || txn.nextDueDate || txn.dueDate) + 'T00:00:00');
             const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
 
             if (diffDays < 0) stats.overdue++;
@@ -153,7 +167,11 @@ const ScheduledTransactionsWidget = ({
 
     // Sort transactions by due date and take the first 5
     const sortedTransactions = [...filteredTransactions]
-        .sort((a, b) => new Date(a.scheduledDate || a.nextDueDate || a.dueDate) - new Date(b.scheduledDate || b.nextDueDate || b.dueDate))
+        .sort((a, b) => {
+            const dateA = new Date((a.scheduledDate || a.nextDueDate || a.dueDate) + 'T00:00:00');
+            const dateB = new Date((b.scheduledDate || b.nextDueDate || b.dueDate) + 'T00:00:00');
+            return dateA - dateB;
+        })
         .slice(0, 5);
 
     const stats = getUrgencyStats();

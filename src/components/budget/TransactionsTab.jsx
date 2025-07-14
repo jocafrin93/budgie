@@ -1461,9 +1461,13 @@ export default function TransactionsTab({
                                 </THead>
                                 <TBody>
                                     {scheduledTransactions.map(scheduledTxn => {
-                                        const dueDate = new Date(scheduledTxn.nextDueDate || scheduledTxn.dueDate);
-                                        const isOverdue = dueDate < new Date();
-                                        const daysDiff = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
+                                        // Use local timezone parsing like the rest of the app
+                                        const dueDate = new Date((scheduledTxn.nextDueDate || scheduledTxn.dueDate) + 'T00:00:00');
+                                        const today = new Date();
+                                        today.setHours(0, 0, 0, 0); // Reset to start of day
+
+                                        const isOverdue = dueDate < today;
+                                        const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
                                         // Get account and category names
                                         const getAccountName = (accountId) => {

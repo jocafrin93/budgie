@@ -26,7 +26,8 @@ const ScheduledTransactionsRow = ({
         if (!dateString) return 'No date';
 
         try {
-            const date = new Date(dateString);
+            // Use local timezone parsing like the rest of the app
+            const date = new Date(dateString + 'T00:00:00');
 
             // Check if date is valid
             if (isNaN(date.getTime())) {
@@ -34,13 +35,20 @@ const ScheduledTransactionsRow = ({
                 return 'Invalid date';
             }
 
+            // Get today in local timezone consistently
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset to start of day
+
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
 
-            if (date.toDateString() === today.toDateString()) {
+            // Reset date to start of day for comparison
+            const dateToCompare = new Date(date);
+            dateToCompare.setHours(0, 0, 0, 0);
+
+            if (dateToCompare.getTime() === today.getTime()) {
                 return 'Today';
-            } else if (date.toDateString() === tomorrow.toDateString()) {
+            } else if (dateToCompare.getTime() === tomorrow.getTime()) {
                 return 'Tomorrow';
             } else {
                 return formatDate(date);
