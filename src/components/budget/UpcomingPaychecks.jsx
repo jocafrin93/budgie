@@ -210,7 +210,7 @@ const UpcomingPaychecks = ({
     }
 
     return (
-        <Card className="p-6 bg-base-200">
+        <Card className="p-3 sm:p-6 bg-base-200">
             {showHeader && (
                 <div className="flex justify-between items-center mb-6">
                     <div>
@@ -233,8 +233,8 @@ const UpcomingPaychecks = ({
                 </div>
             )}
 
-            {/* Desktop Calendar View */}
-            <div className="hidden md:block">
+            {/* Desktop Calendar View - Hidden on small screens */}
+            <div className="hidden lg:block">
                 {calendarData.length > 0 && (
                     <div className="space-y-4">
                         {/* Calendar Header */}
@@ -294,7 +294,7 @@ const UpcomingPaychecks = ({
             </div>
 
             {/* Mobile Timeline View */}
-            <div className="md:hidden">
+            <div className="lg:hidden">
                 {timelineItems.length > 0 ? (
                     <Timeline variant="filled" pointSize="12px" lineWidth="2px">
                         {timelineItems.slice(0, maxPaychecks).map((item, index) => {
