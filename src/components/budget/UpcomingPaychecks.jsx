@@ -11,7 +11,6 @@ import { Timeline, TimelineItem } from '../ui/Timeline/index.jsx';
  */
 const UpcomingPaychecks = ({
     accounts = [],
-    onStartPaydayWorkflow,
     showHeader = true,
     maxPaychecks = 5
 }) => {
@@ -309,14 +308,14 @@ const UpcomingPaychecks = ({
                                             </div>
 
                                             {/* Payday Action Button */}
-                                            {onStartPaydayWorkflow && item.type === 'paycheck' && isNext && (item.daysUntil || 0) <= 1 && (
+                                            {/* {onStartPaydayWorkflow && item.type === 'paycheck' && isNext && (item.daysUntil || 0) <= 1 && (
                                                 <button
                                                     onClick={() => onStartPaydayWorkflow(item)}
                                                     className="btn btn-success btn-sm"
                                                 >
                                                     💰 Start Payday
                                                 </button>
-                                            )}
+                                            )} */}
                                         </div>
 
                                         {/* Account Distribution for paychecks */}

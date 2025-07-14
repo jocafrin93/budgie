@@ -1164,7 +1164,7 @@ const BudgetCategoriesTable = ({
     };
 
     return (
-        <div className="w-full max-w-7xl mx-auto p-6 bg-base-200 rounded-lg border border-base-300">
+        <div className="w-full p-6 bg-base-200 rounded-lg border border-base-300">
             {/* Header */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">

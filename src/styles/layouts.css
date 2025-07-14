@@ -1,6 +1,6 @@
 /* Main Layout Styles */
 [data-layout="main-layout"] {
-  @apply [--main-panel-width:4.5rem] [--margin-x:1rem] [--prime-panel-min-width:64px] [--prime-panel-width:230px] md:[--margin-x:1.5rem] lg:[--main-panel-width:5rem] lg:[--prime-panel-width:240px] xl:[--margin-x:4rem];
+  @apply [--main-panel-width:3.5rem] [--margin-x:1rem] [--prime-panel-min-width:64px] [--prime-panel-width:200px] md:[--margin-x:1.5rem] lg:[--main-panel-width:4rem] lg:[--prime-panel-width:220px] xl:[--margin-x:2rem];
 }
 
 [data-layout="main-layout"] #root {
@@ -11,17 +11,11 @@
   @apply xl:[--margin-x:1.5rem];
 }
 
-[data-layout="main-layout"] main.main-content,
-[data-layout="main-layout"] .app-header {
-  @apply md:ltr:ml-(--main-panel-width) md:rtl:mr-(--main-panel-width);
-}
-
 [data-layout="main-layout"] main.main-content {
-  @apply pb-20 md:pb-0;
+  @apply pb-20 md:pb-0 md:ltr:ml-(--main-panel-width) md:rtl:mr-(--main-panel-width);
 }
 
-[data-layout="main-layout"].is-sidebar-open main.main-content,
-[data-layout="main-layout"].is-sidebar-open .app-header {
+[data-layout="main-layout"].is-sidebar-open main.main-content {
   @apply xl:ltr:ml-[calc(var(--main-panel-width)+var(--prime-panel-width))] xl:rtl:mr-[calc(var(--main-panel-width)+var(--prime-panel-width))];
 }
 

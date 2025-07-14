@@ -1,5 +1,4 @@
 // Import Dependencies
-import clsx from "clsx";
 import { Outlet } from "react-router";
 
 // Local Imports
@@ -26,7 +25,7 @@ function MinimalHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center justify-between border-b border-base-300 bg-base-100/80 backdrop-blur-sm px-4">
+    <header className={`sticky top-0 z-20 flex h-12 shrink-0 items-center justify-between border-b border-base-300 bg-base-300 backdrop-blur-sm px-4 ${mdAndDown ? '' : 'md:ml-16'}`}>
       <div className="flex items-center gap-3">
         {mdAndDown && <AppLogo className="h-8 w-8 text-primary" />}
         <h1 className="text-lg font-semibold text-base-content">Budgie</h1>
@@ -54,13 +53,14 @@ export default function MainLayout() {
 
   return (
     <DaisyUIWrapper>
-      <MinimalHeader />
-      <main
-        className={clsx("main-content transition-content grid grid-cols-1")}
-      >
-        <Outlet />
-      </main>
-      {mdAndDown ? <MobileBottomNav /> : <Sidebar />}
+      <div className="min-h-screen">
+        <MinimalHeader />
+        {!mdAndDown && <Sidebar />}
+        <main className={`${mdAndDown ? 'pb-20' : 'pb-0 md:ml-16'}`}>
+          <Outlet />
+        </main>
+        {mdAndDown && <MobileBottomNav />}
+      </div>
     </DaisyUIWrapper>
   );
 }
