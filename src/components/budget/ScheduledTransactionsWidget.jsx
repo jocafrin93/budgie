@@ -13,12 +13,28 @@ const ScheduledTransactionsWidget = ({
 }) => {
     const navigate = useNavigate();
 
+    console.log('🔍 SCHEDULED TRANSACTIONS WIDGET DEBUG:', {
+        scheduledTransactionsLength: scheduledTransactions.length,
+        scheduledTransactions: scheduledTransactions,
+        accountsLength: accounts.length,
+        accounts: accounts,
+        selectedAccountId
+    });
+
     // Filter transactions based on selected account
     const filteredTransactions = selectedAccountId === 'all'
         ? scheduledTransactions
         : scheduledTransactions.filter(txn => String(txn.accountId) === String(selectedAccountId));
 
+    console.log('🔍 FILTERED TRANSACTIONS DEBUG:', {
+        originalLength: scheduledTransactions.length,
+        filteredLength: filteredTransactions.length,
+        filteredTransactions: filteredTransactions,
+        selectedAccountId
+    });
+
     if (filteredTransactions.length === 0) {
+        console.log('🔍 NO FILTERED TRANSACTIONS - Widget will not render');
         return null;
     }
 
