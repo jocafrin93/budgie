@@ -106,8 +106,8 @@ function Content({ table, options }) {
                 key={refIndex}
                 className={({ focused }) =>
                   clsx(
-                    "relative cursor-pointer select-none px-2.5 py-2 text-base-content outline-hidden transition-colors text-base-content",
-                    focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary && "bg-base-200",
+                    "relative cursor-pointer select-none px-2.5 py-2 text-base-content outline-hidden transition-colors",
+                    focused && "bg-base-200",
                   )
                 }
                 value={item}

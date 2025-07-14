@@ -332,10 +332,10 @@ const EnhancedGoalFields = ({ formValues, setFieldValue, errors, currentPay }) =
     };
 
     return (
-        <div className="space-y-4 p-4 bg-success-lighter/20 border border-success-light rounded-lg">
-            <h3 className="font-medium text-success-dark">Savings Goal Configuration</h3>
+        <div className="space-y-4 p-4 bg-neutral border border-base-300 rounded-lg">
+            <h3 className="font-medium text-base-content">Savings Goal Configuration</h3>
 
-            <div className="bg-info/10 border border-info p-3 mb-4 rounded-md text-sm text-info">
+            <div className="bg-info border border-base-300 p-3 mb-4 rounded-md text-sm text-info-content">
                 <div className="mt-1 text-xs">
                     <span className="text-error">*</span> Required field
                 </div>
@@ -1050,7 +1050,7 @@ const UnifiedCategoryForm = ({
                                         type="button"
                                         onClick={() => form.setFieldValue('type', 'single')}
                                         className={`flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm rounded-lg border transition-colors ${form.values.type === 'single'
-                                            ? 'bg-primary text-white border-primary'
+                                            ? 'bg-primary text-primary-content border-base-300'
                                             : 'bg-base-100 text-base-content border-base-300 hover:bg-base-200'
                                             }`}
                                     >
@@ -1061,7 +1061,7 @@ const UnifiedCategoryForm = ({
                                         type="button"
                                         onClick={() => form.setFieldValue('type', 'multiple')}
                                         className={`flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm rounded-lg border transition-colors ${form.values.type === 'multiple'
-                                            ? 'bg-secondary text-white border-secondary'
+                                            ? 'bg-secondary text-secondary-content border-base-300'
                                             : 'bg-base-100 text-base-content border-base-300 hover:bg-base-200'
                                             }`}
                                     >
@@ -1080,7 +1080,7 @@ const UnifiedCategoryForm = ({
                                             type="button"
                                             onClick={() => form.setFieldValue('planningType', 'expense')}
                                             className={`flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm rounded-lg border transition-colors ${form.values.planningType === 'expense'
-                                                ? 'bg-primary text-white border-primary'
+                                                ? 'bg-primary text-primary-content border-primary'
                                                 : 'bg-base-100 text-base-content border-base-300 hover:bg-base-200'
                                                 }`}
                                         >
@@ -1091,7 +1091,7 @@ const UnifiedCategoryForm = ({
                                             type="button"
                                             onClick={() => form.setFieldValue('planningType', 'goal')}
                                             className={`flex-1 py-2 px-3 flex items-center justify-center space-x-1 text-sm rounded-lg border transition-colors ${form.values.planningType === 'goal'
-                                                ? 'bg-success text-white border-success'
+                                                ? 'bg-secondary text-secondary-content border-success'
                                                 : 'bg-base-100 text-base-content border-base-300 hover:bg-base-200'
                                                 }`}
                                         >
@@ -1118,7 +1118,7 @@ const UnifiedCategoryForm = ({
 
                         {/* Expense-specific fields - Only show for single categories */}
                         {form.values.type === 'single' && form.values.planningType === 'expense' && (
-                            <div className="space-y-4 p-4 bg-primary/20 bg-base-200 border border-primary rounded-lg">
+                            <div className="space-y-4 p-4 bg-neutral border border-base-300 rounded-lg">
 
                                 {/* Amount and Due Date Row */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1136,30 +1136,16 @@ const UnifiedCategoryForm = ({
                                             </label>
                                         </div> */}
 
-                                        {form.values.usePercentage ? (
-                                            <Input
-                                                label="Percentage of Pay"
-                                                name="percentageAmount"
-                                                type="number"
-                                                step="0.1"
-                                                min="0"
-                                                max="100"
-                                                value={form.values.percentageAmount}
-                                                onChange={form.handleChange}
-                                                error={form.errors.percentageAmount}
-                                                placeholder="5.0"
-                                                className="border-base-300 bg-base-100 text-base-content"
-                                            />
-                                        ) : (
-                                            <CurrencyField
-                                                label="Amount"
-                                                name="amount"
-                                                value={form.values.amount}
-                                                onChange={(e) => form.setFieldValue('amount', e.target.value)}
-                                                error={form.errors.amount}
-                                                className="border-base-300 bg-base-100 text-base-content"
-                                            />
-                                        )}
+
+                                        <CurrencyField
+                                            label="Amount"
+                                            name="amount"
+                                            value={form.values.amount}
+                                            onChange={(e) => form.setFieldValue('amount', e.target.value)}
+                                            error={form.errors.amount}
+                                            className="border-base-300 bg-base-100 text-base-content"
+                                        />
+
                                     </div>
 
                                     {/* Due Date */}
@@ -1431,7 +1417,7 @@ const UnifiedCategoryForm = ({
                                 <button
                                     type="button"
                                     onClick={handleSubmitAnother}
-                                    className="btn btn-primary btn-outline"
+                                    className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover transition-colors"
                                 >
                                     Save & Add Another
                                 </button>

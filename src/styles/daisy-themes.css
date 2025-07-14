@@ -661,62 +661,94 @@
     /* #2d0b0b */
 }
 
-/* Abyss Theme (Deep Blue with Green Accents) */
+/* Abyss Theme (Deep Blue with Green Accents) - Original OKLCH Colors */
 [data-theme="abyss"] {
-    --color-primary: 184 245 205;
-    /* #b8f5cd */
-    --color-primary-focus: 164 235 185;
-    /* darker version of primary */
-    --color-primary-content: 45 122 68;
-    /* #2d7a44 */
+    --color-primary: oklch(92% 0.2653 125);
+    --color-primary-focus: oklch(82% 0.2653 125);
+    /* darker version for focus states */
+    --color-primary-content: oklch(50% 0.2653 125);
 
-    --color-secondary: 228 197 247;
-    /* #e4c5f7 */
-    --color-secondary-focus: 208 177 227;
-    /* darker version of secondary */
-    --color-secondary-content: 122 77 147;
-    /* #7a4d93 */
+    --color-secondary: oklch(83.27% 0.0764 298.3);
+    --color-secondary-focus: oklch(73.27% 0.0764 298.3);
+    /* darker version for focus states */
+    --color-secondary-content: oklch(43.27% 0.0764 298.3);
 
-    --color-accent: 110 110 110;
-    /* #6e6e6e */
-    --color-accent-focus: 90 90 90;
-    /* darker version of accent */
-    --color-accent-content: 250 250 250;
-    /* #fafafa */
+    --color-accent: oklch(43% 0 0);
+    --color-accent-focus: oklch(33% 0 0);
+    /* darker version for focus states */
+    --color-accent-content: oklch(98% 0 0);
 
-    --color-neutral: 42 51 68;
-    /* #2a3344 */
-    --color-neutral-focus: 32 41 58;
-    /* darker version of neutral */
-    --color-neutral-content: 232 213 163;
-    /* #e8d5a3 */
+    --color-neutral: oklch(30% 0.08 209);
+    --color-neutral-focus: oklch(25% 0.08 209);
+    /* darker version for focus states */
+    --color-neutral-content: oklch(90% 0.076 70.697);
 
-    --color-base-100: 26 31 46;
-    /* #1a1f2e */
-    --color-base-200: 21 25 37;
-    /* #151925 */
-    --color-base-300: 16 20 28;
-    /* #10141c */
-    --color-base-content: 232 213 163;
-    /* #e8d5a3 */
+    --color-base-100: oklch(20% 0.08 209);
+    --color-base-200: oklch(15% 0.08 209);
+    --color-base-300: oklch(10% 0.08 209);
+    --color-base-content: oklch(90% 0.076 70.697);
 
-    --color-info: 125 179 255;
-    /* #7db3ff */
-    --color-info-content: 30 58 95;
-    /* #1e3a5f */
+    --color-info: oklch(74% 0.16 232.661);
+    --color-info-content: oklch(29% 0.066 243.157);
 
-    --color-success: 92 230 92;
-    /* #5ce65c */
-    --color-success-content: 26 77 26;
-    /* #1a4d1a */
+    --color-success: oklch(79% 0.209 151.711);
+    --color-success-content: oklch(26% 0.065 152.934);
 
-    --color-warning: 255 217 102;
-    /* #ffd966 */
-    --color-warning-content: 204 136 0;
-    /* #cc8800 */
+    --color-warning: oklch(84.8% 0.1962 84.62);
+    --color-warning-content: oklch(44.8% 0.1962 84.62);
 
-    --color-error: 255 128 128;
-    /* #ff8080 */
-    --color-error-content: 102 26 26;
-    /* #661a1a */
+    --color-error: oklch(65% 0.1985 24.22);
+    --color-error-content: oklch(27% 0.1985 24.22);
+}
+
+/* VSCode Dark Theme (Astro) - OKLCH Colors */
+[data-theme="vscode-dark"] {
+    --color-base-100: oklch(32.5% 0.035 285);
+    /* #504a68 - editor background */
+    --color-base-200: oklch(36.2% 0.038 285);
+    /* #5a5475 - secondary background */
+    --color-base-300: oklch(40.8% 0.042 285);
+    /* #645e82 - tertiary background */
+    --color-base-content: oklch(97.2% 0.005 285);
+    /* #f8f8f2 - foreground text */
+
+    --color-primary: oklch(72.5% 0.089 285);
+    /* #ADD6C5 - teal function color */
+    --color-primary-focus: oklch(67.5% 0.089 285);
+    /* darker version for focus states */
+    --color-primary-content: oklch(15.8% 0.025 285);
+
+    --color-secondary: oklch(76.8% 0.115 310);
+    /* #E4AAF2 - purple entity color */
+    --color-secondary-focus: oklch(71.8% 0.115 310);
+    /* darker version for focus states */
+    --color-secondary-content: oklch(16.2% 0.031 310);
+
+    --color-accent: oklch(80.2% 0.068 95);
+    /* #E4DD91 - yellow string color */
+    --color-accent-focus: oklch(75.2% 0.068 95);
+    /* darker version for focus states */
+    --color-accent-content: oklch(17.5% 0.019 95);
+
+    --color-neutral: oklch(52.1% 0.045 285);
+    /* #8077a8 - neutral purple */
+    --color-neutral-focus: oklch(47.1% 0.045 285);
+    /* darker version for focus states */
+    --color-neutral-content: oklch(90.5% 0.008 285);
+
+    --color-info: oklch(76.3% 0.088 245);
+    /* #83ACF2 - blue variable color */
+    --color-info-content: oklch(16.8% 0.024 245);
+
+    --color-success: oklch(82.1% 0.095 160);
+    /* #ADD6C5 - success teal */
+    --color-success-content: oklch(18.2% 0.026 160);
+
+    --color-warning: oklch(85.8% 0.078 95);
+    /* #E4DD91 - warning yellow */
+    --color-warning-content: oklch(19.1% 0.021 95);
+
+    --color-error: oklch(78.5% 0.105 325);
+    /* #E4AAF2 - error purple */
+    --color-error-content: oklch(17.2% 0.029 325);
 }

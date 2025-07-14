@@ -18,7 +18,8 @@ const THEME_MODE_MAP = {
     'forest': 'dark',
     'aqua': 'light',
     'dracula': 'dark',
-    'abyss': 'dark'
+    'abyss': 'dark',
+    'vscode-dark': 'dark'
 };
 
 export function DaisyThemeProvider({ children }) {
@@ -71,7 +72,8 @@ export function DaisyThemeProvider({ children }) {
             'forest',
             'aqua',
             'dracula',
-            'abyss'
+            'abyss',
+            'vscode-dark'
         ]
     };
 
