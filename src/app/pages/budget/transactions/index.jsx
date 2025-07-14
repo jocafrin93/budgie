@@ -252,23 +252,30 @@ export default function BudgetTransactions() {
         if (scheduledTransactionsHook.scheduledTransactions.length === 0) {
             console.log('🔧 CREATING TEST SCHEDULED TRANSACTIONS FOR PRODUCTION');
 
-            // Get first available account and category IDs
-            const firstAccount = accounts[0];
-            const firstCategory = categories[0];
+            // Find categories with funding accounts set
+            const categoriesWithFundingAccounts = categories.filter(cat => cat.accountId);
 
-            if (firstAccount && firstCategory) {
-                const testScheduledTransactions = [
-                    {
-                        id: 'test_1',
-                        payee: 'Electric Company',
-                        amount: -150,
-                        categoryId: firstCategory.id,
-                        accountId: firstAccount.id,
+            if (categoriesWithFundingAccounts.length > 0) {
+                const testScheduledTransactions = categoriesWithFundingAccounts.slice(0, 3).map((category, index) => {
+                    const testData = [
+                        { payee: 'Electric Company', amount: -150, days: 5 },
+                        { payee: 'Rent Payment', amount: -1200, days: 10 },
+                        { payee: 'Internet Bill', amount: -80, days: 15 }
+                    ];
+
+                    const test = testData[index] || testData[0];
+
+                    return {
+                        id: `test_${index + 1}`,
+                        payee: test.payee,
+                        amount: test.amount,
+                        categoryId: category.id,
+                        accountId: category.accountId, // Use the category's funding account
                         frequency: 'monthly',
-                        scheduledDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 5 days from now
-                        nextDueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        memo: 'Monthly electric bill',
+                        scheduledDate: new Date(Date.now() + test.days * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        nextDueDate: new Date(Date.now() + test.days * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        dueDate: new Date(Date.now() + test.days * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        memo: `Monthly ${test.payee.toLowerCase()}`,
                         isActivated: false,
                         isSkipped: false,
                         recurringPattern: {
@@ -276,49 +283,17 @@ export default function BudgetTransactions() {
                             interval: 1,
                             endCondition: 'indefinite'
                         }
-                    },
-                    {
-                        id: 'test_2',
-                        payee: 'Rent Payment',
-                        amount: -1200,
-                        categoryId: firstCategory.id,
-                        accountId: firstAccount.id,
-                        frequency: 'monthly',
-                        scheduledDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days from now
-                        nextDueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        dueDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        memo: 'Monthly rent payment',
-                        isActivated: false,
-                        isSkipped: false,
-                        recurringPattern: {
-                            frequency: 'monthly',
-                            interval: 1,
-                            endCondition: 'indefinite'
-                        }
-                    },
-                    {
-                        id: 'test_3',
-                        payee: 'Salary Deposit',
-                        amount: 3000,
-                        categoryId: firstCategory.id,
-                        accountId: firstAccount.id,
-                        frequency: 'bi-weekly',
-                        scheduledDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 days from now
-                        nextDueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-                        memo: 'Bi-weekly salary',
-                        isActivated: false,
-                        isSkipped: false,
-                        recurringPattern: {
-                            frequency: 'bi-weekly',
-                            interval: 1,
-                            endCondition: 'indefinite'
-                        }
-                    }
-                ];
+                    };
+                });
 
                 scheduledTransactionsHook.addScheduledTransactions(testScheduledTransactions);
                 console.log('✅ TEST SCHEDULED TRANSACTIONS CREATED FOR PRODUCTION:', testScheduledTransactions);
+                console.log('🔍 USING FUNDING ACCOUNTS FROM CATEGORIES:', categoriesWithFundingAccounts.map(c => ({
+                    categoryName: c.name,
+                    fundingAccountId: c.accountId
+                })));
+            } else {
+                console.log('⚠️ NO CATEGORIES WITH FUNDING ACCOUNTS FOUND - Cannot create test scheduled transactions');
             }
         }
     }, [scheduledTransactionsHook, accounts, categories]);
