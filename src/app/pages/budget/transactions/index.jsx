@@ -249,11 +249,58 @@ export default function BudgetTransactions() {
 
     // Create some test scheduled transactions if none exist (for production testing)
     useEffect(() => {
+        console.log('🔧 TEST DATA CREATION DEBUG:', {
+            scheduledTransactionsLength: scheduledTransactionsHook?.scheduledTransactions?.length || 0,
+            categoriesLength: categories.length,
+            accountsLength: accounts.length,
+            allCategories: categories.map(c => ({
+                id: c.id,
+                name: c.name,
+                accountId: c.accountId,
+                hasAccountId: !!c.accountId
+            })),
+            allAccounts: accounts.map(a => ({
+                id: a.id,
+                name: a.name,
+                accountName: a.accountName
+            }))
+        });
+
         if (scheduledTransactionsHook.scheduledTransactions.length === 0) {
             console.log('🔧 CREATING TEST SCHEDULED TRANSACTIONS FOR PRODUCTION');
 
-            // Find categories with funding accounts set
-            const categoriesWithFundingAccounts = categories.filter(cat => cat.accountId);
+            // Find categories with funding accounts set AND validate that the account exists
+            const categoriesWithFundingAccounts = categories.filter(cat => {
+                if (!cat.accountId) return false;
+
+                // Check if the account actually exists
+                const accountExists = accounts.some(acc => String(acc.id) === String(cat.accountId));
+
+                if (!accountExists) {
+                    console.warn(`⚠️ Category "${cat.name}" references non-existent account ID: ${cat.accountId}`);
+                }
+
+                return accountExists;
+            });
+
+            console.log('🔍 CATEGORIES WITH FUNDING ACCOUNTS:', {
+                totalCategories: categories.length,
+                categoriesWithFundingAccounts: categoriesWithFundingAccounts.length,
+                availableAccountIds: accounts.map(a => a.id),
+                categoriesWithFunding: categoriesWithFundingAccounts.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    accountId: c.accountId,
+                    accountIdType: typeof c.accountId
+                })),
+                invalidCategories: categories.filter(cat => {
+                    if (!cat.accountId) return false;
+                    return !accounts.some(acc => String(acc.id) === String(cat.accountId));
+                }).map(c => ({
+                    name: c.name,
+                    invalidAccountId: c.accountId
+                }))
+            });
 
             if (categoriesWithFundingAccounts.length > 0) {
                 const testScheduledTransactions = categoriesWithFundingAccounts.slice(0, 3).map((category, index) => {
@@ -265,7 +312,7 @@ export default function BudgetTransactions() {
 
                     const test = testData[index] || testData[0];
 
-                    return {
+                    const transaction = {
                         id: `test_${index + 1}`,
                         payee: test.payee,
                         amount: test.amount,
@@ -284,17 +331,35 @@ export default function BudgetTransactions() {
                             endCondition: 'indefinite'
                         }
                     };
+
+                    console.log(`🔍 CREATING TEST TRANSACTION ${index + 1}:`, {
+                        categoryName: category.name,
+                        categoryAccountId: category.accountId,
+                        transactionAccountId: transaction.accountId,
+                        payee: transaction.payee,
+                        amount: transaction.amount
+                    });
+
+                    return transaction;
                 });
 
                 scheduledTransactionsHook.addScheduledTransactions(testScheduledTransactions);
                 console.log('✅ TEST SCHEDULED TRANSACTIONS CREATED FOR PRODUCTION:', testScheduledTransactions);
                 console.log('🔍 USING FUNDING ACCOUNTS FROM CATEGORIES:', categoriesWithFundingAccounts.map(c => ({
                     categoryName: c.name,
-                    fundingAccountId: c.accountId
+                    fundingAccountId: c.accountId,
+                    fundingAccountIdType: typeof c.accountId
                 })));
             } else {
                 console.log('⚠️ NO CATEGORIES WITH FUNDING ACCOUNTS FOUND - Cannot create test scheduled transactions');
+                console.log('🔍 AVAILABLE CATEGORIES:', categories.map(c => ({
+                    name: c.name,
+                    accountId: c.accountId,
+                    hasAccountId: !!c.accountId
+                })));
             }
+        } else {
+            console.log('🔍 EXISTING SCHEDULED TRANSACTIONS FOUND:', scheduledTransactionsHook.scheduledTransactions);
         }
     }, [scheduledTransactionsHook, accounts, categories]);
 

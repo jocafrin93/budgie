@@ -778,6 +778,18 @@ const UnifiedCategoryForm = ({
         // Find the full objects from the arrays
         const selectedAccount = accounts.find(acc => acc.id === form.values.accountId);
 
+        console.log('🔥 CATEGORY FORM DEBUG - Account Selection:', {
+            formAccountId: form.values.accountId,
+            formAccountIdType: typeof form.values.accountId,
+            availableAccounts: accounts.map(acc => ({
+                id: acc.id,
+                idType: typeof acc.id,
+                name: acc.name
+            })),
+            selectedAccount,
+            selectedAccountFound: !!selectedAccount
+        });
+
         // Prepare the data with full objects
         const commonData = {
             name: form.values.name,
@@ -790,6 +802,13 @@ const UnifiedCategoryForm = ({
             autoFunding: form.values.autoFunding,
             description: form.values.description,
         };
+
+        console.log('🔥 CATEGORY FORM DEBUG - Final Category Data:', {
+            categoryName: commonData.name,
+            accountId: commonData.accountId,
+            accountIdType: typeof commonData.accountId,
+            selectedAccountName: selectedAccount?.name
+        });
 
         let categoryData;
         if (form.values.type === 'single' && form.values.planningType === 'expense') {

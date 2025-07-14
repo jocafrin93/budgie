@@ -23,7 +23,25 @@ const ScheduledTransactionsWidget = ({
     }
 
     const getAccountName = (accountId) => {
+        console.log('🔍 ACCOUNT LOOKUP DEBUG:', {
+            lookingForAccountId: accountId,
+            accountIdType: typeof accountId,
+            availableAccounts: accounts.map(acc => ({
+                id: acc.id,
+                idType: typeof acc.id,
+                name: acc.name,
+                accountName: acc.accountName
+            }))
+        });
+
         const account = accounts.find(acc => String(acc.id) === String(accountId));
+
+        console.log('🔍 ACCOUNT LOOKUP RESULT:', {
+            accountId,
+            foundAccount: account,
+            accountName: account?.name || account?.accountName || `Unknown Account (ID: ${accountId})`
+        });
+
         return account?.name || account?.accountName || `Unknown Account (ID: ${accountId})`;
     };
 
