@@ -49,7 +49,10 @@ export const calculateMonthlyAmount = (amount, frequency) => {
  * @returns {number} Number of paychecks remaining until due date
  */
 export const calculatePaychecksUntilDue = (dueDate, upcomingPaychecks = [], accountId = null) => {
-    if (!dueDate || !upcomingPaychecks.length) return 0;
+    if (!dueDate || !upcomingPaychecks.length) {
+        console.log('🔍 PAYCHECK COUNTDOWN DEBUG: Early return', { dueDate, upcomingPaychecksLength: upcomingPaychecks.length });
+        return 0;
+    }
 
     // Parse due date safely to avoid timezone issues - FIXED VERSION
     const parseDateSafely = (dateInput) => {
@@ -75,7 +78,27 @@ export const calculatePaychecksUntilDue = (dueDate, upcomingPaychecks = [], acco
     };
 
     const dueDateObj = parseDateSafely(dueDate);
-    if (!dueDateObj) return 0;
+    if (!dueDateObj) {
+        console.log('🔍 PAYCHECK COUNTDOWN DEBUG: Invalid due date', { dueDate });
+        return 0;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    console.log('🔍 PAYCHECK COUNTDOWN DEBUG: Starting calculation', {
+        dueDate,
+        dueDateObj: dueDateObj.toISOString().split('T')[0],
+        today: today.toISOString().split('T')[0],
+        accountId,
+        upcomingPaychecksLength: upcomingPaychecks.length,
+        upcomingPaychecks: upcomingPaychecks.map(p => ({
+            date: p.date,
+            formattedDate: p.formattedDate,
+            paycheckName: p.paycheck?.name,
+            accountDistribution: p.paycheck?.accountDistribution
+        }))
+    });
 
     // Filter paychecks by account if specified - SIMPLIFIED LOGIC
     let relevantPaychecks = upcomingPaychecks;
@@ -89,13 +112,54 @@ export const calculatePaychecksUntilDue = (dueDate, upcomingPaychecks = [], acco
             }
             return false;
         });
+
+        console.log('🔍 PAYCHECK COUNTDOWN DEBUG: After account filtering', {
+            accountId,
+            originalCount: upcomingPaychecks.length,
+            filteredCount: relevantPaychecks.length,
+            relevantPaychecks: relevantPaychecks.map(p => ({
+                date: p.date,
+                formattedDate: p.formattedDate,
+                paycheckName: p.paycheck?.name
+            }))
+        });
     }
 
-    // Count paychecks that occur before the due date (not including the due date)
-    return relevantPaychecks.filter(paycheck => {
+    // FIXED LOGIC: Count paychecks that occur from today up to (but not including) the due date
+    // This means if something is due today, there are 0 paychecks left
+    // If something is due tomorrow and there's a paycheck today, there's 1 paycheck left
+    const paychecksUntilDue = relevantPaychecks.filter(paycheck => {
         const paycheckDate = parseDateSafely(paycheck.date);
-        return paycheckDate && paycheckDate < dueDateObj; // Only count paychecks BEFORE the due date
-    }).length;
+        if (!paycheckDate) return false;
+
+        // Count paychecks from today up to (but not including) the due date
+        const isFromTodayUntilDue = paycheckDate >= today && paycheckDate < dueDateObj;
+
+        console.log('🔍 PAYCHECK COUNTDOWN DEBUG: Checking paycheck', {
+            paycheckDate: paycheckDate.toISOString().split('T')[0],
+            today: today.toISOString().split('T')[0],
+            dueDate: dueDateObj.toISOString().split('T')[0],
+            isFromTodayUntilDue,
+            paycheckName: paycheck.paycheck?.name
+        });
+
+        return isFromTodayUntilDue;
+    });
+
+    const result = paychecksUntilDue.length;
+
+    console.log('🔍 PAYCHECK COUNTDOWN DEBUG: Final result', {
+        dueDate,
+        accountId,
+        paychecksUntilDueCount: result,
+        paychecksUntilDue: paychecksUntilDue.map(p => ({
+            date: p.date,
+            formattedDate: p.formattedDate,
+            paycheckName: p.paycheck?.name
+        }))
+    });
+
+    return result;
 };
 
 /**

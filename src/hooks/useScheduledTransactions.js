@@ -242,12 +242,40 @@ export const useScheduledTransactions = (addTransaction) => {
     }, [setScheduledTransactions, addTransaction, getNextOccurrenceDate]);
 
     /**
-     * Get upcoming scheduled transactions (not yet activated)
+     * Get upcoming scheduled transactions (not yet activated) - only next occurrence per unique transaction
      */
     const getUpcomingScheduledTransactions = useCallback(() => {
-        return scheduledTransactions
-            .filter(txn => !txn.isActivated)
-            .sort((a, b) => new Date(a.scheduledDate) - new Date(b.scheduledDate));
+        // Filter out activated and skipped transactions
+        const activeScheduledTransactions = scheduledTransactions
+            .filter(txn => !txn.isActivated && !txn.isSkipped);
+
+        // Group by parent budget item ID or payee to identify unique transactions
+        const groupedTransactions = {};
+
+        activeScheduledTransactions.forEach(txn => {
+            // Use parentBudgetItemId if available, otherwise use payee as grouping key
+            const groupKey = txn.recurringPattern?.parentBudgetItemId ||
+                txn.budgetItemId ||
+                `${txn.payee}_${txn.accountId}_${txn.amount}`;
+
+            if (!groupedTransactions[groupKey]) {
+                groupedTransactions[groupKey] = [];
+            }
+            groupedTransactions[groupKey].push(txn);
+        });
+
+        // Get only the next occurrence (earliest date) for each group
+        const nextOccurrences = Object.values(groupedTransactions).map(group => {
+            // Sort by scheduled date and return the earliest one
+            return group.sort((a, b) =>
+                new Date(a.scheduledDate) - new Date(b.scheduledDate)
+            )[0];
+        });
+
+        // Sort all next occurrences by date
+        return nextOccurrences.sort((a, b) =>
+            new Date(a.scheduledDate) - new Date(b.scheduledDate)
+        );
     }, [scheduledTransactions]);
 
     /**
