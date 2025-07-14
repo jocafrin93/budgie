@@ -46,6 +46,10 @@ const UpcomingPaychecks = ({
             const currentMonth = today.getMonth();
             const currentYear = today.getFullYear();
 
+            // Get today's date in local timezone for accurate comparison
+            const todayLocal = new Date();
+            const todayStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
+
             // Get first day of month and number of days
             const firstDay = new Date(currentYear, currentMonth, 1);
             const lastDay = new Date(currentYear, currentMonth + 1, 0);
@@ -81,7 +85,7 @@ const UpcomingPaychecks = ({
                 week.push({
                     day,
                     date,
-                    isToday: dateStr === today.toISOString().split('T')[0],
+                    isToday: dateStr === todayStr,
                     paychecks: dayPaychecks,
                     transactions: dayTransactions
                 });
