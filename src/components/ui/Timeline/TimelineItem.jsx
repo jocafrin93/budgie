@@ -8,7 +8,7 @@ import PropTypes from "prop-types";
 import { useLocaleContext } from "app/contexts/locale/context";
 import { COLORS } from "constants/app.constant";
 import { setThisClass } from "utils/setThisClass";
-import { useTimelineContext } from "./context";
+import { useTimelineContext } from "./context.js";
 
 // ----------------------------------------------------------------------
 
@@ -106,4 +106,3 @@ TimelineItem.propTypes = {
 };
 
 export { TimelineItem };
-

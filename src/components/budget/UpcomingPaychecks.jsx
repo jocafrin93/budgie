@@ -29,83 +29,107 @@ const UpcomingPaychecks = ({
 
     // Update upcoming paychecks and transactions when data changes
     useEffect(() => {
-        const upcoming = getAllUpcomingPaycheckDates(3); // Get next 3 months
-        setUpcomingPaychecks(upcoming.slice(0, maxPaychecks));
+        try {
+            const upcoming = getAllUpcomingPaycheckDates ? getAllUpcomingPaycheckDates(3) : [];
+            setUpcomingPaychecks(Array.isArray(upcoming) ? upcoming.slice(0, maxPaychecks) : []);
 
-        const scheduledTxns = getUpcomingScheduledTransactions();
-        setUpcomingTransactions(scheduledTxns.slice(0, 10)); // Limit to 10 transactions
+            const scheduledTxns = getUpcomingScheduledTransactions ? getUpcomingScheduledTransactions() : [];
+            setUpcomingTransactions(Array.isArray(scheduledTxns) ? scheduledTxns.slice(0, 10) : []);
 
-        const monthly = calculateTotalMonthlyIncome();
-        setMonthlyIncome(monthly);
+            const monthly = calculateTotalMonthlyIncome ? calculateTotalMonthlyIncome() : 0;
+            setMonthlyIncome(typeof monthly === 'number' ? monthly : 0);
+        } catch (error) {
+            console.error('Error updating upcoming items:', error);
+            setUpcomingPaychecks([]);
+            setUpcomingTransactions([]);
+            setMonthlyIncome(0);
+        }
     }, [paychecks, getAllUpcomingPaycheckDates, calculateTotalMonthlyIncome, maxPaychecks, getUpcomingScheduledTransactions]);
 
     // Generate calendar data for desktop view
     useEffect(() => {
         const generateCalendarData = () => {
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
+            try {
+                const today = new Date();
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
 
-            // Get today's date in local timezone for accurate comparison
-            const todayLocal = new Date();
-            const todayStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
+                // Get today's date in local timezone for accurate comparison
+                const todayLocal = new Date();
+                const todayStr = `${todayLocal.getFullYear()}-${String(todayLocal.getMonth() + 1).padStart(2, '0')}-${String(todayLocal.getDate()).padStart(2, '0')}`;
 
-            // Get first day of month and number of days
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startingDayOfWeek = firstDay.getDay();
+                // Get first day of month and number of days
+                const firstDay = new Date(currentYear, currentMonth, 1);
+                const lastDay = new Date(currentYear, currentMonth + 1, 0);
+                const daysInMonth = lastDay.getDate();
+                const startingDayOfWeek = firstDay.getDay();
 
-            // Create calendar grid
-            const calendar = [];
-            let week = [];
+                // Create calendar grid
+                const calendar = [];
+                let week = [];
 
-            // Add empty cells for days before month starts
-            for (let i = 0; i < startingDayOfWeek; i++) {
-                week.push(null);
-            }
-
-            // Add days of the month
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(currentYear, currentMonth, day);
-                const dateStr = date.toISOString().split('T')[0];
-
-                // Find paychecks for this day
-                const dayPaychecks = upcomingPaychecks.filter(paycheck => {
-                    const paycheckDate = new Date(paycheck.date).toISOString().split('T')[0];
-                    return paycheckDate === dateStr;
-                });
-
-                // Find scheduled transactions for this day
-                const dayTransactions = upcomingTransactions.filter(txn => {
-                    const txnDate = new Date(txn.nextDueDate || txn.dueDate).toISOString().split('T')[0];
-                    return txnDate === dateStr;
-                });
-
-                week.push({
-                    day,
-                    date,
-                    isToday: dateStr === todayStr,
-                    paychecks: dayPaychecks,
-                    transactions: dayTransactions
-                });
-
-                // Start new week on Sunday
-                if (week.length === 7) {
-                    calendar.push(week);
-                    week = [];
-                }
-            }
-
-            // Add remaining days to last week
-            if (week.length > 0) {
-                while (week.length < 7) {
+                // Add empty cells for days before month starts
+                for (let i = 0; i < startingDayOfWeek; i++) {
                     week.push(null);
                 }
-                calendar.push(week);
-            }
 
-            setCalendarData(calendar);
+                // Add days of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(currentYear, currentMonth, day);
+                    const dateStr = date.toISOString().split('T')[0];
+
+                    // Find paychecks for this day (with safety checks)
+                    const dayPaychecks = Array.isArray(upcomingPaychecks) ? upcomingPaychecks.filter(paycheck => {
+                        try {
+                            if (!paycheck || !paycheck.date) return false;
+                            const paycheckDate = new Date(paycheck.date).toISOString().split('T')[0];
+                            return paycheckDate === dateStr;
+                        } catch (e) {
+                            console.warn('Error processing paycheck date:', e);
+                            return false;
+                        }
+                    }) : [];
+
+                    // Find scheduled transactions for this day (with safety checks)
+                    const dayTransactions = Array.isArray(upcomingTransactions) ? upcomingTransactions.filter(txn => {
+                        try {
+                            if (!txn || (!txn.nextDueDate && !txn.dueDate)) return false;
+                            const txnDate = new Date(txn.nextDueDate || txn.dueDate).toISOString().split('T')[0];
+                            return txnDate === dateStr;
+                        } catch (e) {
+                            console.warn('Error processing transaction date:', e);
+                            return false;
+                        }
+                    }) : [];
+
+                    week.push({
+                        day,
+                        date,
+                        isToday: dateStr === todayStr,
+                        paychecks: dayPaychecks,
+                        transactions: dayTransactions
+                    });
+
+                    // Start new week on Sunday
+                    if (week.length === 7) {
+                        calendar.push(week);
+                        week = [];
+                    }
+                }
+
+                // Add remaining days to last week
+                if (week.length > 0) {
+                    while (week.length < 7) {
+                        week.push(null);
+                    }
+                    calendar.push(week);
+                }
+
+                setCalendarData(calendar);
+            } catch (error) {
+                console.error('Error generating calendar data:', error);
+                setCalendarData([]);
+            }
         };
 
         generateCalendarData();
