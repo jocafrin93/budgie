@@ -69,8 +69,21 @@ export const useScheduledTransactions = (addTransaction) => {
         } = scheduledTransactionOptions;
 
         if (!createScheduledTransactions || !budgetItem.dueDate || !budgetItem.frequency) {
+            console.log('🔥 SCHEDULED TRANSACTION CREATION SKIPPED:', {
+                createScheduledTransactions,
+                dueDate: budgetItem.dueDate,
+                frequency: budgetItem.frequency,
+                budgetItem
+            });
             return [];
         }
+
+        console.log('🔥 CREATING SCHEDULED TRANSACTIONS FROM BUDGET ITEM:', {
+            budgetItem,
+            categoryId: budgetItem.categoryId,
+            categoryIdType: typeof budgetItem.categoryId,
+            scheduledTransactionOptions
+        });
 
         const transactions = [];
         let currentDate = new Date(budgetItem.dueDate);
@@ -99,14 +112,17 @@ export const useScheduledTransactions = (addTransaction) => {
                 id: `scheduled_${Date.now()}_${occurrenceCount}`,
                 isScheduled: true,
                 scheduledDate: currentDate.toISOString().split('T')[0],
+                nextDueDate: currentDate.toISOString().split('T')[0], // Add nextDueDate for compatibility
+                dueDate: currentDate.toISOString().split('T')[0], // Add dueDate for compatibility
                 isActivated: false,
                 budgetItemId: budgetItem.id || `budget_${Date.now()}`,
-                categoryId: budgetItem.categoryId,
+                categoryId: budgetItem.categoryId, // Ensure categoryId is preserved
                 accountId: budgetItem.accountId,
                 amount: -Math.abs(budgetItem.amount), // Expenses are negative
                 payee: budgetItem.payee || budgetItem.name,
-                memo: `${budgetItem.name} - Scheduled Payment`,
+                memo: `${budgetItem.displayName || budgetItem.name} - Scheduled Payment`,
                 date: currentDate.toISOString().split('T')[0],
+                frequency: budgetItem.frequency, // Add frequency for display
                 recurringPattern: {
                     frequency: budgetItem.frequency,
                     interval: 1,
@@ -118,6 +134,21 @@ export const useScheduledTransactions = (addTransaction) => {
                 },
                 createdAt: new Date().toISOString()
             };
+
+            console.log('🔥 SCHEDULED TRANSACTION CREATED:', {
+                id: scheduledTransaction.id,
+                categoryId: scheduledTransaction.categoryId,
+                categoryIdType: typeof scheduledTransaction.categoryId,
+                budgetItemCategoryId: budgetItem.categoryId,
+                budgetItemCategoryIdType: typeof budgetItem.categoryId,
+                budgetItemId: budgetItem.id,
+                budgetItemIdType: typeof budgetItem.id,
+                payee: scheduledTransaction.payee,
+                amount: scheduledTransaction.amount,
+                frequency: scheduledTransaction.frequency,
+                scheduledDate: scheduledTransaction.scheduledDate,
+                fullBudgetItem: budgetItem
+            });
 
             transactions.push(scheduledTransaction);
 

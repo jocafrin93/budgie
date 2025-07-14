@@ -256,8 +256,8 @@ export default function BudgetTransactions() {
             futureDate.setDate(today.getDate() + days);
 
             return scheduledTransactions
-                .filter(txn => !txn.isActivated && new Date(txn.nextDueDate || txn.dueDate) <= futureDate)
-                .sort((a, b) => new Date(a.nextDueDate || a.dueDate) - new Date(b.nextDueDate || b.dueDate));
+                .filter(txn => !txn.isActivated && new Date(txn.scheduledDate || txn.nextDueDate || txn.dueDate) <= futureDate)
+                .sort((a, b) => new Date(a.scheduledDate || a.nextDueDate || a.dueDate) - new Date(b.scheduledDate || b.nextDueDate || b.dueDate));
         };
 
         const editScheduledTransaction = (id, updates) => {

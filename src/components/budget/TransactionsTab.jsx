@@ -1473,7 +1473,14 @@ export default function TransactionsTab({
 
                                         const getCategoryName = (categoryId) => {
                                             if (!categoryId) return 'Uncategorized';
-                                            const category = categories.find(cat => cat.id === categoryId);
+
+                                            // Regular category lookup using categoryId
+                                            const category = categories.find(cat =>
+                                                cat.id === categoryId ||
+                                                String(cat.id) === String(categoryId) ||
+                                                parseInt(cat.id) === parseInt(categoryId)
+                                            );
+
                                             return category ? category.name : 'Unknown';
                                         };
 
@@ -1525,7 +1532,7 @@ export default function TransactionsTab({
                                                 {/* Category */}
                                                 <Td>
                                                     <Badge variant="soft" className="text-xs">
-                                                        {getCategoryName(scheduledTxn.categoryId)}
+                                                        {getCategoryName(scheduledTxn.categoryId, scheduledTxn)}
                                                     </Badge>
                                                 </Td>
 

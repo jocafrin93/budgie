@@ -93,9 +93,12 @@ const UpcomingPaychecks = ({
                     // Find scheduled transactions for this day (with safety checks)
                     const dayTransactions = Array.isArray(upcomingTransactions) ? upcomingTransactions.filter(txn => {
                         try {
-                            if (!txn || (!txn.nextDueDate && !txn.dueDate)) return false;
-                            const txnDate = new Date(txn.nextDueDate || txn.dueDate).toISOString().split('T')[0];
-                            return txnDate === dateStr;
+                            if (!txn) return false;
+                            // Check multiple possible date fields for scheduled transactions
+                            const txnDate = txn.scheduledDate || txn.nextDueDate || txn.dueDate || txn.date;
+                            if (!txnDate) return false;
+                            const normalizedDate = new Date(txnDate).toISOString().split('T')[0];
+                            return normalizedDate === dateStr;
                         } catch (e) {
                             console.warn('Error processing transaction date:', e);
                             return false;
@@ -192,8 +195,14 @@ const UpcomingPaychecks = ({
     };
 
     // Combine and sort paychecks and transactions for timeline
-    const timelineItems = [...upcomingPaychecks.map(p => ({ ...p, type: 'paycheck' })),
-    ...upcomingTransactions.map(t => ({ ...t, type: 'transaction', date: t.nextDueDate || t.dueDate }))];
+    const timelineItems = [
+        ...upcomingPaychecks.map(p => ({ ...p, type: 'paycheck' })),
+        ...upcomingTransactions.map(t => ({
+            ...t,
+            type: 'transaction',
+            date: t.scheduledDate || t.nextDueDate || t.dueDate || t.date
+        }))
+    ];
     timelineItems.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (paychecks.length === 0 && upcomingTransactions.length === 0) {

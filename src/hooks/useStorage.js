@@ -15,7 +15,7 @@ export const useStorage = (key, defaultValue) => {
 
     // Show loading state while cloud storage initializes
     if (cloudMeta.isLoading) {
-        console.log(`⏳ STORAGE (${key}) - Loading cloud storage state...`);
+        // console.log(`⏳ STORAGE (${key}) - Loading cloud storage state...`);
         return [
             defaultValue, // Show default while loading to prevent flicker
             () => { }, // Disabled setter during loading

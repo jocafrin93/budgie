@@ -481,10 +481,22 @@ export default function BudgetOverview() {
 
                 console.log('🔥 ALL CONDITIONS MET - Creating scheduled transactions for category:', categoryData.name);
 
+                // Find the actual category to get its real ID
+                const actualCategory = categories.find(cat => cat.id === categoryId);
+
+                console.log('🔍 CATEGORY LOOKUP FOR SCHEDULED TRANSACTION:', {
+                    categoryId,
+                    categoryIdType: typeof categoryId,
+                    actualCategory,
+                    allCategories: categories.map(cat => ({ id: cat.id, name: cat.name, type: typeof cat.id })),
+                    foundMatch: !!actualCategory
+                });
+
                 const budgetItem = {
                     id: categoryId,
-                    categoryId: categoryId,
+                    categoryId: actualCategory ? actualCategory.id : categoryId, // Use the actual category ID for lookup
                     name: categoryData.name,
+                    displayName: categoryData.name, // For single categories, use category name
                     amount: categoryData.amount,
                     frequency: categoryData.frequency,
                     dueDate: categoryData.dueDate,
@@ -492,11 +504,17 @@ export default function BudgetOverview() {
                     payee: categoryData.payee || categoryData.name
                 };
 
+                console.log('🔍 FINAL BUDGET ITEM CATEGORY ID:', {
+                    originalCategoryId: categoryId,
+                    actualCategoryId: actualCategory ? actualCategory.id : categoryId,
+                    budgetItemCategoryId: budgetItem.categoryId
+                });
+
                 const scheduledTransactionOptions = {
                     createScheduledTransactions: true,
-                    endCondition: categoryData.endCondition || 'indefinite',
-                    endDate: categoryData.endDate,
-                    maxOccurrences: categoryData.maxOccurrences
+                    endCondition: categoryData.scheduledEndCondition || 'indefinite',
+                    endDate: categoryData.scheduledEndDate,
+                    maxOccurrences: categoryData.scheduledMaxOccurrences
                 };
 
                 console.log('🔥 BUDGET ITEM DATA:', budgetItem);
@@ -675,16 +693,34 @@ export default function BudgetOverview() {
 
                 console.log('🔥 ALL CONDITIONS MET - Creating scheduled transactions for item:', itemData.name);
 
+                // Find the actual category to get its real ID (same as for single categories)
+                const actualCategory = categories.find(cat => cat.id === itemData.categoryId);
+
+                console.log('🔍 CATEGORY LOOKUP FOR SCHEDULED TRANSACTION (ITEM):', {
+                    itemCategoryId: itemData.categoryId,
+                    itemCategoryIdType: typeof itemData.categoryId,
+                    actualCategory,
+                    allCategories: categories.map(cat => ({ id: cat.id, name: cat.name, type: typeof cat.id })),
+                    foundMatch: !!actualCategory
+                });
+
                 const budgetItem = {
                     id: itemId,
-                    categoryId: itemData.categoryId,
+                    categoryId: actualCategory ? actualCategory.id : itemData.categoryId, // Use the actual category ID for lookup
                     name: itemData.name,
+                    displayName: itemData.name, // For multi-item categories, use item name
                     amount: itemData.amount,
                     frequency: itemData.frequency,
                     dueDate: itemData.dueDate,
                     accountId: itemData.accountId,
                     payee: itemData.payee || itemData.name
                 };
+
+                console.log('🔍 FINAL BUDGET ITEM CATEGORY ID (ITEM):', {
+                    originalCategoryId: itemData.categoryId,
+                    actualCategoryId: actualCategory ? actualCategory.id : itemData.categoryId,
+                    budgetItemCategoryId: budgetItem.categoryId
+                });
 
                 const scheduledTransactionOptions = {
                     createScheduledTransactions: true,

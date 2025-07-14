@@ -76,7 +76,7 @@ const ScheduledTransactionsWidget = ({
         };
 
         filteredTransactions.forEach(txn => {
-            const date = new Date(txn.nextDueDate || txn.dueDate);
+            const date = new Date(txn.scheduledDate || txn.nextDueDate || txn.dueDate);
             const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
 
             if (diffDays < 0) stats.overdue++;
@@ -93,7 +93,7 @@ const ScheduledTransactionsWidget = ({
 
     // Sort transactions by due date and take the first 5
     const sortedTransactions = [...filteredTransactions]
-        .sort((a, b) => new Date(a.nextDueDate || a.dueDate) - new Date(b.nextDueDate || b.dueDate))
+        .sort((a, b) => new Date(a.scheduledDate || a.nextDueDate || a.dueDate) - new Date(b.scheduledDate || b.nextDueDate || b.dueDate))
         .slice(0, 5);
 
     const stats = getUrgencyStats();
@@ -187,14 +187,14 @@ const ScheduledTransactionsWidget = ({
                                 <div className="flex-shrink-0">
                                     <Clock
                                         size={16}
-                                        className={getUrgencyColor(txn.nextDueDate || txn.dueDate)}
+                                        className={getUrgencyColor(txn.scheduledDate || txn.nextDueDate || txn.dueDate)}
                                     />
                                 </div>
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center space-x-2">
-                                        <span className={`font-medium ${getUrgencyColor(txn.nextDueDate || txn.dueDate)}`}>
-                                            {formatScheduledDate(txn.nextDueDate || txn.dueDate)}
+                                        <span className={`font-medium ${getUrgencyColor(txn.scheduledDate || txn.nextDueDate || txn.dueDate)}`}>
+                                            {formatScheduledDate(txn.scheduledDate || txn.nextDueDate || txn.dueDate)}
                                         </span>
                                         <span className="text-base-content/60">•</span>
                                         <span className="text-base-content truncate">

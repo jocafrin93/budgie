@@ -809,9 +809,9 @@ const UnifiedCategoryForm = ({
                 isRecurring: form.values.isRecurring,
                 // Scheduled transaction options
                 createScheduledTransactions: form.values.createScheduledTransactions,
-                endCondition: form.values.scheduledEndCondition,
-                endDate: form.values.scheduledEndDate,
-                maxOccurrences: form.values.scheduledMaxOccurrences,
+                scheduledEndCondition: form.values.scheduledEndCondition,
+                scheduledEndDate: form.values.scheduledEndDate,
+                scheduledMaxOccurrences: form.values.scheduledMaxOccurrences,
             };
 
             console.log('🔥 CATEGORY DATA PREPARED:', categoryData);
