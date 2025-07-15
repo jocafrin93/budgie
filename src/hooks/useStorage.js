@@ -52,6 +52,30 @@ export const useStorage = (key, defaultValue) => {
                 }
             ];
         }
+
+        // CRITICAL FIX: Check if local storage has more recent data than cloud storage
+        const cloudArray = Array.isArray(cloudStorageResult[0]) ? cloudStorageResult[0] : [];
+        const localArray = Array.isArray(localStorageResult[0]) ? localStorageResult[0] : [];
+
+        if (localArray.length > cloudArray.length) {
+            console.log(`🔄 LOCAL DATA IS NEWER for ${key}: local(${localArray.length}) > cloud(${cloudArray.length}) - using local`);
+            return [
+                localStorageResult[0],
+                (newValue) => {
+                    // Update both local and cloud when local is used
+                    localStorageResult[1](newValue);
+                    cloudStorageResult[1](newValue);
+                },
+                {
+                    isLoading: false,
+                    isAuthenticated: cloudMeta.isAuthenticated,
+                    error: cloudMeta.error,
+                    signIn: cloudMeta.signIn,
+                    signOut: cloudMeta.signOut
+                }
+            ];
+        }
+
         console.log(`🔍 USING CLOUD STORAGE for ${key}`);
         return cloudStorageResult;
     }

@@ -373,6 +373,24 @@ export const useCloudStorage = (key, defaultValue) => {
             setIsLoading(false);
         };
 
+        // Add error handling and timeout
+        const initWithTimeout = async () => {
+            try {
+                await Promise.race([
+                    initialize(),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Initialization timeout')), 10000)
+                    )
+                ]);
+            } catch (error) {
+                console.error('🚨 CLOUD STORAGE INIT FAILED:', error);
+                console.log('🚨 Falling back to default value and disabling loading');
+                setValue(defaultValue);
+                setIsLoading(false);
+                setError(`Initialization failed: ${error.message}`);
+            }
+        };
+
         initialize();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // EMPTY DEPENDENCIES - CRITICAL FOR PREVENTING LOOPS
