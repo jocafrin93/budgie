@@ -197,13 +197,25 @@ export default function BudgetOverview() {
                         // Get paychecks specifically for this account
                         const accountPaychecks = getUpcomingPaycheckDatesForAccount(accountId, monthsAhead);
 
+                        console.log(`🔍 PAYCHECK DEBUG for account ${account.name}:`, {
+                            accountId,
+                            dueDate,
+                            monthsAhead,
+                            totalAccountPaychecks: accountPaychecks.length,
+                            accountPaycheckDates: accountPaychecks.map(p => p.formattedDate || p.date)
+                        });
+
                         // Filter to only include paychecks before or on the due date
                         const paychecksUntilDue = accountPaychecks.filter(paycheck => {
                             const paycheckDate = new Date(paycheck.date);
-                            return paycheckDate <= due;
+                            const isBeforeDue = paycheckDate <= due;
+                            console.log(`🔍 Paycheck ${paycheck.formattedDate || paycheck.date}: ${isBeforeDue ? 'INCLUDED' : 'EXCLUDED'} (due: ${dueDate})`);
+                            return isBeforeDue;
                         });
 
-                        console.log(`Calculating paychecks for account ${account.name} until ${dueDate}:`, paychecksUntilDue.length);
+                        console.log(`🔍 FINAL RESULT for account ${account.name}: ${paychecksUntilDue.length} paychecks until ${dueDate}`);
+                        console.log(`🔍 Included paycheck dates:`, paychecksUntilDue.map(p => p.formattedDate || p.date));
+
                         return paychecksUntilDue.length;
                     }
                 }
@@ -702,7 +714,19 @@ export default function BudgetOverview() {
                 // Generate ID for new item
                 itemId = Date.now().toString();
                 const itemWithId = { ...itemData, id: itemId };
-                addItem(itemWithId);
+
+                console.log('🔥 OVERVIEW - About to call addItem with:', itemWithId);
+                const result = addItem(itemWithId);
+                console.log('🔥 OVERVIEW - addItem returned:', result);
+
+                // Verify the item was added
+                setTimeout(() => {
+                    console.log('🔥 OVERVIEW - Verifying item persistence after 500ms');
+                    console.log('🔥 OVERVIEW - Current planningItems count:', planningItems.length);
+                    console.log('🔥 OVERVIEW - Looking for item with ID:', itemId);
+                    const foundItem = planningItems.find(item => item.id === itemId);
+                    console.log('🔥 OVERVIEW - Found item:', foundItem);
+                }, 500);
             }
 
             // Create scheduled transactions if enabled for expense items
