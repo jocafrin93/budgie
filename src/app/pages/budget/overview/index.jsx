@@ -292,8 +292,19 @@ export default function BudgetOverview() {
                     const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
 
                     if (item.dueDate && paychecksUntilDue > 0) {
-                        // For items with due dates, calculate based on actual paychecks until due
-                        perPaycheck = (item.amount || 0) / paychecksUntilDue;
+                        // For items with due dates, calculate based on total amount needed divided by paychecks remaining
+                        const totalAmountNeeded = item.type === 'savings-goal'
+                            ? (item.monthlyContribution || 0)
+                            : (item.amount || 0);
+                        perPaycheck = totalAmountNeeded / paychecksUntilDue;
+
+                        console.log(`💰 Per-paycheck calculation for ${item.name}:`, {
+                            totalAmountNeeded,
+                            paychecksUntilDue,
+                            perPaycheck,
+                            itemType: item.type,
+                            dueDate: item.dueDate
+                        });
                     } else {
                         // For items without due dates, use conservative approach (2 paychecks per month for bi-weekly)
                         perPaycheck = monthlyNeed / paycheckInfo.conservative;
