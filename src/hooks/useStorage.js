@@ -28,6 +28,20 @@ export const useStorage = (key, defaultValue) => {
 
     // Return the appropriate storage system based on cached decision
     if (shouldUseCloudStorage) {
+        // For cloud storage, if still loading, return local data to prevent showing defaults
+        if (cloudMeta.isLoading) {
+            return [
+                localStorageResult[0], // Use local data while cloud loads
+                localStorageResult[1],
+                {
+                    isLoading: true,
+                    isAuthenticated: cloudMeta.isAuthenticated,
+                    error: cloudMeta.error,
+                    signIn: cloudMeta.signIn,
+                    signOut: cloudMeta.signOut
+                }
+            ];
+        }
         return cloudStorageResult;
     }
 

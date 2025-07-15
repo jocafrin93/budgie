@@ -856,6 +856,7 @@ export default function BudgetOverview() {
                 <div className="mb-6">
                     <React.Suspense fallback={
                         <div className="bg-base-200 rounded-lg p-4">
+                            {/* Main navigation row */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="w-8 h-8 bg-base-300 rounded animate-pulse"></div>
@@ -866,7 +867,12 @@ export default function BudgetOverview() {
                                     <div className="w-20 h-12 bg-base-300 rounded animate-pulse"></div>
                                     <div className="w-20 h-12 bg-base-300 rounded animate-pulse"></div>
                                     <div className="w-20 h-12 bg-base-300 rounded animate-pulse"></div>
+                                    <div className="w-16 h-8 bg-base-300 rounded animate-pulse"></div>
                                 </div>
+                            </div>
+                            {/* Month selector dropdown section */}
+                            <div className="mt-3 pt-3 border-t border-base-300">
+                                <div className="w-48 h-8 bg-base-300 rounded animate-pulse"></div>
                             </div>
                         </div>
                     }>
