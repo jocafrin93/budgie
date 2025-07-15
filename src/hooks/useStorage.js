@@ -26,10 +26,20 @@ export const useStorage = (key, defaultValue) => {
         console.log(`📋 STORAGE SESSION DECISION: ${shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'} (cached for session)`);
     }
 
+    // Add debugging to see which storage system is being used
+    console.log(`🔍 STORAGE DECISION for ${key}:`, {
+        shouldUseCloudStorage,
+        cloudIsLoading: cloudMeta.isLoading,
+        cloudValue: cloudStorageResult[0],
+        localValue: localStorageResult[0],
+        finalChoice: shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'
+    });
+
     // Return the appropriate storage system based on cached decision
     if (shouldUseCloudStorage) {
         // For cloud storage, if still loading, return local data to prevent showing defaults
         if (cloudMeta.isLoading) {
+            console.log(`🔍 CLOUD LOADING for ${key} - using local data temporarily`);
             return [
                 localStorageResult[0], // Use local data while cloud loads
                 localStorageResult[1],
@@ -42,9 +52,11 @@ export const useStorage = (key, defaultValue) => {
                 }
             ];
         }
+        console.log(`🔍 USING CLOUD STORAGE for ${key}`);
         return cloudStorageResult;
     }
 
+    console.log(`🔍 USING LOCAL STORAGE for ${key}`);
     return [
         localStorageResult[0],
         localStorageResult[1],
