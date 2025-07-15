@@ -1,11 +1,10 @@
 // src/hooks/useStorage.js
-import { useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef } from 'react';
 import { useCloudStorage } from './useCloudStorage';
 import { useLocalStorage } from './useLocalStorage';
 
 // Global cache to prevent flickering across all storage instances
 const storageDecisionCache = new Map();
-const storageResultCache = new Map();
 const recentWriteTimestamps = new Map(); // Track recent writes to prevent overwrites
 
 export const useStorage = (key, defaultValue) => {
@@ -34,10 +33,15 @@ export const useStorage = (key, defaultValue) => {
         console.log(`📋 STORAGE SESSION DECISION: ${shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'} (cached for session)`);
     }
 
+    // Extract values for dependency array
+    const localValue = localStorageResult[0];
+    const cloudValue = cloudStorageResult[0];
+    const localSetValue = localStorageResult[1];
+    const cloudSetValue = cloudStorageResult[1];
+    const { isLoading, isAuthenticated, error, signIn, signOut } = cloudMeta;
+
     // Memoized storage result calculation - only recalculate when values actually change
     const storageResult = useMemo(() => {
-        const localValue = localStorageResult[0];
-        const cloudValue = cloudStorageResult[0];
 
         // Check if values have actually changed
         const localChanged = prevLocalValueRef.current !== localValue;
@@ -58,7 +62,7 @@ export const useStorage = (key, defaultValue) => {
         if (debugKey && (localChanged || cloudChanged)) {
             console.log(`🔍 STORAGE VALUES CHANGED for ${key}:`, {
                 shouldUseCloudStorage,
-                cloudIsLoading: cloudMeta.isLoading,
+                cloudIsLoading: isLoading,
                 cloudValueLength: Array.isArray(cloudValue) ? cloudValue.length : 'not-array',
                 localValueLength: Array.isArray(localValue) ? localValue.length : 'not-array',
                 localChanged,
@@ -71,17 +75,17 @@ export const useStorage = (key, defaultValue) => {
 
         if (shouldUseCloudStorage) {
             // For cloud storage, if still loading, return local data to prevent showing defaults
-            if (cloudMeta.isLoading) {
+            if (isLoading) {
                 if (debugKey) console.log(`🔍 CLOUD LOADING for ${key} - using local data temporarily`);
                 result = [
                     localValue,
-                    localStorageResult[1],
+                    localSetValue,
                     {
                         isLoading: true,
-                        isAuthenticated: cloudMeta.isAuthenticated,
-                        error: cloudMeta.error,
-                        signIn: cloudMeta.signIn,
-                        signOut: cloudMeta.signOut
+                        isAuthenticated,
+                        error,
+                        signIn,
+                        signOut
                     }
                 ];
             } else {
@@ -108,15 +112,15 @@ export const useStorage = (key, defaultValue) => {
                             // Track write timestamp for protection
                             recentWriteTimestamps.set(key, Date.now());
                             // Update both local and cloud when local is used
-                            localStorageResult[1](newValue);
-                            cloudStorageResult[1](newValue);
+                            localSetValue(newValue);
+                            cloudSetValue(newValue);
                         },
                         {
                             isLoading: false,
-                            isAuthenticated: cloudMeta.isAuthenticated,
-                            error: cloudMeta.error,
-                            signIn: cloudMeta.signIn,
-                            signOut: cloudMeta.signOut
+                            isAuthenticated,
+                            error,
+                            signIn,
+                            signOut
                         }
                     ];
                 } else {
@@ -128,13 +132,13 @@ export const useStorage = (key, defaultValue) => {
             if (debugKey) console.log(`🔍 USING LOCAL STORAGE for ${key}`);
             result = [
                 localValue,
-                localStorageResult[1],
+                localSetValue,
                 {
                     isLoading: false,
-                    isAuthenticated: cloudMeta.isAuthenticated,
-                    error: cloudMeta.error,
-                    signIn: cloudMeta.signIn,
-                    signOut: cloudMeta.signOut
+                    isAuthenticated,
+                    error,
+                    signIn,
+                    signOut
                 }
             ];
         }
@@ -143,10 +147,16 @@ export const useStorage = (key, defaultValue) => {
         prevResultRef.current = result;
         return result;
     }, [
-        localStorageResult[0],
-        cloudStorageResult[0],
-        cloudMeta.isLoading,
-        cloudMeta.isAuthenticated,
+        localValue,
+        cloudValue,
+        isLoading,
+        isAuthenticated,
+        error,
+        signIn,
+        signOut,
+        localSetValue,
+        cloudSetValue,
+        cloudStorageResult,
         shouldUseCloudStorage,
         key
     ]);
