@@ -1,56 +1,35 @@
 // src/hooks/useStorage.js
-import { useEffect, useRef, useState } from 'react';
 import { useCloudStorage } from './useCloudStorage';
 import { useLocalStorage } from './useLocalStorage';
+
+// Global cache to prevent flickering across all storage instances
+const storageDecisionCache = new Map();
 
 export const useStorage = (key, defaultValue) => {
     const localStorageResult = useLocalStorage(key, defaultValue);
     const cloudStorageResult = useCloudStorage(key, defaultValue);
     const [, , cloudMeta] = cloudStorageResult;
 
-    // Track initialization state to prevent flickering
-    const [hasDecided, setHasDecided] = useState(false);
-    const [useCloud, setUseCloud] = useState(false);
-    const decisionMadeRef = useRef(false);
+    // Check if we've already made a decision for this session
+    const cacheKey = 'storage_decision';
+    let useCloudStorage = storageDecisionCache.get(cacheKey);
 
-    // Make storage decision once and stick with it
-    useEffect(() => {
-        // Only make decision once during initialization
-        if (decisionMadeRef.current) return;
+    if (useCloudStorage === undefined) {
+        // Make decision once per session based on current token state
+        const storedToken = localStorage.getItem('google_access_token');
+        const tokenExpiry = localStorage.getItem('google_token_expiry');
+        const hasValidToken = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
 
-        // Wait for cloud storage to finish loading
-        if (cloudMeta.isLoading) return;
+        useCloudStorage = hasValidToken;
+        storageDecisionCache.set(cacheKey, useCloudStorage);
 
-        // Now make the decision and stick with it
-        decisionMadeRef.current = true;
-        const shouldUseCloud = cloudMeta.isAuthenticated;
-
-        console.log(`📋 STORAGE (${key}) - Making storage decision: ${shouldUseCloud ? 'CLOUD' : 'LOCAL'}`);
-        setUseCloud(shouldUseCloud);
-        setHasDecided(true);
-    }, [cloudMeta.isLoading, cloudMeta.isAuthenticated, key]);
-
-    // Show loading state while deciding
-    if (!hasDecided) {
-        return [
-            defaultValue, // Show default while deciding to prevent flicker
-            () => { }, // Disabled setter during decision
-            {
-                isLoading: true,
-                isAuthenticated: cloudMeta.isAuthenticated,
-                error: cloudMeta.error,
-                signIn: cloudMeta.signIn,
-                signOut: cloudMeta.signOut
-            }
-        ];
+        console.log(`📋 STORAGE SESSION DECISION: ${useCloudStorage ? 'CLOUD' : 'LOCAL'} (cached for session)`);
     }
 
-    // Return the decided storage system
-    if (useCloud) {
-        console.log(`☁️ STORAGE (${key}) - Using CLOUD STORAGE`);
+    // Return the appropriate storage system based on cached decision
+    if (useCloudStorage) {
         return cloudStorageResult;
     } else {
-        console.log(`💾 STORAGE (${key}) - Using localStorage`);
         return [
             localStorageResult[0],
             localStorageResult[1],
