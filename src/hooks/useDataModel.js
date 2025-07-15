@@ -48,6 +48,14 @@ export const useDataModel = ({
   const isSyncing = useRef(false);
   const cleanupRef = useRef(false);
 
+  // Add debugging for planningItems changes
+  useEffect(() => {
+    console.log('🔥 DATAMODEL - planningItems changed:', {
+      length: planningItems.length,
+      items: planningItems.map(item => ({ id: item.id, name: item.name }))
+    });
+  }, [planningItems]);
+
   // Initialize planning items from expenses and savings goals if needed
   useEffect(() => {
     if (planningItems.length === 0 && (expenses.length > 0 || savingsGoals.length > 0)) {
