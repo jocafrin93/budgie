@@ -297,6 +297,13 @@ export default function BudgetOverview() {
                         ? (item.monthlyContribution || 0)
                         : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly');
 
+                    // Debug the accountId being passed
+                    console.log(`🔍 ITEM ACCOUNT DEBUG for ${item.name}:`, {
+                        itemAccountId: item.accountId,
+                        itemAccountIdType: typeof item.accountId,
+                        itemData: item
+                    });
+
                     const paychecksUntilDue = item.dueDate ? calculatePaychecksUntilDue(item.dueDate, item.accountId) : null;
 
                     // Calculate per paycheck based on due date if available
@@ -345,6 +352,14 @@ export default function BudgetOverview() {
             // Calculate per paycheck amount - use real paycheck schedule for single categories with due dates
             let perPaycheck;
             if (category.type === 'single' && categoryDueDate) {
+                // Debug the accountId for single categories
+                console.log(`🔍 SINGLE CATEGORY ACCOUNT DEBUG for ${category.name}:`, {
+                    categoryAccountId: category.accountId,
+                    categoryAccountIdType: typeof category.accountId,
+                    categoryData: category,
+                    dueDate: categoryDueDate
+                });
+
                 const paychecksUntilDue = calculatePaychecksUntilDue(categoryDueDate, category.accountId);
                 if (paychecksUntilDue > 0) {
                     // For single categories with due dates, calculate based on actual paychecks until due
