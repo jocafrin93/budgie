@@ -119,9 +119,9 @@ export const useDataModel = ({
     const categoryId = parseInt(newItem.categoryId, 10);
 
     // Debug logging to see what we're working with
-    console.log('DEBUG - Adding item with categoryId:', categoryId);
-    console.log('DEBUG - Available categories:', categories.map(cat => ({ id: cat.id, name: cat.name, hasId: 'id' in cat })));
-    console.log('DEBUG - Full category objects:', categories);
+    console.log('🔥 DATAMODEL - Adding item with categoryId:', categoryId);
+    console.log('🔥 DATAMODEL - Available categories:', categories.map(cat => ({ id: cat.id, name: cat.name, hasId: 'id' in cat })));
+    console.log('🔥 DATAMODEL - Full item data:', newItem);
 
     // More flexible category validation - handle categories without ID field
     const categoryExists = categories.some((cat, index) => {
@@ -136,8 +136,8 @@ export const useDataModel = ({
     });
 
     if (isNaN(categoryId) || !categoryExists) {
-      console.error('Invalid category ID for new item:', newItem);
-      console.error('Available categories with IDs:', categories.map((cat, index) => ({
+      console.error('🔥 DATAMODEL - Invalid category ID for new item:', newItem);
+      console.error('🔥 DATAMODEL - Available categories with IDs:', categories.map((cat, index) => ({
         id: cat.id || (index + 1),
         name: cat.name,
         hasIdField: 'id' in cat
@@ -145,48 +145,63 @@ export const useDataModel = ({
       return;
     }
 
-    // Generate ID first to ensure consistency between planning item and budget allocation
-    const newItemId = newItem.id || Date.now().toString();
+    // Generate a more robust ID to prevent collisions
+    const newItemId = newItem.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Create a copy of the item with the generated ID and parsed categoryId
     const itemWithId = {
       ...newItem,
       id: newItemId,
       categoryId,
-      isActive: newItem.isActive !== false // Default to true unless explicitly false
+      isActive: newItem.isActive !== false, // Default to true unless explicitly false
+      createdAt: new Date().toISOString() // Add timestamp for debugging
     };
 
-    console.log('DEBUG - Adding item with final data:', itemWithId);
+    console.log('🔥 DATAMODEL - Adding item with final data:', itemWithId);
 
-    // Update planning items
-    setPlanningItems(prev => {
-      const updatedItems = [...prev, itemWithId];
-      console.log('DEBUG - Updated planning items:', updatedItems);
-      return updatedItems;
-    });
+    // Update planning items with error handling
+    try {
+      setPlanningItems(prev => {
+        const updatedItems = [...prev, itemWithId];
+        console.log('🔥 DATAMODEL - Updated planning items count:', updatedItems.length);
+        console.log('🔥 DATAMODEL - New item in list:', updatedItems.find(item => item.id === newItemId));
 
-    // Create budget allocation if item is active
-    if (itemWithId.isActive) {
-      setActiveBudgetAllocations(prev => {
-        const newAllocation = {
-          id: Math.max(...prev.map(a => a.id), 0) + 1,
-          planningItemId: newItemId,
-          categoryId,
-          monthlyAllocation: itemWithId.type === 'savings-goal'
-            ? itemWithId.monthlyContribution
-            : itemWithId.amount,
-          perPaycheckAmount: 0, // Will be calculated
-          sourceAccountId: itemWithId.accountId || accounts[0]?.id || 1,
-          isPaused: false,
-          createdAt: new Date().toISOString()
-        };
+        // Force immediate storage write by triggering a re-render
+        setTimeout(() => {
+          console.log('🔥 DATAMODEL - Verifying item persistence after timeout');
+        }, 100);
 
-        const newAllocations = [...prev, newAllocation];
-        return calculatePerPaycheckAmounts(newAllocations, payFrequency, payFrequencyOptions);
+        return updatedItems;
       });
-    }
 
-    console.log('DEBUG - Item added successfully');
+      // Create budget allocation if item is active
+      if (itemWithId.isActive) {
+        setActiveBudgetAllocations(prev => {
+          const newAllocation = {
+            id: Math.max(...prev.map(a => a.id), 0) + 1,
+            planningItemId: newItemId,
+            categoryId,
+            monthlyAllocation: itemWithId.type === 'savings-goal'
+              ? itemWithId.monthlyContribution
+              : itemWithId.amount,
+            perPaycheckAmount: 0, // Will be calculated
+            sourceAccountId: itemWithId.accountId || accounts[0]?.id || 1,
+            isPaused: false,
+            createdAt: new Date().toISOString()
+          };
+
+          const newAllocations = [...prev, newAllocation];
+          console.log('🔥 DATAMODEL - Created budget allocation for item:', newAllocation);
+          return calculatePerPaycheckAmounts(newAllocations, payFrequency, payFrequencyOptions);
+        });
+      }
+
+      console.log('🔥 DATAMODEL - Item added successfully with ID:', newItemId);
+      return newItemId; // Return the ID for verification
+    } catch (error) {
+      console.error('🔥 DATAMODEL - Error adding item:', error);
+      throw error;
+    }
   }, [setPlanningItems, setActiveBudgetAllocations, categories, accounts, payFrequency, payFrequencyOptions]);
 
 

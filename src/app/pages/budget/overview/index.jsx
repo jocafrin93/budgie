@@ -50,6 +50,7 @@ export default function BudgetOverview() {
     const paycheckHookResult = usePaycheckManagement(accounts || []);
     const {
         getPaychecksInDateRange,
+        getUpcomingPaycheckDatesForAccount,
         getTodayLocal,
         getAllUpcomingPaycheckDates
     } = paycheckHookResult || {};
@@ -183,23 +184,33 @@ export default function BudgetOverview() {
 
         try {
             // Check if paycheck management functions are available
-            if (getTodayLocal && getPaychecksInDateRange && accounts) {
-                const today = getTodayLocal();
-
+            if (getTodayLocal && getUpcomingPaycheckDatesForAccount && accounts) {
                 // If accountId is provided, get paychecks only for that specific account
                 if (accountId) {
                     const account = accounts.find(acc => acc.id === accountId);
                     if (account) {
+                        // Calculate months ahead needed to cover the due date
+                        const today = new Date();
+                        const due = new Date(dueDate);
+                        const monthsAhead = Math.ceil((due - today) / (1000 * 60 * 60 * 24 * 30)) + 1;
+
                         // Get paychecks specifically for this account
-                        const accountPaychecks = getPaychecksInDateRange(today, dueDate, accountId);
-                        console.log(`Calculating paychecks for account ${account.name} from ${today} to ${dueDate}:`, accountPaychecks.length);
-                        return accountPaychecks.length;
+                        const accountPaychecks = getUpcomingPaycheckDatesForAccount(accountId, monthsAhead);
+
+                        // Filter to only include paychecks before or on the due date
+                        const paychecksUntilDue = accountPaychecks.filter(paycheck => {
+                            const paycheckDate = new Date(paycheck.date);
+                            return paycheckDate <= due;
+                        });
+
+                        console.log(`Calculating paychecks for account ${account.name} until ${dueDate}:`, paychecksUntilDue.length);
+                        return paychecksUntilDue.length;
                     }
                 }
 
                 // Fallback to all paychecks if no specific account
-                const paychecksInRange = getPaychecksInDateRange(today, dueDate);
-                console.log(`Calculating all paychecks from ${today} to ${dueDate}:`, paychecksInRange.length);
+                const paychecksInRange = getPaychecksInDateRange(getTodayLocal(), dueDate);
+                console.log(`Calculating all paychecks until ${dueDate}:`, paychecksInRange.length);
                 return paychecksInRange.length;
             } else {
                 console.warn('Paycheck management functions not available, using fallback calculation');
@@ -214,7 +225,7 @@ export default function BudgetOverview() {
             if (daysUntilDue <= 0) return 0;
             return Math.ceil(daysUntilDue / 14); // Assuming bi-weekly pay
         }
-    }, [getTodayLocal, getPaychecksInDateRange, accounts]);
+    }, [getTodayLocal, getPaychecksInDateRange, getUpcomingPaycheckDatesForAccount, accounts]);
 
     // Transform data for the budget table
     const transformDataForBudgetTable = useCallback((categories = [], planningItems = []) => {
