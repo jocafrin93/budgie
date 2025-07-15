@@ -79,11 +79,11 @@ export const useStorage = (key, defaultValue) => {
             ];
         }
 
-        console.log(`🔍 USING CLOUD STORAGE for ${key}`);
+        if (debugKey) console.log(`🔍 USING CLOUD STORAGE for ${key}`);
         return cloudStorageResult;
     }
 
-    console.log(`🔍 USING LOCAL STORAGE for ${key}`);
+    if (debugKey) console.log(`🔍 USING LOCAL STORAGE for ${key}`);
     return [
         localStorageResult[0],
         localStorageResult[1],

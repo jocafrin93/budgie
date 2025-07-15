@@ -40,10 +40,7 @@ export const useCloudStorage = (key, defaultValue) => {
             const storedToken = localStorage.getItem('google_access_token');
             const tokenExpiry = localStorage.getItem('google_token_expiry');
 
-            console.log('DEBUG - Checking auth state:');
-            console.log('- Token exists:', !!storedToken);
-            console.log('- Token expiry:', tokenExpiry);
-            console.log('- Current time:', Date.now());
+            // Reduced logging for performance
 
             if (storedToken && tokenExpiry) {
                 const now = Date.now();
@@ -229,9 +226,12 @@ export const useCloudStorage = (key, defaultValue) => {
             return;
         }
 
-        console.log('Data changed, saving to Drive. Previous:', lastSavedValueRef.current?.length || 0, 'chars, New:', dataString.length, 'chars');
-        console.log('DEBUG - Previous data:', lastSavedValueRef.current);
-        console.log('DEBUG - New data:', dataString);
+        // Only log for planning items to reduce console spam
+        if (key === 'budgetCalc_planningItems') {
+            console.log('Data changed, saving to Drive. Previous:', lastSavedValueRef.current?.length || 0, 'chars, New:', dataString.length, 'chars');
+            console.log('DEBUG - Previous data:', lastSavedValueRef.current);
+            console.log('DEBUG - New data:', dataString);
+        }
 
         isSavingRef.current = true;
 
