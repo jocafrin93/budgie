@@ -28,8 +28,6 @@ export const useCloudStorage = (key, defaultValue) => {
     const retryCountRef = useRef(0);
     const circuitBreakerRef = useRef(false);
     const hasInitializedRef = useRef(false);
-    const saveQueueRef = useRef([]);
-    const isProcessingQueueRef = useRef(false);
     const pendingOperationsRef = useRef(new Set());
 
     // Stable function references
@@ -483,7 +481,11 @@ export const useCloudStorage = (key, defaultValue) => {
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
-            pendingOperationsRef.current.clear();
+            // Clear pending operations safely
+            const currentPendingOps = pendingOperationsRef.current;
+            if (currentPendingOps) {
+                currentPendingOps.clear();
+            }
         };
     }, []);
 
