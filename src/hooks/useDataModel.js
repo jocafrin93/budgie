@@ -197,6 +197,20 @@ export const useDataModel = ({
       }
 
       console.log('🔥 DATAMODEL - Item added successfully with ID:', newItemId);
+
+      // Add additional verification
+      setTimeout(() => {
+        console.log('🔥 DATAMODEL - Post-add verification check:');
+        console.log('🔥 DATAMODEL - Current planningItems length:', planningItems.length);
+        console.log('🔥 DATAMODEL - All planning item IDs:', planningItems.map(item => item.id));
+        console.log('🔥 DATAMODEL - Looking for newly added item:', newItemId);
+        const foundItem = planningItems.find(item => item.id === newItemId);
+        console.log('🔥 DATAMODEL - Found newly added item:', foundItem ? 'YES' : 'NO');
+        if (foundItem) {
+          console.log('🔥 DATAMODEL - Item details:', foundItem);
+        }
+      }, 1000);
+
       return newItemId; // Return the ID for verification
     } catch (error) {
       console.error('🔥 DATAMODEL - Error adding item:', error);
