@@ -364,7 +364,6 @@ export const useCloudStorage = (key, defaultValue) => {
         const hasValidToken = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
 
         if (isLoading || !hasValidToken) {
-            // console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: loading=${isLoading}, hasValidToken=${hasValidToken}`);
             return;
         }
 
@@ -375,16 +374,8 @@ export const useCloudStorage = (key, defaultValue) => {
 
         if (valueString === defaultString && lastSavedValueRef.current === null) {
             // Only skip if this is the initial state (never saved before)
-            console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: initial state equals defaultValue`);
             return;
         }
-
-        if (valueString === defaultString && lastSavedValueRef.current !== null) {
-            // This is a legitimate empty state after deletions - SAVE IT
-            console.log(`💾 CLOUD STORAGE (${key}) - Saving empty state after deletions`);
-        }
-
-        console.log(`💾 CLOUD STORAGE (${key}) - Scheduling save for:`, value);
 
         // Clear existing timeout
         if (saveTimeoutRef.current) {
@@ -393,7 +384,6 @@ export const useCloudStorage = (key, defaultValue) => {
 
         // Debounced save
         saveTimeoutRef.current = setTimeout(() => {
-            console.log(`💾 CLOUD STORAGE (${key}) - Executing save...`);
             writeToDriveRef.current(value);
         }, DEBOUNCE_DELAY);
 
@@ -403,7 +393,7 @@ export const useCloudStorage = (key, defaultValue) => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [value, isLoading, defaultValue, key]);
+    }, [value]); // Only depend on value to prevent loops
 
     // Update value function
     const updateValue = (newValue) => {
