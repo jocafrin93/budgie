@@ -26,14 +26,17 @@ export const useStorage = (key, defaultValue) => {
         console.log(`📋 STORAGE SESSION DECISION: ${shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'} (cached for session)`);
     }
 
-    // Add debugging to see which storage system is being used
-    console.log(`🔍 STORAGE DECISION for ${key}:`, {
-        shouldUseCloudStorage,
-        cloudIsLoading: cloudMeta.isLoading,
-        cloudValue: cloudStorageResult[0],
-        localValue: localStorageResult[0],
-        finalChoice: shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'
-    });
+    // Only log storage decisions when they change or for debugging specific keys
+    const debugKey = key === 'budgetCalc_planningItems';
+    if (debugKey) {
+        console.log(`🔍 STORAGE DECISION for ${key}:`, {
+            shouldUseCloudStorage,
+            cloudIsLoading: cloudMeta.isLoading,
+            cloudValueLength: Array.isArray(cloudStorageResult[0]) ? cloudStorageResult[0].length : 'not-array',
+            localValueLength: Array.isArray(localStorageResult[0]) ? localStorageResult[0].length : 'not-array',
+            finalChoice: shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'
+        });
+    }
 
     // Return the appropriate storage system based on cached decision
     if (shouldUseCloudStorage) {
