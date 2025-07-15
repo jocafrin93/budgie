@@ -324,15 +324,36 @@ export const useCloudStorage = (key, defaultValue) => {
                         const hasLocalData = localData && localData !== 'undefined' && localData !== JSON.stringify(defaultValue);
                         const hasCloudData = JSON.stringify(cloudData) !== JSON.stringify(defaultValue);
 
-                        if (hasLocalData && !hasCloudData) {
-                            // Migrate localStorage data to cloud storage
+                        // CRITICAL FIX: Check if current state has been modified from default
+                        const currentStateString = JSON.stringify(value);
+                        const defaultString = JSON.stringify(defaultValue);
+                        const hasCurrentData = currentStateString !== defaultString;
+
+                        console.log('🔍 CLOUD INIT DEBUG:', {
+                            hasLocalData,
+                            hasCloudData,
+                            hasCurrentData,
+                            currentStateLength: Array.isArray(value) ? value.length : 'not-array',
+                            cloudDataLength: Array.isArray(cloudData) ? cloudData.length : 'not-array'
+                        });
+
+                        if (hasCurrentData) {
+                            // PRIORITY 1: Current state has data - don't overwrite it
+                            console.log('🚫 PREVENTING CLOUD OVERWRITE: Current state has data, keeping it');
+                            // Don't change setValue - keep current state
+                        } else if (hasLocalData && !hasCloudData) {
+                            // PRIORITY 2: Migrate localStorage data to cloud storage
                             console.log(`🔄 MIGRATING localStorage data to cloud storage for ${key}`);
                             const parsedLocalData = JSON.parse(localData);
                             setValue(parsedLocalData);
-                            // The save will happen automatically via the save effect
-                        } else {
+                        } else if (hasCloudData) {
+                            // PRIORITY 3: Use cloud data only if no local data exists
                             console.log('DEBUG: Using cloud data:', cloudData);
                             setValue(cloudData);
+                        } else {
+                            // PRIORITY 4: No data anywhere, use default
+                            console.log('DEBUG: No data found, using default value');
+                            setValue(defaultValue);
                         }
                     } else {
                         console.log('DEBUG: Not authenticated, using default value');
