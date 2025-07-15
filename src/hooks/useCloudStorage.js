@@ -1,13 +1,15 @@
 // src/hooks/useCloudStorage.js
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 
-// Rate limiting and debouncing
-const DEBOUNCE_DELAY = 2000; // 2 seconds
+// Configuration constants
+const DEBOUNCE_DELAY = 1500; // Reduced to 1.5 seconds for better responsiveness
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
+const RETRY_BASE_DELAY = 1000;
+const CIRCUIT_BREAKER_TIMEOUT = 30000;
+const TOKEN_REFRESH_BUFFER = 5 * 60 * 1000; // 5 minutes before expiry
 
 let gapi = null;
 let isInitialized = false;
@@ -18,7 +20,7 @@ export const useCloudStorage = (key, defaultValue) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [error, setError] = useState(null);
 
-    // Refs to prevent infinite loops
+    // Refs for state management
     const saveTimeoutRef = useRef(null);
     const lastSavedValueRef = useRef(null);
     const isSavingRef = useRef(false);
@@ -26,63 +28,116 @@ export const useCloudStorage = (key, defaultValue) => {
     const retryCountRef = useRef(0);
     const circuitBreakerRef = useRef(false);
     const hasInitializedRef = useRef(false);
+    const saveQueueRef = useRef([]);
+    const isProcessingQueueRef = useRef(false);
+    const pendingOperationsRef = useRef(new Set());
 
-    // Stable function references using refs
+    // Stable function references
     const checkAuthStateRef = useRef();
     const initializeGapiRef = useRef();
     const getFileIdRef = useRef();
     const readFromDriveRef = useRef();
     const writeToDriveRef = useRef();
+    const refreshTokenIfNeededRef = useRef();
 
-    // Check authentication state
+    // Utility: Check if error is retryable
+    const isRetryableError = (error) => {
+        const status = error.status || error.code;
+        return (
+            status >= 500 ||
+            status === 429 ||
+            status === 408 ||
+            !navigator.onLine ||
+            error.message?.includes('network') ||
+            error.message?.includes('timeout')
+        );
+    };
+
+    // Utility: Exponential backoff retry
+    const retryWithBackoff = async (fn, maxRetries = MAX_RETRIES, operation = 'operation') => {
+        let lastError;
+
+        for (let attempt = 0; attempt < maxRetries; attempt++) {
+            try {
+                return await fn();
+            } catch (error) {
+                lastError = error;
+
+                if (!isRetryableError(error) || attempt === maxRetries - 1) {
+                    throw error;
+                }
+
+                const delay = RETRY_BASE_DELAY * Math.pow(2, attempt);
+                console.warn(`${operation} failed (attempt ${attempt + 1}/${maxRetries}), retrying in ${delay}ms:`, error.message);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+
+        throw lastError;
+    };
+
+    // Check and refresh token if needed
+    refreshTokenIfNeededRef.current = () => {
+        const tokenExpiry = localStorage.getItem('google_token_expiry');
+
+        if (tokenExpiry) {
+            const expiryTime = parseInt(tokenExpiry);
+            const now = Date.now();
+
+            if (now > (expiryTime - TOKEN_REFRESH_BUFFER)) {
+                console.log('Token is expiring soon, marking as unauthenticated');
+                setIsAuthenticated(false);
+                setError('Authentication token expired. Please sign in again.');
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    // Enhanced authentication state check
     checkAuthStateRef.current = () => {
         try {
             const storedToken = localStorage.getItem('google_access_token');
             const tokenExpiry = localStorage.getItem('google_token_expiry');
 
-            // Reduced logging for performance
-
-            if (storedToken && tokenExpiry) {
-                const now = Date.now();
-                const expiry = parseInt(tokenExpiry);
-
-                console.log('- Token valid:', now < expiry);
-
-                if (now < expiry) {
-                    console.log('Found valid Google token for cloud storage');
-                    setIsAuthenticated(true);
-                    return true;
-                } else {
-                    console.log('Google token expired for cloud storage');
-                    localStorage.removeItem('google_access_token');
-                    localStorage.removeItem('google_token_expiry');
-                    setIsAuthenticated(false);
-                }
-            } else {
-                console.log('No valid token found - cloud storage disabled');
+            if (!storedToken || !tokenExpiry) {
                 setIsAuthenticated(false);
+                return false;
+            }
+
+            const now = Date.now();
+            const expiry = parseInt(tokenExpiry);
+
+            if (now < expiry) {
+                setIsAuthenticated(true);
+                return true;
+            } else {
+                console.log('Google token expired, clearing storage');
+                localStorage.removeItem('google_access_token');
+                localStorage.removeItem('google_token_expiry');
+                setIsAuthenticated(false);
+                return false;
             }
         } catch (err) {
             console.error('Error checking auth state:', err);
             setIsAuthenticated(false);
+            return false;
         }
-        return false;
     };
 
-    // Initialize Google API
+    // Initialize Google API with better error handling
     initializeGapiRef.current = async () => {
         if (isInitialized) return;
 
         try {
-            console.log('Initializing Google API for cloud storage...');
-
             // Load gapi if not already loaded
             if (!window.gapi) {
                 await new Promise((resolve, reject) => {
                     const script = document.createElement('script');
                     script.src = 'https://apis.google.com/js/api.js';
                     script.onload = resolve;
-                    script.onerror = reject;
+                    script.onerror = () => reject(new Error('Failed to load Google API script'));
                     document.head.appendChild(script);
                 });
             }
@@ -90,122 +145,134 @@ export const useCloudStorage = (key, defaultValue) => {
             gapi = window.gapi;
 
             await new Promise((resolve, reject) => {
+                const timeoutId = setTimeout(() => {
+                    reject(new Error('Google API initialization timeout'));
+                }, 10000);
+
                 gapi.load('client', async () => {
                     try {
+                        clearTimeout(timeoutId);
                         await gapi.client.init({
                             apiKey: API_KEY,
                             discoveryDocs: [DISCOVERY_DOC]
                         });
 
                         isInitialized = true;
-                        console.log('Google API initialized for cloud storage');
+                        console.log('Google API initialized successfully');
                         resolve();
                     } catch (initError) {
-                        console.error('Error during gapi client init:', initError);
+                        clearTimeout(timeoutId);
                         reject(initError);
                     }
                 });
             });
         } catch (err) {
-            console.error('Google API initialization error:', err);
-            setError(`Failed to initialize Google API: ${err?.message || err || 'Unknown error'}`);
+            console.error('Google API initialization failed:', err);
+            setError(`Failed to initialize Google API: ${err.message}`);
             throw err;
         }
     };
 
-    // Get file ID using OAuth token
-    getFileIdRef.current = async (fileName, retryCount = 0) => {
+    // Enhanced file ID retrieval with better error handling
+    getFileIdRef.current = async (fileName) => {
+        const operationId = `getFileId-${fileName}-${Date.now()}`;
+
         if (circuitBreakerRef.current) {
-            throw new Error('Circuit breaker open - too many failures');
+            throw new Error('Service temporarily unavailable (circuit breaker open)');
         }
 
+        if (pendingOperationsRef.current.has(operationId)) {
+            throw new Error('Duplicate operation in progress');
+        }
+
+        pendingOperationsRef.current.add(operationId);
+
         try {
-            const storedToken = localStorage.getItem('google_access_token');
-            if (!storedToken) {
-                throw new Error('No access token available for Drive access');
-            }
-
-            const query = encodeURIComponent(`name='${fileName}' and parents in 'appDataFolder'`);
-            const url = `https://www.googleapis.com/drive/v3/files?q=${query}&spaces=appDataFolder`;
-
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${storedToken}`,
-                    'Content-Type': 'application/json'
+            return await retryWithBackoff(async () => {
+                const storedToken = localStorage.getItem('google_access_token');
+                if (!storedToken) {
+                    throw new Error('No access token available');
                 }
-            });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+                const query = encodeURIComponent(`name='${fileName}' and parents in 'appDataFolder'`);
+                const url = `https://www.googleapis.com/drive/v3/files?q=${query}&spaces=appDataFolder`;
 
-            const data = await response.json();
-            const files = data.files;
-            return files && files.length > 0 ? files[0].id : null;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${storedToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                return data.files?.length > 0 ? data.files[0].id : null;
+            }, MAX_RETRIES, `Get file ID for ${fileName}`);
         } catch (err) {
-            console.error(`Error getting file ID (attempt ${retryCount + 1}):`, err);
-
-            if (retryCount < MAX_RETRIES) {
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
-                return getFileIdRef.current(fileName, retryCount + 1);
-            }
-
-            // Open circuit breaker after max retries
-            if (retryCount >= MAX_RETRIES) {
+            if (retryCountRef.current >= MAX_RETRIES) {
                 circuitBreakerRef.current = true;
                 setTimeout(() => {
                     circuitBreakerRef.current = false;
-                }, 30000); // Reset after 30 seconds
+                    retryCountRef.current = 0;
+                }, CIRCUIT_BREAKER_TIMEOUT);
             }
-
             throw err;
+        } finally {
+            pendingOperationsRef.current.delete(operationId);
         }
     };
 
-    // Read data from Google Drive
+    // Enhanced read from Drive with better error handling
     readFromDriveRef.current = async () => {
-        // Check token directly instead of relying on state to avoid race conditions
-        const storedToken = localStorage.getItem('google_access_token');
-        const tokenExpiry = localStorage.getItem('google_token_expiry');
-        const hasValidToken = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
+        if (isLoadingRef.current || circuitBreakerRef.current) {
+            return defaultValue;
+        }
 
-        if (!hasValidToken || circuitBreakerRef.current || isLoadingRef.current) {
+        // Check token validity before proceeding
+        if (!refreshTokenIfNeededRef.current()) {
             return defaultValue;
         }
 
         isLoadingRef.current = true;
 
         try {
-            const fileName = `budgie_${key}.json`;
-            const fileId = await getFileIdRef.current(fileName);
+            return await retryWithBackoff(async () => {
+                const fileName = `budgie_${key}.json`;
+                const fileId = await getFileIdRef.current(fileName);
 
-            if (!fileId) {
-                console.log(`No existing file found for ${fileName}`);
-                return defaultValue;
-            }
-
-            const storedToken = localStorage.getItem('google_access_token');
-            if (!storedToken) {
-                throw new Error('No access token available for Drive read');
-            }
-
-            const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${storedToken}`
+                if (!fileId) {
+                    console.log(`No existing file found for ${fileName}`);
+                    return defaultValue;
                 }
-            });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+                const storedToken = localStorage.getItem('google_access_token');
+                if (!storedToken) {
+                    throw new Error('No access token available for read operation');
+                }
 
-            const content = await response.text();
-            const data = JSON.parse(content);
-            console.log(`Successfully loaded data from Google Drive: ${fileName}`);
-            console.log('Loaded data content:', data);
-            return data;
+                const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${storedToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const content = await response.text();
+                const data = JSON.parse(content);
+
+                console.log(`Successfully loaded data from Google Drive: ${fileName}`);
+                return data;
+            }, MAX_RETRIES, `Read from Drive (${key})`);
         } catch (err) {
             console.error('Error reading from Drive:', err);
             setError(`Failed to load from Drive: ${err.message}`);
@@ -215,70 +282,68 @@ export const useCloudStorage = (key, defaultValue) => {
         }
     };
 
-    // Write data to Google Drive
+    // Enhanced write to Drive with queue management
     writeToDriveRef.current = async (data) => {
-        if (!isAuthenticated || isSavingRef.current || circuitBreakerRef.current) return;
-
-        // Prevent saving the same data multiple times
-        const dataString = JSON.stringify(data);
-        if (lastSavedValueRef.current === dataString) {
-            console.log('Data unchanged, skipping save to Drive');
+        if (!isAuthenticated || isSavingRef.current || circuitBreakerRef.current) {
             return;
         }
 
-        // Only log for planning items to reduce console spam
-        if (key === 'budgetCalc_planningItems') {
-            console.log('Data changed, saving to Drive. Previous:', lastSavedValueRef.current?.length || 0, 'chars, New:', dataString.length, 'chars');
-            console.log('DEBUG - Previous data:', lastSavedValueRef.current);
-            console.log('DEBUG - New data:', dataString);
+        // Check token validity before proceeding
+        if (!refreshTokenIfNeededRef.current()) {
+            return;
+        }
+
+        const dataString = JSON.stringify(data);
+        if (lastSavedValueRef.current === dataString) {
+            return; // No changes to save
         }
 
         isSavingRef.current = true;
 
         try {
-            const storedToken = localStorage.getItem('google_access_token');
-            if (!storedToken) {
-                console.error('No access token available for Drive write');
-                return;
-            }
+            await retryWithBackoff(async () => {
+                const storedToken = localStorage.getItem('google_access_token');
+                if (!storedToken) {
+                    throw new Error('No access token available for write operation');
+                }
 
-            const fileName = `budgie_${key}.json`;
-            const fileId = await getFileIdRef.current(fileName);
-            const content = JSON.stringify(data, null, 2);
+                const fileName = `budgie_${key}.json`;
+                const fileId = await getFileIdRef.current(fileName);
+                const content = JSON.stringify(data, null, 2);
 
-            // Different metadata for create vs update
-            const fileMetadata = fileId
-                ? { name: fileName } // Update: only name, no parents
-                : { name: fileName, parents: ['appDataFolder'] }; // Create: include parents
+                const fileMetadata = fileId
+                    ? { name: fileName }
+                    : { name: fileName, parents: ['appDataFolder'] };
 
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
-            form.append('file', new Blob([content], { type: 'application/json' }));
+                const form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
+                form.append('file', new Blob([content], { type: 'application/json' }));
 
-            const url = fileId
-                ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
-                : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+                const url = fileId
+                    ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
+                    : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
 
-            const method = fileId ? 'PATCH' : 'POST';
+                const method = fileId ? 'PATCH' : 'POST';
 
-            console.log(`${method === 'PATCH' ? 'Updating' : 'Creating'} file in Google Drive:`, fileName);
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Authorization': `Bearer ${storedToken}`
+                    },
+                    body: form
+                });
 
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Authorization': `Bearer ${storedToken}`
-                },
-                body: form
-            });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+                lastSavedValueRef.current = dataString;
+                retryCountRef.current = 0;
+                setError(null);
 
-            lastSavedValueRef.current = dataString;
-            retryCountRef.current = 0; // Reset retry count on success
-            console.log('Successfully saved to Google Drive:', fileName);
-            setError(null);
+                console.log(`Successfully saved to Google Drive: ${fileName}`);
+            }, MAX_RETRIES, `Write to Drive (${key})`);
         } catch (err) {
             console.error('Error saving to Drive:', err);
             setError(`Failed to save to Drive: ${err.message}`);
@@ -289,112 +354,87 @@ export const useCloudStorage = (key, defaultValue) => {
                 setTimeout(() => {
                     circuitBreakerRef.current = false;
                     retryCountRef.current = 0;
-                }, 30000);
+                }, CIRCUIT_BREAKER_TIMEOUT);
             }
         } finally {
             isSavingRef.current = false;
         }
     };
 
-    // Initialize on mount - NO DEPENDENCIES TO PREVENT LOOPS
+    // Enhanced initialization with better state management
     useEffect(() => {
         if (hasInitializedRef.current) return;
         hasInitializedRef.current = true;
 
         const initialize = async () => {
-            console.log('DEBUG: Starting cloud storage initialization for key:', key);
+            console.log(`Starting cloud storage initialization for key: ${key}`);
             setIsLoading(true);
+            setError(null);
 
-            // Check authentication
-            const hasAuth = checkAuthStateRef.current();
-            console.log('DEBUG: Has auth?', hasAuth);
+            try {
+                const hasAuth = checkAuthStateRef.current();
 
-            if (hasAuth) {
-                try {
+                if (hasAuth) {
                     await initializeGapiRef.current();
-                    console.log('DEBUG: GAPI initialized, hasAuth:', hasAuth);
 
-                    // Use hasAuth instead of isAuthenticated to avoid race condition
-                    if (hasAuth) {
-                        console.log('Loading data from Google Drive...');
-                        const cloudData = await readFromDriveRef.current();
+                    // Load data from cloud
+                    const cloudData = await readFromDriveRef.current();
 
-                        // Check if we have localStorage data to migrate
-                        const localData = localStorage.getItem(key);
-                        const hasLocalData = localData && localData !== 'undefined' && localData !== JSON.stringify(defaultValue);
-                        const hasCloudData = JSON.stringify(cloudData) !== JSON.stringify(defaultValue);
+                    // Handle data migration and priority
+                    const localData = localStorage.getItem(key);
+                    const hasLocalData = localData &&
+                        localData !== 'undefined' &&
+                        localData !== JSON.stringify(defaultValue);
+                    const hasCloudData = JSON.stringify(cloudData) !== JSON.stringify(defaultValue);
 
-                        // CRITICAL FIX: Check if current state has been modified from default
-                        const currentStateString = JSON.stringify(value);
-                        const defaultString = JSON.stringify(defaultValue);
-                        const hasCurrentData = currentStateString !== defaultString;
+                    // Priority: Current state > Local data > Cloud data > Default
+                    const currentStateString = JSON.stringify(value);
+                    const defaultString = JSON.stringify(defaultValue);
+                    const hasCurrentData = currentStateString !== defaultString;
 
-                        console.log('🔍 CLOUD INIT DEBUG:', {
-                            hasLocalData,
-                            hasCloudData,
-                            hasCurrentData,
-                            currentStateLength: Array.isArray(value) ? value.length : 'not-array',
-                            cloudDataLength: Array.isArray(cloudData) ? cloudData.length : 'not-array'
-                        });
-
-                        if (hasCurrentData) {
-                            // PRIORITY 1: Current state has data - don't overwrite it
-                            console.log('🚫 PREVENTING CLOUD OVERWRITE: Current state has data, keeping it');
-                            // Don't change setValue - keep current state
-                        } else if (hasLocalData && !hasCloudData) {
-                            // PRIORITY 2: Migrate localStorage data to cloud storage
-                            console.log(`🔄 MIGRATING localStorage data to cloud storage for ${key}`);
-                            const parsedLocalData = JSON.parse(localData);
-                            setValue(parsedLocalData);
-                        } else if (hasCloudData) {
-                            // PRIORITY 3: Use cloud data only if no local data exists
-                            console.log('DEBUG: Using cloud data:', cloudData);
-                            setValue(cloudData);
-                        } else {
-                            // PRIORITY 4: No data anywhere, use default
-                            console.log('DEBUG: No data found, using default value');
-                            setValue(defaultValue);
-                        }
+                    if (hasCurrentData) {
+                        console.log('Keeping current state (has data)');
+                        // Keep current value
+                    } else if (hasLocalData && !hasCloudData) {
+                        console.log(`Migrating localStorage data to cloud storage for ${key}`);
+                        const parsedLocalData = JSON.parse(localData);
+                        setValue(parsedLocalData);
+                        // Migration will be saved automatically via the save effect
+                    } else if (hasCloudData) {
+                        console.log('Using cloud data');
+                        setValue(cloudData);
                     } else {
-                        console.log('DEBUG: Not authenticated, using default value');
+                        console.log('No data found, using default value');
                         setValue(defaultValue);
                     }
-                } catch (err) {
-                    console.error('Initialization error:', err);
-                    console.log('DEBUG: Error occurred, using default value');
+                } else {
+                    console.log('Not authenticated, using default value');
                     setValue(defaultValue);
                 }
-            } else {
-                console.log('DEBUG: No auth, using default value');
+            } catch (err) {
+                console.error('Cloud storage initialization failed:', err);
+                setError(`Initialization failed: ${err.message}`);
                 setValue(defaultValue);
+            } finally {
+                setIsLoading(false);
             }
-
-            console.log('DEBUG: Initialization complete, setting loading to false');
-            setIsLoading(false);
         };
 
         initialize();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // EMPTY DEPENDENCIES - CRITICAL FOR PREVENTING LOOPS
+    }, []); // Empty dependencies to prevent loops
 
-    // Save data when value changes (debounced)
+    // Enhanced save effect with better debouncing
     useEffect(() => {
-        // Check token directly to avoid race conditions with state
-        const storedToken = localStorage.getItem('google_access_token');
-        const tokenExpiry = localStorage.getItem('google_token_expiry');
-        const hasValidToken = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
-
-        if (isLoading || !hasValidToken) {
+        // Skip if still loading or not authenticated
+        if (isLoading || !refreshTokenIfNeededRef.current()) {
             return;
         }
 
-        // Don't save if value is exactly the same as defaultValue (deep comparison for arrays/objects)
-        // BUT: Always save if we have an empty array that resulted from deletions
         const valueString = JSON.stringify(value);
         const defaultString = JSON.stringify(defaultValue);
 
+        // Skip saving if this is the initial default state
         if (valueString === defaultString && lastSavedValueRef.current === null) {
-            // Only skip if this is the initial state (never saved before)
             return;
         }
 
@@ -408,52 +448,87 @@ export const useCloudStorage = (key, defaultValue) => {
             writeToDriveRef.current(value);
         }, DEBOUNCE_DELAY);
 
-        // Cleanup timeout on unmount
         return () => {
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [value]); // Only depend on value to prevent loops
+    }, [value, isLoading, defaultValue, key]);
 
-    // Update value function
-    const updateValue = (newValue) => {
+    // Network state monitoring
+    useEffect(() => {
+        const handleOnline = () => {
+            console.log('Network back online, resetting circuit breaker');
+            circuitBreakerRef.current = false;
+            retryCountRef.current = 0;
+            setError(null);
+        };
+
+        const handleOffline = () => {
+            console.log('Network offline, cloud storage operations paused');
+        };
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            pendingOperationsRef.current.clear();
+        };
+    }, []);
+
+    // Enhanced update value function
+    const updateValue = useCallback((newValue) => {
         const finalValue = typeof newValue === 'function' ? newValue(value) : newValue;
         setValue(finalValue);
-    };
+    }, [value]);
 
-    // Sign in function
-    const signIn = async () => {
-        console.log('Please use the Google Sign-In button in settings');
-        setError('Please sign in through the settings page');
-    };
+    // Sign in function (placeholder)
+    const signIn = useCallback(async () => {
+        setError('Please use the Google Sign-In button in settings');
+    }, []);
 
-    // Sign out function
-    const signOut = async () => {
+    // Enhanced sign out function
+    const signOut = useCallback(async () => {
         try {
             console.log('Signing out of Google Drive...');
+
+            // Clear pending operations
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            pendingOperationsRef.current.clear();
 
             // Clear stored tokens
             localStorage.removeItem('google_access_token');
             localStorage.removeItem('google_token_expiry');
 
-            // Reset state
+            // Reset all state
             setIsAuthenticated(false);
             setError(null);
-
-            // Reset circuit breaker
             circuitBreakerRef.current = false;
             retryCountRef.current = 0;
+            isSavingRef.current = false;
+            isLoadingRef.current = false;
 
             console.log('Successfully signed out of Google Drive');
-
             return { success: true };
         } catch (err) {
             console.error('Error signing out:', err);
             setError(`Failed to sign out: ${err.message}`);
             return { success: false, error: err.message };
         }
-    };
+    }, []);
 
     return [
         value,
