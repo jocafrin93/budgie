@@ -103,8 +103,7 @@ export function SelectedRowsActions({ table, height }) {
                     <button
                       className={clsx(
                         "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
-                        focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&
-                        "bg-base-200 text-base-content",
+                        focused && "bg-base-200 text-base-content",
                       )}
                     >
                       <ArrowUpTrayIcon className="size-4.5" />
@@ -117,8 +116,7 @@ export function SelectedRowsActions({ table, height }) {
                     <button
                       className={clsx(
                         "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
-                        focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&
-                        "bg-base-200 text-base-content",
+                        focused && "bg-base-200 text-base-content",
                       )}
                     >
                       <ArrowUpTrayIcon className="size-4.5" />
@@ -131,8 +129,7 @@ export function SelectedRowsActions({ table, height }) {
                     <button
                       className={clsx(
                         "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
-                        focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&
-                        "bg-base-200 text-base-content",
+                        focused && "bg-base-200 text-base-content",
                       )}
                     >
                       <CiViewTable className="size-4.5" />
@@ -145,8 +142,7 @@ export function SelectedRowsActions({ table, height }) {
                     <button
                       className={clsx(
                         "flex h-9 w-full items-center space-x-3 px-3 tracking-wide outline-hidden transition-colors ",
-                        focused focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focused focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&focused focus:border-primary &&focus:border-primary &&
-                        "bg-base-200 text-base-content",
+                        focused && "bg-base-200 text-base-content",
                       )}
                     >
                       <PrinterIcon className="size-4.5" />
@@ -157,9 +153,9 @@ export function SelectedRowsActions({ table, height }) {
               </MenuItems>
             </Transition>
           </Menu>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 }
 

@@ -10,7 +10,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     TbEdit,
     TbPlus,
-    TbTrash
+    TbTrash,
+    TbPlayerSkipForward,
+    TbPlay
 } from 'react-icons/tb';
 
 // Import PayeeAutocomplete
@@ -1225,7 +1227,7 @@ export default function TransactionsTab({
                 ),
             },
         ];
-    }, [accounts, categories, onDeleteTransaction, handleToggleCleared]);
+    }, [accounts, categories, handleDeleteTransaction, isTransactionReconciled]);
 
     // Filter transactions by account if specified - ensure numeric comparison
     const filteredTransactions = useMemo(() => {
@@ -1580,7 +1582,7 @@ export default function TransactionsTab({
                                                             className="text-success hover:bg-success/10"
                                                             title="Activate Now"
                                                         >
-                                                            ▶
+                                                            <TbPlay className="size-4" />
                                                         </Button>
 
                                                         {/* Skip */}
@@ -1592,7 +1594,7 @@ export default function TransactionsTab({
                                                             className="text-warning hover:bg-warning/10"
                                                             title="Skip This Occurrence"
                                                         >
-                                                            ⏭
+                                                            <TbPlayerSkipForward className="size-4" />
                                                         </Button>
 
                                                         {/* Edit */}
