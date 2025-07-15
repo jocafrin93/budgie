@@ -12,7 +12,7 @@ import {
     TbPlus,
     TbTrash,
     TbPlayerSkipForward,
-    TbPlay
+    TbPlayerPlay
 } from 'react-icons/tb';
 
 // Import PayeeAutocomplete
@@ -1582,7 +1582,7 @@ export default function TransactionsTab({
                                                             className="text-success hover:bg-success/10"
                                                             title="Activate Now"
                                                         >
-                                                            <TbPlay className="size-4" />
+                                                            <TbPlayerPlay className="size-4" />
                                                         </Button>
 
                                                         {/* Skip */}
