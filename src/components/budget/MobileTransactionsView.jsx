@@ -1,7 +1,7 @@
 import { useBreakpointsContext } from 'app/contexts/breakpoint/context';
-import { CheckCircle, Edit, Plus, Trash2, X } from 'lucide-react';
+import { CheckCircle, Edit, Plus, Trash2, X, Calendar, DollarSign, CreditCard, Play, SkipForward } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-
+// TODO - custom icons or match with desktop
 // Mobile Transaction Form Component
 const MobileTransactionForm = ({
     isOpen,
@@ -200,22 +200,24 @@ const MobileTransactionForm = ({
                             <button
                                 type="button"
                                 onClick={() => setTransactionType('outflow')}
-                                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'outflow'
+                                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${transactionType === 'outflow'
                                     ? 'bg-error text-white'
                                     : 'bg-base-200 text-base-content hover:bg-base-300'
                                     }`}
                             >
-                                💸 Expense
+                                <CreditCard className="w-4 h-4" />
+                                Expense
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setTransactionType('inflow')}
-                                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors ${transactionType === 'inflow'
+                                className={`flex-1 py-3 px-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${transactionType === 'inflow'
                                     ? 'bg-success text-white'
                                     : 'bg-base-200 text-base-content hover:bg-base-300'
                                     }`}
                             >
-                                💰 Income
+                                <DollarSign className="w-4 h-4" />
+                                Income
                             </button>
                         </div>
                     </div>
@@ -846,9 +848,7 @@ const MobileTransactionsView = ({
                             className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-warning/20 transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="text-warning">
-                                    ⏰
-                                </div>
+                                <Calendar className="w-6 h-6 text-warning" />
                                 <div>
                                     <h3 className="font-medium text-base-content">
                                         Scheduled Transactions
@@ -881,8 +881,8 @@ const MobileTransactionsView = ({
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-3 mb-1">
                                                 {/* Schedule indicator */}
-                                                <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs ${isOverdue ? 'bg-error text-white' : 'bg-warning text-white'}`}>
-                                                    ⏰
+                                                <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${isOverdue ? 'bg-error text-white' : 'bg-warning text-white'}`}>
+                                                    <Calendar className="w-3 h-3" />
                                                 </div>
 
                                                 {/* Payee */}
@@ -947,7 +947,7 @@ const MobileTransactionsView = ({
                                                     className="p-2 text-success hover:bg-success/10 rounded transition-colors"
                                                     title="Activate Now"
                                                 >
-                                                    ▶
+                                                    <Play className="w-4 h-4" />
                                                 </button>
 
                                                 {/* Skip */}
@@ -956,7 +956,7 @@ const MobileTransactionsView = ({
                                                     className="p-2 text-warning hover:bg-warning/10 rounded transition-colors"
                                                     title="Skip This Occurrence"
                                                 >
-                                                    ⏭
+                                                    <SkipForward className="w-4 h-4" />
                                                 </button>
 
                                                 {/* Edit */}

@@ -241,9 +241,6 @@ export default function BudgetTransactions() {
         transactions
     });
 
-    // Load scheduled transactions component dynamically
-    const [ScheduledTransactionsRow, setScheduledTransactionsRow] = useState(null);
-
     // Use proper cloud storage-based scheduled transactions hook
     const scheduledTransactionsHook = useScheduledTransactions(addTransaction);
 
@@ -363,19 +360,6 @@ export default function BudgetTransactions() {
         }
     }, [scheduledTransactionsHook, accounts, categories]);
 
-    // Load scheduled transactions component dynamically
-    useEffect(() => {
-        const loadScheduledTransactionsComponent = async () => {
-            try {
-                const componentModule = await import('../../../../components/budget/ScheduledTransactionsRow');
-                setScheduledTransactionsRow(() => componentModule.default);
-            } catch (error) {
-                console.error('Failed to load scheduled transactions component:', error);
-            }
-        };
-        loadScheduledTransactionsComponent();
-    }, []);
-
     // Get upcoming scheduled transactions for display with debugging
     const upcomingScheduledTransactions = React.useMemo(() => {
         if (!scheduledTransactionsHook) {
@@ -401,7 +385,6 @@ export default function BudgetTransactions() {
     console.log('🔍 PASSING TO COMPONENTS:', {
         upcomingScheduledTransactions,
         upcomingLength: upcomingScheduledTransactions.length,
-        ScheduledTransactionsRowExists: !!ScheduledTransactionsRow,
         scheduledTransactionsHookExists: !!scheduledTransactionsHook
     });
 
@@ -599,18 +582,49 @@ export default function BudgetTransactions() {
                             }}
                         />
 
-                        {/* Scheduled Transactions Widget */}
-                        {ScheduledTransactionsRow && scheduledTransactionsHook && (
-                            <ScheduledTransactionsRow
-                                scheduledTransactions={upcomingScheduledTransactions}
-                                selectedAccountId={selectedAccountId}
-                                accounts={accounts}
-                                onEditScheduledTransaction={scheduledTransactionsHook.editScheduledTransaction}
-                                onSkipScheduledTransaction={scheduledTransactionsHook.skipScheduledTransaction}
-                                onActivateScheduledTransactionEarly={scheduledTransactionsHook.activateScheduledTransactionEarly}
-                                onDeleteScheduledTransaction={scheduledTransactionsHook.deleteScheduledTransaction}
-                            />
-                        )}
+                        {/* Header Actions */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                            <div>
+                                <h2 className="text-xl font-semibold text-base-content">
+                                    Transactions
+                                </h2>
+                                <p className="text-sm text-base-content/60">
+                                    Manage your financial transactions
+                                </p>
+                            </div>
+
+                            <div className="flex items-center space-x-2" id="transaction-header-actions">
+                                {/* Filter Button */}
+                                <button
+                                    className="btn btn-outline btn-sm flex items-center space-x-2"
+                                    onClick={() => {
+                                        // This will be handled by the TransactionsTab component
+                                        const event = new CustomEvent('toggleFilters');
+                                        window.dispatchEvent(event);
+                                    }}
+                                >
+                                    <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                    </svg>
+                                    <span>Filter</span>
+                                </button>
+
+                                {/* Add Transaction Button */}
+                                <button
+                                    className="btn btn-primary btn-sm flex items-center gap-2"
+                                    onClick={() => {
+                                        // This will be handled by the TransactionsTab component
+                                        const event = new CustomEvent('addTransaction');
+                                        window.dispatchEvent(event);
+                                    }}
+                                >
+                                    <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <span>Add</span>
+                                </button>
+                            </div>
+                        </div>
 
                         {/* Responsive Transaction Views */}
                         {mdAndDown ? (

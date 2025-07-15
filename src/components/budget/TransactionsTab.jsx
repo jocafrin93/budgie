@@ -14,6 +14,7 @@ import {
     TbPlayerSkipForward,
     TbPlayerPlay
 } from 'react-icons/tb';
+import { LuCalendarClock } from 'react-icons/lu';
 
 // Import PayeeAutocomplete
 
@@ -918,6 +919,25 @@ export default function TransactionsTab({
     const [showFilters, setShowFilters] = useState(false);
     const [showScheduledTransactions, setShowScheduledTransactions] = useState(true);
 
+    // Listen for events from the main page
+    useEffect(() => {
+        const handleToggleFilters = () => {
+            setShowFilters(prev => !prev);
+        };
+
+        const handleAddTransaction = () => {
+            setShowModal(true);
+        };
+
+        window.addEventListener('toggleFilters', handleToggleFilters);
+        window.addEventListener('addTransaction', handleAddTransaction);
+
+        return () => {
+            window.removeEventListener('toggleFilters', handleToggleFilters);
+            window.removeEventListener('addTransaction', handleAddTransaction);
+        };
+    }, []);
+
     // Format currency for display
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', {
@@ -1278,6 +1298,52 @@ export default function TransactionsTab({
         }
     };
 
+    // Listen for bulk delete events from main page
+    useEffect(() => {
+        const handleBulkDeleteRequest = () => {
+            handleBulkDelete();
+        };
+
+        window.addEventListener('bulkDelete', handleBulkDeleteRequest);
+
+        return () => {
+            window.removeEventListener('bulkDelete', handleBulkDeleteRequest);
+        };
+    }, [selectedRows, handleBulkDelete]);
+
+    // Update header actions in main page when selection changes
+    useEffect(() => {
+        const headerActionsContainer = document.getElementById('transaction-header-actions');
+        if (headerActionsContainer) {
+            // Remove existing bulk delete button
+            const existingBulkButton = headerActionsContainer.querySelector('#bulk-delete-button');
+            if (existingBulkButton) {
+                existingBulkButton.remove();
+            }
+
+            // Add bulk delete button if transactions are selected
+            if (selectedCount > 0) {
+                const bulkDeleteButton = document.createElement('button');
+                bulkDeleteButton.id = 'bulk-delete-button';
+                bulkDeleteButton.className = 'btn btn-error btn-sm flex items-center space-x-2';
+                bulkDeleteButton.innerHTML = `
+                    <svg class="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Delete ${selectedCount}</span>
+                `;
+                bulkDeleteButton.onclick = () => {
+                    const event = new CustomEvent('bulkDelete');
+                    window.dispatchEvent(event);
+                };
+
+                // Insert before the filter button
+                const filterButton = headerActionsContainer.querySelector('button');
+                headerActionsContainer.insertBefore(bulkDeleteButton, filterButton);
+            }
+        }
+    }, [selectedCount]);
+
     // Handle form submission
     const handleSaveTransaction = (transactionData) => {
         if (editingTransaction) {
@@ -1427,9 +1493,7 @@ export default function TransactionsTab({
                             className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-warning/20 transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="text-warning text-xl">
-                                    ⏰
-                                </div>
+                                <LuCalendarClock className="w-8 h-8 text-base-content" />
                                 <div>
                                     <h3 className="font-semibold text-base-content">
                                         Scheduled Transactions
@@ -1579,7 +1643,7 @@ export default function TransactionsTab({
                                                             variant="flat"
                                                             size="sm"
                                                             isIcon
-                                                            className="text-success hover:bg-success/10"
+                                                            className="text-base-content/60 hover:text-base-content"
                                                             title="Activate Now"
                                                         >
                                                             <TbPlayerPlay className="size-4" />
@@ -1591,7 +1655,7 @@ export default function TransactionsTab({
                                                             variant="flat"
                                                             size="sm"
                                                             isIcon
-                                                            className="text-warning hover:bg-warning/10"
+                                                            className="text-base-content/60 hover:text-base-content"
                                                             title="Skip This Occurrence"
                                                         >
                                                             <TbPlayerSkipForward className="size-4" />
@@ -1615,7 +1679,7 @@ export default function TransactionsTab({
                                                             variant="flat"
                                                             size="sm"
                                                             isIcon
-                                                            className="text-base-content/60 hover:text-error"
+                                                            className="text-base-content/60 hover:text-base-content"
                                                             title="Delete Schedule"
                                                         >
                                                             <TbTrash className="size-4" />
@@ -1632,50 +1696,6 @@ export default function TransactionsTab({
                 </Card>
             )}
 
-            {/* Header Actions */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h2 className="text-xl font-semibold text-base-content">
-                        Transactions
-                    </h2>
-                    <p className="text-sm text-base-content/60">
-                        Manage your financial transactions
-                    </p>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                    {/* Bulk Delete Button - Only show when transactions are selected */}
-                    {selectedCount > 0 && (
-                        <Button
-                            onClick={handleBulkDelete}
-                            variant="filled"
-                            color="error"
-                            size="sm"
-                            className="flex items-center space-x-2 bg-error hover text-white"
-                        >
-                            <TbTrash className="size-4" />
-                            <span> {selectedCount} </span>
-                        </Button>
-                    )}
-                    <Button
-                        onClick={() => setShowFilters(!showFilters)}
-                        variant="outlined"
-                        size="sm"
-                        className="flex items-center space-x-2"
-                    >
-                        <svg className={`size-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                    </Button>
-                    <button
-                        onClick={() => setShowModal(true)}
-                        className="btn btn-primary btn-sm flex items-center gap-2"
-                    >
-                        <TbPlus className="size-4" />
-
-                    </button>
-                </div>
-            </div>
 
             {/* Table Container */}
             <Card className="overflow-hidden">
