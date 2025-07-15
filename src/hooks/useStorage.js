@@ -1,165 +1,79 @@
 // src/hooks/useStorage.js
-import { useMemo, useRef } from 'react';
 import { useCloudStorage } from './useCloudStorage';
 import { useLocalStorage } from './useLocalStorage';
-
-// Global cache to prevent flickering across all storage instances
-const storageDecisionCache = new Map();
-const recentWriteTimestamps = new Map(); // Track recent writes to prevent overwrites
+import { useState, useEffect, useCallback } from 'react';
 
 export const useStorage = (key, defaultValue) => {
     const localStorageResult = useLocalStorage(key, defaultValue);
     const cloudStorageResult = useCloudStorage(key, defaultValue);
-    const [, , cloudMeta] = cloudStorageResult;
+    const [cloudValue, cloudSetter, cloudMeta] = cloudStorageResult;
+    const [localValue, localSetter] = localStorageResult;
 
-    // Use refs to track previous values and prevent unnecessary recalculations
-    const prevLocalValueRef = useRef();
-    const prevCloudValueRef = useRef();
-    const prevResultRef = useRef();
+    // State to track if we've received the initial cloud data
+    const [hasLoadedCloudData, setHasLoadedCloudData] = useState(false);
+    const [finalValue, setFinalValue] = useState(defaultValue);
 
-    // Check if we've already made a decision for this session
-    const cacheKey = 'storage_decision';
-    let shouldUseCloudStorage = storageDecisionCache.get(cacheKey);
+    // Handle cloud storage state changes
+    useEffect(() => {
+        if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
+            // Cloud storage is ready and authenticated
+            console.log(`☁️ STORAGE (${key}) - Cloud storage ready, using cloud data`);
+            setFinalValue(cloudValue);
+            setHasLoadedCloudData(true);
+        } else if (!cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
+            // Not authenticated, use localStorage
+            console.log(`💾 STORAGE (${key}) - Not authenticated, using localStorage`);
+            setFinalValue(localValue);
+            setHasLoadedCloudData(true);
+        } else if (cloudMeta.isLoading) {
+            // Still loading - keep current value or default if this is initial load
+            if (!hasLoadedCloudData) {
+                console.log(`⏳ STORAGE (${key}) - Cloud storage loading, keeping current state`);
+                // Don't change finalValue during loading to prevent flicker
+            }
+        }
+    }, [cloudValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, localValue, key, hasLoadedCloudData]);
 
-    if (shouldUseCloudStorage === undefined) {
-        // Make decision once per session based on current token state
-        const storedToken = localStorage.getItem('google_access_token');
-        const tokenExpiry = localStorage.getItem('google_token_expiry');
-        const hasValidToken = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
+    // Determine which setter to use
+    const setValue = useCallback((newValue) => {
+        if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
+            cloudSetter(newValue);
+        } else {
+            localSetter(newValue);
+        }
+        // Update final value immediately for responsive UI
+        const finalNewValue = typeof newValue === 'function' ? newValue(finalValue) : newValue;
+        setFinalValue(finalNewValue);
+    }, [cloudMeta.isAuthenticated, cloudMeta.isLoading, cloudSetter, localSetter, finalValue]);
 
-        shouldUseCloudStorage = hasValidToken;
-        storageDecisionCache.set(cacheKey, shouldUseCloudStorage);
+    // Determine the loading state
+    const isLoading = cloudMeta.isLoading && !hasLoadedCloudData;
 
-        console.log(`📋 STORAGE SESSION DECISION: ${shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'} (cached for session)`);
+    // Return the appropriate state
+    if (isLoading) {
+        // Still loading cloud storage for the first time
+        return [
+            finalValue, // Keep current value during loading
+            () => { }, // Disabled setter during loading
+            {
+                isLoading: true,
+                isAuthenticated: cloudMeta.isAuthenticated,
+                error: cloudMeta.error,
+                signIn: cloudMeta.signIn
+            }
+        ];
     }
 
-    // Extract values for dependency array
-    const localValue = localStorageResult[0];
-    const cloudValue = cloudStorageResult[0];
-    const localSetValue = localStorageResult[1];
-    const cloudSetValue = cloudStorageResult[1];
-    const { isLoading, isAuthenticated, error, signIn, signOut } = cloudMeta;
-
-    // Memoized storage result calculation - only recalculate when values actually change
-    const storageResult = useMemo(() => {
-
-        // Check if values have actually changed
-        const localChanged = prevLocalValueRef.current !== localValue;
-        const cloudChanged = prevCloudValueRef.current !== cloudValue;
-
-        // If nothing changed and we have a cached result, return it
-        if (!localChanged && !cloudChanged && prevResultRef.current) {
-            return prevResultRef.current;
+    // Cloud storage is ready (authenticated or not)
+    return [
+        finalValue,
+        setValue,
+        {
+            isLoading: false,
+            isAuthenticated: cloudMeta.isAuthenticated,
+            error: cloudMeta.error,
+            signIn: cloudMeta.signIn,
+            signOut: cloudMeta.signOut
         }
-
-        // Update refs
-        prevLocalValueRef.current = localValue;
-        prevCloudValueRef.current = cloudValue;
-
-        const debugKey = key === 'budgetCalc_planningItems';
-
-        // Only log when values actually change
-        if (debugKey && (localChanged || cloudChanged)) {
-            console.log(`🔍 STORAGE VALUES CHANGED for ${key}:`, {
-                shouldUseCloudStorage,
-                cloudIsLoading: isLoading,
-                cloudValueLength: Array.isArray(cloudValue) ? cloudValue.length : 'not-array',
-                localValueLength: Array.isArray(localValue) ? localValue.length : 'not-array',
-                localChanged,
-                cloudChanged,
-                finalChoice: shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'
-            });
-        }
-
-        let result;
-
-        if (shouldUseCloudStorage) {
-            // For cloud storage, if still loading, return local data to prevent showing defaults
-            if (isLoading) {
-                if (debugKey) console.log(`🔍 CLOUD LOADING for ${key} - using local data temporarily`);
-                result = [
-                    localValue,
-                    localSetValue,
-                    {
-                        isLoading: true,
-                        isAuthenticated,
-                        error,
-                        signIn,
-                        signOut
-                    }
-                ];
-            } else {
-                // CRITICAL FIX: Check if local storage has more recent data than cloud storage
-                const cloudArray = Array.isArray(cloudValue) ? cloudValue : [];
-                const localArray = Array.isArray(localValue) ? localValue : [];
-
-                // Check for recent writes to prevent cloud overwrites
-                const recentWriteTime = recentWriteTimestamps.get(key);
-                const now = Date.now();
-                const hasRecentWrite = recentWriteTime && (now - recentWriteTime) < 5000; // 5 second protection
-
-                if (localArray.length > cloudArray.length || hasRecentWrite) {
-                    if (debugKey) {
-                        if (hasRecentWrite) {
-                            console.log(`🛡️ WRITE PROTECTION ACTIVE for ${key}: preventing cloud overwrite (${now - recentWriteTime}ms ago)`);
-                        } else {
-                            console.log(`🔄 LOCAL DATA IS NEWER for ${key}: local(${localArray.length}) > cloud(${cloudArray.length}) - using local`);
-                        }
-                    }
-                    result = [
-                        localValue,
-                        (newValue) => {
-                            // Track write timestamp for protection
-                            recentWriteTimestamps.set(key, Date.now());
-                            // Update both local and cloud when local is used
-                            localSetValue(newValue);
-                            cloudSetValue(newValue);
-                        },
-                        {
-                            isLoading: false,
-                            isAuthenticated,
-                            error,
-                            signIn,
-                            signOut
-                        }
-                    ];
-                } else {
-                    if (debugKey) console.log(`🔍 USING CLOUD STORAGE for ${key}`);
-                    result = cloudStorageResult;
-                }
-            }
-        } else {
-            if (debugKey) console.log(`🔍 USING LOCAL STORAGE for ${key}`);
-            result = [
-                localValue,
-                localSetValue,
-                {
-                    isLoading: false,
-                    isAuthenticated,
-                    error,
-                    signIn,
-                    signOut
-                }
-            ];
-        }
-
-        // Cache the result
-        prevResultRef.current = result;
-        return result;
-    }, [
-        localValue,
-        cloudValue,
-        isLoading,
-        isAuthenticated,
-        error,
-        signIn,
-        signOut,
-        localSetValue,
-        cloudSetValue,
-        cloudStorageResult,
-        shouldUseCloudStorage,
-        key
-    ]);
-
-    return storageResult;
+    ];
 };
