@@ -20,10 +20,18 @@ export const useDataModel = ({
   initialExpenses = [],
   initialSavingsGoals = [],
   initialCategories = [],
-  initialAccounts = [],
-  payFrequency = 'bi-weekly',
-  payFrequencyOptions = []
+  initialAccounts = []
 } = {}) => {
+  // Read pay frequency directly from storage to ensure it stays in sync
+  const [payFrequency] = useStorage('budgetCalc_payFrequency', 'biweekly');
+
+  // Pay frequency options
+  const payFrequencyOptions = [
+    { value: 'weekly', label: 'Weekly', paychecksPerMonth: 4.33 },
+    { value: 'biweekly', label: 'Biweekly', paychecksPerMonth: 2.17 },
+    { value: 'monthly', label: 'Monthly', paychecksPerMonth: 1 },
+    { value: 'semimonthly', label: 'Twice a Month', paychecksPerMonth: 2 }
+  ];
   // Legacy state (for backward compatibility)
   const [expenses, setExpenses] = useStorage('budgetCalc_expenses', initialExpenses);
   const [savingsGoals, setSavingsGoals] = useStorage('budgetCalc_savingsGoals', initialSavingsGoals);
@@ -137,33 +145,49 @@ export const useDataModel = ({
       return;
     }
 
-    // Ensure the item uses the parsed categoryId
-    newItem = {
-      ...newItem,
-      categoryId
-    };
-
     // Generate ID first to ensure consistency between planning item and budget allocation
-    const newItemId = Math.max(...planningItems.map(item => parseInt(item.id || 0, 10)), 0) + 1;
+    const newItemId = newItem.id || Date.now().toString();
 
-    // Create a copy of the item with the generated ID
+    // Create a copy of the item with the generated ID and parsed categoryId
     const itemWithId = {
       ...newItem,
       id: newItemId,
-      isActive: newItem.isActive || (!newItem.allocationPaused && newItem.priorityState === 'active')
+      categoryId,
+      isActive: newItem.isActive !== false // Default to true unless explicitly false
     };
+
+    console.log('DEBUG - Adding item with final data:', itemWithId);
 
     // Update planning items
     setPlanningItems(prev => {
       const updatedItems = [...prev, itemWithId];
+      console.log('DEBUG - Updated planning items:', updatedItems);
       return updatedItems;
     });
 
-    // Mark item as needing allocation if it's active
+    // Create budget allocation if item is active
     if (itemWithId.isActive) {
-      itemWithId.needsAllocation = true;
+      setActiveBudgetAllocations(prev => {
+        const newAllocation = {
+          id: Math.max(...prev.map(a => a.id), 0) + 1,
+          planningItemId: newItemId,
+          categoryId,
+          monthlyAllocation: itemWithId.type === 'savings-goal'
+            ? itemWithId.monthlyContribution
+            : itemWithId.amount,
+          perPaycheckAmount: 0, // Will be calculated
+          sourceAccountId: itemWithId.accountId || accounts[0]?.id || 1,
+          isPaused: false,
+          createdAt: new Date().toISOString()
+        };
+
+        const newAllocations = [...prev, newAllocation];
+        return calculatePerPaycheckAmounts(newAllocations, payFrequency, payFrequencyOptions);
+      });
     }
-  }, [setPlanningItems, categories, planningItems]);
+
+    console.log('DEBUG - Item added successfully');
+  }, [setPlanningItems, setActiveBudgetAllocations, categories, accounts, payFrequency, payFrequencyOptions]);
 
 
 

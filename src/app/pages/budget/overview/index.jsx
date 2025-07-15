@@ -100,8 +100,7 @@ export default function BudgetOverview() {
         toggleItemActive
     } = useDataModel({
         initialCategories: [],
-        initialAccounts: [],
-        payFrequency: 'bi-weekly'
+        initialAccounts: []
     });
 
     // Envelope budgeting hook - now using real transactions
@@ -178,18 +177,29 @@ export default function BudgetOverview() {
         return amount * (multipliers[frequency] || 1);
     }, []);
 
-    // Helper function to calculate paychecks until due date using real paycheck schedule
-    const calculatePaychecksUntilDue = useCallback((dueDate) => {
+    // Helper function to calculate paychecks until due date using account-specific paycheck schedule
+    const calculatePaychecksUntilDue = useCallback((dueDate, accountId) => {
         if (!dueDate) return null;
 
         try {
             // Check if paycheck management functions are available
-            if (getTodayLocal && getPaychecksInDateRange) {
+            if (getTodayLocal && getPaychecksInDateRange && accounts) {
                 const today = getTodayLocal();
+
+                // If accountId is provided, get paychecks only for that specific account
+                if (accountId) {
+                    const account = accounts.find(acc => acc.id === accountId);
+                    if (account) {
+                        // Get paychecks specifically for this account
+                        const accountPaychecks = getPaychecksInDateRange(today, dueDate, accountId);
+                        console.log(`Calculating paychecks for account ${account.name} from ${today} to ${dueDate}:`, accountPaychecks.length);
+                        return accountPaychecks.length;
+                    }
+                }
+
+                // Fallback to all paychecks if no specific account
                 const paychecksInRange = getPaychecksInDateRange(today, dueDate);
-
-                console.log(`Calculating paychecks from ${today} to ${dueDate}:`, paychecksInRange.length);
-
+                console.log(`Calculating all paychecks from ${today} to ${dueDate}:`, paychecksInRange.length);
                 return paychecksInRange.length;
             } else {
                 console.warn('Paycheck management functions not available, using fallback calculation');
@@ -204,7 +214,7 @@ export default function BudgetOverview() {
             if (daysUntilDue <= 0) return 0;
             return Math.ceil(daysUntilDue / 14); // Assuming bi-weekly pay
         }
-    }, [getTodayLocal, getPaychecksInDateRange]);
+    }, [getTodayLocal, getPaychecksInDateRange, accounts]);
 
     // Transform data for the budget table
     const transformDataForBudgetTable = useCallback((categories = [], planningItems = []) => {
@@ -264,7 +274,7 @@ export default function BudgetOverview() {
                         ? (item.monthlyContribution || 0)
                         : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly');
 
-                    const paychecksUntilDue = item.dueDate ? calculatePaychecksUntilDue(item.dueDate) : null;
+                    const paychecksUntilDue = item.dueDate ? calculatePaychecksUntilDue(item.dueDate, item.accountId) : null;
 
                     // Calculate per paycheck based on due date if available
                     let perPaycheck;
@@ -301,7 +311,7 @@ export default function BudgetOverview() {
             // Calculate per paycheck amount - use real paycheck schedule for single categories with due dates
             let perPaycheck;
             if (category.type === 'single' && categoryDueDate) {
-                const paychecksUntilDue = calculatePaychecksUntilDue(categoryDueDate);
+                const paychecksUntilDue = calculatePaychecksUntilDue(categoryDueDate, category.accountId);
                 if (paychecksUntilDue > 0) {
                     // For single categories with due dates, calculate based on actual paychecks until due
                     perPaycheck = (category.amount || 0) / paychecksUntilDue;
