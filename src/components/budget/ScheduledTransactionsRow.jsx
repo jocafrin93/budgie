@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, Edit, Play, SkipForward, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Edit, PlayCircle, FastForward, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatDate } from '../../utils/dateUtils';
 import { formatCurrency } from '../../utils/formatUtils';
@@ -197,7 +197,7 @@ const ScheduledTransactionsRow = ({
                                         className="p-2 text-base-content/60 hover:text-base-content rounded transition-colors"
                                         title="Skip this occurrence"
                                     >
-                                        <SkipForward size={16} />
+                                        <FastForward size={16} />
                                     </button>
 
                                     <button
@@ -205,7 +205,7 @@ const ScheduledTransactionsRow = ({
                                         className="p-2 text-base-content/60 hover:text-base-content rounded transition-colors"
                                         title="Pay now (activate early)"
                                     >
-                                        <Play size={16} />
+                                        <PlayCircle size={16} />
                                     </button>
 
                                     <button
