@@ -854,7 +854,22 @@ export default function BudgetOverview() {
 
                 {/* Monthly Budget Navigator */}
                 <div className="mb-6">
-                    <React.Suspense fallback={<div>Loading...</div>}>
+                    <React.Suspense fallback={
+                        <div className="bg-base-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-base-300 rounded animate-pulse"></div>
+                                    <div className="w-32 h-6 bg-base-300 rounded animate-pulse"></div>
+                                    <div className="w-8 h-8 bg-base-300 rounded animate-pulse"></div>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-20 h-12 bg-base-300 rounded animate-pulse"></div>
+                                    <div className="w-20 h-12 bg-base-300 rounded animate-pulse"></div>
+                                    <div className="w-20 h-12 bg-base-300 rounded animate-pulse"></div>
+                                </div>
+                            </div>
+                        </div>
+                    }>
                         {React.createElement(
                             React.lazy(() => import("../../../../components/budget/MonthlyBudgetNavigator")),
                             {
