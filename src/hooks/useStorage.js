@@ -1,14 +1,22 @@
 // src/hooks/useStorage.js
+import { useMemo, useRef, useCallback } from 'react';
 import { useCloudStorage } from './useCloudStorage';
 import { useLocalStorage } from './useLocalStorage';
 
 // Global cache to prevent flickering across all storage instances
 const storageDecisionCache = new Map();
+const storageResultCache = new Map();
+const recentWriteTimestamps = new Map(); // Track recent writes to prevent overwrites
 
 export const useStorage = (key, defaultValue) => {
     const localStorageResult = useLocalStorage(key, defaultValue);
     const cloudStorageResult = useCloudStorage(key, defaultValue);
     const [, , cloudMeta] = cloudStorageResult;
+
+    // Use refs to track previous values and prevent unnecessary recalculations
+    const prevLocalValueRef = useRef();
+    const prevCloudValueRef = useRef();
+    const prevResultRef = useRef();
 
     // Check if we've already made a decision for this session
     const cacheKey = 'storage_decision';
@@ -26,49 +34,101 @@ export const useStorage = (key, defaultValue) => {
         console.log(`📋 STORAGE SESSION DECISION: ${shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'} (cached for session)`);
     }
 
-    // Only log storage decisions when they change or for debugging specific keys
-    const debugKey = key === 'budgetCalc_planningItems';
-    if (debugKey) {
-        console.log(`🔍 STORAGE DECISION for ${key}:`, {
-            shouldUseCloudStorage,
-            cloudIsLoading: cloudMeta.isLoading,
-            cloudValueLength: Array.isArray(cloudStorageResult[0]) ? cloudStorageResult[0].length : 'not-array',
-            localValueLength: Array.isArray(localStorageResult[0]) ? localStorageResult[0].length : 'not-array',
-            finalChoice: shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'
-        });
-    }
+    // Memoized storage result calculation - only recalculate when values actually change
+    const storageResult = useMemo(() => {
+        const localValue = localStorageResult[0];
+        const cloudValue = cloudStorageResult[0];
 
-    // Return the appropriate storage system based on cached decision
-    if (shouldUseCloudStorage) {
-        // For cloud storage, if still loading, return local data to prevent showing defaults
-        if (cloudMeta.isLoading) {
-            console.log(`🔍 CLOUD LOADING for ${key} - using local data temporarily`);
-            return [
-                localStorageResult[0], // Use local data while cloud loads
-                localStorageResult[1],
-                {
-                    isLoading: true,
-                    isAuthenticated: cloudMeta.isAuthenticated,
-                    error: cloudMeta.error,
-                    signIn: cloudMeta.signIn,
-                    signOut: cloudMeta.signOut
-                }
-            ];
+        // Check if values have actually changed
+        const localChanged = prevLocalValueRef.current !== localValue;
+        const cloudChanged = prevCloudValueRef.current !== cloudValue;
+
+        // If nothing changed and we have a cached result, return it
+        if (!localChanged && !cloudChanged && prevResultRef.current) {
+            return prevResultRef.current;
         }
 
-        // CRITICAL FIX: Check if local storage has more recent data than cloud storage
-        const cloudArray = Array.isArray(cloudStorageResult[0]) ? cloudStorageResult[0] : [];
-        const localArray = Array.isArray(localStorageResult[0]) ? localStorageResult[0] : [];
+        // Update refs
+        prevLocalValueRef.current = localValue;
+        prevCloudValueRef.current = cloudValue;
 
-        if (localArray.length > cloudArray.length) {
-            console.log(`🔄 LOCAL DATA IS NEWER for ${key}: local(${localArray.length}) > cloud(${cloudArray.length}) - using local`);
-            return [
-                localStorageResult[0],
-                (newValue) => {
-                    // Update both local and cloud when local is used
-                    localStorageResult[1](newValue);
-                    cloudStorageResult[1](newValue);
-                },
+        const debugKey = key === 'budgetCalc_planningItems';
+
+        // Only log when values actually change
+        if (debugKey && (localChanged || cloudChanged)) {
+            console.log(`🔍 STORAGE VALUES CHANGED for ${key}:`, {
+                shouldUseCloudStorage,
+                cloudIsLoading: cloudMeta.isLoading,
+                cloudValueLength: Array.isArray(cloudValue) ? cloudValue.length : 'not-array',
+                localValueLength: Array.isArray(localValue) ? localValue.length : 'not-array',
+                localChanged,
+                cloudChanged,
+                finalChoice: shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'
+            });
+        }
+
+        let result;
+
+        if (shouldUseCloudStorage) {
+            // For cloud storage, if still loading, return local data to prevent showing defaults
+            if (cloudMeta.isLoading) {
+                if (debugKey) console.log(`🔍 CLOUD LOADING for ${key} - using local data temporarily`);
+                result = [
+                    localValue,
+                    localStorageResult[1],
+                    {
+                        isLoading: true,
+                        isAuthenticated: cloudMeta.isAuthenticated,
+                        error: cloudMeta.error,
+                        signIn: cloudMeta.signIn,
+                        signOut: cloudMeta.signOut
+                    }
+                ];
+            } else {
+                // CRITICAL FIX: Check if local storage has more recent data than cloud storage
+                const cloudArray = Array.isArray(cloudValue) ? cloudValue : [];
+                const localArray = Array.isArray(localValue) ? localValue : [];
+
+                // Check for recent writes to prevent cloud overwrites
+                const recentWriteTime = recentWriteTimestamps.get(key);
+                const now = Date.now();
+                const hasRecentWrite = recentWriteTime && (now - recentWriteTime) < 5000; // 5 second protection
+
+                if (localArray.length > cloudArray.length || hasRecentWrite) {
+                    if (debugKey) {
+                        if (hasRecentWrite) {
+                            console.log(`🛡️ WRITE PROTECTION ACTIVE for ${key}: preventing cloud overwrite (${now - recentWriteTime}ms ago)`);
+                        } else {
+                            console.log(`🔄 LOCAL DATA IS NEWER for ${key}: local(${localArray.length}) > cloud(${cloudArray.length}) - using local`);
+                        }
+                    }
+                    result = [
+                        localValue,
+                        (newValue) => {
+                            // Track write timestamp for protection
+                            recentWriteTimestamps.set(key, Date.now());
+                            // Update both local and cloud when local is used
+                            localStorageResult[1](newValue);
+                            cloudStorageResult[1](newValue);
+                        },
+                        {
+                            isLoading: false,
+                            isAuthenticated: cloudMeta.isAuthenticated,
+                            error: cloudMeta.error,
+                            signIn: cloudMeta.signIn,
+                            signOut: cloudMeta.signOut
+                        }
+                    ];
+                } else {
+                    if (debugKey) console.log(`🔍 USING CLOUD STORAGE for ${key}`);
+                    result = cloudStorageResult;
+                }
+            }
+        } else {
+            if (debugKey) console.log(`🔍 USING LOCAL STORAGE for ${key}`);
+            result = [
+                localValue,
+                localStorageResult[1],
                 {
                     isLoading: false,
                     isAuthenticated: cloudMeta.isAuthenticated,
@@ -79,20 +139,17 @@ export const useStorage = (key, defaultValue) => {
             ];
         }
 
-        if (debugKey) console.log(`🔍 USING CLOUD STORAGE for ${key}`);
-        return cloudStorageResult;
-    }
-
-    if (debugKey) console.log(`🔍 USING LOCAL STORAGE for ${key}`);
-    return [
+        // Cache the result
+        prevResultRef.current = result;
+        return result;
+    }, [
         localStorageResult[0],
-        localStorageResult[1],
-        {
-            isLoading: false,
-            isAuthenticated: cloudMeta.isAuthenticated,
-            error: cloudMeta.error,
-            signIn: cloudMeta.signIn,
-            signOut: cloudMeta.signOut
-        }
-    ];
+        cloudStorageResult[0],
+        cloudMeta.isLoading,
+        cloudMeta.isAuthenticated,
+        shouldUseCloudStorage,
+        key
+    ]);
+
+    return storageResult;
 };
