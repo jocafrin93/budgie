@@ -12,34 +12,34 @@ export const useStorage = (key, defaultValue) => {
 
     // Check if we've already made a decision for this session
     const cacheKey = 'storage_decision';
-    let useCloudStorage = storageDecisionCache.get(cacheKey);
+    let shouldUseCloudStorage = storageDecisionCache.get(cacheKey);
 
-    if (useCloudStorage === undefined) {
+    if (shouldUseCloudStorage === undefined) {
         // Make decision once per session based on current token state
         const storedToken = localStorage.getItem('google_access_token');
         const tokenExpiry = localStorage.getItem('google_token_expiry');
         const hasValidToken = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
 
-        useCloudStorage = hasValidToken;
-        storageDecisionCache.set(cacheKey, useCloudStorage);
+        shouldUseCloudStorage = hasValidToken;
+        storageDecisionCache.set(cacheKey, shouldUseCloudStorage);
 
-        console.log(`📋 STORAGE SESSION DECISION: ${useCloudStorage ? 'CLOUD' : 'LOCAL'} (cached for session)`);
+        console.log(`📋 STORAGE SESSION DECISION: ${shouldUseCloudStorage ? 'CLOUD' : 'LOCAL'} (cached for session)`);
     }
 
     // Return the appropriate storage system based on cached decision
-    if (useCloudStorage) {
+    if (shouldUseCloudStorage) {
         return cloudStorageResult;
-    } else {
-        return [
-            localStorageResult[0],
-            localStorageResult[1],
-            {
-                isLoading: false,
-                isAuthenticated: cloudMeta.isAuthenticated,
-                error: cloudMeta.error,
-                signIn: cloudMeta.signIn,
-                signOut: cloudMeta.signOut
-            }
-        ];
     }
+
+    return [
+        localStorageResult[0],
+        localStorageResult[1],
+        {
+            isLoading: false,
+            isAuthenticated: cloudMeta.isAuthenticated,
+            error: cloudMeta.error,
+            signIn: cloudMeta.signIn,
+            signOut: cloudMeta.signOut
+        }
+    ];
 };
