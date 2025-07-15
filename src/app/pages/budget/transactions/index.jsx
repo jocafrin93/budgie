@@ -367,7 +367,7 @@ export default function BudgetTransactions() {
     useEffect(() => {
         const loadScheduledTransactionsComponent = async () => {
             try {
-                const componentModule = await import('../../../../components/budget/ScheduledTransactionsWidget');
+                const componentModule = await import('../../../../components/budget/ScheduledTransactionsRow');
                 setScheduledTransactionsRow(() => componentModule.default);
             } catch (error) {
                 console.error('Failed to load scheduled transactions component:', error);
