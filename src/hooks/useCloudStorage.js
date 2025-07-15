@@ -358,8 +358,13 @@ export const useCloudStorage = (key, defaultValue) => {
 
     // Save data when value changes (debounced)
     useEffect(() => {
-        if (isLoading || !isAuthenticated) {
-            // console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: loading=${isLoading}, authenticated=${isAuthenticated}`);
+        // Check token directly to avoid race conditions with state
+        const storedToken = localStorage.getItem('google_access_token');
+        const tokenExpiry = localStorage.getItem('google_token_expiry');
+        const hasValidToken = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
+
+        if (isLoading || !hasValidToken) {
+            // console.log(`🚫 CLOUD STORAGE (${key}) - Skipping save: loading=${isLoading}, hasValidToken=${hasValidToken}`);
             return;
         }
 
@@ -398,7 +403,7 @@ export const useCloudStorage = (key, defaultValue) => {
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [value, isLoading, isAuthenticated, defaultValue, key]);
+    }, [value, isLoading, defaultValue, key]);
 
     // Update value function
     const updateValue = (newValue) => {
