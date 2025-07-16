@@ -100,18 +100,19 @@ export const useStorage = (key, defaultValue) => {
 
     // Stable setter function that doesn't change unless auth state changes
     const setValue = useCallback((newValue) => {
-        const resolvedValue = typeof newValue === 'function' ? newValue(finalValue) : newValue;
+        setFinalValue(prevValue => {
+            const resolvedValue = typeof newValue === 'function' ? newValue(prevValue) : newValue;
 
-        // Update the appropriate storage
-        if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
-            cloudSetter(resolvedValue);
-        } else {
-            localSetter(resolvedValue);
-        }
+            // Update the appropriate storage
+            if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
+                cloudSetter(resolvedValue);
+            } else {
+                localSetter(resolvedValue);
+            }
 
-        // Update local state immediately for responsive UI
-        setFinalValue(resolvedValue);
-    }, [cloudMeta.isAuthenticated, cloudMeta.isLoading, cloudSetter, localSetter, finalValue]);
+            return resolvedValue;
+        });
+    }, [cloudMeta.isAuthenticated, cloudMeta.isLoading, cloudSetter, localSetter]);
 
     // Determine the loading state
     const isLoading = cloudMeta.isLoading && !hasInitialized;

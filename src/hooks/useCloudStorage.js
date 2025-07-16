@@ -36,13 +36,16 @@ export const useCloudStorage = (key, defaultValue) => {
 
     // Update function
     const updateValue = useCallback((newValue) => {
-        const finalValue = typeof newValue === 'function' ? newValue(value) : newValue;
-        setValue(finalValue);
+        setValue(prevValue => {
+            const finalValue = typeof newValue === 'function' ? newValue(prevValue) : newValue;
 
-        if (isAuthenticated && !isLoading) {
-            debouncedSave(key, finalValue);
-        }
-    }, [value, isAuthenticated, isLoading, debouncedSave, key]);
+            if (isAuthenticated && !isLoading) {
+                debouncedSave(key, finalValue);
+            }
+
+            return finalValue;
+        });
+    }, [isAuthenticated, isLoading, debouncedSave, key]);
 
     // Return loading state during initial load
     if (!hasLoadedInitialData) {
