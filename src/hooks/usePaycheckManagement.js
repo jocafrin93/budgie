@@ -70,10 +70,10 @@ export const usePaycheckManagement = (accounts = []) => {
   const parsedOldPaySchedule = oldPaySchedule ? JSON.parse(oldPaySchedule) : null;
   const parsedOldCurrentPay = oldCurrentPay ? parseFloat(oldCurrentPay) : null;
 
-  // Paychecks state - migrate from old format if needed - now using cloud storage
+  // Paychecks state - force empty array to remove mock data
   const [paychecks, setPaychecks] = useStorage(
     'budgetCalc_paychecks',
-    migrateFromLegacyPaySchedule(parsedOldPaySchedule, parsedOldCurrentPay)
+    [] // Always start with empty array - no mock data
   );
 
   // Clean up any mock data that might be stored in cloud storage
