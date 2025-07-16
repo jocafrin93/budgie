@@ -1,26 +1,65 @@
 // src/hooks/useCloudStorage.js
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useCloudStorageManager } from './useCloudStorageManager.jsx';
 
 export const useCloudStorage = (key, defaultValue) => {
     const { isAuthenticated, isLoading, readFromDrive, debouncedSave } = useCloudStorageManager();
     const [value, setValue] = useState(defaultValue);
     const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
+    const [isLoadingData, setIsLoadingData] = useState(false);
 
-    // Load initial data when cloud storage is ready
+    // Track previous auth state to detect changes
+    const prevAuthStateRef = useRef({ isAuthenticated: false, isLoading: true });
+    const hasLoggedInitialStateRef = useRef(false);
+
+    // Load data when authentication state changes or initially
     useEffect(() => {
-        if (isLoading || hasLoadedInitialData) return;
+        const currentAuthState = { isAuthenticated, isLoading };
+        const prevAuthState = prevAuthStateRef.current;
 
-        const loadInitialData = async () => {
+        // Check if auth state actually changed
+        const authStateChanged =
+            prevAuthState.isAuthenticated !== currentAuthState.isAuthenticated ||
+            prevAuthState.isLoading !== currentAuthState.isLoading;
+
+        // Only proceed if auth state changed or we haven't loaded initial data
+        if (!authStateChanged && hasLoadedInitialData) {
+            return;
+        }
+
+        // Update the ref
+        prevAuthStateRef.current = currentAuthState;
+
+        // Don't load if still loading
+        if (isLoading) {
+            return;
+        }
+
+        const loadData = async () => {
+            setIsLoadingData(true);
+
             try {
                 if (isAuthenticated) {
-                    console.log(`📁 CLOUD STORAGE (${key}) - Loading from cloud...`);
+                    // Only log once per key to reduce console spam
+                    if (!hasLoggedInitialStateRef.current) {
+                        console.log(`📁 CLOUD STORAGE (${key}) - Loading from cloud...`);
+                        hasLoggedInitialStateRef.current = true;
+                    }
+
                     const cloudData = await readFromDrive(key, defaultValue);
-                    console.log(`☁️ CLOUD STORAGE (${key}) - Using cloud data`);
                     setValue(cloudData);
+
+                    if (!hasLoadedInitialData) {
+                        console.log(`☁️ CLOUD STORAGE (${key}) - Cloud data loaded successfully`);
+                    }
                 } else {
-                    console.log(`💾 CLOUD STORAGE (${key}) - Not authenticated, using default`);
+                    // Use default value when not authenticated
                     setValue(defaultValue);
+
+                    if (!hasLoadedInitialData && !hasLoggedInitialStateRef.current) {
+                        console.log(`💾 CLOUD STORAGE (${key}) - Not authenticated, using default`);
+                        hasLoggedInitialStateRef.current = true;
+                    }
                 }
 
                 setHasLoadedInitialData(true);
@@ -28,11 +67,13 @@ export const useCloudStorage = (key, defaultValue) => {
                 console.error(`❌ CLOUD STORAGE (${key}) - Load failed:`, error);
                 setValue(defaultValue);
                 setHasLoadedInitialData(true);
+            } finally {
+                setIsLoadingData(false);
             }
         };
 
-        loadInitialData();
-    }, [isLoading, isAuthenticated, hasLoadedInitialData, key]); // Removed defaultValue and readFromDrive to prevent loops
+        loadData();
+    }, [isLoading, isAuthenticated, hasLoadedInitialData, key, defaultValue, readFromDrive]);
 
     // Update function
     const updateValue = useCallback((newValue) => {
@@ -47,8 +88,8 @@ export const useCloudStorage = (key, defaultValue) => {
         });
     }, [isAuthenticated, isLoading, debouncedSave, key]);
 
-    // Return loading state during initial load
-    if (!hasLoadedInitialData) {
+    // Return loading state during initial load or data loading
+    if (!hasLoadedInitialData || isLoadingData) {
         return [
             defaultValue,
             () => { },

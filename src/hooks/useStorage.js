@@ -54,21 +54,27 @@ export const useStorage = (key, defaultValue) => {
 
         if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
             // Use cloud storage
-            if (!hasInitialized || cloudValueChanged || authStateChanged) {
+            if (!hasInitialized || cloudValueChanged || (authStateChanged && prevAuthStateRef.current.isAuthenticated !== true)) {
                 newValue = cloudValue;
                 shouldUpdate = true;
-                logMessage = hasInitialized ?
-                    `☁️ STORAGE (${key}) - Cloud value updated` :
-                    `☁️ STORAGE (${key}) - Cloud storage ready, using cloud data`;
+                // Only log meaningful changes, not every update
+                if (!hasInitialized) {
+                    logMessage = `☁️ STORAGE (${key}) - Cloud storage ready, using cloud data`;
+                } else if (authStateChanged && prevAuthStateRef.current.isAuthenticated !== true) {
+                    logMessage = `☁️ STORAGE (${key}) - Switched to cloud storage`;
+                }
             }
         } else if (!cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
             // Use local storage
-            if (!hasInitialized || localValueChanged || authStateChanged) {
+            if (!hasInitialized || localValueChanged || (authStateChanged && prevAuthStateRef.current.isAuthenticated !== false)) {
                 newValue = localValue;
                 shouldUpdate = true;
-                logMessage = hasInitialized ?
-                    `💾 STORAGE (${key}) - Local value updated` :
-                    `💾 STORAGE (${key}) - Not authenticated, using localStorage`;
+                // Only log meaningful changes
+                if (!hasInitialized) {
+                    logMessage = `💾 STORAGE (${key}) - Not authenticated, using localStorage`;
+                } else if (authStateChanged && prevAuthStateRef.current.isAuthenticated !== false) {
+                    logMessage = `💾 STORAGE (${key}) - Switched to local storage`;
+                }
             }
         } else if (cloudMeta.isLoading && !hasInitialized) {
             // Still loading for the first time
@@ -77,9 +83,11 @@ export const useStorage = (key, defaultValue) => {
             logMessage = `⏳ STORAGE (${key}) - First load, using defaultValue temporarily`;
         }
 
-        // Only update state if there's an actual change
+        // Only update state and log if there's an actual change
         if (shouldUpdate && newValue !== finalValue) {
-            console.log(logMessage);
+            if (logMessage) {
+                console.log(logMessage);
+            }
             setFinalValue(newValue);
         }
 

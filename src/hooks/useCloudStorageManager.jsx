@@ -53,18 +53,17 @@ export const CloudStorageProvider = ({ children }) => {
                     // Only update state if it actually changed
                     setIsAuthenticated(prev => {
                         if (!prev) {
-                            console.log('Cloud Storage Manager: Valid token found');
+                            console.log('Cloud Storage Manager: Authentication restored');
                         }
                         return true;
                     });
                     return true;
                 } else {
-                    console.log('Cloud Storage Manager: Token expired');
                     localStorage.removeItem('google_access_token');
                     localStorage.removeItem('google_token_expiry');
                     setIsAuthenticated(prev => {
                         if (prev) {
-                            console.log('Cloud Storage Manager: Authentication lost');
+                            console.log('Cloud Storage Manager: Token expired, signed out');
                         }
                         return false;
                     });
@@ -72,7 +71,7 @@ export const CloudStorageProvider = ({ children }) => {
             } else {
                 setIsAuthenticated(prev => {
                     if (prev) {
-                        console.log('Cloud Storage Manager: No token found');
+                        console.log('Cloud Storage Manager: No token found, signed out');
                     }
                     return false;
                 });
