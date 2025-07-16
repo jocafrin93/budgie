@@ -15,29 +15,9 @@ export const usePaycheckManagement = (accounts = []) => {
   };
   // Migrate from old paySchedule format if needed
   const migrateFromLegacyPaySchedule = (legacyPaySchedule, legacyCurrentPay) => {
-    // Default paycheck to create if no legacy data exists
-    const defaultPaycheck = {
-      id: 1,
-      name: "Main Paycheck",
-      frequency: "biweekly",
-      startDate: new Date().toISOString().split('T')[0],
-      baseAmount: 2000,
-      variableAmount: false,
-      accountDistribution: [
-        {
-          accountId: accounts.length > 0 ? accounts[0].id : 1,
-          amount: 2000,
-          distributionType: "fixed",
-          distributionValue: 2000
-        }
-      ],
-      historyEntries: [],
-      isActive: true
-    };
-
-    // If no legacy data, return default
+    // If no legacy data, return empty array
     if (!legacyPaySchedule && !legacyCurrentPay) {
-      return [defaultPaycheck];
+      return [];
     }
 
     // Create paycheck from legacy data
