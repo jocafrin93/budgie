@@ -479,6 +479,26 @@ export const usePaycheckManagement = (accounts = []) => {
     }, 0);
   }, [getPaychecksInDateRange, formatDate]);
 
+  /**
+   * Force clear all paycheck data (including cloud storage)
+   */
+  const clearAllPaycheckData = useCallback(() => {
+    console.log('🧹 FORCE CLEARING ALL PAYCHECK DATA');
+    setPaychecks([]);
+
+    // Also clear localStorage as backup
+    localStorage.removeItem('budgetCalc_paychecks');
+    localStorage.removeItem('budgetCalc_paySchedule');
+    localStorage.removeItem('budgetCalc_currentPay');
+
+    console.log('🧹 All paycheck data cleared');
+  }, [setPaychecks]);
+
+  // Expose clearAllPaycheckData globally for debugging
+  if (typeof window !== 'undefined') {
+    window.clearPaycheckData = clearAllPaycheckData;
+  }
+
   return {
     paychecks,
     setPaychecks,
@@ -496,6 +516,7 @@ export const usePaycheckManagement = (accounts = []) => {
     getNextPaycheckDate,
     getPaychecksInDateRange,
     calculateMonthlyExpectedIncome,
+    clearAllPaycheckData,
     // Utility functions for timezone-safe date handling
     getTodayLocal,
     isUpcoming,
