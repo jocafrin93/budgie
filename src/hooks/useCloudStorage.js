@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCloudStorageManager } from './useCloudStorageManager.jsx';
 import { useLocalStorage } from './useLocalStorage';
 
-export const useStorage = (key, defaultValue) => {
+export const useCloudStorage = (key, defaultValue) => {
     const { isAuthenticated, isLoading, readFromDrive, debouncedSave } = useCloudStorageManager();
     const [localValue, setLocalValue] = useLocalStorage(key, defaultValue);
 

@@ -1,5 +1,5 @@
 // src/hooks/useStorage.js
-import { useStorage as useCloudStorage } from './useCloudStorage';
+import { useCloudStorage } from './useCloudStorage';
 import { useLocalStorage } from './useLocalStorage';
 import { useState, useEffect, useCallback } from 'react';
 
