@@ -11,7 +11,7 @@ export const useStorage = (key, defaultValue) => {
 
     // State to track if we've received the initial cloud data
     const [hasLoadedCloudData, setHasLoadedCloudData] = useState(false);
-    const [finalValue, setFinalValue] = useState(defaultValue);
+    const [finalValue, setFinalValue] = useState(null); // Start with null instead of defaultValue
 
     // Handle cloud storage state changes
     useEffect(() => {
@@ -26,13 +26,15 @@ export const useStorage = (key, defaultValue) => {
             setFinalValue(localValue);
             setHasLoadedCloudData(true);
         } else if (cloudMeta.isLoading) {
-            // Still loading - keep current value or default if this is initial load
-            if (!hasLoadedCloudData) {
+            // Still loading - only set finalValue if it's still null (first load)
+            if (finalValue === null) {
+                console.log(`⏳ STORAGE (${key}) - First load, using defaultValue temporarily`);
+                setFinalValue(defaultValue);
+            } else {
                 console.log(`⏳ STORAGE (${key}) - Cloud storage loading, keeping current state`);
-                // Don't change finalValue during loading to prevent flicker
             }
         }
-    }, [cloudValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, localValue, key, hasLoadedCloudData]);
+    }, [cloudValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, localValue, key, hasLoadedCloudData, finalValue, defaultValue]);
 
     // Determine which setter to use
     const setValue = useCallback((newValue) => {
@@ -53,7 +55,7 @@ export const useStorage = (key, defaultValue) => {
     if (isLoading) {
         // Still loading cloud storage for the first time
         return [
-            finalValue, // Keep current value during loading
+            finalValue !== null ? finalValue : defaultValue, // Use finalValue if set, otherwise defaultValue
             () => { }, // Disabled setter during loading
             {
                 isLoading: true,
@@ -66,7 +68,7 @@ export const useStorage = (key, defaultValue) => {
 
     // Cloud storage is ready (authenticated or not)
     return [
-        finalValue,
+        finalValue !== null ? finalValue : defaultValue, // Ensure we never return null
         setValue,
         {
             isLoading: false,
