@@ -13,62 +13,6 @@ export const usePaycheckManagement = (accounts = []) => {
     // Cap at reasonable maximum (e.g., $100,000) and minimum (-$100,000)
     return Math.min(Math.max(amount, -100000), 100000);
   };
-  // Migrate from old paySchedule format if needed
-  const migrateFromLegacyPaySchedule = (legacyPaySchedule, legacyCurrentPay) => {
-    // If no legacy data, return empty array
-    if (!legacyPaySchedule && !legacyCurrentPay) {
-      return [];
-    }
-
-    // Create paycheck from legacy data
-    const paycheck = {
-      id: 1,
-      name: "Main Paycheck",
-      frequency: legacyPaySchedule?.frequency || "biweekly",
-      startDate: legacyPaySchedule?.startDate?.split('T')[0] || new Date().toISOString().split('T')[0],
-      baseAmount: legacyCurrentPay || 2000,
-      variableAmount: false,
-      accountDistribution: [],
-      historyEntries: [],
-      isActive: true
-    };
-
-    // Handle split paycheck if configured in legacy data
-    if (legacyPaySchedule?.splitPaycheck && legacyPaySchedule?.primaryAccountId && legacyPaySchedule?.secondaryAccountId) {
-      paycheck.accountDistribution = [
-        {
-          accountId: legacyPaySchedule.primaryAccountId,
-          amount: legacyPaySchedule.primaryAmount || (legacyCurrentPay * 0.7),
-          distributionType: "fixed",
-          distributionValue: legacyPaySchedule.primaryAmount || (legacyCurrentPay * 0.7)
-        },
-        {
-          accountId: legacyPaySchedule.secondaryAccountId,
-          amount: legacyPaySchedule.secondaryAmount || (legacyCurrentPay * 0.3),
-          distributionType: "fixed",
-          distributionValue: legacyPaySchedule.secondaryAmount || (legacyCurrentPay * 0.3)
-        }
-      ];
-    } else {
-      // Single account distribution
-      paycheck.accountDistribution = [
-        {
-          accountId: accounts.length > 0 ? accounts[0].id : 1,
-          amount: legacyCurrentPay || 2000,
-          distributionType: "fixed",
-          distributionValue: legacyCurrentPay || 2000
-        }
-      ];
-    }
-
-    return [paycheck];
-  };
-
-  // Try to get legacy data for migration
-  const oldPaySchedule = localStorage.getItem('budgetCalc_paySchedule');
-  const oldCurrentPay = localStorage.getItem('budgetCalc_currentPay');
-  const parsedOldPaySchedule = oldPaySchedule ? JSON.parse(oldPaySchedule) : null;
-  const parsedOldCurrentPay = oldCurrentPay ? parseFloat(oldCurrentPay) : null;
 
   // Paychecks state - force empty array to remove mock data
   const [paychecks, setPaychecks] = useStorage(
