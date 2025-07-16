@@ -1,5 +1,5 @@
 // src/hooks/usePaycheckManagement.js
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useStorage } from './useStorage';
 
 /**
@@ -75,6 +75,23 @@ export const usePaycheckManagement = (accounts = []) => {
     'budgetCalc_paychecks',
     migrateFromLegacyPaySchedule(parsedOldPaySchedule, parsedOldCurrentPay)
   );
+
+  // Clean up any mock data that might be stored in cloud storage
+  useEffect(() => {
+    if (paychecks && Array.isArray(paychecks) && paychecks.length > 0) {
+      // Check if we have the old mock data pattern
+      const hasMockData = paychecks.some(paycheck =>
+        paycheck.name === "Main Paycheck" &&
+        paycheck.baseAmount === 2000 &&
+        paycheck.id === 1
+      );
+
+      if (hasMockData) {
+        console.log('🧹 Detected mock paycheck data, clearing it...');
+        setPaychecks([]);
+      }
+    }
+  }, [paychecks, setPaychecks]);
 
   /**
    * Add a new paycheck
