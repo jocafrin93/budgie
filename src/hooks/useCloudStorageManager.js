@@ -4,8 +4,6 @@ import { createContext, useContext, useEffect, useRef, useState, useCallback } f
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const DEBOUNCE_DELAY = 1500;
-const MAX_RETRIES = 3;
-const RETRY_BASE_DELAY = 1000;
 
 // Global state
 let gapi = null;
@@ -272,8 +270,9 @@ export const CloudStorageProvider = ({ children }) => {
     // Cleanup on unmount
     useEffect(() => {
         return () => {
-            saveTimeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
-            saveTimeoutsRef.current.clear();
+            const saveTimeouts = saveTimeoutsRef.current;
+            saveTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+            saveTimeouts.clear();
         };
     }, []);
 
