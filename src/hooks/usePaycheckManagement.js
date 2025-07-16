@@ -57,7 +57,7 @@ export const usePaycheckManagement = (accounts = []) => {
     } else {
       console.log('🔍 PAYCHECK CLEANUP - No paychecks found or empty array');
     }
-  }, []); // Remove dependencies to prevent infinite loop - this should only run once on mount
+  }, [paychecks, setPaychecks]); // Include dependencies but this will only run when paychecks change
 
   /**
    * Add a new paycheck
@@ -177,36 +177,36 @@ export const usePaycheckManagement = (accounts = []) => {
   }, []);
 
   // Helper function to get today's date in local timezone (avoiding timezone issues)
-  const getTodayLocal = () => {
+  const getTodayLocal = useCallback(() => {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  };
+  }, []);
 
   // Helper function to add days to a date
-  const addDays = (date, days) => {
+  const addDays = useCallback((date, days) => {
     const result = new Date(date);
     result.setDate(result.getDate() + days);
     return result;
-  };
+  }, []);
 
   // Helper function to format date as YYYY-MM-DD
-  const formatDate = (date) => {
+  const formatDate = useCallback((date) => {
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
-  };
+  }, []);
 
   // Helper function to create a date from YYYY-MM-DD string in local timezone
-  const createLocalDate = (dateString) => {
+  const createLocalDate = useCallback((dateString) => {
     if (!dateString) return new Date();
     const [year, month, day] = dateString.split('-').map(Number);
     return new Date(year, month - 1, day); // month is 0-indexed
-  };
+  }, []);
 
   // Helper function to check if a date is today or in the future
   const isUpcoming = (date) => {
@@ -275,7 +275,7 @@ export const usePaycheckManagement = (accounts = []) => {
     }
 
     return dates;
-  }, [paychecks]);
+  }, [paychecks, addDays, createLocalDate]);
 
   /**
    * Calculate total monthly income from all active paychecks
@@ -334,7 +334,7 @@ export const usePaycheckManagement = (accounts = []) => {
 
     // Sort dates chronologically
     return allDates.sort((a, b) => a.date - b.date);
-  }, [paychecks, generatePaycheckDates, getPaychecksPerYear]);
+  }, [paychecks, generatePaycheckDates, getPaychecksPerYear, formatDate]);
 
   /**
    * Get upcoming paycheck dates for a specific account
