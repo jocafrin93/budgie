@@ -8,6 +8,7 @@ import { LocaleProvider } from "app/contexts/locale/Provider";
 import { SidebarProvider } from "app/contexts/sidebar/Provider";
 import { DaisyThemeProvider } from "app/contexts/theme/DaisyProvider";
 import { ThemeProvider } from "app/contexts/theme/Provider";
+import { CloudStorageProvider } from "./hooks/useCloudStorageManager";
 import router from "app/router/router";
 
 // ----------------------------------------------------------------------
@@ -20,7 +21,9 @@ function App() {
           <LocaleProvider>
             <BreakpointProvider>
               <SidebarProvider>
-                <RouterProvider router={router} />
+                <CloudStorageProvider>
+                  <RouterProvider router={router} />
+                </CloudStorageProvider>
               </SidebarProvider>
             </BreakpointProvider>
           </LocaleProvider>
