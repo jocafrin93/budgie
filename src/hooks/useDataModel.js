@@ -9,7 +9,7 @@ import {
   removePlanningItem,
   updatePlanningItem
 } from '../utils/dataModelUtils';
-import { useStorage } from './useStorage';
+import { useSimpleStorage } from './useSimpleStorage';
 
 /**
  * Custom hook for managing the unified data model
@@ -23,7 +23,7 @@ export const useDataModel = ({
   initialAccounts = []
 } = {}) => {
   // Read pay frequency directly from storage to ensure it stays in sync
-  const [payFrequency] = useStorage('budgetCalc_payFrequency', 'biweekly');
+  const [payFrequency] = useSimpleStorage('budgetCalc_payFrequency', 'biweekly');
 
   // Pay frequency options
   const payFrequencyOptions = [
@@ -33,16 +33,16 @@ export const useDataModel = ({
     { value: 'semimonthly', label: 'Twice a Month', paychecksPerMonth: 2 }
   ];
   // Legacy state (for backward compatibility)
-  const [expenses, setExpenses] = useStorage('budgetCalc_expenses', initialExpenses);
-  const [savingsGoals, setSavingsGoals] = useStorage('budgetCalc_savingsGoals', initialSavingsGoals);
+  const [expenses, setExpenses] = useSimpleStorage('budgetCalc_expenses', initialExpenses);
+  const [savingsGoals, setSavingsGoals] = useSimpleStorage('budgetCalc_savingsGoals', initialSavingsGoals);
 
   // Unified data model state
-  const [planningItems, setPlanningItems] = useStorage('budgetCalc_planningItems', []);
-  const [activeBudgetAllocations, setActiveBudgetAllocations] = useStorage('budgetCalc_activeBudgetAllocations', []);
+  const [planningItems, setPlanningItems] = useSimpleStorage('budgetCalc_planningItems', []);
+  const [activeBudgetAllocations, setActiveBudgetAllocations] = useSimpleStorage('budgetCalc_activeBudgetAllocations', []);
 
   // Categories and accounts
-  const [categories, setCategories] = useStorage('budgetCalc_categories', initialCategories);
-  const [accounts, setAccounts] = useStorage('budgetCalc_accounts', initialAccounts);
+  const [categories, setCategories] = useSimpleStorage('budgetCalc_categories', initialCategories);
+  const [accounts, setAccounts] = useSimpleStorage('budgetCalc_accounts', initialAccounts);
 
   // Use refs to track if we're in a sync operation to prevent infinite loops
   const isSyncing = useRef(false);
