@@ -1,6 +1,6 @@
 // src/hooks/useStorage.js (Replace your existing file)
 import { useState, useEffect, useCallback } from 'react';
-import { useCloudStorageManager } from './useCloudStorageManager';
+import { useCloudStorageManager } from './useCloudStorageManager.jsx';
 import { useLocalStorage } from './useLocalStorage';
 
 export const useStorage = (key, defaultValue) => {
