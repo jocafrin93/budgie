@@ -1,6 +1,6 @@
 // src/hooks/usePaycheckManagement.js
 import { useCallback, useEffect } from 'react';
-import { useStorage } from './useStorage';
+import { useSimpleStorage } from './useSimpleStorage';
 
 /**
  * Custom hook for managing multiple paychecks
@@ -15,7 +15,7 @@ export const usePaycheckManagement = (accounts = []) => {
   };
 
   // Paychecks state - force empty array to remove mock data
-  const [paychecks, setPaychecks] = useStorage(
+  const [paychecks, setPaychecks] = useSimpleStorage(
     'budgetCalc_paychecks',
     [] // Always start with empty array - no mock data
   );

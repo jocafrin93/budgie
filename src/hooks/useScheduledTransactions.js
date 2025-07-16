@@ -1,6 +1,6 @@
 // src/hooks/useScheduledTransactions.js
 import { useCallback, useEffect, useRef } from 'react';
-import { useStorage } from './useStorage';
+import { useSimpleStorage } from './useSimpleStorage';
 
 /**
  * Custom hook for managing scheduled transactions
@@ -8,7 +8,7 @@ import { useStorage } from './useStorage';
  */
 export const useScheduledTransactions = (addTransaction) => {
     // Scheduled transactions state
-    const [scheduledTransactions, setScheduledTransactions] = useStorage('budgetCalc_scheduledTransactions', []);
+    const [scheduledTransactions, setScheduledTransactions] = useSimpleStorage('budgetCalc_scheduledTransactions', []);
 
     // Clean up any mock scheduled transactions that might be stored in cloud storage
     // Use a ref to track if cleanup has already been performed

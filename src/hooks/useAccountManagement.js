@@ -1,14 +1,14 @@
 // src/hooks/useAccountManagement.js
 import { useCallback } from 'react';
-import { useStorage } from './useStorage';
+import { useSimpleStorage } from './useSimpleStorage';
 
 /**
  * Custom hook for managing accounts
  * Extracts account-related state and operations from App.js
  */
 export const useAccountManagement = () => {
-  // Accounts state - now using cloud storage
-  const [accounts, setAccounts] = useStorage('budgetCalc_accounts', [
+  // Accounts state - now using simple localStorage
+  const [accounts, setAccounts] = useSimpleStorage('budgetCalc_accounts', [
     {
       id: 1,
       name: 'Checking',
