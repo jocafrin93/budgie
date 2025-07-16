@@ -53,7 +53,7 @@ export const useScheduledTransactions = (addTransaction) => {
         } else {
             console.log('🔍 SCHEDULED TRANSACTION CLEANUP - No scheduled transactions found or empty array');
         }
-    }, [scheduledTransactions, setScheduledTransactions]);
+    }, []); // Remove dependencies to prevent infinite loop - this should only run once on mount
 
     /**
      * Generate next occurrence date based on frequency

@@ -57,7 +57,7 @@ export const usePaycheckManagement = (accounts = []) => {
     } else {
       console.log('🔍 PAYCHECK CLEANUP - No paychecks found or empty array');
     }
-  }, [paychecks, setPaychecks]);
+  }, []); // Remove dependencies to prevent infinite loop - this should only run once on mount
 
   /**
    * Add a new paycheck

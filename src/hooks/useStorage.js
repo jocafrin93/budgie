@@ -30,7 +30,23 @@ export const useStorage = (key, defaultValue) => {
             console.log(`⏳ STORAGE (${key}) - First load, using defaultValue temporarily`);
             setFinalValue(defaultValue);
         }
-    }, [cloudValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, localValue, key, hasLoadedCloudData, defaultValue]);
+    }, [cloudMeta.isAuthenticated, cloudMeta.isLoading, hasLoadedCloudData, key]);
+
+    // Separate effect to handle cloud value changes (only when authenticated)
+    useEffect(() => {
+        if (cloudMeta.isAuthenticated && !cloudMeta.isLoading && hasLoadedCloudData) {
+            console.log(`☁️ STORAGE (${key}) - Cloud value updated`);
+            setFinalValue(cloudValue);
+        }
+    }, [cloudValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, hasLoadedCloudData, key]);
+
+    // Separate effect to handle local value changes (only when not authenticated)
+    useEffect(() => {
+        if (!cloudMeta.isAuthenticated && !cloudMeta.isLoading && hasLoadedCloudData) {
+            console.log(`💾 STORAGE (${key}) - Local value updated`);
+            setFinalValue(localValue);
+        }
+    }, [localValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, hasLoadedCloudData, key]);
 
     // Determine which setter to use
     const setValue = useCallback((newValue) => {
