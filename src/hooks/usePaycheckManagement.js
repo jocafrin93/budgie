@@ -78,18 +78,40 @@ export const usePaycheckManagement = (accounts = []) => {
 
   // Clean up any mock data that might be stored in cloud storage
   useEffect(() => {
+    console.log('🔍 PAYCHECK CLEANUP - Checking for mock data:', paychecks);
+
     if (paychecks && Array.isArray(paychecks) && paychecks.length > 0) {
-      // Check if we have the old mock data pattern
-      const hasMockData = paychecks.some(paycheck =>
-        paycheck.name === "Main Paycheck" &&
-        paycheck.baseAmount === 2000 &&
-        paycheck.id === 1
-      );
+      console.log('🔍 PAYCHECK CLEANUP - Found paychecks:', paychecks.length);
+
+      // Check for multiple patterns of mock data
+      const hasMockData = paychecks.some(paycheck => {
+        const isMockPattern1 = paycheck.name === "Main Paycheck" && paycheck.baseAmount === 2000 && paycheck.id === 1;
+        const isMockPattern2 = paycheck.name === "Main Paycheck" && paycheck.baseAmount === 2000;
+        const isMockPattern3 = paycheck.baseAmount === 2000 && paycheck.frequency === "biweekly" && paycheck.id === 1;
+
+        console.log('🔍 PAYCHECK CLEANUP - Checking paycheck:', {
+          name: paycheck.name,
+          baseAmount: paycheck.baseAmount,
+          id: paycheck.id,
+          frequency: paycheck.frequency,
+          isMockPattern1,
+          isMockPattern2,
+          isMockPattern3
+        });
+
+        return isMockPattern1 || isMockPattern2 || isMockPattern3;
+      });
+
+      console.log('🔍 PAYCHECK CLEANUP - Has mock data:', hasMockData);
 
       if (hasMockData) {
-        console.log('🧹 Detected mock paycheck data, clearing it...');
+        console.log('🧹 DETECTED MOCK PAYCHECK DATA - CLEARING IT NOW!');
+        console.log('🧹 Current paychecks before clearing:', paychecks);
         setPaychecks([]);
+        console.log('🧹 Paychecks cleared - should be empty now');
       }
+    } else {
+      console.log('🔍 PAYCHECK CLEANUP - No paychecks found or empty array');
     }
   }, [paychecks, setPaychecks]);
 
