@@ -1,14 +1,14 @@
 // src/hooks/useTransactionManagement.js
 import { useCallback } from 'react';
-import { useStorage } from './useStorage';
+import { useSimpleStorage } from './useSimpleStorage';
 
 /**
  * Custom hook for managing transactions
  * Extracts transaction-related state and operations from App.js
  */
 export const useTransactionManagement = (accounts, setAccounts, categories, setCategories) => {
-  // Transactions state - now uses cloud storage
-  const [transactions, setTransactions] = useStorage('budgetCalc_transactions', []);
+  // Transactions state - now uses simple localStorage
+  const [transactions, setTransactions] = useSimpleStorage('budgetCalc_transactions', []);
 
   /**
    * Add a new transaction with enhanced split support
