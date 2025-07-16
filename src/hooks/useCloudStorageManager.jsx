@@ -14,7 +14,22 @@ let initializationPromise = null;
 const CloudStorageContext = createContext();
 
 export const CloudStorageProvider = ({ children }) => {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+        // Initialize with actual auth state to prevent flickering
+        try {
+            const storedToken = localStorage.getItem('google_access_token');
+            const tokenExpiry = localStorage.getItem('google_token_expiry');
+            if (storedToken && tokenExpiry) {
+                const now = Date.now();
+                const expiry = parseInt(tokenExpiry);
+                return now < expiry;
+            }
+        } catch (err) {
+            console.error('Cloud Storage Manager: Initial auth check error:', err);
+        }
+        return false;
+    });
+
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -24,7 +39,7 @@ export const CloudStorageProvider = ({ children }) => {
     const dataCache = useRef(new Map());
     const initPromiseRef = useRef(null);
 
-    // Check authentication state
+    // Stable authentication state check that doesn't cause re-renders
     const checkAuthState = useCallback(() => {
         try {
             const storedToken = localStorage.getItem('google_access_token');
@@ -35,17 +50,32 @@ export const CloudStorageProvider = ({ children }) => {
                 const expiry = parseInt(tokenExpiry);
 
                 if (now < expiry) {
-                    console.log('Cloud Storage Manager: Valid token found');
-                    setIsAuthenticated(true);
+                    // Only update state if it actually changed
+                    setIsAuthenticated(prev => {
+                        if (!prev) {
+                            console.log('Cloud Storage Manager: Valid token found');
+                        }
+                        return true;
+                    });
                     return true;
                 } else {
                     console.log('Cloud Storage Manager: Token expired');
                     localStorage.removeItem('google_access_token');
                     localStorage.removeItem('google_token_expiry');
-                    setIsAuthenticated(false);
+                    setIsAuthenticated(prev => {
+                        if (prev) {
+                            console.log('Cloud Storage Manager: Authentication lost');
+                        }
+                        return false;
+                    });
                 }
             } else {
-                setIsAuthenticated(false);
+                setIsAuthenticated(prev => {
+                    if (prev) {
+                        console.log('Cloud Storage Manager: No token found');
+                    }
+                    return false;
+                });
             }
         } catch (err) {
             console.error('Cloud Storage Manager: Auth check error:', err);
@@ -54,57 +84,6 @@ export const CloudStorageProvider = ({ children }) => {
         return false;
     }, []);
 
-    // Initialize Google API (once for all hooks)
-    const initializeGapi = useCallback(async () => {
-        if (isInitialized) return;
-        if (initializationPromise) return initializationPromise;
-
-        initializationPromise = (async () => {
-            try {
-                console.log('Cloud Storage Manager: Initializing Google API...');
-
-                if (!window.gapi) {
-                    await new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = 'https://apis.google.com/js/api.js';
-                        script.onload = resolve;
-                        script.onerror = () => reject(new Error('Failed to load Google API script'));
-                        document.head.appendChild(script);
-                    });
-                }
-
-                gapi = window.gapi;
-
-                await new Promise((resolve, reject) => {
-                    const timeoutId = setTimeout(() => {
-                        reject(new Error('Google API initialization timeout'));
-                    }, 10000);
-
-                    gapi.load('client', async () => {
-                        try {
-                            clearTimeout(timeoutId);
-                            await gapi.client.init({
-                                apiKey: API_KEY,
-                                discoveryDocs: [DISCOVERY_DOC]
-                            });
-
-                            isInitialized = true;
-                            console.log('Cloud Storage Manager: Google API initialized successfully');
-                            resolve();
-                        } catch (initError) {
-                            clearTimeout(timeoutId);
-                            reject(initError);
-                        }
-                    });
-                });
-            } catch (err) {
-                console.error('Cloud Storage Manager: Failed to initialize Google API:', err);
-                throw err;
-            }
-        })();
-
-        return initializationPromise;
-    }, []);
 
     // Get file ID for a key
     const getFileId = useCallback(async (key) => {
@@ -234,7 +213,7 @@ export const CloudStorageProvider = ({ children }) => {
         saveTimeoutsRef.current.set(key, timeoutId);
     }, [writeToDrive]);
 
-    // Initialize on mount
+    // Initialize on mount - run only once
     useEffect(() => {
         const initialize = async () => {
             if (initPromiseRef.current) return initPromiseRef.current;
@@ -245,10 +224,62 @@ export const CloudStorageProvider = ({ children }) => {
                 setError(null);
 
                 try {
-                    const hasAuth = checkAuthState();
+                    // Don't call checkAuthState here as it can cause loops
+                    // Just check the initial state directly
+                    const storedToken = localStorage.getItem('google_access_token');
+                    const tokenExpiry = localStorage.getItem('google_token_expiry');
+                    const hasAuth = storedToken && tokenExpiry && Date.now() < parseInt(tokenExpiry);
 
                     if (hasAuth) {
-                        await initializeGapi();
+                        // Call initializeGapi directly to avoid dependency issues
+                        if (isInitialized) return;
+                        if (initializationPromise) return initializationPromise;
+
+                        initializationPromise = (async () => {
+                            try {
+                                console.log('Cloud Storage Manager: Initializing Google API...');
+
+                                if (!window.gapi) {
+                                    await new Promise((resolve, reject) => {
+                                        const script = document.createElement('script');
+                                        script.src = 'https://apis.google.com/js/api.js';
+                                        script.onload = resolve;
+                                        script.onerror = () => reject(new Error('Failed to load Google API script'));
+                                        document.head.appendChild(script);
+                                    });
+                                }
+
+                                gapi = window.gapi;
+
+                                await new Promise((resolve, reject) => {
+                                    const timeoutId = setTimeout(() => {
+                                        reject(new Error('Google API initialization timeout'));
+                                    }, 10000);
+
+                                    gapi.load('client', async () => {
+                                        try {
+                                            clearTimeout(timeoutId);
+                                            await gapi.client.init({
+                                                apiKey: API_KEY,
+                                                discoveryDocs: [DISCOVERY_DOC]
+                                            });
+
+                                            isInitialized = true;
+                                            console.log('Cloud Storage Manager: Google API initialized successfully');
+                                            resolve();
+                                        } catch (initError) {
+                                            clearTimeout(timeoutId);
+                                            reject(initError);
+                                        }
+                                    });
+                                });
+                            } catch (err) {
+                                console.error('Cloud Storage Manager: Failed to initialize Google API:', err);
+                                throw err;
+                            }
+                        })();
+
+                        await initializationPromise;
                         console.log('Cloud Storage Manager: Initialization complete');
                     } else {
                         console.log('Cloud Storage Manager: Not authenticated');
@@ -265,12 +296,12 @@ export const CloudStorageProvider = ({ children }) => {
         };
 
         initialize();
-    }, [checkAuthState, initializeGapi]);
+    }, []); // Empty dependency array - run only once, inline initializeGapi to avoid dependency
 
     // Cleanup on unmount
     useEffect(() => {
+        const saveTimeouts = saveTimeoutsRef.current;
         return () => {
-            const saveTimeouts = saveTimeoutsRef.current;
             saveTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
             saveTimeouts.clear();
         };

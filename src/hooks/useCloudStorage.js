@@ -32,7 +32,7 @@ export const useCloudStorage = (key, defaultValue) => {
         };
 
         loadInitialData();
-    }, [isLoading, isAuthenticated, hasLoadedInitialData, key, defaultValue, readFromDrive]);
+    }, [isLoading, isAuthenticated, hasLoadedInitialData, key]); // Removed defaultValue and readFromDrive to prevent loops
 
     // Update function
     const updateValue = useCallback((newValue) => {
