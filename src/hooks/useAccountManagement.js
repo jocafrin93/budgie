@@ -33,19 +33,20 @@ export const useAccountManagement = () => {
    * Add a new account
    */
   const addAccount = useCallback((accountData) => {
-    const newAccount = {
-      ...accountData,
-      id: Math.max(...accounts.map(a => a.id), 0) + 1,
-    };
+    setAccounts(prev => {
+      const newAccount = {
+        ...accountData,
+        id: Math.max(...prev.map(a => a.id), 0) + 1,
+      };
 
-    // If this is the first account, make it the default
-    if (accounts.length === 0) {
-      newAccount.isDefault = true;
-    }
+      // If this is the first account, make it the default
+      if (prev.length === 0) {
+        newAccount.isDefault = true;
+      }
 
-    setAccounts(prev => [...prev, newAccount]);
-    return newAccount;
-  }, [accounts, setAccounts]);
+      return [...prev, newAccount];
+    });
+  }, [setAccounts]);
 
   /**
    * Update an existing account
@@ -58,47 +59,50 @@ export const useAccountManagement = () => {
         isDefault: account.id === accountId
       })));
     } else {
-      // Make sure we're not unsetting the default on the only default account
-      const currentDefault = accounts.find(a => a.isDefault);
-      if (currentDefault && currentDefault.id === accountId) {
-        // Don't allow unsetting the default if it's the only default
-        setAccounts(prev => prev.map(account =>
-          account.id === accountId ? { ...account, ...accountData, isDefault: true } : account
-        ));
-        return;
-      }
+      setAccounts(prev => {
+        // Make sure we're not unsetting the default on the only default account
+        const currentDefault = prev.find(a => a.isDefault);
+        if (currentDefault && currentDefault.id === accountId) {
+          // Don't allow unsetting the default if it's the only default
+          return prev.map(account =>
+            account.id === accountId ? { ...account, ...accountData, isDefault: true } : account
+          );
+        }
 
-      // Normal update
-      setAccounts(prev => prev.map(account =>
-        account.id === accountId ? { ...account, ...accountData } : account
-      ));
+        // Normal update
+        return prev.map(account =>
+          account.id === accountId ? { ...account, ...accountData } : account
+        );
+      });
     }
-  }, [accounts, setAccounts]);
+  }, [setAccounts]);
 
   /**
    * Delete an account
    */
   const deleteAccount = useCallback((accountId) => {
-    // Check if this is the default account
-    const accountToDelete = accounts.find(a => a.id === accountId);
-    if (!accountToDelete) return;
+    setAccounts(prev => {
+      // Check if this is the default account
+      const accountToDelete = prev.find(a => a.id === accountId);
+      if (!accountToDelete) return prev;
 
-    // Don't allow deleting the only account
-    if (accounts.length <= 1) {
-      console.error('Cannot delete the only account');
-      return;
-    }
+      // Don't allow deleting the only account
+      if (prev.length <= 1) {
+        console.error('Cannot delete the only account');
+        return prev;
+      }
 
-    // If deleting the default account, make another account the default
-    if (accountToDelete.isDefault) {
-      const newAccounts = accounts.filter(a => a.id !== accountId);
-      newAccounts[0].isDefault = true;
-      setAccounts(newAccounts);
-    } else {
-      // Normal delete
-      setAccounts(prev => prev.filter(a => a.id !== accountId));
-    }
-  }, [accounts, setAccounts]);
+      // If deleting the default account, make another account the default
+      if (accountToDelete.isDefault) {
+        const newAccounts = prev.filter(a => a.id !== accountId);
+        newAccounts[0].isDefault = true;
+        return newAccounts;
+      } else {
+        // Normal delete
+        return prev.filter(a => a.id !== accountId);
+      }
+    });
+  }, [setAccounts]);
 
   /**
    * Transfer money between accounts
@@ -114,41 +118,47 @@ export const useAccountManagement = () => {
       return;
     }
 
-    const fromAccount = accounts.find(a => a.id === fromAccountId);
-    if (!fromAccount) {
-      console.error('From account not found');
-      return;
-    }
+    let transferResult = null;
 
-    if (fromAccount.balance < amount) {
-      console.error('Insufficient funds for transfer');
-      return;
-    }
-
-    const toAccount = accounts.find(a => a.id === toAccountId);
-    if (!toAccount) {
-      console.error('To account not found');
-      return;
-    }
-
-    setAccounts(prev => prev.map(account => {
-      if (account.id === fromAccountId) {
-        return { ...account, balance: account.balance - amount };
+    setAccounts(prev => {
+      const fromAccount = prev.find(a => a.id === fromAccountId);
+      if (!fromAccount) {
+        console.error('From account not found');
+        return prev;
       }
-      if (account.id === toAccountId) {
-        return { ...account, balance: account.balance + amount };
-      }
-      return account;
-    }));
 
-    // Return a transaction-like object that could be used to record the transfer
-    return {
-      fromAccount: fromAccount.name,
-      toAccount: toAccount.name,
-      amount,
-      date: new Date().toISOString()
-    };
-  }, [accounts, setAccounts]);
+      if (fromAccount.balance < amount) {
+        console.error('Insufficient funds for transfer');
+        return prev;
+      }
+
+      const toAccount = prev.find(a => a.id === toAccountId);
+      if (!toAccount) {
+        console.error('To account not found');
+        return prev;
+      }
+
+      // Store transfer result for return value
+      transferResult = {
+        fromAccount: fromAccount.name,
+        toAccount: toAccount.name,
+        amount,
+        date: new Date().toISOString()
+      };
+
+      return prev.map(account => {
+        if (account.id === fromAccountId) {
+          return { ...account, balance: account.balance - amount };
+        }
+        if (account.id === toAccountId) {
+          return { ...account, balance: account.balance + amount };
+        }
+        return account;
+      });
+    });
+
+    return transferResult;
+  }, [setAccounts]);
 
   /**
    * Get the default account
