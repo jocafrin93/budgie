@@ -10,6 +10,51 @@ export const useScheduledTransactions = (addTransaction) => {
     // Scheduled transactions state
     const [scheduledTransactions, setScheduledTransactions] = useStorage('budgetCalc_scheduledTransactions', []);
 
+    // Clean up any mock scheduled transactions that might be stored in cloud storage
+    useEffect(() => {
+        console.log('🔍 SCHEDULED TRANSACTION CLEANUP - Checking for mock data:', scheduledTransactions);
+
+        if (scheduledTransactions && Array.isArray(scheduledTransactions) && scheduledTransactions.length > 0) {
+            console.log('🔍 SCHEDULED TRANSACTION CLEANUP - Found scheduled transactions:', scheduledTransactions.length);
+
+            // Check for common mock transaction patterns
+            const hasMockData = scheduledTransactions.some(txn => {
+                const commonMockPayees = ['rent', 'internet', 'utilities', 'phone', 'insurance', 'netflix', 'spotify', 'gym'];
+                const isMockPayee = commonMockPayees.some(mockPayee =>
+                    txn.payee && txn.payee.toLowerCase().includes(mockPayee)
+                );
+
+                // Also check for test amounts or patterns
+                const isMockAmount = txn.amount && (
+                    Math.abs(txn.amount) === 1000 || // Common test amount
+                    Math.abs(txn.amount) === 500 ||
+                    Math.abs(txn.amount) === 100 ||
+                    Math.abs(txn.amount) === 50
+                );
+
+                console.log('🔍 SCHEDULED TRANSACTION CLEANUP - Checking transaction:', {
+                    payee: txn.payee,
+                    amount: txn.amount,
+                    isMockPayee,
+                    isMockAmount
+                });
+
+                return isMockPayee || isMockAmount;
+            });
+
+            console.log('🔍 SCHEDULED TRANSACTION CLEANUP - Has mock data:', hasMockData);
+
+            if (hasMockData) {
+                console.log('🧹 DETECTED MOCK SCHEDULED TRANSACTION DATA - CLEARING IT NOW!');
+                console.log('🧹 Current scheduled transactions before clearing:', scheduledTransactions);
+                setScheduledTransactions([]);
+                console.log('🧹 Scheduled transactions cleared - should be empty now');
+            }
+        } else {
+            console.log('🔍 SCHEDULED TRANSACTION CLEANUP - No scheduled transactions found or empty array');
+        }
+    }, [scheduledTransactions, setScheduledTransactions]);
+
     /**
      * Generate next occurrence date based on frequency
      */
@@ -392,6 +437,20 @@ export const useScheduledTransactions = (addTransaction) => {
         });
     }, [setScheduledTransactions]);
 
+    /**
+     * Force clear all scheduled transaction data (including cloud storage)
+     */
+    const clearAllScheduledTransactionData = useCallback(() => {
+        console.log('🧹 FORCE CLEARING ALL SCHEDULED TRANSACTION DATA');
+        setScheduledTransactions([]);
+        console.log('🧹 All scheduled transaction data cleared');
+    }, [setScheduledTransactions]);
+
+    // Expose clearAllScheduledTransactionData globally for debugging
+    if (typeof window !== 'undefined') {
+        window.clearScheduledTransactionData = clearAllScheduledTransactionData;
+    }
+
     // Auto-activate scheduled transactions at midnight (run on component mount and daily)
     useEffect(() => {
         activateScheduledTransactions();
@@ -427,6 +486,7 @@ export const useScheduledTransactions = (addTransaction) => {
         editScheduledTransaction,
         skipScheduledTransaction,
         activateScheduledTransactionEarly,
-        deleteScheduledTransaction
+        deleteScheduledTransaction,
+        clearAllScheduledTransactionData
     };
 };
