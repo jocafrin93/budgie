@@ -1,7 +1,7 @@
 // src/hooks/useStorage.js
 import { useCloudStorage } from './useCloudStorage';
 import { useLocalStorage } from './useLocalStorage';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export const useStorage = (key, defaultValue) => {
     const localStorageResult = useLocalStorage(key, defaultValue);
@@ -9,65 +9,117 @@ export const useStorage = (key, defaultValue) => {
     const [cloudValue, cloudSetter, cloudMeta] = cloudStorageResult;
     const [localValue, localSetter] = localStorageResult;
 
-    // State to track if we've received the initial cloud data
-    const [hasLoadedCloudData, setHasLoadedCloudData] = useState(false);
-    const [finalValue, setFinalValue] = useState(null); // Start with null instead of defaultValue
+    // State to track initialization and current value
+    const [hasInitialized, setHasInitialized] = useState(false);
+    const [finalValue, setFinalValue] = useState(defaultValue);
 
-    // Handle cloud storage state changes
+    // Use refs to track previous values and prevent unnecessary updates
+    const prevCloudValueRef = useRef(cloudValue);
+    const prevLocalValueRef = useRef(localValue);
+    const prevAuthStateRef = useRef({
+        isAuthenticated: cloudMeta.isAuthenticated,
+        isLoading: cloudMeta.isLoading
+    });
+
+    // Single consolidated effect to handle all storage state changes
     useEffect(() => {
+        const currentAuthState = {
+            isAuthenticated: cloudMeta.isAuthenticated,
+            isLoading: cloudMeta.isLoading
+        };
+
+        // Check if auth state changed
+        const authStateChanged =
+            prevAuthStateRef.current.isAuthenticated !== currentAuthState.isAuthenticated ||
+            prevAuthStateRef.current.isLoading !== currentAuthState.isLoading;
+
+        // Check if values changed
+        const cloudValueChanged = prevCloudValueRef.current !== cloudValue;
+        const localValueChanged = prevLocalValueRef.current !== localValue;
+
+        // Only proceed if something actually changed or we haven't initialized yet
+        if (!authStateChanged && !cloudValueChanged && !localValueChanged && hasInitialized) {
+            return;
+        }
+
+        // Update refs
+        prevAuthStateRef.current = currentAuthState;
+        prevCloudValueRef.current = cloudValue;
+        prevLocalValueRef.current = localValue;
+
+        // Determine which value to use based on current state
+        let newValue = finalValue; // Default to current value
+        let shouldUpdate = false;
+        let logMessage = '';
+
         if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
-            // Cloud storage is ready and authenticated
-            console.log(`☁️ STORAGE (${key}) - Cloud storage ready, using cloud data`);
-            setFinalValue(cloudValue);
-            setHasLoadedCloudData(true);
+            // Use cloud storage
+            if (!hasInitialized || cloudValueChanged || authStateChanged) {
+                newValue = cloudValue;
+                shouldUpdate = true;
+                logMessage = hasInitialized ?
+                    `☁️ STORAGE (${key}) - Cloud value updated` :
+                    `☁️ STORAGE (${key}) - Cloud storage ready, using cloud data`;
+            }
         } else if (!cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
-            // Not authenticated, use localStorage
-            console.log(`💾 STORAGE (${key}) - Not authenticated, using localStorage`);
-            setFinalValue(localValue);
-            setHasLoadedCloudData(true);
-        } else if (cloudMeta.isLoading && !hasLoadedCloudData) {
+            // Use local storage
+            if (!hasInitialized || localValueChanged || authStateChanged) {
+                newValue = localValue;
+                shouldUpdate = true;
+                logMessage = hasInitialized ?
+                    `💾 STORAGE (${key}) - Local value updated` :
+                    `💾 STORAGE (${key}) - Not authenticated, using localStorage`;
+            }
+        } else if (cloudMeta.isLoading && !hasInitialized) {
             // Still loading for the first time
-            console.log(`⏳ STORAGE (${key}) - First load, using defaultValue temporarily`);
-            setFinalValue(defaultValue);
+            newValue = defaultValue;
+            shouldUpdate = true;
+            logMessage = `⏳ STORAGE (${key}) - First load, using defaultValue temporarily`;
         }
-    }, [cloudMeta.isAuthenticated, cloudMeta.isLoading, hasLoadedCloudData, key]);
 
-    // Separate effect to handle cloud value changes (only when authenticated)
-    useEffect(() => {
-        if (cloudMeta.isAuthenticated && !cloudMeta.isLoading && hasLoadedCloudData) {
-            console.log(`☁️ STORAGE (${key}) - Cloud value updated`);
-            setFinalValue(cloudValue);
+        // Only update state if there's an actual change
+        if (shouldUpdate && newValue !== finalValue) {
+            console.log(logMessage);
+            setFinalValue(newValue);
         }
-    }, [cloudValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, hasLoadedCloudData, key]);
 
-    // Separate effect to handle local value changes (only when not authenticated)
-    useEffect(() => {
-        if (!cloudMeta.isAuthenticated && !cloudMeta.isLoading && hasLoadedCloudData) {
-            console.log(`💾 STORAGE (${key}) - Local value updated`);
-            setFinalValue(localValue);
+        // Mark as initialized once we've processed the initial state
+        if (!hasInitialized && !cloudMeta.isLoading) {
+            setHasInitialized(true);
         }
-    }, [localValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, hasLoadedCloudData, key]);
+    }, [
+        cloudMeta.isAuthenticated,
+        cloudMeta.isLoading,
+        cloudValue,
+        localValue,
+        hasInitialized,
+        key,
+        defaultValue,
+        finalValue
+    ]);
 
-    // Determine which setter to use
+    // Stable setter function that doesn't change unless auth state changes
     const setValue = useCallback((newValue) => {
+        const resolvedValue = typeof newValue === 'function' ? newValue(finalValue) : newValue;
+
+        // Update the appropriate storage
         if (cloudMeta.isAuthenticated && !cloudMeta.isLoading) {
-            cloudSetter(newValue);
+            cloudSetter(resolvedValue);
         } else {
-            localSetter(newValue);
+            localSetter(resolvedValue);
         }
-        // Update final value immediately for responsive UI
-        const finalNewValue = typeof newValue === 'function' ? newValue(finalValue) : newValue;
-        setFinalValue(finalNewValue);
+
+        // Update local state immediately for responsive UI
+        setFinalValue(resolvedValue);
     }, [cloudMeta.isAuthenticated, cloudMeta.isLoading, cloudSetter, localSetter, finalValue]);
 
     // Determine the loading state
-    const isLoading = cloudMeta.isLoading && !hasLoadedCloudData;
+    const isLoading = cloudMeta.isLoading && !hasInitialized;
 
     // Return the appropriate state
     if (isLoading) {
-        // Still loading cloud storage for the first time
         return [
-            finalValue !== null ? finalValue : defaultValue, // Use finalValue if set, otherwise defaultValue
+            defaultValue,
             () => { }, // Disabled setter during loading
             {
                 isLoading: true,
@@ -78,9 +130,8 @@ export const useStorage = (key, defaultValue) => {
         ];
     }
 
-    // Cloud storage is ready (authenticated or not)
     return [
-        finalValue !== null ? finalValue : defaultValue, // Ensure we never return null
+        finalValue,
         setValue,
         {
             isLoading: false,
