@@ -25,16 +25,12 @@ export const useStorage = (key, defaultValue) => {
             console.log(`💾 STORAGE (${key}) - Not authenticated, using localStorage`);
             setFinalValue(localValue);
             setHasLoadedCloudData(true);
-        } else if (cloudMeta.isLoading) {
-            // Still loading - only set finalValue if it's still null (first load)
-            if (finalValue === null) {
-                console.log(`⏳ STORAGE (${key}) - First load, using defaultValue temporarily`);
-                setFinalValue(defaultValue);
-            } else {
-                console.log(`⏳ STORAGE (${key}) - Cloud storage loading, keeping current state`);
-            }
+        } else if (cloudMeta.isLoading && !hasLoadedCloudData) {
+            // Still loading for the first time
+            console.log(`⏳ STORAGE (${key}) - First load, using defaultValue temporarily`);
+            setFinalValue(defaultValue);
         }
-    }, [cloudValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, localValue, key, hasLoadedCloudData, finalValue, defaultValue]);
+    }, [cloudValue, cloudMeta.isAuthenticated, cloudMeta.isLoading, localValue, key, hasLoadedCloudData, defaultValue]);
 
     // Determine which setter to use
     const setValue = useCallback((newValue) => {
