@@ -845,21 +845,8 @@ body {
     opacity: 0.25;
 }
 
-/* Theme Preview Support - Ensure previews work for all themes */
-/* Default: All themes get direct values first (works for OKLCH) */
-[data-theme] .bg-primary {
-    background-color: var(--color-primary) !important;
-}
-
-[data-theme] .bg-secondary {
-    background-color: var(--color-secondary) !important;
-}
-
-[data-theme] .bg-accent {
-    background-color: var(--color-accent) !important;
-}
-
-/* RGB themes need rgb() wrapper - override the default */
+/* Theme Preview Support - Ensure previews work for all themes regardless of current active theme */
+/* RGB themes - explicit overrides with higher specificity */
 [data-theme="light"] .bg-primary,
 [data-theme="dark"] .bg-primary,
 [data-theme="cupcake"] .bg-primary,
@@ -902,7 +889,7 @@ body {
     background-color: rgb(var(--color-accent)) !important;
 }
 
-/* OKLCH themes use direct values (already covered by default [data-theme] rules above) */
+/* OKLCH themes - explicit overrides */
 [data-theme="abyss"] .bg-primary,
 [data-theme="vscode-dark"] .bg-primary {
     background-color: var(--color-primary) !important;

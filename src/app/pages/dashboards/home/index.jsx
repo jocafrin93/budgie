@@ -43,6 +43,8 @@ export default function Home() {
           {/* Upcoming Paychecks - Payday Functionality */}
           <UpcomingPaychecks
             accounts={accounts || []}
+            categories={categories || []}
+            planningItems={planningItems || []}
             onStartPaydayWorkflow={(paycheck) => {
               console.log('Starting payday workflow for:', paycheck);
               // This will be implemented with the full payday workflow

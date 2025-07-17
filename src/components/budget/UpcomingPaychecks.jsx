@@ -11,6 +11,8 @@ import { Timeline, TimelineItem } from '../ui/Timeline/index.jsx';
  */
 const UpcomingPaychecks = ({
     accounts = [],
+    categories = [],
+    planningItems = [],
     showHeader = true,
     maxPaychecks = 5
 }) => {
@@ -24,8 +26,10 @@ const UpcomingPaychecks = ({
 
     const [upcomingPaychecks, setUpcomingPaychecks] = useState([]);
     const [upcomingTransactions, setUpcomingTransactions] = useState([]);
+    const [upcomingBudgetItems, setUpcomingBudgetItems] = useState([]);
     const [monthlyIncome, setMonthlyIncome] = useState(0);
     const [calendarData, setCalendarData] = useState([]);
+    const [showAllDueDates, setShowAllDueDates] = useState(true); // Toggle between scheduled transactions only vs all due dates
 
     // Update upcoming paychecks and transactions when data changes
     useEffect(() => {
@@ -45,6 +49,68 @@ const UpcomingPaychecks = ({
             setMonthlyIncome(0);
         }
     }, [paychecks, getAllUpcomingPaycheckDates, calculateTotalMonthlyIncome, maxPaychecks, getUpcomingScheduledTransactions]);
+
+    // Extract budget items with due dates
+    useEffect(() => {
+        try {
+            const budgetItems = [];
+            const today = new Date();
+            const futureLimit = new Date();
+            futureLimit.setMonth(futureLimit.getMonth() + 2); // Show items up to 2 months ahead
+
+            // Process categories with due dates
+            categories.forEach(category => {
+                if (category.dueDate) {
+                    const dueDate = new Date(category.dueDate);
+                    if (dueDate >= today && dueDate <= futureLimit) {
+                        const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                        budgetItems.push({
+                            id: `category-${category.id}`,
+                            type: 'budget-item',
+                            itemType: 'category',
+                            name: category.name,
+                            amount: category.amount,
+                            dueDate: category.dueDate,
+                            date: category.dueDate,
+                            daysUntil,
+                            category: category,
+                            color: category.color || 'bg-primary-500'
+                        });
+                    }
+                }
+            });
+
+            // Process planning items with due dates
+            planningItems.forEach(item => {
+                if (item.dueDate) {
+                    const dueDate = new Date(item.dueDate);
+                    if (dueDate >= today && dueDate <= futureLimit) {
+                        const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                        const parentCategory = categories.find(cat => cat.id === item.categoryId);
+                        budgetItems.push({
+                            id: `item-${item.id}`,
+                            type: 'budget-item',
+                            itemType: 'planning-item',
+                            name: item.name || item.description,
+                            amount: item.amount,
+                            dueDate: item.dueDate,
+                            date: item.dueDate,
+                            daysUntil,
+                            category: parentCategory,
+                            color: parentCategory?.color || 'bg-primary-500'
+                        });
+                    }
+                }
+            });
+
+            // Sort by date
+            budgetItems.sort((a, b) => new Date(a.date) - new Date(b.date));
+            setUpcomingBudgetItems(budgetItems);
+        } catch (error) {
+            console.error('Error processing budget items:', error);
+            setUpcomingBudgetItems([]);
+        }
+    }, [categories, planningItems]);
 
     // Generate calendar data for desktop view
     useEffect(() => {
@@ -105,12 +171,25 @@ const UpcomingPaychecks = ({
                         }
                     }) : [];
 
+                    // Find budget items for this day (if showAllDueDates is enabled)
+                    const dayBudgetItems = showAllDueDates && Array.isArray(upcomingBudgetItems) ? upcomingBudgetItems.filter(item => {
+                        try {
+                            if (!item || !item.date) return false;
+                            const itemDate = new Date(item.date).toISOString().split('T')[0];
+                            return itemDate === dateStr;
+                        } catch (e) {
+                            console.warn('Error processing budget item date:', e);
+                            return false;
+                        }
+                    }) : [];
+
                     week.push({
                         day,
                         date,
                         isToday: dateStr === todayStr,
                         paychecks: dayPaychecks,
-                        transactions: dayTransactions
+                        transactions: dayTransactions,
+                        budgetItems: dayBudgetItems
                     });
 
                     // Start new week on Sunday
@@ -136,7 +215,7 @@ const UpcomingPaychecks = ({
         };
 
         generateCalendarData();
-    }, [upcomingPaychecks, upcomingTransactions]);
+    }, [upcomingPaychecks, upcomingTransactions, upcomingBudgetItems, showAllDueDates]);
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -194,14 +273,15 @@ const UpcomingPaychecks = ({
         }
     };
 
-    // Combine and sort paychecks and transactions for timeline
+    // Combine and sort paychecks, transactions, and budget items for timeline
     const timelineItems = [
         ...upcomingPaychecks.map(p => ({ ...p, type: 'paycheck' })),
         ...upcomingTransactions.map(t => ({
             ...t,
             type: 'transaction',
             date: t.scheduledDate || t.nextDueDate || t.dueDate || t.date
-        }))
+        })),
+        ...(showAllDueDates ? upcomingBudgetItems : [])
     ];
     timelineItems.sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -225,10 +305,16 @@ const UpcomingPaychecks = ({
                     <div>
                         <h3 className="text-lg font-bold mb-2 text-base-content">Upcoming Events</h3>
                         <p className="text-sm text-base-content/60 hidden md:block">
-                            Calendar view of paychecks and scheduled transactions
+                            {showAllDueDates
+                                ? 'Calendar view of paychecks and all items with due dates'
+                                : 'Calendar view of paychecks and scheduled transactions'
+                            }
                         </p>
                         <p className="text-sm text-base-content/60 md:hidden">
-                            Timeline of paychecks and scheduled transactions
+                            {showAllDueDates
+                                ? 'Timeline of paychecks and all items with due dates'
+                                : 'Timeline of paychecks and scheduled transactions'
+                            }
                         </p>
                     </div>
 
@@ -241,6 +327,30 @@ const UpcomingPaychecks = ({
                     </div>
                 </div>
             )}
+
+            {/* View Toggle Control */}
+            <div className="mb-4 flex justify-center">
+                <div className="bg-base-100 rounded-lg p-1 border border-base-300">
+                    <button
+                        onClick={() => setShowAllDueDates(false)}
+                        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${!showAllDueDates
+                            ? 'bg-primary text-primary-content shadow-sm'
+                            : 'text-base-content/60 hover:text-base-content hover:bg-base-200'
+                            }`}
+                    >
+                        📅 Scheduled Only
+                    </button>
+                    <button
+                        onClick={() => setShowAllDueDates(true)}
+                        className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${showAllDueDates
+                            ? 'bg-primary text-primary-content shadow-sm'
+                            : 'text-base-content/60 hover:text-base-content hover:bg-base-200'
+                            }`}
+                    >
+                        🗓️ All Due Dates
+                    </button>
+                </div>
+            </div>
 
             {/* Desktop Calendar View - Hidden on small screens */}
             <div className="hidden lg:block">
@@ -293,6 +403,35 @@ const UpcomingPaychecks = ({
                                                     📅 {txn.description || txn.payee || 'Transaction'}
                                                 </div>
                                             ))}
+
+                                            {/* Budget Items (when showAllDueDates is enabled) */}
+                                            {dayData.budgetItems && dayData.budgetItems.map((item, idx) => {
+                                                // Convert gradient class to inline style for better theme compatibility
+                                                const getItemStyle = (color) => {
+                                                    if (!color) return {};
+                                                    // Handle gradient classes like 'bg-gradient-to-r from-blue-500 to-purple-600'
+                                                    if (color.includes('gradient')) {
+                                                        return { background: 'linear-gradient(to right, var(--color-primary), var(--color-secondary))' };
+                                                    }
+                                                    // Handle solid color classes
+                                                    return {};
+                                                };
+
+                                                return (
+                                                    <div
+                                                        key={`budget-${idx}`}
+                                                        className={`text-xs px-1 py-0.5 rounded mb-1 truncate text-white ${item.color || 'bg-info'}`}
+                                                        style={getItemStyle(item.color)}
+                                                    >
+                                                        💳 {item.name}
+                                                        {item.amount && (
+                                                            <span className="block text-xs opacity-90">
+                                                                {formatCurrency(item.amount)}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </>
                                     )}
                                 </div>
@@ -330,6 +469,25 @@ const UpcomingPaychecks = ({
                                                         <div className="text-sm text-base-content/60">
                                                             {formatDateForDisplay(item.date)} • {getDaysUntilText(item.daysUntil)}
                                                         </div>
+                                                    </>
+                                                ) : item.type === 'budget-item' ? (
+                                                    <>
+                                                        <div className="font-bold text-info text-lg">
+                                                            💳 {item.name}
+                                                        </div>
+                                                        <div className="text-sm text-base-content/60">
+                                                            {formatDateForDisplay(item.date)} • {getDaysUntilText(item.daysUntil)}
+                                                        </div>
+                                                        {item.amount && (
+                                                            <div className="text-sm font-medium text-base-content">
+                                                                {formatCurrency(item.amount)}
+                                                            </div>
+                                                        )}
+                                                        {item.category && (
+                                                            <div className="text-xs text-base-content/60">
+                                                                Category: {item.category.name}
+                                                            </div>
+                                                        )}
                                                     </>
                                                 ) : (
                                                     <>
