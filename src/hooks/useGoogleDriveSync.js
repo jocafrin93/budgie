@@ -14,7 +14,11 @@ export const useGoogleDriveSync = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [initialized, setInitialized] = useState(false);
-    const [accessToken, setAccessToken] = useState(null);
+    const [accessToken, setAccessToken] = useState(() => {
+        // Try to restore token from localStorage
+        return localStorage.getItem('google_drive_token');
+    });
+    const [tokenClient, setTokenClient] = useState(null);
 
     // Debug logging
     console.log('useGoogleDriveSync state:', { isSignedIn, isLoading, error, initialized });
@@ -87,6 +91,48 @@ export const useGoogleDriveSync = () => {
         }
     }, [initialized, isLoading, initializeGapi]);
 
+    // Refresh access token
+    const refreshToken = useCallback(async () => {
+        if (!tokenClient) {
+            console.log('🔄 No token client available, signing in fresh...');
+            return signIn();
+        }
+
+        try {
+            console.log('🔄 Refreshing access token...');
+
+            const tokenResponse = await new Promise((resolve, reject) => {
+                tokenClient.callback = (response) => {
+                    if (response.error) {
+                        reject(new Error(response.error));
+                    } else {
+                        resolve(response);
+                    }
+                };
+                tokenClient.requestAccessToken({ prompt: '' }); // Silent refresh
+            });
+
+            // Set the new access token
+            window.gapi.client.setToken({
+                access_token: tokenResponse.access_token
+            });
+
+            setAccessToken(tokenResponse.access_token);
+            localStorage.setItem('google_drive_token', tokenResponse.access_token);
+            setIsSignedIn(true);
+            console.log('✅ Access token refreshed');
+
+            return tokenResponse.access_token;
+        } catch (err) {
+            console.error('❌ Token refresh failed:', err);
+            // If refresh fails, clear stored token and require fresh sign-in
+            localStorage.removeItem('google_drive_token');
+            setAccessToken(null);
+            setIsSignedIn(false);
+            throw err;
+        }
+    }, [tokenClient]);
+
     // Sign in using Google Identity Services
     const signIn = useCallback(async () => {
         try {
@@ -99,20 +145,25 @@ export const useGoogleDriveSync = () => {
                 throw new Error('Google Identity Services not loaded');
             }
 
+            // Create token client
+            const client = window.google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: () => { }, // Will be set per request
+            });
+
+            setTokenClient(client);
+
             // Request access token using the new GIS
             const tokenResponse = await new Promise((resolve, reject) => {
-                const tokenClient = window.google.accounts.oauth2.initTokenClient({
-                    client_id: CLIENT_ID,
-                    scope: SCOPES,
-                    callback: (response) => {
-                        if (response.error) {
-                            reject(new Error(response.error));
-                        } else {
-                            resolve(response);
-                        }
-                    },
-                });
-                tokenClient.requestAccessToken();
+                client.callback = (response) => {
+                    if (response.error) {
+                        reject(new Error(response.error));
+                    } else {
+                        resolve(response);
+                    }
+                };
+                client.requestAccessToken({ prompt: 'consent' }); // Force consent for fresh token
             });
 
             // Set the access token for API calls
@@ -121,6 +172,7 @@ export const useGoogleDriveSync = () => {
             });
 
             setAccessToken(tokenResponse.access_token);
+            localStorage.setItem('google_drive_token', tokenResponse.access_token);
             setIsSignedIn(true);
             console.log('✅ Signed in to Google Drive with GIS');
 
@@ -132,16 +184,31 @@ export const useGoogleDriveSync = () => {
         }
     }, [initializeGapi]);
 
+    // Check if we have a stored token on initialization
+    React.useEffect(() => {
+        const storedToken = localStorage.getItem('google_drive_token');
+        if (storedToken && initialized) {
+            console.log('🔄 Found stored token, attempting to use it...');
+            window.gapi.client.setToken({
+                access_token: storedToken
+            });
+            setAccessToken(storedToken);
+            setIsSignedIn(true);
+        }
+    }, [initialized]);
+
     // Sign out
     const signOut = useCallback(() => {
         try {
-            if (window.google?.accounts?.oauth2) {
+            if (window.google?.accounts?.oauth2 && accessToken) {
                 window.google.accounts.oauth2.revoke(accessToken);
             }
 
             window.gapi.client.setToken(null);
+            localStorage.removeItem('google_drive_token');
             setAccessToken(null);
             setIsSignedIn(false);
+            setTokenClient(null);
             console.log('✅ Signed out of Google Drive');
         } catch (err) {
             console.error('❌ Sign out failed:', err);
@@ -149,15 +216,37 @@ export const useGoogleDriveSync = () => {
         }
     }, [accessToken]);
 
+    // Helper function to ensure we have a valid token
+    const ensureValidToken = useCallback(async () => {
+        if (!accessToken) {
+            throw new Error('Not signed in to Google Drive');
+        }
+
+        // Test if current token is still valid
+        try {
+            await window.gapi.client.drive.files.list({
+                pageSize: 1,
+                spaces: 'appDataFolder'
+            });
+            return accessToken; // Token is still valid
+        } catch (err) {
+            console.log('🔄 Current token invalid, attempting refresh...');
+            return await refreshToken();
+        }
+    }, [accessToken, refreshToken]);
+
     // Backup all localStorage data to Google Drive
     const backupToCloud = useCallback(async () => {
-        if (!isSignedIn || !accessToken) {
+        if (!isSignedIn) {
             throw new Error('Not signed in to Google Drive');
         }
 
         try {
             setIsLoading(true);
             setError(null);
+
+            // Ensure we have a valid token
+            const validToken = await ensureValidToken();
 
             // Get all localStorage data
             const allData = {};
@@ -191,7 +280,7 @@ export const useGoogleDriveSync = () => {
                 const updateResponse = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
                     method: 'PATCH',
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
+                        'Authorization': `Bearer ${validToken}`,
                         'Content-Type': 'application/json'
                     },
                     body: content
@@ -248,17 +337,20 @@ export const useGoogleDriveSync = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [isSignedIn, accessToken]);
+    }, [isSignedIn, ensureValidToken]);
 
     // Restore data from Google Drive to localStorage
     const restoreFromCloud = useCallback(async () => {
-        if (!isSignedIn || !accessToken) {
+        if (!isSignedIn) {
             throw new Error('Not signed in to Google Drive');
         }
 
         try {
             setIsLoading(true);
             setError(null);
+
+            // Ensure we have a valid token
+            const validToken = await ensureValidToken();
 
             // Find the backup file
             const fileName = 'budgie_backup.json';
@@ -275,7 +367,7 @@ export const useGoogleDriveSync = () => {
             // Download the backup file
             const downloadResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`
+                    'Authorization': `Bearer ${validToken}`
                 }
             });
 
@@ -303,7 +395,7 @@ export const useGoogleDriveSync = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [isSignedIn, accessToken]);
+    }, [isSignedIn, ensureValidToken]);
 
     return {
         isSignedIn,
