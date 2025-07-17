@@ -3,7 +3,7 @@ import React from "react";
 import PaycheckManager from "../../../../components/budget/PaycheckManager";
 import PayeeManagement from "../../../../components/budget/PayeeManagement";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
-import { useStorage } from "../../../../hooks/useStorage";
+import { useSimpleStorage } from "../../../../hooks/useSimpleStorage";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
 
 export default function BudgetSettings() {
@@ -20,8 +20,8 @@ export default function BudgetSettings() {
         transactions
     } = useTransactionManagement();
 
-    // Use cloud storage for payees - now syncs to Google Drive
-    const [payees, setPayees] = useStorage('budgetCalc_payees', [
+    // Use simple storage for payees - automatically saved to localStorage
+    const [payees, setPayees] = useSimpleStorage('budgetCalc_payees', [
         'Amazon',
         'Target',
         'Walmart',
@@ -68,14 +68,14 @@ export default function BudgetSettings() {
                                 Cloud Storage & Sync
                             </h3>
                             <p className="text-sm text-base-content/60">
-                                Connect with Google Drive to sync your budget data across devices
+                                Connect with Google Drive to backup and sync your budget data across devices
                             </p>
                         </div>
                         {(() => {
-                            const CloudStorageStatus = React.lazy(() => import("../../../../components/budget/CloudStorageStatus"));
+                            const GoogleDriveSync = React.lazy(() => import("../../../../components/shared/GoogleDriveSync"));
                             return (
-                                <React.Suspense fallback={<div className="p-4 text-center">Loading cloud storage status...</div>}>
-                                    <CloudStorageStatus />
+                                <React.Suspense fallback={<div className="p-4 text-center">Loading Google Drive sync...</div>}>
+                                    <GoogleDriveSync />
                                 </React.Suspense>
                             );
                         })()}
