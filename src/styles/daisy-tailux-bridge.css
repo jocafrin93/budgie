@@ -160,7 +160,15 @@
 }
 
 /* Global overrides to ensure DaisyUI colors take precedence */
+/* Default RGB themes */
 body {
+    background-color: rgb(var(--color-base-100)) !important;
+    color: rgb(var(--color-base-content)) !important;
+}
+
+/* OKLCH themes override */
+[data-theme*="abyss"] body,
+[data-theme*="vscode-dark"] body {
     background-color: var(--color-base-100) !important;
     color: var(--color-base-content) !important;
 }
@@ -334,6 +342,22 @@ body {
 
 .text-error {
     color: rgb(var(--color-error)) !important;
+}
+
+.border-info {
+    border-color: rgb(var(--color-info)) !important;
+}
+
+.border-success {
+    border-color: rgb(var(--color-success)) !important;
+}
+
+.border-warning {
+    border-color: rgb(var(--color-warning)) !important;
+}
+
+.border-error {
+    border-color: rgb(var(--color-error)) !important;
 }
 
 /* DaisyUI content color classes - Default RGB format */
@@ -529,6 +553,11 @@ body {
     color: var(--color-info) !important;
 }
 
+[data-theme*="abyss"] .border-info,
+[data-theme*="vscode-dark"] .border-info {
+    border-color: var(--color-info) !important;
+}
+
 [data-theme*="abyss"] .bg-success,
 [data-theme*="vscode-dark"] .bg-success {
     background-color: var(--color-success) !important;
@@ -537,6 +566,11 @@ body {
 [data-theme*="abyss"] .text-success,
 [data-theme*="vscode-dark"] .text-success {
     color: var(--color-success) !important;
+}
+
+[data-theme*="abyss"] .border-success,
+[data-theme*="vscode-dark"] .border-success {
+    border-color: var(--color-success) !important;
 }
 
 [data-theme*="abyss"] .bg-warning,
@@ -549,6 +583,11 @@ body {
     color: var(--color-warning) !important;
 }
 
+[data-theme*="abyss"] .border-warning,
+[data-theme*="vscode-dark"] .border-warning {
+    border-color: var(--color-warning) !important;
+}
+
 [data-theme*="abyss"] .bg-error,
 [data-theme*="vscode-dark"] .bg-error {
     background-color: var(--color-error) !important;
@@ -557,6 +596,63 @@ body {
 [data-theme*="abyss"] .text-error,
 [data-theme*="vscode-dark"] .text-error {
     color: var(--color-error) !important;
+}
+
+[data-theme*="abyss"] .border-error,
+[data-theme*="vscode-dark"] .border-error {
+    border-color: var(--color-error) !important;
+}
+
+/* OKLCH DaisyUI button class overrides */
+[data-theme*="abyss"] .btn-primary,
+[data-theme*="vscode-dark"] .btn-primary {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary-content) !important;
+}
+
+[data-theme*="abyss"] .btn-primary:hover,
+[data-theme*="vscode-dark"] .btn-primary:hover {
+    background-color: var(--color-primary-focus) !important;
+    border-color: var(--color-primary-focus) !important;
+}
+
+[data-theme*="abyss"] .btn-secondary,
+[data-theme*="vscode-dark"] .btn-secondary {
+    background-color: var(--color-secondary) !important;
+    border-color: var(--color-secondary) !important;
+    color: var(--color-secondary-content) !important;
+}
+
+[data-theme*="abyss"] .btn-secondary:hover,
+[data-theme*="vscode-dark"] .btn-secondary:hover {
+    background-color: var(--color-secondary-focus) !important;
+    border-color: var(--color-secondary-focus) !important;
+}
+
+[data-theme*="abyss"] .btn-accent,
+[data-theme*="vscode-dark"] .btn-accent {
+    background-color: var(--color-accent) !important;
+    border-color: var(--color-accent) !important;
+    color: var(--color-accent-content) !important;
+}
+
+[data-theme*="abyss"] .btn-accent:hover,
+[data-theme*="vscode-dark"] .btn-accent:hover {
+    background-color: var(--color-accent-focus) !important;
+    border-color: var(--color-accent-focus) !important;
+}
+
+[data-theme*="abyss"] .btn-ghost,
+[data-theme*="vscode-dark"] .btn-ghost {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: var(--color-base-content) !important;
+}
+
+[data-theme*="abyss"] .btn-ghost:hover,
+[data-theme*="vscode-dark"] .btn-ghost:hover {
+    background-color: var(--color-base-200) !important;
 }
 
 /* OKLCH DaisyUI content color class overrides */
@@ -750,6 +846,7 @@ body {
 }
 
 /* Theme Preview Support - Ensure previews work for all themes */
+/* Default: All themes get direct values first (works for OKLCH) */
 [data-theme] .bg-primary {
     background-color: var(--color-primary) !important;
 }
@@ -762,32 +859,62 @@ body {
     background-color: var(--color-accent) !important;
 }
 
-/* Ensure RGB themes still work in previews */
-[data-theme]:not([data-theme*="abyss"]):not([data-theme*="vscode-dark"]) .bg-primary {
+/* RGB themes need rgb() wrapper - override the default */
+[data-theme="light"] .bg-primary,
+[data-theme="dark"] .bg-primary,
+[data-theme="cupcake"] .bg-primary,
+[data-theme="corporate"] .bg-primary,
+[data-theme="synthwave"] .bg-primary,
+[data-theme="retro"] .bg-primary,
+[data-theme="cyberpunk"] .bg-primary,
+[data-theme="valentine"] .bg-primary,
+[data-theme="forest"] .bg-primary,
+[data-theme="aqua"] .bg-primary,
+[data-theme="dracula"] .bg-primary {
     background-color: rgb(var(--color-primary)) !important;
 }
 
-[data-theme]:not([data-theme*="abyss"]):not([data-theme*="vscode-dark"]) .bg-secondary {
+[data-theme="light"] .bg-secondary,
+[data-theme="dark"] .bg-secondary,
+[data-theme="cupcake"] .bg-secondary,
+[data-theme="corporate"] .bg-secondary,
+[data-theme="synthwave"] .bg-secondary,
+[data-theme="retro"] .bg-secondary,
+[data-theme="cyberpunk"] .bg-secondary,
+[data-theme="valentine"] .bg-secondary,
+[data-theme="forest"] .bg-secondary,
+[data-theme="aqua"] .bg-secondary,
+[data-theme="dracula"] .bg-secondary {
     background-color: rgb(var(--color-secondary)) !important;
 }
 
-[data-theme]:not([data-theme*="abyss"]):not([data-theme*="vscode-dark"]) .bg-accent {
+[data-theme="light"] .bg-accent,
+[data-theme="dark"] .bg-accent,
+[data-theme="cupcake"] .bg-accent,
+[data-theme="corporate"] .bg-accent,
+[data-theme="synthwave"] .bg-accent,
+[data-theme="retro"] .bg-accent,
+[data-theme="cyberpunk"] .bg-accent,
+[data-theme="valentine"] .bg-accent,
+[data-theme="forest"] .bg-accent,
+[data-theme="aqua"] .bg-accent,
+[data-theme="dracula"] .bg-accent {
     background-color: rgb(var(--color-accent)) !important;
 }
 
-/* OKLCH themes use direct values in previews */
-[data-theme*="abyss"] .bg-primary,
-[data-theme*="vscode-dark"] .bg-primary {
+/* OKLCH themes use direct values (already covered by default [data-theme] rules above) */
+[data-theme="abyss"] .bg-primary,
+[data-theme="vscode-dark"] .bg-primary {
     background-color: var(--color-primary) !important;
 }
 
-[data-theme*="abyss"] .bg-secondary,
-[data-theme*="vscode-dark"] .bg-secondary {
+[data-theme="abyss"] .bg-secondary,
+[data-theme="vscode-dark"] .bg-secondary {
     background-color: var(--color-secondary) !important;
 }
 
-[data-theme*="abyss"] .bg-accent,
-[data-theme*="vscode-dark"] .bg-accent {
+[data-theme="abyss"] .bg-accent,
+[data-theme="vscode-dark"] .bg-accent {
     background-color: var(--color-accent) !important;
 }
 
