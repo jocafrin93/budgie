@@ -4,6 +4,7 @@ import { usePaycheckManagement } from '../../hooks/usePaycheckManagement';
 import { useScheduledTransactions } from '../../hooks/useScheduledTransactions';
 import { Card } from '../ui/Card/index.jsx';
 import { Timeline, TimelineItem } from '../ui/Timeline/index.jsx';
+import { getGradientStyle } from '../../utils/gradientUtils';
 
 /**
  * Component to display upcoming paychecks and scheduled transactions
@@ -58,24 +59,42 @@ const UpcomingPaychecks = ({
             const futureLimit = new Date();
             futureLimit.setMonth(futureLimit.getMonth() + 2); // Show items up to 2 months ahead
 
+            // Get scheduled transaction dates to avoid duplicates
+            const scheduledTransactionDates = new Set();
+            upcomingTransactions.forEach(txn => {
+                const txnDate = txn.scheduledDate || txn.nextDueDate || txn.dueDate || txn.date;
+                if (txnDate) {
+                    // Create a unique key combining date and name/description for duplicate detection
+                    const dateStr = new Date(txnDate).toISOString().split('T')[0];
+                    const name = txn.description || txn.payee || '';
+                    scheduledTransactionDates.add(`${dateStr}-${name.toLowerCase()}`);
+                }
+            });
+
             // Process categories with due dates
             categories.forEach(category => {
                 if (category.dueDate) {
                     const dueDate = new Date(category.dueDate);
                     if (dueDate >= today && dueDate <= futureLimit) {
-                        const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                        budgetItems.push({
-                            id: `category-${category.id}`,
-                            type: 'budget-item',
-                            itemType: 'category',
-                            name: category.name,
-                            amount: category.amount,
-                            dueDate: category.dueDate,
-                            date: category.dueDate,
-                            daysUntil,
-                            category: category,
-                            color: category.color || 'bg-primary-500'
-                        });
+                        const dateStr = dueDate.toISOString().split('T')[0];
+                        const duplicateKey = `${dateStr}-${category.name.toLowerCase()}`;
+
+                        // Only add if not already covered by a scheduled transaction
+                        if (!scheduledTransactionDates.has(duplicateKey)) {
+                            const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                            budgetItems.push({
+                                id: `category-${category.id}`,
+                                type: 'budget-item',
+                                itemType: 'category',
+                                name: category.name,
+                                amount: category.amount,
+                                dueDate: category.dueDate,
+                                date: category.dueDate,
+                                daysUntil,
+                                category: category,
+                                color: category.color || 'bg-primary-500'
+                            });
+                        }
                     }
                 }
             });
@@ -85,20 +104,27 @@ const UpcomingPaychecks = ({
                 if (item.dueDate) {
                     const dueDate = new Date(item.dueDate);
                     if (dueDate >= today && dueDate <= futureLimit) {
-                        const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                        const parentCategory = categories.find(cat => cat.id === item.categoryId);
-                        budgetItems.push({
-                            id: `item-${item.id}`,
-                            type: 'budget-item',
-                            itemType: 'planning-item',
-                            name: item.name || item.description,
-                            amount: item.amount,
-                            dueDate: item.dueDate,
-                            date: item.dueDate,
-                            daysUntil,
-                            category: parentCategory,
-                            color: parentCategory?.color || 'bg-primary-500'
-                        });
+                        const dateStr = dueDate.toISOString().split('T')[0];
+                        const itemName = item.name || item.description || '';
+                        const duplicateKey = `${dateStr}-${itemName.toLowerCase()}`;
+
+                        // Only add if not already covered by a scheduled transaction
+                        if (!scheduledTransactionDates.has(duplicateKey)) {
+                            const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                            const parentCategory = categories.find(cat => cat.id === item.categoryId);
+                            budgetItems.push({
+                                id: `item-${item.id}`,
+                                type: 'budget-item',
+                                itemType: 'planning-item',
+                                name: itemName,
+                                amount: item.amount,
+                                dueDate: item.dueDate,
+                                date: item.dueDate,
+                                daysUntil,
+                                category: parentCategory,
+                                color: parentCategory?.color || 'bg-primary-500'
+                            });
+                        }
                     }
                 }
             });
@@ -110,7 +136,7 @@ const UpcomingPaychecks = ({
             console.error('Error processing budget items:', error);
             setUpcomingBudgetItems([]);
         }
-    }, [categories, planningItems]);
+    }, [categories, planningItems, upcomingTransactions]);
 
     // Generate calendar data for desktop view
     useEffect(() => {
@@ -406,22 +432,15 @@ const UpcomingPaychecks = ({
 
                                             {/* Budget Items (when showAllDueDates is enabled) */}
                                             {dayData.budgetItems && dayData.budgetItems.map((item, idx) => {
-                                                // Convert gradient class to inline style for better theme compatibility
-                                                const getItemStyle = (color) => {
-                                                    if (!color) return {};
-                                                    // Handle gradient classes like 'bg-gradient-to-r from-blue-500 to-purple-600'
-                                                    if (color.includes('gradient')) {
-                                                        return { background: 'linear-gradient(to right, var(--color-primary), var(--color-secondary))' };
-                                                    }
-                                                    // Handle solid color classes
-                                                    return {};
-                                                };
+                                                // Get gradient style using the utility function
+                                                const gradientStyle = getGradientStyle(item.color);
+                                                const hasGradient = Object.keys(gradientStyle).length > 0;
 
                                                 return (
                                                     <div
                                                         key={`budget-${idx}`}
-                                                        className={`text-xs px-1 py-0.5 rounded mb-1 truncate text-white ${item.color || 'bg-info'}`}
-                                                        style={getItemStyle(item.color)}
+                                                        className={`text-xs px-1 py-0.5 rounded mb-1 truncate text-white ${!hasGradient ? (item.color || 'bg-info') : ''}`}
+                                                        style={hasGradient ? gradientStyle : {}}
                                                     >
                                                         💳 {item.name}
                                                         {item.amount && (
