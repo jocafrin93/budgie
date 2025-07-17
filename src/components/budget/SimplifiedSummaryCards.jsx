@@ -70,7 +70,7 @@ const SimplifiedSummaryCards = ({
             urgentItemsList: urgentItems,
             fundingPercentage,
         };
-    }, [accounts, categories, planningItems]);
+    }, [accounts, categories, planningItems, transactions]);
 
     // Format currency helper
     const formatCurrency = (amount) => {

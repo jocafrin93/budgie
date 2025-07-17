@@ -1,5 +1,5 @@
 // src/hooks/useDataModel.js
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   calculatePerPaycheckAmounts,
   convertToUnifiedModel,
@@ -10,6 +10,14 @@ import {
   updatePlanningItem
 } from '../utils/dataModelUtils';
 import { useSimpleStorage } from './useSimpleStorage';
+
+// Move pay frequency options outside the hook to prevent dependency issues
+const PAY_FREQUENCY_OPTIONS = [
+  { value: 'weekly', label: 'Weekly', paychecksPerMonth: 4.33 },
+  { value: 'biweekly', label: 'Biweekly', paychecksPerMonth: 2.17 },
+  { value: 'monthly', label: 'Monthly', paychecksPerMonth: 1 },
+  { value: 'semimonthly', label: 'Twice a Month', paychecksPerMonth: 2 }
+];
 
 /**
  * Custom hook for managing the unified data model
@@ -25,13 +33,8 @@ export const useDataModel = ({
   // Read pay frequency directly from storage to ensure it stays in sync
   const [payFrequency] = useSimpleStorage('budgetCalc_payFrequency', 'biweekly');
 
-  // Pay frequency options
-  const payFrequencyOptions = [
-    { value: 'weekly', label: 'Weekly', paychecksPerMonth: 4.33 },
-    { value: 'biweekly', label: 'Biweekly', paychecksPerMonth: 2.17 },
-    { value: 'monthly', label: 'Monthly', paychecksPerMonth: 1 },
-    { value: 'semimonthly', label: 'Twice a Month', paychecksPerMonth: 2 }
-  ];
+  // Memoize pay frequency options to prevent dependency issues
+  const payFrequencyOptions = useMemo(() => PAY_FREQUENCY_OPTIONS, []);
   // Legacy state (for backward compatibility)
   const [expenses, setExpenses] = useSimpleStorage('budgetCalc_expenses', initialExpenses);
   const [savingsGoals, setSavingsGoals] = useSimpleStorage('budgetCalc_savingsGoals', initialSavingsGoals);
@@ -343,7 +346,7 @@ export const useDataModel = ({
 
       return updatedItems;
     });
-  }, [setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, categories, setExpenses, setSavingsGoals]);
+  }, [setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, categories, setExpenses, setSavingsGoals, planningItems]);
 
   // Toggle a planning item's active status
   const toggleItemActive = useCallback((itemId, isActive) => {

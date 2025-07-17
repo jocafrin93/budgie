@@ -225,7 +225,6 @@ const UpcomingPaychecks = ({
     useEffect(() => {
         const generateCalendarData = () => {
             try {
-                const today = new Date();
                 const currentMonth = currentCalendarDate.getMonth();
                 const currentYear = currentCalendarDate.getFullYear();
 

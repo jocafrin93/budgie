@@ -410,7 +410,7 @@ export default function BudgetOverview() {
                 sortOrder: typeof category.sortOrder === 'number' ? category.sortOrder : index
             };
         });
-    }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateCategorySpent]);
+    }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateCategorySpent, categories, planningItems]);
 
     // Transform the real data for the table
     const tableData = useMemo(() =>
@@ -609,7 +609,7 @@ export default function BudgetOverview() {
         } catch (error) {
             console.error("Error saving category:", error);
         }
-    }, [editingCategory, addCategory, updateCategory, planningItems, handleCloseCategoryModal, removeItem, createScheduledTransactionsFromBudgetItem, addScheduledTransactions]);
+    }, [editingCategory, addCategory, updateCategory, planningItems, handleCloseCategoryModal, removeItem, createScheduledTransactionsFromBudgetItem, addScheduledTransactions, categories]);
 
     const handleEditCategory = useCallback((categoryData) => {
         try {
