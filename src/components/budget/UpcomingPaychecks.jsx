@@ -183,7 +183,8 @@ const UpcomingPaychecks = ({
                     }) : [];
 
                     // Find scheduled transactions for this day (with safety checks)
-                    const dayTransactions = Array.isArray(upcomingTransactions) ? upcomingTransactions.filter(txn => {
+                    // Only show scheduled transactions when NOT showing all due dates
+                    const dayTransactions = !showAllDueDates && Array.isArray(upcomingTransactions) ? upcomingTransactions.filter(txn => {
                         try {
                             if (!txn) return false;
                             // Check multiple possible date fields for scheduled transactions
@@ -302,11 +303,12 @@ const UpcomingPaychecks = ({
     // Combine and sort paychecks, transactions, and budget items for timeline
     const timelineItems = [
         ...upcomingPaychecks.map(p => ({ ...p, type: 'paycheck' })),
-        ...upcomingTransactions.map(t => ({
+        // Only include scheduled transactions when NOT showing all due dates
+        ...(!showAllDueDates ? upcomingTransactions.map(t => ({
             ...t,
             type: 'transaction',
             date: t.scheduledDate || t.nextDueDate || t.dueDate || t.date
-        })),
+        })) : []),
         ...(showAllDueDates ? upcomingBudgetItems : [])
     ];
     timelineItems.sort((a, b) => new Date(a.date) - new Date(b.date));
