@@ -174,42 +174,72 @@ export const useGoogleDriveSync = () => {
                 version: '1.0'
             }, null, 2);
 
+            console.log('📦 Backing up data...', { dataKeys: Object.keys(allData).length });
+
             // Check if backup file already exists
             const fileName = 'budgie_backup.json';
-            const response = await window.gapi.client.drive.files.list({
+            const listResponse = await window.gapi.client.drive.files.list({
                 q: `name='${fileName}' and parents in 'appDataFolder'`,
                 spaces: 'appDataFolder'
             });
 
-            const fileId = response.result.files?.[0]?.id;
+            const fileId = listResponse.result.files?.[0]?.id;
+            console.log('📁 Existing file ID:', fileId || 'None found');
 
-            // Create or update the backup file
-            const fileMetadata = {
-                name: fileName,
-                parents: ['appDataFolder']
-            };
+            if (fileId) {
+                // Update existing file using simple upload
+                const updateResponse = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: content
+                });
 
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
-            form.append('file', new Blob([content], { type: 'application/json' }));
+                if (!updateResponse.ok) {
+                    const errorText = await updateResponse.text();
+                    console.error('Update response:', updateResponse.status, errorText);
+                    throw new Error(`Update failed: ${updateResponse.status} ${updateResponse.statusText} - ${errorText}`);
+                }
 
-            const url = fileId
-                ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
-                : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+                console.log('✅ Existing backup file updated');
+            } else {
+                // Create new file using the Drive API client
+                const createResponse = await window.gapi.client.request({
+                    path: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+                    method: 'POST',
+                    params: {
+                        uploadType: 'multipart'
+                    },
+                    headers: {
+                        'Content-Type': 'multipart/related; boundary="foo_bar_baz"'
+                    },
+                    body: [
+                        '--foo_bar_baz',
+                        'Content-Type: application/json; charset=UTF-8',
+                        '',
+                        JSON.stringify({
+                            name: fileName,
+                            parents: ['appDataFolder']
+                        }),
+                        '--foo_bar_baz',
+                        'Content-Type: application/json',
+                        '',
+                        content,
+                        '--foo_bar_baz--'
+                    ].join('\r\n')
+                });
 
-            const uploadResponse = await fetch(url, {
-                method: fileId ? 'PATCH' : 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: form
-            });
+                if (!createResponse || createResponse.status !== 200) {
+                    console.error('Create response:', createResponse);
+                    throw new Error(`Create failed: ${createResponse?.status || 'Unknown error'}`);
+                }
 
-            if (!uploadResponse.ok) {
-                throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+                console.log('✅ New backup file created');
             }
 
-            console.log('✅ Data backed up to Google Drive');
+            console.log('✅ Data backed up to Google Drive successfully');
             return true;
         } catch (err) {
             console.error('❌ Backup failed:', err);
