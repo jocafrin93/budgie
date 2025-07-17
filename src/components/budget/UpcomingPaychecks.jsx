@@ -32,6 +32,7 @@ const UpcomingPaychecks = ({
     const [monthlyIncome, setMonthlyIncome] = useState(0);
     const [calendarData, setCalendarData] = useState([]);
     const [showAllDueDates, setShowAllDueDates] = useState(true); // Toggle between scheduled transactions only vs all due dates
+    const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date()); // Track current month being viewed
 
     // Update upcoming paychecks and transactions when data changes
     useEffect(() => {
@@ -225,8 +226,8 @@ const UpcomingPaychecks = ({
         const generateCalendarData = () => {
             try {
                 const today = new Date();
-                const currentMonth = today.getMonth();
-                const currentYear = today.getFullYear();
+                const currentMonth = currentCalendarDate.getMonth();
+                const currentYear = currentCalendarDate.getFullYear();
 
                 // Get today's date in local timezone for accurate comparison
                 const todayLocal = new Date();
@@ -324,7 +325,7 @@ const UpcomingPaychecks = ({
         };
 
         generateCalendarData();
-    }, [upcomingPaychecks, upcomingTransactions, upcomingBudgetItems, showAllDueDates]);
+    }, [upcomingPaychecks, upcomingTransactions, upcomingBudgetItems, showAllDueDates, currentCalendarDate]);
 
     // Format currency for display
     const formatCurrency = (amount) => {
@@ -466,11 +467,44 @@ const UpcomingPaychecks = ({
             <div className="hidden lg:block">
                 {calendarData.length > 0 && (
                     <div className="space-y-4">
-                        {/* Calendar Header */}
-                        <div className="text-center">
-                            <h4 className="text-lg font-semibold text-base-content">
-                                {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                            </h4>
+                        {/* Calendar Header with Navigation */}
+                        <div className="flex items-center justify-between mb-4">
+                            <button
+                                onClick={() => {
+                                    const newDate = new Date(currentCalendarDate);
+                                    newDate.setMonth(newDate.getMonth() - 1);
+                                    setCurrentCalendarDate(newDate);
+                                }}
+                                className="btn btn-ghost btn-sm"
+                                title="Previous month"
+                            >
+                                ←
+                            </button>
+
+                            <div className="text-center">
+                                <h4 className="text-lg font-semibold text-base-content">
+                                    {currentCalendarDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                </h4>
+                                <button
+                                    onClick={() => setCurrentCalendarDate(new Date())}
+                                    className="text-xs text-base-content/60 hover:text-base-content transition-colors"
+                                    title="Go to current month"
+                                >
+                                    Today
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={() => {
+                                    const newDate = new Date(currentCalendarDate);
+                                    newDate.setMonth(newDate.getMonth() + 1);
+                                    setCurrentCalendarDate(newDate);
+                                }}
+                                className="btn btn-ghost btn-sm"
+                                title="Next month"
+                            >
+                                →
+                            </button>
                         </div>
 
                         {/* Calendar Grid */}
