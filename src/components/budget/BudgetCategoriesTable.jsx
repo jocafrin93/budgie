@@ -49,6 +49,7 @@ import {
     formatAmountWithFrequency
 } from '../../utils/budgetDisplayUtils';
 import { getGradientStyle } from '../../utils/gradientUtils';
+import { getDaysBetweenOccurrences } from '../../utils/frequencyUtils';
 // import { Button } from '../ui/Button';
 import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
@@ -275,6 +276,24 @@ const BudgetCategoriesTable = ({
         return `$${numAmount.toFixed(2)}`;
     }, []);
 
+    // Calculate next occurrence for recurring items
+    const getNextOccurrence = useCallback((originalDate, frequency) => {
+        if (!originalDate || !frequency || frequency === 'once') {
+            return originalDate; // Return original date for one-time items
+        }
+
+        const today = new Date();
+        let currentDate = new Date(originalDate);
+
+        // Skip past dates to find the next occurrence
+        while (currentDate < today) {
+            const daysBetween = getDaysBetweenOccurrences(frequency);
+            currentDate.setDate(currentDate.getDate() + daysBetween);
+        }
+
+        return currentDate.toISOString().split('T')[0]; // Return in YYYY-MM-DD format
+    }, []);
+
     const formatDueDate = useCallback((dateString) => {
         if (!dateString) return '—';
 
@@ -298,29 +317,35 @@ const BudgetCategoriesTable = ({
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }, []);
 
-    // Calculate earliest due date and count for multi-item categories
+    // Calculate earliest due date and count for multi-item categories (with recurring logic)
     const getCategoryDateInfo = useCallback((category) => {
         if (!category.subItems || category.subItems.length === 0) {
-            // Single category - use its own due date
+            // Single category - use its own due date with recurring calculation
+            if (category.dueDate) {
+                const nextOccurrence = getNextOccurrence(category.dueDate, category.frequency);
+                return {
+                    earliestDate: nextOccurrence,
+                    additionalCount: 0,
+                    sortValue: new Date(nextOccurrence)
+                };
+            }
             return {
-                earliestDate: category.dueDate,
+                earliestDate: null,
                 additionalCount: 0,
-                sortValue: category.dueDate ? new Date(category.dueDate) : new Date('9999-12-31')
+                sortValue: new Date('9999-12-31')
             };
         }
 
-        // Multi-item category - find earliest date among sub-items
+        // Multi-item category - find earliest date among sub-items (with recurring logic)
         const itemsWithDates = category.subItems
             .filter(item => item.dueDate)
-            .map(item => ({
-                date: item.dueDate,
-                dateObj: typeof item.dueDate === 'string' && item.dueDate.match(/^\d{4}-\d{2}-\d{2}$/)
-                    ? (() => {
-                        const [year, month, day] = item.dueDate.split('-').map(Number);
-                        return new Date(year, month - 1, day);
-                    })()
-                    : new Date(item.dueDate)
-            }))
+            .map(item => {
+                const nextOccurrence = getNextOccurrence(item.dueDate, item.frequency);
+                return {
+                    date: nextOccurrence,
+                    dateObj: new Date(nextOccurrence)
+                };
+            })
             .sort((a, b) => a.dateObj - b.dateObj);
 
         if (itemsWithDates.length === 0) {
@@ -337,7 +362,7 @@ const BudgetCategoriesTable = ({
             additionalCount: itemsWithDates.length - 1,
             sortValue: itemsWithDates[0].dateObj
         };
-    }, []);
+    }, [getNextOccurrence]);
 
     // Format category due date with count badge
     const formatCategoryDueDate = useCallback((category) => {
@@ -1052,19 +1077,27 @@ const BudgetCategoriesTable = ({
                     const isSubItem = !item.isParent;
 
                     if (isSubItem) {
-                        // Sub-item: show its own due date
-                        const dueDate = getValue();
-                        if (!dueDate) return (
+                        // Sub-item: show its own due date with recurring calculation
+                        const originalDueDate = getValue();
+                        if (!originalDueDate) return (
                             <div className="text-center">
                                 <CalendarOff className="w-4 h-4 text-base-content/60 mx-auto" />
                             </div>
                         );
 
-                        const urgency = getDueDateUrgency(dueDate);
+                        // Calculate next occurrence for recurring items
+                        const nextDueDate = getNextOccurrence(originalDueDate, item.frequency);
+                        const urgency = getDueDateUrgency(nextDueDate);
+
                         return (
                             <div className="text-center">
                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyStyles(urgency)}`}>
-                                    {formatDueDate(dueDate)}
+                                    {formatDueDate(nextDueDate)}
+                                    {item.frequency && item.frequency !== 'once' && (
+                                        <span className="ml-1 text-xs opacity-75" title="Recurring item">
+                                            🔄
+                                        </span>
+                                    )}
                                 </span>
                             </div>
                         );

@@ -5,6 +5,7 @@ import { useScheduledTransactions } from '../../hooks/useScheduledTransactions';
 import { Card } from '../ui/Card/index.jsx';
 import { Timeline, TimelineItem } from '../ui/Timeline/index.jsx';
 import { getGradientStyle } from '../../utils/gradientUtils';
+import { getDaysBetweenOccurrences } from '../../utils/frequencyUtils';
 
 /**
  * Component to display upcoming paychecks and scheduled transactions
@@ -71,63 +72,144 @@ const UpcomingPaychecks = ({
                 }
             });
 
+            // Helper function to generate recurring occurrences
+            const generateRecurringOccurrences = (baseItem, startDate, frequency, name, amount, category, color) => {
+                const occurrences = [];
+                let currentDate = new Date(startDate);
+
+                // Skip past dates to find the next occurrence
+                while (currentDate < today) {
+                    const daysBetween = getDaysBetweenOccurrences(frequency || 'monthly');
+                    currentDate.setDate(currentDate.getDate() + daysBetween);
+                }
+
+                // Generate future occurrences within the limit
+                let occurrenceCount = 0;
+                while (currentDate <= futureLimit && occurrenceCount < 10) { // Limit to 10 occurrences
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    const duplicateKey = `${dateStr}-${name.toLowerCase()}`;
+
+                    // Only add if not already covered by a scheduled transaction
+                    if (!scheduledTransactionDates.has(duplicateKey)) {
+                        const daysUntil = Math.ceil((currentDate - today) / (1000 * 60 * 60 * 24));
+                        occurrences.push({
+                            id: `${baseItem.id}-occurrence-${occurrenceCount}`,
+                            type: 'budget-item',
+                            itemType: baseItem.itemType,
+                            name: name,
+                            amount: amount,
+                            dueDate: dateStr,
+                            date: dateStr,
+                            daysUntil,
+                            category: category,
+                            color: color || 'bg-primary-500',
+                            frequency: frequency,
+                            isRecurring: true
+                        });
+                    }
+
+                    // Move to next occurrence
+                    const daysBetween = getDaysBetweenOccurrences(frequency || 'monthly');
+                    currentDate.setDate(currentDate.getDate() + daysBetween);
+                    occurrenceCount++;
+                }
+
+                return occurrences;
+            };
+
             // Process categories with due dates
             categories.forEach(category => {
                 if (category.dueDate) {
-                    const dueDate = new Date(category.dueDate);
-                    if (dueDate >= today && dueDate <= futureLimit) {
-                        const dateStr = dueDate.toISOString().split('T')[0];
-                        const duplicateKey = `${dateStr}-${category.name.toLowerCase()}`;
+                    const frequency = category.frequency || 'monthly';
 
-                        // Only add if not already covered by a scheduled transaction
-                        if (!scheduledTransactionDates.has(duplicateKey)) {
-                            const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                            budgetItems.push({
-                                id: `category-${category.id}`,
-                                type: 'budget-item',
-                                itemType: 'category',
-                                name: category.name,
-                                amount: category.amount,
-                                dueDate: category.dueDate,
-                                date: category.dueDate,
-                                daysUntil,
-                                category: category,
-                                color: category.color || 'bg-primary-500'
-                            });
+                    if (frequency === 'once') {
+                        // Handle one-time items
+                        const dueDate = new Date(category.dueDate);
+                        if (dueDate >= today && dueDate <= futureLimit) {
+                            const dateStr = dueDate.toISOString().split('T')[0];
+                            const duplicateKey = `${dateStr}-${category.name.toLowerCase()}`;
+
+                            if (!scheduledTransactionDates.has(duplicateKey)) {
+                                const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                                budgetItems.push({
+                                    id: `category-${category.id}`,
+                                    type: 'budget-item',
+                                    itemType: 'category',
+                                    name: category.name,
+                                    amount: category.amount,
+                                    dueDate: category.dueDate,
+                                    date: category.dueDate,
+                                    daysUntil,
+                                    category: category,
+                                    color: category.color || 'bg-primary-500',
+                                    isRecurring: false
+                                });
+                            }
                         }
+                    } else {
+                        // Handle recurring items
+                        const occurrences = generateRecurringOccurrences(
+                            { id: `category-${category.id}`, itemType: 'category' },
+                            category.dueDate,
+                            frequency,
+                            category.name,
+                            category.amount,
+                            category,
+                            category.color
+                        );
+                        budgetItems.push(...occurrences);
                     }
                 }
             });
 
-            // Process planning items with due dates
-            planningItems.forEach(item => {
-                if (item.dueDate) {
-                    const dueDate = new Date(item.dueDate);
-                    if (dueDate >= today && dueDate <= futureLimit) {
-                        const dateStr = dueDate.toISOString().split('T')[0];
+            // Process planning items with due dates (only active items)
+            planningItems
+                .filter(item => item.isActive !== false) // Only include active items
+                .forEach(item => {
+                    if (item.dueDate) {
+                        const frequency = item.frequency || 'monthly';
                         const itemName = item.name || item.description || '';
-                        const duplicateKey = `${dateStr}-${itemName.toLowerCase()}`;
+                        const parentCategory = categories.find(cat => cat.id === item.categoryId);
 
-                        // Only add if not already covered by a scheduled transaction
-                        if (!scheduledTransactionDates.has(duplicateKey)) {
-                            const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-                            const parentCategory = categories.find(cat => cat.id === item.categoryId);
-                            budgetItems.push({
-                                id: `item-${item.id}`,
-                                type: 'budget-item',
-                                itemType: 'planning-item',
-                                name: itemName,
-                                amount: item.amount,
-                                dueDate: item.dueDate,
-                                date: item.dueDate,
-                                daysUntil,
-                                category: parentCategory,
-                                color: parentCategory?.color || 'bg-primary-500'
-                            });
+                        if (frequency === 'once') {
+                            // Handle one-time items
+                            const dueDate = new Date(item.dueDate);
+                            if (dueDate >= today && dueDate <= futureLimit) {
+                                const dateStr = dueDate.toISOString().split('T')[0];
+                                const duplicateKey = `${dateStr}-${itemName.toLowerCase()}`;
+
+                                if (!scheduledTransactionDates.has(duplicateKey)) {
+                                    const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                                    budgetItems.push({
+                                        id: `item-${item.id}`,
+                                        type: 'budget-item',
+                                        itemType: 'planning-item',
+                                        name: itemName,
+                                        amount: item.amount,
+                                        dueDate: item.dueDate,
+                                        date: item.dueDate,
+                                        daysUntil,
+                                        category: parentCategory,
+                                        color: parentCategory?.color || 'bg-primary-500',
+                                        isRecurring: false
+                                    });
+                                }
+                            }
+                        } else {
+                            // Handle recurring items
+                            const occurrences = generateRecurringOccurrences(
+                                { id: `item-${item.id}`, itemType: 'planning-item' },
+                                item.dueDate,
+                                frequency,
+                                itemName,
+                                item.amount,
+                                parentCategory,
+                                parentCategory?.color
+                            );
+                            budgetItems.push(...occurrences);
                         }
                     }
-                }
-            });
+                });
 
             // Sort by date
             budgetItems.sort((a, b) => new Date(a.date) - new Date(b.date));
