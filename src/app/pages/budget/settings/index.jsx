@@ -2,6 +2,7 @@ import { Page } from "components/shared/Page";
 import React from "react";
 import PaycheckManager from "../../../../components/budget/PaycheckManager";
 import PayeeManagement from "../../../../components/budget/PayeeManagement";
+import { GoogleDriveSync } from "../../../../components/shared/GoogleDriveSync";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
 import { useSimpleStorage } from "../../../../hooks/useSimpleStorage";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
@@ -71,14 +72,7 @@ export default function BudgetSettings() {
                                 Connect with Google Drive to backup and sync your budget data across devices
                             </p>
                         </div>
-                        {(() => {
-                            const GoogleDriveSync = React.lazy(() => import("../../../../components/shared/GoogleDriveSync"));
-                            return (
-                                <React.Suspense fallback={<div className="p-4 text-center">Loading Google Drive sync...</div>}>
-                                    <GoogleDriveSync />
-                                </React.Suspense>
-                            );
-                        })()}
+                        <GoogleDriveSync />
                     </div>
 
                     {/* Theme Settings Section */}
