@@ -95,7 +95,8 @@ export const useGoogleDriveSync = () => {
     const refreshToken = useCallback(async () => {
         if (!tokenClient) {
             console.log('🔄 No token client available, signing in fresh...');
-            return signIn();
+            // We can't call signIn here due to circular dependency, so throw error instead
+            throw new Error('No token client available, please sign in again');
         }
 
         try {
@@ -123,13 +124,13 @@ export const useGoogleDriveSync = () => {
             console.log('✅ Access token refreshed');
 
             return tokenResponse.access_token;
-        } catch (err) {
-            console.error('❌ Token refresh failed:', err);
+        } catch (refreshError) {
+            console.error('❌ Token refresh failed:', refreshError);
             // If refresh fails, clear stored token and require fresh sign-in
             localStorage.removeItem('google_drive_token');
             setAccessToken(null);
             setIsSignedIn(false);
-            throw err;
+            throw refreshError;
         }
     }, [tokenClient]);
 
@@ -229,8 +230,8 @@ export const useGoogleDriveSync = () => {
                 spaces: 'appDataFolder'
             });
             return accessToken; // Token is still valid
-        } catch (err) {
-            console.log('🔄 Current token invalid, attempting refresh...');
+        } catch (tokenError) {
+            console.log('🔄 Current token invalid, attempting refresh...', tokenError.message);
             return await refreshToken();
         }
     }, [accessToken, refreshToken]);
