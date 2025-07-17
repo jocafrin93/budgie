@@ -6,14 +6,15 @@ const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/res
 const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata';
 
 /**
- * Simple Google Drive sync hook for backing up/restoring localStorage data
- * Much simpler than the previous complex cloud storage system
+ * Google Drive sync hook using the new Google Identity Services (GIS)
+ * Replaces the deprecated gapi.auth2 library
  */
 export const useGoogleDriveSync = () => {
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [initialized, setInitialized] = useState(false);
+    const [accessToken, setAccessToken] = useState(null);
 
     // Debug logging
     console.log('useGoogleDriveSync state:', { isSignedIn, isLoading, error, initialized });
@@ -22,80 +23,56 @@ export const useGoogleDriveSync = () => {
         CLIENT_ID: CLIENT_ID ? 'Set' : 'Missing'
     });
 
-    // Initialize Google API
+    // Initialize Google API with new GIS
     const initializeGapi = useCallback(async () => {
-        if (initialized) return; // Already initialized
+        if (initialized) return;
 
-        console.log('🔄 Initializing Google API...');
+        console.log('🔄 Initializing Google API with GIS...');
 
         try {
             setIsLoading(true);
             setError(null);
 
-            return new Promise((resolve, reject) => {
+            // Load Google API client
+            await new Promise((resolve, reject) => {
                 if (!window.gapi) {
                     const script = document.createElement('script');
                     script.src = 'https://apis.google.com/js/api.js';
                     script.onload = () => {
-                        window.gapi.load('client:auth2', async () => {
-                            try {
-                                await window.gapi.client.init({
-                                    apiKey: API_KEY,
-                                    clientId: CLIENT_ID,
-                                    discoveryDocs: [DISCOVERY_DOC],
-                                    scope: SCOPES
-                                });
-
-                                const authInstance = window.gapi.auth2.getAuthInstance();
-                                setIsSignedIn(authInstance.isSignedIn.get());
-
-                                // Listen for sign-in state changes
-                                authInstance.isSignedIn.listen(setIsSignedIn);
-
-                                setInitialized(true);
-                                console.log('✅ Google API initialized successfully');
-                                resolve();
-                            } catch (err) {
-                                console.error('❌ Google API initialization failed:', err);
-                                setError(err.message);
-                                reject(err);
-                            }
-                        });
+                        window.gapi.load('client', resolve);
                     };
-                    script.onerror = () => {
-                        const error = new Error('Failed to load Google API');
-                        console.error('❌ Failed to load Google API script');
-                        setError(error.message);
-                        reject(error);
-                    };
+                    script.onerror = () => reject(new Error('Failed to load Google API'));
                     document.head.appendChild(script);
                 } else {
-                    window.gapi.load('client:auth2', async () => {
-                        try {
-                            if (!window.gapi.client.getToken()) {
-                                await window.gapi.client.init({
-                                    apiKey: API_KEY,
-                                    clientId: CLIENT_ID,
-                                    discoveryDocs: [DISCOVERY_DOC],
-                                    scope: SCOPES
-                                });
-                            }
-
-                            const authInstance = window.gapi.auth2.getAuthInstance();
-                            setIsSignedIn(authInstance.isSignedIn.get());
-                            authInstance.isSignedIn.listen(setIsSignedIn);
-
-                            setInitialized(true);
-                            console.log('✅ Google API initialized successfully (already loaded)');
-                            resolve();
-                        } catch (err) {
-                            console.error('❌ Google API initialization failed:', err);
-                            setError(err.message);
-                            reject(err);
-                        }
-                    });
+                    window.gapi.load('client', resolve);
                 }
             });
+
+            // Initialize the API client
+            await window.gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: [DISCOVERY_DOC]
+            });
+
+            // Load Google Identity Services
+            await new Promise((resolve, reject) => {
+                if (!window.google) {
+                    const script = document.createElement('script');
+                    script.src = 'https://accounts.google.com/gsi/client';
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
+                    document.head.appendChild(script);
+                } else {
+                    resolve();
+                }
+            });
+
+            setInitialized(true);
+            console.log('✅ Google API with GIS initialized successfully');
+
+        } catch (err) {
+            console.error('❌ Google API initialization failed:', err);
+            setError(err.message || 'Failed to initialize Google API');
         } finally {
             setIsLoading(false);
         }
@@ -110,40 +87,71 @@ export const useGoogleDriveSync = () => {
         }
     }, [initialized, isLoading, initializeGapi]);
 
-    // Sign in to Google
+    // Sign in using Google Identity Services
     const signIn = useCallback(async () => {
         try {
             setIsLoading(true);
             setError(null);
 
             await initializeGapi();
-            const authInstance = window.gapi.auth2.getAuthInstance();
-            await authInstance.signIn();
 
-            console.log('✅ Signed in to Google Drive');
+            if (!window.google?.accounts?.oauth2) {
+                throw new Error('Google Identity Services not loaded');
+            }
+
+            // Request access token using the new GIS
+            const tokenResponse = await new Promise((resolve, reject) => {
+                const tokenClient = window.google.accounts.oauth2.initTokenClient({
+                    client_id: CLIENT_ID,
+                    scope: SCOPES,
+                    callback: (response) => {
+                        if (response.error) {
+                            reject(new Error(response.error));
+                        } else {
+                            resolve(response);
+                        }
+                    },
+                });
+                tokenClient.requestAccessToken();
+            });
+
+            // Set the access token for API calls
+            window.gapi.client.setToken({
+                access_token: tokenResponse.access_token
+            });
+
+            setAccessToken(tokenResponse.access_token);
+            setIsSignedIn(true);
+            console.log('✅ Signed in to Google Drive with GIS');
+
         } catch (err) {
             console.error('❌ Sign in failed:', err);
-            setError(err.message);
+            setError(err.message || 'Sign in failed');
         } finally {
             setIsLoading(false);
         }
     }, [initializeGapi]);
 
-    // Sign out of Google
-    const signOut = useCallback(async () => {
+    // Sign out
+    const signOut = useCallback(() => {
         try {
-            const authInstance = window.gapi.auth2.getAuthInstance();
-            await authInstance.signOut();
+            if (window.google?.accounts?.oauth2) {
+                window.google.accounts.oauth2.revoke(accessToken);
+            }
+
+            window.gapi.client.setToken(null);
+            setAccessToken(null);
+            setIsSignedIn(false);
             console.log('✅ Signed out of Google Drive');
         } catch (err) {
             console.error('❌ Sign out failed:', err);
-            setError(err.message);
+            setError(err.message || 'Sign out failed');
         }
-    }, []);
+    }, [accessToken]);
 
     // Backup all localStorage data to Google Drive
     const backupToCloud = useCallback(async () => {
-        if (!isSignedIn) {
+        if (!isSignedIn || !accessToken) {
             throw new Error('Not signed in to Google Drive');
         }
 
@@ -192,7 +200,7 @@ export const useGoogleDriveSync = () => {
             const uploadResponse = await fetch(url, {
                 method: fileId ? 'PATCH' : 'POST',
                 headers: {
-                    'Authorization': `Bearer ${window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token}`
+                    'Authorization': `Bearer ${accessToken}`
                 },
                 body: form
             });
@@ -205,16 +213,16 @@ export const useGoogleDriveSync = () => {
             return true;
         } catch (err) {
             console.error('❌ Backup failed:', err);
-            setError(err.message);
+            setError(err.message || 'Backup failed');
             throw err;
         } finally {
             setIsLoading(false);
         }
-    }, [isSignedIn]);
+    }, [isSignedIn, accessToken]);
 
     // Restore data from Google Drive to localStorage
     const restoreFromCloud = useCallback(async () => {
-        if (!isSignedIn) {
+        if (!isSignedIn || !accessToken) {
             throw new Error('Not signed in to Google Drive');
         }
 
@@ -237,7 +245,7 @@ export const useGoogleDriveSync = () => {
             // Download the backup file
             const downloadResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
                 headers: {
-                    'Authorization': `Bearer ${window.gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().access_token}`
+                    'Authorization': `Bearer ${accessToken}`
                 }
             });
 
@@ -260,12 +268,12 @@ export const useGoogleDriveSync = () => {
             return backup;
         } catch (err) {
             console.error('❌ Restore failed:', err);
-            setError(err.message);
+            setError(err.message || 'Restore failed');
             throw err;
         } finally {
             setIsLoading(false);
         }
-    }, [isSignedIn]);
+    }, [isSignedIn, accessToken]);
 
     return {
         isSignedIn,
