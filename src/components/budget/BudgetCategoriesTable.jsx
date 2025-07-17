@@ -484,7 +484,19 @@ const BudgetCategoriesTable = ({
                     // Calculate paycheck countdown if there's a due date using account-specific filtering
                     let paychecksLeft = null;
                     if (category.dueDate) {
+                        console.log('🔍 SINGLE CATEGORY PAYCHECK DEBUG:', {
+                            categoryName: category.name,
+                            categoryId: category.id,
+                            dueDate: category.dueDate,
+                            accountId: category.accountId,
+                            upcomingPaychecksLength: upcomingPaychecks.length
+                        });
                         paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks, category.accountId);
+                        console.log('🔍 SINGLE CATEGORY RESULT:', {
+                            categoryName: category.name,
+                            paychecksLeft,
+                            accountId: category.accountId
+                        });
                     }
 
                     result.push({
@@ -882,7 +894,9 @@ const BudgetCategoriesTable = ({
                     if (isSubItem) {
                         if (row.original.dueDate) {
                             // For sub-items with due dates, show paycheck amount and countdown using account-specific filtering
-                            const paychecksLeft = calculatePaychecksUntilDue(row.original.dueDate, upcomingPaychecks, row.original.parentCategory?.accountId);
+                            // Use the sub-item's accountId if it has one, otherwise use parent category's accountId
+                            const accountIdToUse = row.original.accountId || row.original.parentCategory?.accountId;
+                            const paychecksLeft = calculatePaychecksUntilDue(row.original.dueDate, upcomingPaychecks, accountIdToUse);
                             return (
                                 <div className="text-right">
                                     <div className="flex items-center justify-end gap-1 font-medium text-info">

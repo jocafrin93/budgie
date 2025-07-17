@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paycheck Countdown Debug</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="bg-base-200 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-base-content mb-8">Paycheck Countdown Debug Tool</h1>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Input Section -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Test Scenarios</h2>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Expense 1 Due Date</span>
+                        </label>
+                        <input type="date" id="expense1Date" class="input input-bordered" />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Expense 1 Account ID</span>
+                        </label>
+                        <input type="text" id="expense1Account" class="input input-bordered" placeholder="e.g., 1" />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Expense 2 Due Date</span>
+                        </label>
+                        <input type="date" id="expense2Date" class="input input-bordered" />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Expense 2 Account ID</span>
+                        </label>
+                        <input type="text" id="expense2Account" class="input input-bordered" placeholder="e.g., 2" />
+                    </div>
+
+                    <div class="form-control">
+                        <label class="label">
+                            <span class="label-text">Paycheck Frequency</span>
+                        </label>
+                        <select id="paycheckFreq" class="select select-bordered">
+                            <option value="biweekly">Biweekly</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+
+                    <button onclick="runDebugTest()" class="btn btn-primary">
+                        Run Debug Test
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">Debug Results</h2>
+                    <div id="results" class="space-y-4">
+                        <p class="text-base-content/60">Run a test to see results...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paycheck Timeline -->
+        <div class="card bg-base-100 shadow-xl mt-6">
+            <div class="card-body">
+                <h2 class="card-title">Generated Paycheck Timeline</h2>
+                <div id="timeline" class="overflow-x-auto">
+                    <p class="text-base-content/60">Run a test to see timeline...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock paycheck generation function
+        function generateMockPaychecks(frequency, startDate = new Date()) {
+            const paychecks = [];
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+
+            let interval;
+            switch (frequency) {
+                case 'weekly': interval = 7; break;
+                case 'biweekly': interval = 14; break;
+                case 'monthly': interval = 30; break;
+                default: interval = 14;
+            }
+
+            // Generate next 10 paychecks
+            for (let i = 0; i < 10; i++) {
+                const paycheckDate = new Date(start);
+                paycheckDate.setDate(start.getDate() + (i * interval));
+
+                paychecks.push({
+                    date: paycheckDate,
+                    formattedDate: paycheckDate.toISOString().split('T')[0],
+                    paycheck: {
+                        name: `Paycheck ${i + 1}`,
+                        accountDistribution: [
+                            { accountId: '1', amount: 1000 },
+                            { accountId: '2', amount: 500 }
+                        ]
+                    }
+                });
+            }
+
+            return paychecks;
+        }
+
+        // Mock calculatePaychecksUntilDue function
+        function calculatePaychecksUntilDue(dueDate, upcomingPaychecks = [], accountId = null) {
+            console.log('🔍 PAYCHECK COUNTDOWN DEBUG: Starting calculation', {
+                dueDate,
+                accountId,
+                upcomingPaychecksLength: upcomingPaychecks.length
+            });
+
+            if (!dueDate || !upcomingPaychecks.length) {
+                console.log('🔍 Early return - no due date or paychecks');
+                return 0;
+            }
+
+            // Parse due date safely
+            const parseDateSafely = (dateInput) => {
+                if (!dateInput) return null;
+                let dateObj;
+                if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    const [year, month, day] = dateInput.split('-').map(Number);
+                    dateObj = new Date(year, month - 1, day);
+                } else {
+                    dateObj = new Date(dateInput);
+                }
+                dateObj.setHours(0, 0, 0, 0);
+                return dateObj;
+            };
+
+            const dueDateObj = parseDateSafely(dueDate);
+            if (!dueDateObj) {
+                console.log('🔍 Invalid due date');
+                return 0;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            console.log('🔍 Date comparison:', {
+                today: today.toISOString().split('T')[0],
+                dueDate: dueDateObj.toISOString().split('T')[0]
+            });
+
+            // Filter paychecks by account if specified
+            let relevantPaychecks = upcomingPaychecks;
+            if (accountId !== null) {
+                relevantPaychecks = upcomingPaychecks.filter(paycheckEntry => {
+                    if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
+                        return paycheckEntry.paycheck.accountDistribution.some(dist =>
+                            String(dist.accountId) === String(accountId)
+                        );
+                    }
+                    return false;
+                });
+
+                console.log('🔍 After account filtering:', {
+                    accountId,
+                    originalCount: upcomingPaychecks.length,
+                    filteredCount: relevantPaychecks.length
+                });
+            }
+
+            // Count paychecks from today up to (but not including) the due date
+            const paychecksUntilDue = relevantPaychecks.filter(paycheck => {
+                const paycheckDate = parseDateSafely(paycheck.date);
+                if (!paycheckDate) return false;
+
+                const isFromTodayUntilDue = paycheckDate >= today && paycheckDate < dueDateObj;
+
+                console.log('🔍 Checking paycheck:', {
+                    paycheckDate: paycheckDate.toISOString().split('T')[0],
+                    isFromTodayUntilDue,
+                    paycheckName: paycheck.paycheck?.name
+                });
+
+                return isFromTodayUntilDue;
+            });
+
+            const result = paychecksUntilDue.length;
+            console.log('🔍 Final result:', result);
+            return result;
+        }
+
+        function runDebugTest() {
+            const expense1Date = document.getElementById('expense1Date').value;
+            const expense1Account = document.getElementById('expense1Account').value;
+            const expense2Date = document.getElementById('expense2Date').value;
+            const expense2Account = document.getElementById('expense2Account').value;
+            const frequency = document.getElementById('paycheckFreq').value;
+
+            if (!expense1Date || !expense2Date) {
+                alert('Please enter both due dates');
+                return;
+            }
+
+            // Generate mock paychecks
+            const paychecks = generateMockPaychecks(frequency);
+
+            // Calculate countdown for both expenses
+            const countdown1 = calculatePaychecksUntilDue(expense1Date, paychecks, expense1Account || null);
+            const countdown2 = calculatePaychecksUntilDue(expense2Date, paychecks, expense2Account || null);
+
+            // Display results
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="space-y-4">
+                    <div class="alert ${countdown1 === countdown2 ? 'alert-success' : 'alert-warning'}">
+                        <h3 class="font-bold">Comparison Result</h3>
+                        <p>${countdown1 === countdown2 ? '✅ Consistent' : '⚠️ Inconsistent'} countdown calculations</p>
+                    </div>
+                    
+                    <div class="stats stats-vertical lg:stats-horizontal shadow">
+                        <div class="stat">
+                            <div class="stat-title">Expense 1</div>
+                            <div class="stat-value text-primary">${countdown1}</div>
+                            <div class="stat-desc">paychecks left</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-title">Expense 2</div>
+                            <div class="stat-value text-secondary">${countdown2}</div>
+                            <div class="stat-desc">paychecks left</div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="card bg-base-200">
+                            <div class="card-body">
+                                <h4 class="card-title text-sm">Expense 1 Details</h4>
+                                <p><strong>Due:</strong> ${expense1Date}</p>
+                                <p><strong>Account:</strong> ${expense1Account || 'All accounts'}</p>
+                                <p><strong>Countdown:</strong> ${countdown1} paychecks</p>
+                            </div>
+                        </div>
+                        <div class="card bg-base-200">
+                            <div class="card-body">
+                                <h4 class="card-title text-sm">Expense 2 Details</h4>
+                                <p><strong>Due:</strong> ${expense2Date}</p>
+                                <p><strong>Account:</strong> ${expense2Account || 'All accounts'}</p>
+                                <p><strong>Countdown:</strong> ${countdown2} paychecks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Display timeline
+            const timelineDiv = document.getElementById('timeline');
+            const today = new Date().toISOString().split('T')[0];
+
+            timelineDiv.innerHTML = `
+                <table class="table table-zebra w-full">
+                    <thead>
+                        <tr>
+                            <th>Paycheck</th>
+                            <th>Date</th>
+                            <th>Account 1</th>
+                            <th>Account 2</th>
+                            <th>Before Expense 1?</th>
+                            <th>Before Expense 2?</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${paychecks.map(p => {
+                const date = p.formattedDate;
+                const beforeExp1 = date >= today && date < expense1Date;
+                const beforeExp2 = date >= today && date < expense2Date;
+                return `
+                                <tr class="${date === today ? 'bg-primary/20' : ''}">
+                                    <td>${p.paycheck.name}</td>
+                                    <td>${date} ${date === today ? '(Today)' : ''}</td>
+                                    <td>$${p.paycheck.accountDistribution[0].amount}</td>
+                                    <td>$${p.paycheck.accountDistribution[1].amount}</td>
+                                    <td>${beforeExp1 ? '✅' : '❌'}</td>
+                                    <td>${beforeExp2 ? '✅' : '❌'}</td>
+                                </tr>
+                            `;
+            }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Set default dates (today and tomorrow)
+        window.onload = function () {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+
+            document.getElementById('expense1Date').value = today.toISOString().split('T')[0];
+            document.getElementById('expense2Date').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('expense1Account').value = '1';
+            document.getElementById('expense2Account').value = '2';
+        };
+    </script>
+</body>
+
+</html>
