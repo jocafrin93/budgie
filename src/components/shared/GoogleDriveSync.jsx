@@ -16,6 +16,9 @@ export const GoogleDriveSync = () => {
         restoreFromCloud
     } = useGoogleDriveSync();
 
+    // Debug logging
+    console.log('GoogleDriveSync render:', { isSignedIn, isLoading, error });
+
     const [lastBackup, setLastBackup] = useState(() => {
         return localStorage.getItem('lastBackupTime') || null;
     });

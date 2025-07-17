@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata';
 
 /**
  * Simple Google Drive sync hook for backing up/restoring localStorage data
@@ -13,44 +13,102 @@ export const useGoogleDriveSync = () => {
     const [isSignedIn, setIsSignedIn] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [initialized, setInitialized] = useState(false);
+
+    // Debug logging
+    console.log('useGoogleDriveSync state:', { isSignedIn, isLoading, error, initialized });
+    console.log('Google API credentials:', {
+        API_KEY: API_KEY ? 'Set' : 'Missing',
+        CLIENT_ID: CLIENT_ID ? 'Set' : 'Missing'
+    });
 
     // Initialize Google API
     const initializeGapi = useCallback(async () => {
-        if (window.gapi?.client) return; // Already initialized
+        if (initialized) return; // Already initialized
 
-        return new Promise((resolve, reject) => {
-            if (!window.gapi) {
-                const script = document.createElement('script');
-                script.src = 'https://apis.google.com/js/api.js';
-                script.onload = () => {
+        console.log('🔄 Initializing Google API...');
+
+        try {
+            setIsLoading(true);
+            setError(null);
+
+            return new Promise((resolve, reject) => {
+                if (!window.gapi) {
+                    const script = document.createElement('script');
+                    script.src = 'https://apis.google.com/js/api.js';
+                    script.onload = () => {
+                        window.gapi.load('client:auth2', async () => {
+                            try {
+                                await window.gapi.client.init({
+                                    apiKey: API_KEY,
+                                    clientId: CLIENT_ID,
+                                    discoveryDocs: [DISCOVERY_DOC],
+                                    scope: SCOPES
+                                });
+
+                                const authInstance = window.gapi.auth2.getAuthInstance();
+                                setIsSignedIn(authInstance.isSignedIn.get());
+
+                                // Listen for sign-in state changes
+                                authInstance.isSignedIn.listen(setIsSignedIn);
+
+                                setInitialized(true);
+                                console.log('✅ Google API initialized successfully');
+                                resolve();
+                            } catch (err) {
+                                console.error('❌ Google API initialization failed:', err);
+                                setError(err.message);
+                                reject(err);
+                            }
+                        });
+                    };
+                    script.onerror = () => {
+                        const error = new Error('Failed to load Google API');
+                        console.error('❌ Failed to load Google API script');
+                        setError(error.message);
+                        reject(error);
+                    };
+                    document.head.appendChild(script);
+                } else {
                     window.gapi.load('client:auth2', async () => {
                         try {
-                            await window.gapi.client.init({
-                                apiKey: API_KEY,
-                                clientId: CLIENT_ID,
-                                discoveryDocs: [DISCOVERY_DOC],
-                                scope: SCOPES
-                            });
+                            if (!window.gapi.client.getToken()) {
+                                await window.gapi.client.init({
+                                    apiKey: API_KEY,
+                                    clientId: CLIENT_ID,
+                                    discoveryDocs: [DISCOVERY_DOC],
+                                    scope: SCOPES
+                                });
+                            }
 
                             const authInstance = window.gapi.auth2.getAuthInstance();
                             setIsSignedIn(authInstance.isSignedIn.get());
-
-                            // Listen for sign-in state changes
                             authInstance.isSignedIn.listen(setIsSignedIn);
 
+                            setInitialized(true);
+                            console.log('✅ Google API initialized successfully (already loaded)');
                             resolve();
                         } catch (err) {
+                            console.error('❌ Google API initialization failed:', err);
+                            setError(err.message);
                             reject(err);
                         }
                     });
-                };
-                script.onerror = () => reject(new Error('Failed to load Google API'));
-                document.head.appendChild(script);
-            } else {
-                window.gapi.load('client:auth2', resolve);
-            }
-        });
-    }, []);
+                }
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [initialized]);
+
+    // Auto-initialize on mount
+    React.useEffect(() => {
+        if (!initialized && !isLoading) {
+            initializeGapi().catch(err => {
+                console.error('Auto-initialization failed:', err);
+            });
+        }
+    }, [initialized, isLoading, initializeGapi]);
 
     // Sign in to Google
     const signIn = useCallback(async () => {
