@@ -168,7 +168,8 @@ body {
 
 /* OKLCH themes override */
 [data-theme*="abyss"] body,
-[data-theme*="vscode-dark"] body {
+[data-theme*="vscode-dark"] body,
+[data-theme*="silk"] body {
     background-color: var(--color-base-100) !important;
     color: var(--color-base-content) !important;
 }
@@ -396,210 +397,251 @@ body {
 /* OKLCH theme overrides - Use direct values (no rgb() wrapper) */
 /* Add any OKLCH theme names here using [data-theme*="theme-name"] */
 [data-theme*="abyss"] .text-primary-600,
-[data-theme*="vscode-dark"] .text-primary-600 {
+[data-theme*="vscode-dark"] .text-primary-600,
+[data-theme*="silk"] .text-primary-600 {
     color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .bg-primary-600,
-[data-theme*="vscode-dark"] .bg-primary-600 {
+[data-theme*="vscode-dark"] .bg-primary-600,
+[data-theme*="silk"] .bg-primary-600 {
     background-color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .border-primary-600,
-[data-theme*="vscode-dark"] .border-primary-600 {
+[data-theme*="vscode-dark"] .border-primary-600,
+[data-theme*="silk"] .border-primary-600 {
     border-color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .text-gray-500,
-[data-theme*="vscode-dark"] .text-gray-500 {
+[data-theme*="vscode-dark"] .text-gray-500,
+[data-theme*="silk"] .text-gray-500 {
     color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .bg-gray-100,
-[data-theme*="vscode-dark"] .bg-gray-100 {
+[data-theme*="vscode-dark"] .bg-gray-100,
+[data-theme*="silk"] .bg-gray-100 {
     background-color: var(--color-base-200) !important;
 }
 
 [data-theme*="abyss"] .bg-white,
-[data-theme*="vscode-dark"] .bg-white {
+[data-theme*="vscode-dark"] .bg-white,
+[data-theme*="silk"] .bg-white {
     background-color: var(--color-base-100) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-50,
-[data-theme*="vscode-dark"] .bg-slate-50 {
+[data-theme*="vscode-dark"] .bg-slate-50,
+[data-theme*="silk"] .bg-slate-50 {
     background-color: var(--color-base-100) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-100,
-[data-theme*="vscode-dark"] .bg-slate-100 {
+[data-theme*="vscode-dark"] .bg-slate-100,
+[data-theme*="silk"] .bg-slate-100 {
     background-color: var(--color-base-200) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-200,
-[data-theme*="vscode-dark"] .bg-slate-200 {
+[data-theme*="vscode-dark"] .bg-slate-200,
+[data-theme*="silk"] .bg-slate-200 {
     background-color: var(--color-base-300) !important;
 }
 
 [data-theme*="abyss"] .text-slate-900,
-[data-theme*="vscode-dark"] .text-slate-900 {
+[data-theme*="vscode-dark"] .text-slate-900,
+[data-theme*="silk"] .text-slate-900 {
     color: var(--color-base-content) !important;
 }
 
 [data-theme*="abyss"] .text-slate-800,
-[data-theme*="vscode-dark"] .text-slate-800 {
+[data-theme*="vscode-dark"] .text-slate-800,
+[data-theme*="silk"] .text-slate-800 {
     color: var(--color-base-content) !important;
 }
 
 [data-theme*="abyss"] .text-slate-700,
-[data-theme*="vscode-dark"] .text-slate-700 {
+[data-theme*="vscode-dark"] .text-slate-700,
+[data-theme*="silk"] .text-slate-700 {
     color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .text-slate-600,
-[data-theme*="vscode-dark"] .text-slate-600 {
+[data-theme*="vscode-dark"] .text-slate-600,
+[data-theme*="silk"] .text-slate-600 {
     color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .text-slate-500,
-[data-theme*="vscode-dark"] .text-slate-500 {
+[data-theme*="vscode-dark"] .text-slate-500,
+[data-theme*="silk"] .text-slate-500 {
     color: var(--color-neutral) !important;
 }
 
 /* OKLCH DaisyUI class overrides */
 [data-theme*="abyss"] .bg-base-100,
-[data-theme*="vscode-dark"] .bg-base-100 {
+[data-theme*="vscode-dark"] .bg-base-100,
+[data-theme*="silk"] .bg-base-100 {
     background-color: var(--color-base-100) !important;
 }
 
 [data-theme*="abyss"] .bg-base-200,
-[data-theme*="vscode-dark"] .bg-base-200 {
+[data-theme*="vscode-dark"] .bg-base-200,
+[data-theme*="silk"] .bg-base-200 {
     background-color: var(--color-base-200) !important;
 }
 
 [data-theme*="abyss"] .bg-base-300,
-[data-theme*="vscode-dark"] .bg-base-300 {
+[data-theme*="vscode-dark"] .bg-base-300,
+[data-theme*="silk"] .bg-base-300 {
     background-color: var(--color-base-300) !important;
 }
 
 [data-theme*="abyss"] .text-base-content,
-[data-theme*="vscode-dark"] .text-base-content {
+[data-theme*="vscode-dark"] .text-base-content,
+[data-theme*="silk"] .text-base-content {
     color: var(--color-base-content) !important;
 }
 
 [data-theme*="abyss"] .text-base-content\/60,
-[data-theme*="vscode-dark"] .text-base-content\/60 {
+[data-theme*="vscode-dark"] .text-base-content\/60,
+[data-theme*="silk"] .text-base-content\/60 {
     color: var(--color-base-content) !important;
     opacity: 0.6;
 }
 
 [data-theme*="abyss"] .text-base-content\/70,
-[data-theme*="vscode-dark"] .text-base-content\/70 {
+[data-theme*="vscode-dark"] .text-base-content\/70,
+[data-theme*="silk"] .text-base-content\/70 {
     color: var(--color-base-content) !important;
     opacity: 0.7;
 }
 
 [data-theme*="abyss"] .border-base-300,
-[data-theme*="vscode-dark"] .border-base-300 {
+[data-theme*="vscode-dark"] .border-base-300,
+[data-theme*="silk"] .border-base-300 {
     border-color: var(--color-base-300) !important;
 }
 
 [data-theme*="abyss"] .bg-primary,
-[data-theme*="vscode-dark"] .bg-primary {
+[data-theme*="vscode-dark"] .bg-primary,
+[data-theme*="silk"] .bg-primary {
     background-color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .text-primary,
-[data-theme*="vscode-dark"] .text-primary {
+[data-theme*="vscode-dark"] .text-primary,
+[data-theme*="silk"] .text-primary {
     color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .bg-secondary,
-[data-theme*="vscode-dark"] .bg-secondary {
+[data-theme*="vscode-dark"] .bg-secondary,
+[data-theme*="silk"] .bg-secondary {
     background-color: var(--color-secondary) !important;
 }
 
 [data-theme*="abyss"] .text-secondary,
-[data-theme*="vscode-dark"] .text-secondary {
+[data-theme*="vscode-dark"] .text-secondary,
+[data-theme*="silk"] .text-secondary {
     color: var(--color-secondary) !important;
 }
 
 [data-theme*="abyss"] .bg-accent,
-[data-theme*="vscode-dark"] .bg-accent {
+[data-theme*="vscode-dark"] .bg-accent,
+[data-theme*="silk"] .bg-accent {
     background-color: var(--color-accent) !important;
 }
 
 [data-theme*="abyss"] .text-accent,
-[data-theme*="vscode-dark"] .text-accent {
+[data-theme*="vscode-dark"] .text-accent,
+[data-theme*="silk"] .text-accent {
     color: var(--color-accent) !important;
 }
 
 [data-theme*="abyss"] .bg-neutral,
-[data-theme*="vscode-dark"] .bg-neutral {
+[data-theme*="vscode-dark"] .bg-neutral,
+[data-theme*="silk"] .bg-neutral {
     background-color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .text-neutral,
-[data-theme*="vscode-dark"] .text-neutral {
+[data-theme*="vscode-dark"] .text-neutral,
+[data-theme*="silk"] .text-neutral {
     color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .bg-info,
-[data-theme*="vscode-dark"] .bg-info {
+[data-theme*="vscode-dark"] .bg-info,
+[data-theme*="silk"] .bg-info {
     background-color: var(--color-info) !important;
 }
 
 [data-theme*="abyss"] .text-info,
-[data-theme*="vscode-dark"] .text-info {
+[data-theme*="vscode-dark"] .text-info,
+[data-theme*="silk"] .text-info {
     color: var(--color-info) !important;
 }
 
 [data-theme*="abyss"] .border-info,
-[data-theme*="vscode-dark"] .border-info {
+[data-theme*="vscode-dark"] .border-info,
+[data-theme*="silk"] .border-info {
     border-color: var(--color-info) !important;
 }
 
 [data-theme*="abyss"] .bg-success,
-[data-theme*="vscode-dark"] .bg-success {
+[data-theme*="vscode-dark"] .bg-success,
+[data-theme*="silk"] .bg-success {
     background-color: var(--color-success) !important;
 }
 
 [data-theme*="abyss"] .text-success,
-[data-theme*="vscode-dark"] .text-success {
+[data-theme*="vscode-dark"] .text-success,
+[data-theme*="silk"] .text-success {
     color: var(--color-success) !important;
 }
 
 [data-theme*="abyss"] .border-success,
-[data-theme*="vscode-dark"] .border-success {
+[data-theme*="vscode-dark"] .border-success,
+[data-theme*="silk"] .border-success {
     border-color: var(--color-success) !important;
 }
 
 [data-theme*="abyss"] .bg-warning,
-[data-theme*="vscode-dark"] .bg-warning {
+[data-theme*="vscode-dark"] .bg-warning,
+[data-theme*="silk"] .bg-warning {
     background-color: var(--color-warning) !important;
 }
 
 [data-theme*="abyss"] .text-warning,
-[data-theme*="vscode-dark"] .text-warning {
+[data-theme*="vscode-dark"] .text-warning,
+[data-theme*="silk"] .text-warning {
     color: var(--color-warning) !important;
 }
 
 [data-theme*="abyss"] .border-warning,
-[data-theme*="vscode-dark"] .border-warning {
+[data-theme*="vscode-dark"] .border-warning,
+[data-theme*="silk"] .border-warning {
     border-color: var(--color-warning) !important;
 }
 
 [data-theme*="abyss"] .bg-error,
-[data-theme*="vscode-dark"] .bg-error {
+[data-theme*="vscode-dark"] .bg-error,
+[data-theme*="silk"] .bg-error {
     background-color: var(--color-error) !important;
 }
 
 [data-theme*="abyss"] .text-error,
-[data-theme*="vscode-dark"] .text-error {
+[data-theme*="vscode-dark"] .text-error,
+[data-theme*="silk"] .text-error {
     color: var(--color-error) !important;
 }
 
 [data-theme*="abyss"] .border-error,
-[data-theme*="vscode-dark"] .border-error {
+[data-theme*="vscode-dark"] .border-error,
+[data-theme*="silk"] .border-error {
     border-color: var(--color-error) !important;
 }
 
@@ -891,17 +933,20 @@ body {
 
 /* OKLCH themes - explicit overrides */
 [data-theme="abyss"] .bg-primary,
-[data-theme="vscode-dark"] .bg-primary {
+[data-theme="vscode-dark"] .bg-primary,
+[data-theme="silk"] .bg-primary {
     background-color: var(--color-primary) !important;
 }
 
 [data-theme="abyss"] .bg-secondary,
-[data-theme="vscode-dark"] .bg-secondary {
+[data-theme="vscode-dark"] .bg-secondary,
+[data-theme="silk"] .bg-secondary {
     background-color: var(--color-secondary) !important;
 }
 
 [data-theme="abyss"] .bg-accent,
-[data-theme="vscode-dark"] .bg-accent {
+[data-theme="vscode-dark"] .bg-accent,
+[data-theme="silk"] .bg-accent {
     background-color: var(--color-accent) !important;
 }
 

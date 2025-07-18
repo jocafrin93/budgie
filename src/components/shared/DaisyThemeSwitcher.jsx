@@ -16,6 +16,7 @@ const DAISY_THEMES = [
     { name: 'dracula', label: 'Dracula', description: 'Classic dark with vibrant colors' },
     { name: 'abyss', label: 'Abyss', description: 'Deep blue with green accents' },
     { name: 'vscode-dark', label: 'VSCode Dark', description: 'Editor-inspired purple theme' },
+    { name: 'silk', label: 'Silk', description: 'Elegant light with soft purple accents' },
 ];
 
 export default function DaisyThemeSwitcher({ className = '' }) {

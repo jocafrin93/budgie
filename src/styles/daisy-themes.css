@@ -752,3 +752,63 @@
     /* #E4AAF2 - error purple */
     --color-error-content: oklch(17.2% 0.029 325);
 }
+
+/* Silk Theme (Elegant Light with Soft Purple Accents) - OKLCH Colors */
+[data-theme="silk"] {
+    --color-base-100: oklch(97% 0.0035 67.78);
+    /* Very light warm white */
+    --color-base-200: oklch(95% 0.0081 61.42);
+    /* Slightly darker warm white */
+    --color-base-300: oklch(90% 0.0081 61.42);
+    /* Light warm gray */
+    --color-base-content: oklch(40% 0.0081 61.42);
+    /* Dark warm gray text */
+
+    --color-primary: oklch(23.27% 0.0249 284.3);
+    /* Deep purple */
+    --color-primary-focus: oklch(18.27% 0.0249 284.3);
+    /* Darker purple for focus states */
+    --color-primary-content: oklch(94.22% 0.2505 117.44);
+    /* Light green content */
+
+    --color-secondary: oklch(23.27% 0.0249 284.3);
+    /* Same deep purple as primary */
+    --color-secondary-focus: oklch(18.27% 0.0249 284.3);
+    /* Darker purple for focus states */
+    --color-secondary-content: oklch(73.92% 0.2135 50.94);
+    /* Warm orange content */
+
+    --color-accent: oklch(23.27% 0.0249 284.3);
+    /* Same deep purple as primary */
+    --color-accent-focus: oklch(18.27% 0.0249 284.3);
+    /* Darker purple for focus states */
+    --color-accent-content: oklch(88.92% 0.2061 189.9);
+    /* Light blue content */
+
+    --color-neutral: oklch(20% 0 0);
+    /* Pure dark gray */
+    --color-neutral-focus: oklch(15% 0 0);
+    /* Darker gray for focus states */
+    --color-neutral-content: oklch(80% 0.0081 61.42);
+    /* Light warm gray content */
+
+    --color-info: oklch(80.39% 0.1148 241.68);
+    /* Light blue */
+    --color-info-content: oklch(30.39% 0.1148 241.68);
+    /* Dark blue content */
+
+    --color-success: oklch(83.92% 0.0901 136.87);
+    /* Light green */
+    --color-success-content: oklch(23.92% 0.0901 136.87);
+    /* Dark green content */
+
+    --color-warning: oklch(83.92% 0.1085 80);
+    /* Light orange */
+    --color-warning-content: oklch(43.92% 0.1085 80);
+    /* Dark orange content */
+
+    --color-error: oklch(75.1% 0.1814 22.37);
+    /* Light red */
+    --color-error-content: oklch(35.1% 0.1814 22.37);
+    /* Dark red content */
+}
