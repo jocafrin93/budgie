@@ -10,6 +10,7 @@ import {
   updatePlanningItem
 } from '../utils/dataModelUtils';
 import { useSimpleStorage } from './useSimpleStorage';
+import { useCategoryGroups } from './useCategoryGroups';
 
 // Move pay frequency options outside the hook to prevent dependency issues
 const PAY_FREQUENCY_OPTIONS = [
@@ -47,9 +48,24 @@ export const useDataModel = ({
   const [categories, setCategories] = useSimpleStorage('budgetCalc_categories', initialCategories);
   const [accounts, setAccounts] = useSimpleStorage('budgetCalc_accounts', initialAccounts);
 
+  // Category groups integration
+  const {
+    groups,
+    addGroup,
+    updateGroup,
+    deleteGroup,
+    reorderGroups,
+    toggleGroupCollapsed,
+    toggleAllGroups,
+    getGroupById,
+    getSortedGroups,
+    getDefaultGroup
+  } = useCategoryGroups();
+
   // Use refs to track if we're in a sync operation to prevent infinite loops
   const isSyncing = useRef(false);
   const cleanupRef = useRef(false);
+  const migrationRef = useRef(false);
 
   // Add debugging for planningItems changes
   useEffect(() => {
@@ -435,6 +451,39 @@ export const useDataModel = ({
     });
   }, [setPlanningItems, setActiveBudgetAllocations, categories]);
 
+  // Migrate categories to include group information
+  useEffect(() => {
+    if (migrationRef.current || categories.length === 0 || groups.length === 0) return;
+
+    const categoriesNeedingGroups = categories.filter(cat => !cat.groupId);
+
+    if (categoriesNeedingGroups.length > 0) {
+      console.log('🏷️ MIGRATION - Found categories without groups:', categoriesNeedingGroups.map(c => c.name));
+      migrationRef.current = true;
+
+      const defaultGroup = getDefaultGroup();
+      if (defaultGroup) {
+        setCategories(prev => prev.map(category => {
+          if (!category.groupId) {
+            console.log('🏷️ MIGRATION - Assigning category', category.name, 'to group', defaultGroup.name);
+            return {
+              ...category,
+              groupId: defaultGroup.id,
+              groupSortOrder: category.sortOrder || 0,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return category;
+        }));
+      }
+
+      // Reset migration flag after a delay
+      setTimeout(() => {
+        migrationRef.current = false;
+      }, 1000);
+    }
+  }, [categories, groups, getDefaultGroup, setCategories]);
+
   // Clean up invalid items only when categories change
   useEffect(() => {
     if (cleanupRef.current) return;
@@ -480,6 +529,121 @@ export const useDataModel = ({
     cleanup();
   }, [categories, planningItems, activeBudgetAllocations, setPlanningItems, setActiveBudgetAllocations, setExpenses, setSavingsGoals]);
 
+  // Category group management functions
+  const addCategory = useCallback((categoryData) => {
+    const defaultGroup = getDefaultGroup();
+    const newCategory = {
+      id: categoryData.id || Math.max(...categories.map(c => c.id), 0) + 1,
+      name: categoryData.name,
+      type: categoryData.type || 'single',
+      planningType: categoryData.planningType || 'expense',
+      groupId: categoryData.groupId || defaultGroup?.id || 'miscellaneous',
+      groupSortOrder: categoryData.groupSortOrder ?? Math.max(...categories.filter(c => c.groupId === (categoryData.groupId || defaultGroup?.id)).map(c => c.groupSortOrder || 0), -1) + 1,
+      sortOrder: categoryData.sortOrder ?? Math.max(...categories.map(c => c.sortOrder || 0), -1) + 1,
+      color: categoryData.color,
+      amount: categoryData.amount || 0,
+      allocated: categoryData.allocated || 0,
+      available: categoryData.available || 0,
+      spent: categoryData.spent || 0,
+      monthlyNeed: categoryData.monthlyNeed || 0,
+      perPaycheck: categoryData.perPaycheck || 0,
+      isActive: categoryData.isActive !== false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...categoryData
+    };
+
+    setCategories(prev => [...prev, newCategory]);
+    console.log('🏷️ CATEGORIES - Added new category:', newCategory);
+    return newCategory.id;
+  }, [categories, setCategories, getDefaultGroup]);
+
+  const updateCategory = useCallback((categoryId, updates) => {
+    setCategories(prev => prev.map(category =>
+      category.id === categoryId
+        ? { ...category, ...updates, updatedAt: new Date().toISOString() }
+        : category
+    ));
+    console.log('🏷️ CATEGORIES - Updated category:', categoryId, updates);
+  }, [setCategories]);
+
+  const deleteCategory = useCallback((categoryId) => {
+    // Remove all planning items in this category first
+    const itemsToRemove = planningItems.filter(item => item.categoryId === categoryId);
+    itemsToRemove.forEach(item => removeItem(item.id));
+
+    // Remove the category
+    setCategories(prev => prev.filter(category => category.id !== categoryId));
+    console.log('🏷️ CATEGORIES - Deleted category:', categoryId);
+  }, [setCategories, planningItems, removeItem]);
+
+  const moveCategoryToGroup = useCallback((categoryId, newGroupId) => {
+    const targetGroup = getGroupById(newGroupId);
+    if (!targetGroup) {
+      console.error('🏷️ CATEGORIES - Invalid target group:', newGroupId);
+      return false;
+    }
+
+    // Get the next sort order in the target group
+    const categoriesInTargetGroup = categories.filter(c => c.groupId === newGroupId);
+    const nextSortOrder = Math.max(...categoriesInTargetGroup.map(c => c.groupSortOrder || 0), -1) + 1;
+
+    setCategories(prev => prev.map(category =>
+      category.id === categoryId
+        ? {
+          ...category,
+          groupId: newGroupId,
+          groupSortOrder: nextSortOrder,
+          updatedAt: new Date().toISOString()
+        }
+        : category
+    ));
+
+    console.log('🏷️ CATEGORIES - Moved category', categoryId, 'to group', newGroupId);
+    return true;
+  }, [categories, setCategories, getGroupById]);
+
+  const reorderCategoriesInGroup = useCallback((groupId, reorderedCategories) => {
+    const categoriesWithNewOrder = reorderedCategories.map((category, index) => ({
+      ...category,
+      groupSortOrder: index,
+      updatedAt: new Date().toISOString()
+    }));
+
+    setCategories(prev => prev.map(category => {
+      const reorderedCategory = categoriesWithNewOrder.find(rc => rc.id === category.id);
+      return reorderedCategory || category;
+    }));
+
+    console.log('🏷️ CATEGORIES - Reordered categories in group', groupId);
+  }, [setCategories]);
+
+  // Get categories organized by groups
+  const getCategoriesByGroup = useCallback(() => {
+    const sortedGroups = getSortedGroups();
+    const result = {};
+
+    sortedGroups.forEach(group => {
+      const groupCategories = categories
+        .filter(category => category.groupId === group.id)
+        .sort((a, b) => (a.groupSortOrder || 0) - (b.groupSortOrder || 0));
+
+      result[group.id] = {
+        group,
+        categories: groupCategories,
+        totals: {
+          monthlyNeed: groupCategories.reduce((sum, cat) => sum + (cat.monthlyNeed || 0), 0),
+          allocated: groupCategories.reduce((sum, cat) => sum + (cat.allocated || 0), 0),
+          available: groupCategories.reduce((sum, cat) => sum + (cat.available || 0), 0),
+          spent: groupCategories.reduce((sum, cat) => sum + (cat.spent || 0), 0),
+          perPaycheck: groupCategories.reduce((sum, cat) => sum + (cat.perPaycheck || 0), 0)
+        }
+      };
+    });
+
+    return result;
+  }, [categories, getSortedGroups]);
+
   return {
     // Unified data model
     planningItems,
@@ -498,6 +662,26 @@ export const useDataModel = ({
     setCategories,
     accounts,
     setAccounts,
+
+    // Category groups
+    groups,
+    addGroup,
+    updateGroup,
+    deleteGroup,
+    reorderGroups,
+    toggleGroupCollapsed,
+    toggleAllGroups,
+    getGroupById,
+    getSortedGroups,
+    getDefaultGroup,
+
+    // Category management with groups
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    moveCategoryToGroup,
+    reorderCategoriesInGroup,
+    getCategoriesByGroup,
 
     // Actions
     addItem,

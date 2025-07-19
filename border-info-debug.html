@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="abyss">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Border Info Debug - Abyss Theme</title>
+    <link href="./src/styles/index.css" rel="stylesheet">
+    <style>
+        .debug-section {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+
+        .color-swatch {
+            width: 50px;
+            height: 50px;
+            display: inline-block;
+            margin-right: 10px;
+            border: 1px solid #666;
+        }
+
+        .test-border {
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid;
+        }
+    </style>
+</head>
+
+<body class="bg-base-200 text-base-content">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-8">Border Info Debug - Abyss Theme</h1>
+
+        <div class="debug-section bg-base-100">
+            <h2 class="text-xl font-semibold mb-4">CSS Variable Values</h2>
+            <div class="space-y-2">
+                <div>
+                    <span class="font-mono">--color-info:</span>
+                    <span class="color-swatch" style="background-color: var(--color-info);"></span>
+                    <span id="info-value"></span>
+                </div>
+                <div>
+                    <span class="font-mono">--color-primary:</span>
+                    <span class="color-swatch" style="background-color: var(--color-primary);"></span>
+                    <span id="primary-value"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="debug-section bg-base-100">
+            <h2 class="text-xl font-semibold mb-4">Border Tests</h2>
+
+            <div class="test-border border-info">
+                <strong>border-info class:</strong> This should use the info color
+            </div>
+
+            <div class="test-border border-primary">
+                <strong>border-primary class:</strong> This should use the primary color
+            </div>
+
+            <div class="test-border" style="border-left-color: var(--color-info);">
+                <strong>Direct CSS variable:</strong> border-left-color: var(--color-info)
+            </div>
+
+            <div class="test-border" style="border-left-color: oklch(74% 0.16 232.661);">
+                <strong>Direct OKLCH:</strong> border-left-color: oklch(74% 0.16 232.661)
+            </div>
+        </div>
+
+        <div class="debug-section bg-base-100">
+            <h2 class="text-xl font-semibold mb-4">Expense Details Simulation</h2>
+
+            <div style="margin-left: 36px;" class="border-l-2 border-info pl-4 py-2">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">💸</span>
+                            <span class="font-medium text-info">Expense Details</span>
+                        </div>
+                        <div class="text-sm font-medium text-info">
+                            2 paychecks left
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-base-content/60">Amount</div>
+                            <div class="font-medium text-info">$500.00</div>
+                        </div>
+                        <div>
+                            <div class="text-base-content/60">Frequency</div>
+                            <div class="font-medium text-base-content capitalize">monthly</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="debug-section bg-base-100">
+            <h2 class="text-xl font-semibold mb-4">Computed Styles</h2>
+            <div id="computed-styles"></div>
+        </div>
+    </div>
+
+    <script>
+        // Get computed CSS variable values
+        const root = document.documentElement;
+        const computedStyle = getComputedStyle(root);
+
+        const infoColor = computedStyle.getPropertyValue('--color-info').trim();
+        const primaryColor = computedStyle.getPropertyValue('--color-primary').trim();
+
+        document.getElementById('info-value').textContent = infoColor || 'undefined';
+        document.getElementById('primary-value').textContent = primaryColor || 'undefined';
+
+        // Test border-info class computed style
+        const borderInfoElement = document.querySelector('.border-info');
+        const borderInfoStyle = getComputedStyle(borderInfoElement);
+        const borderLeftColor = borderInfoStyle.getPropertyValue('border-left-color');
+
+        document.getElementById('computed-styles').innerHTML = `
+            <div><strong>border-info computed border-left-color:</strong> ${borderLeftColor}</div>
+            <div><strong>Expected info color:</strong> ${infoColor}</div>
+            <div><strong>Primary color for comparison:</strong> ${primaryColor}</div>
+        `;
+
+        console.log('CSS Variable Debug:');
+        console.log('--color-info:', infoColor);
+        console.log('--color-primary:', primaryColor);
+        console.log('border-info computed border-left-color:', borderLeftColor);
+    </script>
+</body>
+
+</html>
