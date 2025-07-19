@@ -461,7 +461,7 @@ const BudgetCategoriesTable = ({
                     uniqueId: `group-${group.id}`,
                     name: group.name,
                     isGroup: true,
-                    isParent: false,
+                    isParent: true, // ✅ Groups should be draggable and expandable
                     depth: 0,
                     group: group,
                     totals: groupData.totals,
@@ -477,7 +477,7 @@ const BudgetCategoriesTable = ({
                             uniqueId: `category-${category.id}`,
                             originalIndex: categoryIndex,
                             isParent: true,
-                            depth: 1, // Categories are indented under groups
+                            depth: 0, // ✅ Categories should be at root level for drag & drop
                             groupId: group.id,
                         });
 
@@ -915,6 +915,60 @@ const BudgetCategoriesTable = ({
                                 </div>
                             </div>
                         );
+                    } else if (item.isGroup) {
+                        // Group header row
+                        return (
+                            <div className="flex items-center justify-between group">
+                                <div className="flex items-center gap-3">
+                                    <div
+                                        className="w-4 h-4 rounded-full border-2"
+                                        style={{ backgroundColor: item.group.color, borderColor: item.group.color }}
+                                    ></div>
+                                    <div className="font-bold text-lg text-base-content">{item.name}</div>
+                                    <div className="text-sm text-base-content/60">
+                                        ({item.totals ? Object.keys(getCategoriesByGroup()[item.group.id]?.categories || {}).length : 0} categories)
+                                    </div>
+                                </div>
+
+                                {/* Group actions */}
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onToggleGroupCollapsed && onToggleGroupCollapsed(item.group.id);
+                                        }}
+                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        title={item.isCollapsed ? "Expand group" : "Collapse group"}
+                                    >
+                                        {item.isCollapsed ? (
+                                            <ChevronRight className="w-4 h-4 text-base-content/60" />
+                                        ) : (
+                                            <ChevronDown className="w-4 h-4 text-base-content/60" />
+                                        )}
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onEditGroup && onEditGroup(item.group.id);
+                                        }}
+                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        title="Edit Group"
+                                    >
+                                        <Edit className="w-4 h-4 text-base-content/60" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteGroup && onDeleteGroup(item.group.id);
+                                        }}
+                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        title="Delete Group"
+                                    >
+                                        <Trash2 className="w-4 h-4 text-base-content/60" />
+                                    </button>
+                                </div>
+                            </div>
+                        );
                     } else if (item.isParent) {
                         return (
                             <div className="flex items-center justify-between group">
@@ -1046,6 +1100,16 @@ const BudgetCategoriesTable = ({
                     if (row.original.isAddRow) return null;
                     const value = getValue();
                     const isSubItem = !row.original.isParent;
+                    const isGroup = row.original.isGroup;
+
+                    if (isGroup) {
+                        // For groups, show total from all categories in the group
+                        return (
+                            <div className="text-right font-bold text-base-content">
+                                {formatCurrency(row.original.totals?.monthlyNeed || 0)}
+                            </div>
+                        );
+                    }
 
                     if (isSubItem && row.original.amount && row.original.frequency) {
                         // For sub-items, calculate and display monthly equivalent
@@ -1075,6 +1139,16 @@ const BudgetCategoriesTable = ({
                     if (row.original.isAddRow) return null;
                     const value = getValue();
                     const isSubItem = !row.original.isParent;
+                    const isGroup = row.original.isGroup;
+
+                    if (isGroup) {
+                        // For groups, show total from all categories in the group
+                        return (
+                            <div className="text-right font-bold text-base-content">
+                                {formatCurrency(row.original.totals?.perPaycheck || 0)}
+                            </div>
+                        );
+                    }
 
                     if (isSubItem) {
                         if (row.original.dueDate) {
@@ -1138,11 +1212,21 @@ const BudgetCategoriesTable = ({
                 cell: ({ getValue, row }) => {
                     if (row.original.isAddRow) return null;
                     const isSubItem = !row.original.isParent;
+                    const isGroup = row.original.isGroup;
 
                     // Don't show allocated amounts for sub-items - funds are allocated to categories, not individual items
                     if (isSubItem) return (
                         '—'
                     );
+
+                    if (isGroup) {
+                        // For groups, show total from all categories in the group
+                        return (
+                            <div className="text-right font-bold text-success">
+                                {formatCurrency(row.original.totals?.allocated || 0)}
+                            </div>
+                        );
+                    }
 
                     const value = getValue();
                     return (
@@ -1160,11 +1244,21 @@ const BudgetCategoriesTable = ({
                 cell: ({ getValue, row }) => {
                     if (row.original.isAddRow) return null;
                     const isSubItem = !row.original.isParent;
+                    const isGroup = row.original.isGroup;
 
                     // Don't show spent amounts for sub-items - spending is tracked at category level
                     if (isSubItem) return (
                         '—'
                     );
+
+                    if (isGroup) {
+                        // For groups, show total from all categories in the group
+                        return (
+                            <div className="text-right font-bold text-error">
+                                {formatCurrency(row.original.totals?.spent || 0)}
+                            </div>
+                        );
+                    }
 
                     const value = getValue();
                     return (
@@ -1182,11 +1276,32 @@ const BudgetCategoriesTable = ({
                 cell: ({ getValue, row }) => {
                     if (row.original.isAddRow) return null;
                     const isSubItem = !row.original.isParent;
+                    const isGroup = row.original.isGroup;
 
                     // Don't show available amounts for sub-items - only categories have available funds
                     if (isSubItem) return ('—'
 
                     );
+
+                    if (isGroup) {
+                        // For groups, show total from all categories in the group
+                        const groupTotal = row.original.totals?.available || 0;
+                        const isOverspent = groupTotal < 0;
+
+                        return (
+                            <div className="text-right">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${isOverspent
+                                    ? 'bg-error/20 text-error border border-error'
+                                    : groupTotal > 0
+                                        ? 'bg-success-lighter/20 text-success border border-success'
+                                        : 'bg-base-200 text-base-content/60 border border-base-300'
+                                    }`}>
+                                    {isOverspent && <span className="mr-1">⚠️</span>}
+                                    {formatCurrency(groupTotal)}
+                                </span>
+                            </div>
+                        );
+                    }
 
                     const value = getValue();
                     const isOverspent = value < 0;
