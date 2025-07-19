@@ -931,6 +931,116 @@ input.form-input.border-primary:focus,
     background-color: var(--color-base-200) !important;
 }
 
+/* Additional button variants for OKLCH themes */
+[data-theme*="abyss"] .btn-info,
+[data-theme*="vscode-dark"] .btn-info,
+[data-theme*="silk"] .btn-info,
+[data-theme*="aurora"] .btn-info {
+    background-color: var(--color-info) !important;
+    border-color: var(--color-info) !important;
+    color: var(--color-info-content) !important;
+}
+
+[data-theme*="abyss"] .btn-info:hover,
+[data-theme*="vscode-dark"] .btn-info:hover,
+[data-theme*="silk"] .btn-info:hover,
+[data-theme*="aurora"] .btn-info:hover {
+    background-color: var(--color-info) !important;
+    border-color: var(--color-info) !important;
+    opacity: 0.8;
+}
+
+[data-theme*="abyss"] .btn-success,
+[data-theme*="vscode-dark"] .btn-success,
+[data-theme*="silk"] .btn-success,
+[data-theme*="aurora"] .btn-success {
+    background-color: var(--color-success) !important;
+    border-color: var(--color-success) !important;
+    color: var(--color-success-content) !important;
+}
+
+[data-theme*="abyss"] .btn-success:hover,
+[data-theme*="vscode-dark"] .btn-success:hover,
+[data-theme*="silk"] .btn-success:hover,
+[data-theme*="aurora"] .btn-success:hover {
+    background-color: var(--color-success) !important;
+    border-color: var(--color-success) !important;
+    opacity: 0.8;
+}
+
+[data-theme*="abyss"] .btn-warning,
+[data-theme*="vscode-dark"] .btn-warning,
+[data-theme*="silk"] .btn-warning,
+[data-theme*="aurora"] .btn-warning {
+    background-color: var(--color-warning) !important;
+    border-color: var(--color-warning) !important;
+    color: var(--color-warning-content) !important;
+}
+
+[data-theme*="abyss"] .btn-warning:hover,
+[data-theme*="vscode-dark"] .btn-warning:hover,
+[data-theme*="silk"] .btn-warning:hover,
+[data-theme*="aurora"] .btn-warning:hover {
+    background-color: var(--color-warning) !important;
+    border-color: var(--color-warning) !important;
+    opacity: 0.8;
+}
+
+[data-theme*="abyss"] .btn-error,
+[data-theme*="vscode-dark"] .btn-error,
+[data-theme*="silk"] .btn-error,
+[data-theme*="aurora"] .btn-error {
+    background-color: var(--color-error) !important;
+    border-color: var(--color-error) !important;
+    color: var(--color-error-content) !important;
+}
+
+[data-theme*="abyss"] .btn-error:hover,
+[data-theme*="vscode-dark"] .btn-error:hover,
+[data-theme*="silk"] .btn-error:hover,
+[data-theme*="aurora"] .btn-error:hover {
+    background-color: var(--color-error) !important;
+    border-color: var(--color-error) !important;
+    opacity: 0.8;
+}
+
+/* Button outline variants for OKLCH themes */
+[data-theme*="abyss"] .btn-outline.btn-primary,
+[data-theme*="vscode-dark"] .btn-outline.btn-primary,
+[data-theme*="silk"] .btn-outline.btn-primary,
+[data-theme*="aurora"] .btn-outline.btn-primary {
+    background-color: transparent !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary) !important;
+}
+
+[data-theme*="abyss"] .btn-outline.btn-primary:hover,
+[data-theme*="vscode-dark"] .btn-outline.btn-primary:hover,
+[data-theme*="silk"] .btn-outline.btn-primary:hover,
+[data-theme*="aurora"] .btn-outline.btn-primary:hover {
+    background-color: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    color: var(--color-primary-content) !important;
+}
+
+[data-theme*="abyss"] .btn-outline.btn-secondary,
+[data-theme*="vscode-dark"] .btn-outline.btn-secondary,
+[data-theme*="silk"] .btn-outline.btn-secondary,
+[data-theme*="aurora"] .btn-outline.btn-secondary {
+    background-color: transparent !important;
+    border-color: var(--color-secondary) !important;
+    color: var(--color-secondary) !important;
+}
+
+[data-theme*="abyss"] .btn-outline.btn-secondary:hover,
+[data-theme*="vscode-dark"] .btn-outline.btn-secondary:hover,
+[data-theme*="silk"] .btn-outline.btn-secondary:hover,
+[data-theme*="aurora"] .btn-outline.btn-secondary:hover {
+    background-color: var(--color-secondary) !important;
+    border-color: var(--color-secondary) !important;
+    color: var(--color-secondary-content) !important;
+}
+
 /* OKLCH DaisyUI content color class overrides */
 [data-theme*="abyss"] .text-primary-content,
 [data-theme*="vscode-dark"] .text-primary-content,

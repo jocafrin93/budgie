@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="abyss">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Border Info Test</title>
+    <style>
+        /* Import the theme variables */
+        :root {
+            /* Abyss Theme */
+            --color-primary: 92% 0.2653 125;
+            --color-primary-focus: 82% 0.2653 125;
+            --color-primary-content: 50% 0.2653 125;
+
+            --color-secondary: 83.27% 0.0764 298.3;
+            --color-secondary-focus: 73.27% 0.0764 298.3;
+            --color-secondary-content: 43.27% 0.0764 298.3;
+
+            --color-accent: 43% 0 0;
+            --color-accent-focus: 33% 0 0;
+            --color-accent-content: 98% 0 0;
+
+            --color-neutral: 30% 0.08 209;
+            --color-neutral-focus: 25% 0.08 209;
+            --color-neutral-content: 90% 0.076 70.697;
+
+            --color-base-100: 20% 0.08 209;
+            --color-base-200: 15% 0.08 209;
+            --color-base-300: 10% 0.08 209;
+            --color-base-content: 90% 0.076 70.697;
+
+            --color-info: 74% 0.16 232.661;
+            --color-info-content: 29% 0.066 243.157;
+
+            --color-success: 79% 0.209 151.711;
+            --color-success-content: 26% 0.065 152.934;
+
+            --color-warning: 84.8% 0.1962 84.62;
+            --color-warning-content: 44.8% 0.1962 84.62;
+
+            --color-error: 65% 0.1985 24.22;
+            --color-error-content: 27% 0.1985 24.22;
+        }
+
+        body {
+            background-color: oklch(var(--color-base-100));
+            color: oklch(var(--color-base-content));
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        /* Test classes */
+        .border-info-custom {
+            border-color: oklch(var(--color-info)) !important;
+        }
+
+        .border-base-content-custom {
+            border-color: oklch(var(--color-base-content)) !important;
+        }
+
+        .test-box {
+            width: 200px;
+            height: 100px;
+            border: 2px solid;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .bg-info-10 {
+            background-color: oklch(var(--color-info) / 0.1);
+        }
+
+        .text-info {
+            color: oklch(var(--color-info));
+        }
+
+        .text-base-content {
+            color: oklch(var(--color-base-content));
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Border Info Color Test - Abyss Theme</h1>
+
+    <h2>Color Values:</h2>
+    <p>Info Color: <span class="text-info">oklch(74% 0.16 232.661)</span> - Should be blue</p>
+    <p>Base Content: <span class="text-base-content">oklch(90% 0.076 70.697)</span> - Should be light text</p>
+
+    <h2>Border Tests:</h2>
+
+    <div class="test-box border-info-custom bg-info-10">
+        <strong>Custom border-info</strong><br>
+        Should have BLUE border (info color)
+    </div>
+
+    <div class="test-box border-base-content-custom bg-info-10">
+        <strong>Custom border-base-content</strong><br>
+        Should have LIGHT border (text color)
+    </div>
+
+    <h2>Expected vs Actual:</h2>
+    <p>If the border in your app is showing the light text color instead of blue, then there's a CSS override happening.
+    </p>
+
+    <h2>Debugging Info:</h2>
+    <div style="font-family: monospace; font-size: 12px;">
+        <p>--color-info: <span id="info-color"></span></p>
+        <p>--color-base-content: <span id="base-content-color"></span></p>
+    </div>
+
+    <script>
+        // Display the computed CSS variable values
+        const root = document.documentElement;
+        const infoColor = getComputedStyle(root).getPropertyValue('--color-info');
+        const baseContentColor = getComputedStyle(root).getPropertyValue('--color-base-content');
+
+        document.getElementById('info-color').textContent = infoColor;
+        document.getElementById('base-content-color').textContent = baseContentColor;
+    </script>
+</body>
+
+</html>
