@@ -39,12 +39,19 @@ import {
     Plus,
     Search,
     Target,
+    ToggleLeft,
+    ToggleRight,
     Trash2,
     FolderOpen,
     Folder,
     Settings
 } from 'lucide-react';
 import React, { useMemo, useState, useCallback } from 'react';
+import {
+    calculateMonthlyAmount,
+    calculatePaychecksUntilDue,
+    formatAmountWithFrequency
+} from '../../utils/budgetDisplayUtils';
 import { getGradientStyle } from '../../utils/gradientUtils';
 import { getDaysBetweenOccurrences } from '../../utils/frequencyUtils';
 import QuickAllocateModal from './QuickAllocateModal';
@@ -129,7 +136,7 @@ const SortableCategoryRow = ({ row, children }) => {
         isDragging,
     } = useSortable({
         id: row.original.id.toString(),
-        disabled: row.original.isAddRow,
+        disabled: !row.original.isParent || row.original.isAddRow,
     });
 
     const style = {
@@ -141,15 +148,15 @@ const SortableCategoryRow = ({ row, children }) => {
     // Base row classes
     const baseClasses = `${row.original.isAddRow
         ? 'bg-primary/10'
-        : !row.original.isCategory && !row.original.isAddRow
+        : !row.original.isParent && !row.original.isAddRow
             ? 'bg-base-100'
-            : row.original.isCategory && !row.original.isActive
+            : row.original.isParent && !row.original.isActive
                 ? 'bg-base-200 opacity-60'
                 : ''
         }`;
 
-    // Non-sortable rows (add rows)
-    if (row.original.isAddRow) {
+    // Non-sortable rows (add rows, sub-items, special rows)
+    if (!row.original.isParent || row.original.isAddRow) {
         return (
             <tr className={baseClasses}>
                 {children}
@@ -205,11 +212,15 @@ const SortableRow = ({ row, children, dragOverGroupId }) => {
 const GroupedBudgetCategoriesTable = ({
     data = [],
     accounts = [],
+    getAllUpcomingPaycheckDates,
     onAddCategory,
     onEditCategory,
     onDeleteCategory,
     onAddItem,
+    onEditItem,
+    onDeleteItem,
     onDataUpdate,
+    onToggleItemActive,
     // Group management props
     groups = [],
     onAddGroup,
@@ -224,12 +235,12 @@ const GroupedBudgetCategoriesTable = ({
 }) => {
     const [sorting, setSorting] = useState([]);
     const [globalFilter, setGlobalFilter] = useState('');
+    const [expanded, setExpanded] = useState({}); // Track expanded state by category ID
     const [rowSelection, setRowSelection] = useState({});
     const [transferModal, setTransferModal] = useState({ isOpen: false, targetCategory: null });
     const [quickAllocateModal, setQuickAllocateModal] = useState({ isOpen: false });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOverGroupId, setDragOverGroupId] = useState(null);
-    const [expandedCategories, setExpandedCategories] = useState(new Set());
 
     // Drag & Drop sensors
     const sensors = useSensors(
@@ -243,6 +254,13 @@ const GroupedBudgetCategoriesTable = ({
         })
     );
 
+    // Get upcoming paychecks for countdown calculations - memoize to prevent infinite re-renders
+    const upcomingPaychecks = useMemo(() => {
+        if (typeof getAllUpcomingPaycheckDates === 'function') {
+            return getAllUpcomingPaycheckDates(3);
+        }
+        return [];
+    }, [getAllUpcomingPaycheckDates]);
 
     // Helper functions
     const formatCurrency = useCallback((amount) => {
@@ -284,6 +302,65 @@ const GroupedBudgetCategoriesTable = ({
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }, []);
+
+    const getCategoryDateInfo = useCallback((category) => {
+        if (!category.subItems || category.subItems.length === 0) {
+            if (category.dueDate) {
+                const nextOccurrence = getNextOccurrence(category.dueDate, category.frequency);
+                return {
+                    earliestDate: nextOccurrence,
+                    additionalCount: 0,
+                    sortValue: new Date(nextOccurrence)
+                };
+            }
+            return {
+                earliestDate: null,
+                additionalCount: 0,
+                sortValue: new Date('9999-12-31')
+            };
+        }
+
+        const itemsWithDates = category.subItems
+            .filter(item => item.dueDate)
+            .map(item => {
+                const nextOccurrence = getNextOccurrence(item.dueDate, item.frequency);
+                return {
+                    date: nextOccurrence,
+                    dateObj: new Date(nextOccurrence)
+                };
+            })
+            .sort((a, b) => a.dateObj - b.dateObj);
+
+        if (itemsWithDates.length === 0) {
+            return {
+                earliestDate: null,
+                additionalCount: 0,
+                sortValue: new Date('9999-12-31')
+            };
+        }
+
+        return {
+            earliestDate: itemsWithDates[0].date,
+            additionalCount: itemsWithDates.length - 1,
+            sortValue: itemsWithDates[0].dateObj
+        };
+    }, [getNextOccurrence]);
+
+    const formatCategoryDueDate = useCallback((category) => {
+        const dateInfo = getCategoryDateInfo(category);
+
+        if (!dateInfo.earliestDate) {
+            return <CalendarOff className="w-4 h-4 text-base-content/60" />;
+        }
+
+        const formattedDate = formatDueDate(dateInfo.earliestDate);
+
+        if (dateInfo.additionalCount > 0) {
+            return `${formattedDate} +${dateInfo.additionalCount}`;
+        }
+
+        return formattedDate;
+    }, [getCategoryDateInfo, formatDueDate]);
 
     const getDueDateUrgency = useCallback((dateString) => {
         if (!dateString) return 'none';
@@ -332,19 +409,6 @@ const GroupedBudgetCategoriesTable = ({
         });
     }, []);
 
-    // Handle category expand/collapse
-    const toggleCategoryExpanded = useCallback((categoryId) => {
-        setExpandedCategories(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(categoryId)) {
-                newSet.delete(categoryId);
-            } else {
-                newSet.add(categoryId);
-            }
-            return newSet;
-        });
-    }, []);
-
     // Enhanced drag and drop handlers
     const handleDragStart = (event) => {
         setIsDragging(true);
@@ -361,7 +425,7 @@ const GroupedBudgetCategoriesTable = ({
 
         const overId = over.id.toString();
 
-        // Check if we're dragging over a group header
+        // Check if dragging over a group
         if (overId.startsWith('group-')) {
             const groupId = overId.replace('group-', '');
             setDragOverGroupId(groupId);
@@ -382,155 +446,153 @@ const GroupedBudgetCategoriesTable = ({
         const activeId = active.id.toString();
         const overId = over.id.toString();
 
-        console.log('🎯 Drag ended - Active:', activeId, 'Over:', overId);
-
         // Handle group reordering
         if (activeId.startsWith('group-') && overId.startsWith('group-')) {
             const activeGroupId = activeId.replace('group-', '');
             const overGroupId = overId.replace('group-', '');
 
-            const oldIndex = groups.findIndex(g => g.id.toString() === activeGroupId);
-            const newIndex = groups.findIndex(g => g.id.toString() === overGroupId);
-
-            if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-                const reorderedGroups = arrayMove(groups, oldIndex, newIndex);
-                console.log('🔄 Reordering groups:', { activeGroupId, overGroupId, oldIndex, newIndex });
-                onReorderGroups && onReorderGroups(reorderedGroups);
+            if (onReorderGroups) {
+                onReorderGroups(activeGroupId, overGroupId);
             }
             return;
         }
 
-        // Handle category operations
-        const categoriesByGroup = getCategoriesByGroup();
-
-        // Find source group for the dragged category
-        let sourceGroupId = null;
-        let draggedCategory = null;
-
-        for (const [groupId, groupData] of Object.entries(categoriesByGroup)) {
-            const category = groupData.categories.find(cat => cat.id.toString() === activeId);
-            if (category) {
-                sourceGroupId = groupId;
-                draggedCategory = category;
-                break;
-            }
-        }
-
-        if (!sourceGroupId || !draggedCategory) {
-            console.log('❌ Could not find source group or category');
-            return;
-        }
-
-        // Check if dropping on a group header (move category to different group)
+        // Handle category to group movement
         if (overId.startsWith('group-')) {
             const targetGroupId = overId.replace('group-', '');
+            const categoryId = parseInt(activeId, 10);
 
-            if (sourceGroupId !== targetGroupId) {
-                console.log('🔄 Moving category between groups:', {
-                    categoryId: draggedCategory.id,
-                    from: sourceGroupId,
-                    to: targetGroupId
-                });
-                onMoveCategoryToGroup && onMoveCategoryToGroup(draggedCategory.id, targetGroupId);
+            if (onMoveCategoryToGroup) {
+                onMoveCategoryToGroup(categoryId, targetGroupId);
             }
             return;
         }
 
-        // Handle reordering within the same group
-        const targetCategory = flattenedData.find(item =>
-            item.isCategory && item.id.toString() === overId
-        );
+        // Handle category reordering within same group
+        const activeCategory = data.find(cat => cat.id.toString() === activeId);
+        const overCategory = data.find(cat => cat.id.toString() === overId);
 
-        if (targetCategory && targetCategory.groupId === sourceGroupId) {
-            const sourceCategories = categoriesByGroup[sourceGroupId].categories;
-            const oldIndex = sourceCategories.findIndex(cat => cat.id.toString() === activeId);
-            const newIndex = sourceCategories.findIndex(cat => cat.id.toString() === overId);
-
-            if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-                const reorderedCategories = arrayMove(sourceCategories, oldIndex, newIndex);
-                console.log('🔄 Reordering categories within group:', {
-                    groupId: sourceGroupId,
-                    oldIndex,
-                    newIndex
-                });
-                onReorderCategoriesInGroup && onReorderCategoriesInGroup(sourceGroupId, reorderedCategories);
+        if (activeCategory && overCategory && activeCategory.groupId === overCategory.groupId) {
+            if (onReorderCategoriesInGroup) {
+                onReorderCategoriesInGroup(activeCategory.groupId, activeId, overId);
             }
         }
     };
 
-    // Transform data to include groups and categories organized by groups
+    // Transform data to include groups and flattened categories with expanded content
     const flattenedData = useMemo(() => {
         const result = [];
-        const categoriesByGroup = getCategoriesByGroup();
 
-        console.log('🏷️ GROUPS - Flattening data for grouped display');
-        console.log('📊 Categories by group:', categoriesByGroup);
+        // Sort groups by their order
+        const sortedGroups = [...groups].sort((a, b) => (a.order || 0) - (b.order || 0));
 
-        Object.entries(categoriesByGroup).forEach(([groupId, groupData]) => {
-            const { group, categories, totals } = groupData;
-
+        sortedGroups.forEach((group) => {
             // Add group header row
             result.push({
-                id: `group-${groupId}`,
-                uniqueId: `group-${groupId}`,
+                id: `group-${group.id}`,
+                uniqueId: `group-${group.id}`,
                 name: group.name,
-                description: group.description,
-                color: group.color,
                 isGroup: true,
+                isParent: false,
+                depth: 0,
+                groupId: group.id,
                 isCollapsed: group.isCollapsed,
-                groupId: groupId,
-                categoryCount: categories.length,
-                totals,
-                depth: 0
+                categoryCount: getCategoriesByGroup(group.id).length
             });
 
-            // Add categories in this group (if not collapsed)
+            // Add categories in this group if not collapsed
             if (!group.isCollapsed) {
-                categories.forEach((category, index) => {
+                const categoriesInGroup = getCategoriesByGroup(group.id);
+
+                categoriesInGroup.forEach((category) => {
                     // Add the main category
                     result.push({
                         ...category,
                         uniqueId: `category-${category.id}`,
-                        originalIndex: index,
-                        isCategory: true,
-                        isGroup: false,
+                        isParent: true,
                         depth: 1,
-                        groupId: groupId
+                        groupId: group.id
                     });
 
-                    // Add sub-items if category is expanded
-                    if (expandedCategories.has(category.id)) {
-                        // For single categories, show expense details
-                        if (category.type === 'single') {
+                    // Add expanded content if category is expanded
+                    if (expanded[category.id]) {
+                        // For goal categories, add a progress row first
+                        if (category.planningType === 'goal' && category.targetAmount) {
+                            const currentAmount = category.alreadySaved || 0;
+                            const targetAmount = category.targetAmount || 0;
+                            const progressPercentage = targetAmount > 0 ? Math.min(100, (currentAmount / targetAmount) * 100) : 0;
+
+                            let daysUntilTarget = null;
+                            if (category.targetDate) {
+                                const today = new Date();
+                                const targetDate = new Date(category.targetDate);
+                                daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+                            }
+
+                            let calculatedPerPaycheck = category.perPaycheckContribution || 0;
+
+                            if (!calculatedPerPaycheck && category.targetDate && daysUntilTarget > 0) {
+                                const remainingAmount = targetAmount - currentAmount;
+                                if (remainingAmount > 0) {
+                                    const paychecksUntilTarget = calculatePaychecksUntilDue(category.targetDate, upcomingPaychecks, category.accountId);
+                                    if (paychecksUntilTarget > 0) {
+                                        calculatedPerPaycheck = remainingAmount / paychecksUntilTarget;
+                                    }
+                                }
+                            }
+
                             result.push({
-                                id: `details-${category.id}`,
-                                uniqueId: `details-${category.id}`,
-                                name: 'Expense Details',
-                                isDetails: true,
-                                isCategory: false,
-                                isGroup: false,
+                                id: `goal-progress-${category.id}`,
+                                uniqueId: `goal-progress-${category.id}`,
+                                name: 'Goal Progress',
+                                isGoalProgress: true,
+                                isParent: false,
                                 depth: 2,
-                                groupId: groupId,
                                 parentCategory: category,
-                                amount: category.amount,
-                                frequency: category.frequency,
-                                dueDate: category.dueDate,
-                                planningType: category.planningType
+                                groupId: group.id,
+                                progressPercentage,
+                                currentAmount,
+                                targetAmount,
+                                daysUntilTarget,
+                                targetDate: category.targetDate,
+                                perPaycheckContribution: calculatedPerPaycheck,
                             });
                         }
 
-                        // For multiple categories, show sub-items
-                        if (category.type === 'multiple' && category.subItems) {
+                        // For single expense categories, add an expense details row
+                        if (category.type === 'single' && category.planningType === 'expense') {
+                            let paychecksLeft = null;
+                            if (category.dueDate) {
+                                paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks, category.accountId);
+                            }
+
+                            result.push({
+                                id: `expense-details-${category.id}`,
+                                uniqueId: `expense-details-${category.id}`,
+                                name: 'Expense Details',
+                                isExpenseDetails: true,
+                                isParent: false,
+                                depth: 2,
+                                parentCategory: category,
+                                groupId: group.id,
+                                paychecksLeft,
+                                dueDate: category.dueDate,
+                                frequency: category.frequency,
+                                amount: category.amount,
+                                isRecurring: category.isRecurring,
+                            });
+                        }
+
+                        // Add existing sub-items
+                        if (category.subItems?.length > 0) {
                             category.subItems.forEach((subItem) => {
                                 result.push({
                                     ...subItem,
-                                    uniqueId: `subitem-${subItem.id}`,
-                                    isSubItem: true,
-                                    isCategory: false,
-                                    isGroup: false,
+                                    uniqueId: `item-${subItem.id}`,
+                                    isParent: false,
                                     depth: 2,
-                                    groupId: groupId,
-                                    parentCategory: category
+                                    parentCategory: category,
+                                    groupId: group.id
                                 });
                             });
                         }
@@ -539,23 +601,15 @@ const GroupedBudgetCategoriesTable = ({
             }
         });
 
-        console.log('📋 Flattened data result:', result.map(r => ({
-            id: r.id,
-            name: r.name,
-            isGroup: r.isGroup,
-            isCategory: r.isCategory,
-            depth: r.depth
-        })));
-
         return result;
-    }, [getCategoriesByGroup, expandedCategories]);
+    }, [groups, getCategoriesByGroup, expanded, upcomingPaychecks, data]);
 
     // Custom header component with sorting
     const SortableHeader = ({ column, children }) => {
         const sorted = column.getIsSorted();
         return (
             <button
-                className="flex items-center gap-2 font-medium text-left w-full hover:text-primary transition-colors"
+                className="flex items-center gap-2 font-medium text-left w-full hover transition-colors"
                 onClick={() => column.toggleSorting()}
             >
                 {children}
@@ -577,19 +631,31 @@ const GroupedBudgetCategoriesTable = ({
     // Table columns definition
     const columns = useMemo(
         () => [
-            // Drag handle column (only for categories within groups)
+            // Drag handle column
             columnHelper.display({
                 id: 'dragHandle',
                 header: '',
                 cell: ({ row }) => {
-                    // Only show drag handle for categories within groups
-                    if (!row.original.isCategory || row.original.isAddRow || row.original.isGroup) return null;
+                    if (row.original.isGroup) {
+                        return (
+                            <div className="flex items-center justify-center">
+                                <button
+                                    className={`p-1 hover:bg-base-200 rounded transition-colors cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
+                                    title="Drag to reorder group"
+                                >
+                                    <GripVertical className="w-4 h-4 text-base-content/60" />
+                                </button>
+                            </div>
+                        );
+                    }
+
+                    if (!row.original.isParent || row.original.isAddRow) return null;
 
                     return (
                         <div className="flex items-center justify-center">
                             <button
                                 className={`p-1 hover:bg-base-200 rounded transition-colors cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
-                                title="Drag to reorder within group"
+                                title="Drag to reorder"
                             >
                                 <GripVertical className="w-4 h-4 text-base-content/60" />
                             </button>
@@ -634,18 +700,16 @@ const GroupedBudgetCategoriesTable = ({
                 id: 'expander',
                 header: '',
                 cell: ({ row }) => {
-                    const item = row.original;
+                    if (row.original.isGroup) {
+                        const group = row.original;
+                        const isCollapsed = group.isCollapsed;
 
-                    if (item.isGroup) {
-                        // Group expand/collapse
                         return (
                             <button
-                                onClick={() => {
-                                    onToggleGroupCollapsed && onToggleGroupCollapsed(item.groupId);
-                                }}
-                                className="p-0.5 hover:bg-base-200 rounded transition-colors"
+                                onClick={() => onToggleGroupCollapsed && onToggleGroupCollapsed(group.groupId)}
+                                className="p-0.5 hover rounded transition-colors"
                             >
-                                {item.isCollapsed ? (
+                                {isCollapsed ? (
                                     <ChevronRight className="w-4 h-4 text-base-content/70" />
                                 ) : (
                                     <ChevronDown className="w-4 h-4 text-base-content/70" />
@@ -654,76 +718,60 @@ const GroupedBudgetCategoriesTable = ({
                         );
                     }
 
-                    if (item.isCategory) {
-                        // Show expand/collapse button for categories that have sub-items or are single categories
-                        const hasExpandableContent = (item.type === 'single') || (item.type === 'multiple' && item.subItems && item.subItems.length > 0);
+                    if (row.original.isAddRow || !row.original.isParent) return null;
 
-                        if (hasExpandableContent) {
-                            const isExpanded = expandedCategories.has(item.id);
-                            return (
-                                <button
-                                    onClick={() => toggleCategoryExpanded(item.id)}
-                                    className="p-0.5 hover:bg-base-200 rounded transition-colors"
-                                >
-                                    {isExpanded ? (
-                                        <ChevronDown className="w-4 h-4 text-base-content/70" />
-                                    ) : (
-                                        <ChevronRight className="w-4 h-4 text-base-content/70" />
-                                    )}
-                                </button>
-                            );
-                        }
-                    }
+                    const category = row.original;
+                    const isExpanded = expanded[category.id];
 
-                    return null;
+                    return (
+                        <button
+                            onClick={() => {
+                                setExpanded(prev => ({
+                                    ...prev,
+                                    [category.id]: !prev[category.id]
+                                }));
+                            }}
+                            className="p-0.5 hover rounded transition-colors"
+                        >
+                            {isExpanded ? (
+                                <ChevronDown className="w-4 h-4 text-base-content/70" />
+                            ) : (
+                                <ChevronRight className="w-4 h-4 text-base-content/70" />
+                            )}
+                        </button>
+                    );
                 },
                 size: 10,
             }),
 
-            // Group/Category name
+            // Category/Item name
             columnHelper.accessor('name', {
                 header: ({ column }) => <SortableHeader column={column}>Category</SortableHeader>,
                 cell: ({ row }) => {
                     const item = row.original;
 
                     if (item.isGroup) {
-                        // Group header row
                         return (
-                            <div className="flex items-center justify-between group py-2">
+                            <div className="flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
-                                    <div
-                                        className="w-5 h-5 rounded-full border-2 border-base-300 flex items-center justify-center"
-                                        style={{ backgroundColor: item.color }}
-                                    >
-                                        {item.isCollapsed ? (
-                                            <Folder className="w-3 h-3 text-white" />
-                                        ) : (
-                                            <FolderOpen className="w-3 h-3 text-white" />
-                                        )}
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-base-content text-lg">
-                                            {item.name}
-                                        </div>
-                                        {item.description && (
-                                            <div className="text-sm text-base-content/60">
-                                                {item.description}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="text-sm text-base-content/60 bg-base-200 px-2 py-1 rounded-full">
-                                        {item.categoryCount} categories
+                                    {item.isCollapsed ? (
+                                        <Folder className="w-5 h-5 text-primary" />
+                                    ) : (
+                                        <FolderOpen className="w-5 h-5 text-primary" />
+                                    )}
+                                    <div className="font-semibold text-primary text-lg">{item.name}</div>
+                                    <div className="text-sm text-base-content/60">
+                                        ({item.categoryCount} categories)
                                     </div>
                                 </div>
 
-                                {/* Group actions */}
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onAddCategory && onAddCategory({ groupId: item.groupId });
                                         }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        className="p-1 hover rounded transition-colors"
                                         title="Add Category to Group"
                                     >
                                         <Plus className="w-4 h-4 text-base-content/60" />
@@ -733,7 +781,7 @@ const GroupedBudgetCategoriesTable = ({
                                             e.stopPropagation();
                                             onEditGroup && onEditGroup(item.groupId);
                                         }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        className="p-1 hover rounded transition-colors"
                                         title="Edit Group"
                                     >
                                         <Settings className="w-4 h-4 text-base-content/60" />
@@ -741,37 +789,97 @@ const GroupedBudgetCategoriesTable = ({
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            if (confirm(`Are you sure you want to delete the group "${item.name}"? Categories in this group will be moved to "Miscellaneous".`)) {
-                                                onDeleteGroup && onDeleteGroup(item.groupId);
-                                            }
+                                            onDeleteGroup && onDeleteGroup(item.groupId);
                                         }}
-                                        className="p-1 hover:bg-error/20 rounded transition-colors"
+                                        className="p-1 hover rounded transition-colors"
                                         title="Delete Group"
                                     >
-                                        <Trash2 className="w-4 h-4 text-error" />
+                                        <Trash2 className="w-4 h-4 text-base-content/60" />
                                     </button>
                                 </div>
                             </div>
                         );
-                    } else if (item.isCategory) {
-                        // Category row
+                    }
+
+                    if (item.isExpenseDetails) {
                         return (
-                            <div style={{ marginLeft: item.depth * 20 }} className="flex items-center justify-between group">
+                            <div style={{ marginLeft: item.depth * 20 + 16 }} className="border-l-2 border-info pl-4 py-2">
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg">💸</span>
+                                            <span className="font-medium text-info">Expense Details</span>
+                                        </div>
+                                        {item.paychecksLeft !== null && (
+                                            <div className="text-sm font-medium text-info">
+                                                {item.paychecksLeft === 0 ? 'Due Now!' :
+                                                    item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <div className="text-base-content/60">Amount</div>
+                                            <div className="font-medium text-info">
+                                                ${(parseFloat(item.amount) || 0).toFixed(2)}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="text-base-content/60">Frequency</div>
+                                            <div className="font-medium text-base-content capitalize">
+                                                {(item.frequency || 'monthly').replace('-', ' ')}
+                                            </div>
+                                        </div>
+                                        {item.dueDate && (
+                                            <>
+                                                <div>
+                                                    <div className="text-base-content/60">Due Date</div>
+                                                    <div className="font-medium text-warning">
+                                                        {formatDueDate(item.dueDate)}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-base-content/60">Paychecks Left</div>
+                                                    <div className={`font-medium ${item.paychecksLeft === 0 ? 'text-error' :
+                                                        item.paychecksLeft === 1 ? 'text-warning' :
+                                                            item.paychecksLeft > 1 ? 'text-success' :
+                                                                'text-error-dark'
+                                                        }`}>
+                                                        {item.paychecksLeft === 0 ? 'Due now!' :
+                                                            item.paychecksLeft > 0 ? `${item.paychecksLeft} left` : 'Overdue'}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                        <div>
+                                            <div className="text-base-content/60">Type</div>
+                                            <div className="font-medium text-base-content">
+                                                {item.isRecurring ? 'Recurring' : 'One-time'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    } else if (item.isParent) {
+                        return (
+                            <div className="flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
                                     <div
                                         className="w-4 h-4 rotate-45 rounded-sm border border-base-300"
                                         style={getGradientStyle(item.color)}
                                     ></div>
                                     {item.type === 'multiple' && (
-                                        <Box className="w-4 h-4 text-base-content/40" fill="none" stroke="currentColor" />
+                                        <Box className="w-4 h-4 text-base-content/40" fill="none" stroke="currentColor">
+                                        </Box>
                                     )}
                                     {item.planningType === 'goal' && (
                                         <Target className="w-4 h-4 text-base-content/40" />
                                     )}
-                                    <div className="font-medium text-base-content">{item.name}</div>
+                                    <div className="font-medium text-base-content/60">{item.name}</div>
                                 </div>
 
-                                {/* Category actions */}
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {item.type === 'multiple' && (
                                         <button
@@ -779,7 +887,7 @@ const GroupedBudgetCategoriesTable = ({
                                                 e.stopPropagation();
                                                 onAddItem && onAddItem({ categoryId: item.id });
                                             }}
-                                            className="p-1 hover:bg-base-200 rounded transition-colors"
+                                            className="p-1 hover rounded transition-colors"
                                             title="Add Item"
                                         >
                                             <Plus className="w-4 h-4 text-base-content/60" />
@@ -790,7 +898,7 @@ const GroupedBudgetCategoriesTable = ({
                                             e.stopPropagation();
                                             onEditCategory && onEditCategory(item);
                                         }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        className="p-1 hover rounded transition-colors"
                                         title="Edit Category"
                                     >
                                         <Edit className="w-4 h-4 text-base-content/60" />
@@ -800,7 +908,7 @@ const GroupedBudgetCategoriesTable = ({
                                             e.stopPropagation();
                                             onDeleteCategory && onDeleteCategory(item.id);
                                         }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        className="p-1 hover rounded transition-colors"
                                         title="Delete Category"
                                     >
                                         <Trash2 className="w-4 h-4 text-base-content/60" />
@@ -808,68 +916,67 @@ const GroupedBudgetCategoriesTable = ({
                                 </div>
                             </div>
                         );
-                    } else if (item.isDetails) {
-                        // Expense details row for single categories
-                        return (
-                            <div style={{ marginLeft: item.depth * 20 }} className="text-sm text-base-content/70 bg-base-50 p-2 rounded">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <span className="font-medium">Amount:</span> {formatCurrency(item.amount || 0)}
-                                    </div>
-                                    <div>
-                                        <span className="font-medium">Frequency:</span> {item.frequency || 'monthly'}
-                                    </div>
-                                    {item.dueDate && (
-                                        <div>
-                                            <span className="font-medium">Due Date:</span> {formatDueDate(item.dueDate)}
-                                        </div>
-                                    )}
-                                    <div>
-                                        <span className="font-medium">Type:</span> {item.planningType || 'expense'}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    } else if (item.isSubItem) {
-                        // Sub-item row for multiple categories
-                        return (
-                            <div style={{ marginLeft: item.depth * 20 }} className="flex items-center justify-between group">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 bg-base-content/40 rounded-full"></div>
-                                    <div className="text-sm text-base-content/80">{item.name}</div>
-                                    {item.type === 'savings-goal' && (
-                                        <Target className="w-3 h-3 text-base-content/40" />
-                                    )}
-                                </div>
+                    } else {
+                        // Sub-item with enhanced display
+                        const amountWithFrequency = formatAmountWithFrequency(item.amount, item.frequency);
 
-                                {/* Sub-item actions */}
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            // Handle edit sub-item
-                                        }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
-                                        title="Edit Item"
-                                    >
-                                        <Edit className="w-3 h-3 text-base-content/60" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            // Handle delete sub-item
-                                        }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
-                                        title="Delete Item"
-                                    >
-                                        <Trash2 className="w-3 h-3 text-base-content/60" />
-                                    </button>
+                        return (
+                            <div style={{ marginLeft: item.depth * 12 + 2 }} className="border-l-2 border-base-300 pl-3">
+                                <div className="flex items-center justify-between group">
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const itemId = parseInt(item.id, 10);
+                                                const newActiveState = item.isActive === false ? true : false;
+                                                onToggleItemActive && onToggleItemActive(itemId, newActiveState);
+                                            }}
+                                            className="w-6 h-4 rounded transition-all duration-200 flex items-center justify-center bg-transparent hover:bg-base-200/50"
+                                            title={item.isActive !== false ? 'Active - counting towards budget' : 'Inactive - planning only'}
+                                        >
+                                            {item.isActive !== false ? (
+                                                <ToggleRight className={`w-4 h-4 text-success hover:text-success/80 transition-colors`} />
+                                            ) : (
+                                                <ToggleLeft className={`w-4 h-4 text-base-content/60 hover:text-base-content/80 transition-colors`} />
+                                            )}
+                                        </button>
+
+                                        <div>
+                                            <div className={`font-medium ${item.isActive !== false ? 'text-base-content' : 'text-base-content/60'}`}>
+                                                {item.name}
+                                            </div>
+                                            <div className={`text-sm ${item.isActive !== false ? 'text-base-content/70' : 'text-base-content/50'}`}>
+                                                {amountWithFrequency}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onEditItem && onEditItem(item);
+                                            }}
+                                            className="p-1 hover rounded transition-colors"
+                                            title="Edit Item"
+                                        >
+                                            <Edit className="w-3 h-3 text-base-content/60" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteItem && onDeleteItem(item.id);
+                                            }}
+                                            className="p-1 hover rounded transition-colors"
+                                            title="Delete Item"
+                                        >
+                                            <Trash2 className="w-3 h-3 text-base-content/60" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );
                     }
-
-                    return null;
                 },
                 size: 300,
             }),
@@ -878,27 +985,26 @@ const GroupedBudgetCategoriesTable = ({
             columnHelper.accessor('monthlyNeed', {
                 header: ({ column }) => <SortableHeader column={column}>Per Month</SortableHeader>,
                 cell: ({ getValue, row }) => {
-                    const item = row.original;
+                    if (row.original.isAddRow || row.original.isGroup) return null;
+                    const value = getValue();
+                    const isSubItem = !row.original.isParent;
 
-                    if (item.isGroup) {
-                        // Group totals
+                    if (isSubItem && row.original.amount && row.original.frequency) {
+                        const monthlyAmount = calculateMonthlyAmount(row.original.amount, row.original.frequency);
                         return (
-                            <div className="text-right font-bold text-base-content">
-                                {formatCurrency(item.totals?.monthlyNeed || 0)}
+                            <div className="text-right">
+                                <div className="font-medium text-base-content/60">
+                                    {formatCurrency(monthlyAmount)}
+                                </div>
                             </div>
                         );
                     }
 
-                    if (item.isCategory) {
-                        const value = getValue();
-                        return (
-                            <div className="text-right font-medium text-base-content">
-                                {formatCurrency(value || 0)}
-                            </div>
-                        );
-                    }
-
-                    return null;
+                    return (
+                        <div className={`text-right font-medium ${isSubItem ? 'text-base-content/60' : 'text-base-content'}`}>
+                            {formatCurrency(value || 0)}
+                        </div>
+                    );
                 },
                 size: 120,
             }),
@@ -907,27 +1013,58 @@ const GroupedBudgetCategoriesTable = ({
             columnHelper.accessor('perPaycheck', {
                 header: ({ column }) => <SortableHeader column={column}>Per Paycheck</SortableHeader>,
                 cell: ({ getValue, row }) => {
-                    const item = row.original;
+                    if (row.original.isAddRow || row.original.isGroup) return null;
+                    const value = getValue();
+                    const isSubItem = !row.original.isParent;
 
-                    if (item.isGroup) {
-                        // Group totals
-                        return (
-                            <div className="text-right font-bold text-primary">
-                                {formatCurrency(item.totals?.perPaycheck || 0)}
-                            </div>
-                        );
+                    if (isSubItem) {
+                        if (row.original.dueDate) {
+                            const accountIdToUse = row.original.accountId || row.original.parentCategory?.accountId;
+                            const paychecksLeft = calculatePaychecksUntilDue(row.original.dueDate, upcomingPaychecks, accountIdToUse);
+                            return (
+                                <div className="text-right">
+                                    <div className="flex items-center justify-end gap-1 font-medium text-info">
+                                        <span>{formatCurrency(value || 0)}</span>
+                                        {paychecksLeft === 0 ? (
+                                            <span className="text-success" title="Due now">
+                                                ⚡
+                                            </span>
+                                        ) : (
+                                            <span className="text-info" title={`${paychecksLeft} paychecks until due`}>
+                                                🕒
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="text-xs">
+                                        {paychecksLeft === 0 ? (
+                                            <span className="text-success font-medium">due now</span>
+                                        ) : paychecksLeft > 0 ? (
+                                            <span className="text-info">{paychecksLeft} left</span>
+                                        ) : (
+                                            <span className="text-error-light">overdue</span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        } else {
+                            return (
+                                <div className="text-right">
+                                    <div className="flex items-center justify-end gap-1 font-medium text-info">
+                                        <span>{formatCurrency(value || 0)}</span>
+                                        <span className="text-base-content/60" title="Ongoing expense">
+                                            ♾️
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        }
                     }
 
-                    if (item.isCategory) {
-                        const value = getValue();
-                        return (
-                            <div className="text-right font-medium text-primary">
-                                {formatCurrency(value || 0)}
-                            </div>
-                        );
-                    }
-
-                    return null;
+                    return (
+                        <div className={`text-right font-medium ${isSubItem ? 'text-primary text-primary' : 'text-primary'}`}>
+                            {formatCurrency(value || 0)}
+                        </div>
+                    );
                 },
                 size: 120,
             }),
@@ -936,27 +1073,17 @@ const GroupedBudgetCategoriesTable = ({
             columnHelper.accessor('allocated', {
                 header: ({ column }) => <SortableHeader column={column}>Allocated</SortableHeader>,
                 cell: ({ getValue, row }) => {
-                    const item = row.original;
+                    if (row.original.isAddRow || row.original.isGroup) return null;
+                    const isSubItem = !row.original.isParent;
 
-                    if (item.isGroup) {
-                        // Group totals
-                        return (
-                            <div className="text-right font-bold text-success">
-                                {formatCurrency(item.totals?.allocated || 0)}
-                            </div>
-                        );
-                    }
+                    if (isSubItem) return '—';
 
-                    if (item.isCategory) {
-                        const value = getValue();
-                        return (
-                            <div className="text-right font-medium text-success">
-                                {formatCurrency(value || 0)}
-                            </div>
-                        );
-                    }
-
-                    return null;
+                    const value = getValue();
+                    return (
+                        <div className="text-right font-medium text-success">
+                            {formatCurrency(value || 0)}
+                        </div>
+                    );
                 },
                 size: 120,
             }),
@@ -965,27 +1092,17 @@ const GroupedBudgetCategoriesTable = ({
             columnHelper.accessor('spent', {
                 header: ({ column }) => <SortableHeader column={column}>Spent</SortableHeader>,
                 cell: ({ getValue, row }) => {
-                    const item = row.original;
+                    if (row.original.isAddRow || row.original.isGroup) return null;
+                    const isSubItem = !row.original.isParent;
 
-                    if (item.isGroup) {
-                        // Group totals
-                        return (
-                            <div className="text-right font-bold text-error">
-                                {formatCurrency(item.totals?.spent || 0)}
-                            </div>
-                        );
-                    }
+                    if (isSubItem) return '—';
 
-                    if (item.isCategory) {
-                        const value = getValue();
-                        return (
-                            <div className="text-right font-medium text-error">
-                                {formatCurrency(value || 0)}
-                            </div>
-                        );
-                    }
-
-                    return null;
+                    const value = getValue();
+                    return (
+                        <div className="text-right font-medium text-error">
+                            {formatCurrency(value || 0)}
+                        </div>
+                    );
                 },
                 size: 120,
             }),
@@ -994,67 +1111,44 @@ const GroupedBudgetCategoriesTable = ({
             columnHelper.accessor('available', {
                 header: ({ column }) => <SortableHeader column={column}>Available</SortableHeader>,
                 cell: ({ getValue, row }) => {
-                    const item = row.original;
+                    if (row.original.isAddRow || row.original.isGroup) return null;
+                    const isSubItem = !row.original.isParent;
 
-                    if (item.isGroup) {
-                        // Group totals
-                        const value = item.totals?.available || 0;
-                        const isOverspent = value < 0;
+                    if (isSubItem) return '—';
 
+                    const value = getValue();
+                    const isOverspent = value < 0;
+
+                    if (value > 0) {
                         return (
                             <div className="text-right">
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold border ${isOverspent
-                                    ? 'bg-error/20 text-error border-error'
-                                    : value > 0
-                                        ? 'bg-success/20 text-success border-success'
-                                        : 'bg-base-200 text-base-content/60 border-base-300'
+                                <button
+                                    onClick={() => handleTransferClick(row.original)}
+                                    className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:border-primary focus:outline-none bg-success-lighter/20 text-success border-success hover"
+                                    title="Click to move money out of this category"
+                                >
+                                    {formatCurrency(value)}
+                                </button>
+                            </div>
+                        );
+                    } else {
+                        return (
+                            <div className="text-right">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
+                                    ? 'bg-error/20 text-error border border-error'
+                                    : 'bg-base-200 text-base-content/60 border border-base-300'
                                     }`}>
                                     {isOverspent && <span className="mr-1">⚠️</span>}
-                                    {formatCurrency(value)}
+                                    {formatCurrency(value || 0)}
                                 </span>
                             </div>
                         );
                     }
-
-                    if (item.isCategory) {
-                        const value = getValue();
-                        const isOverspent = value < 0;
-
-                        // Only make clickable if there's money to transfer out (value > 0)
-                        if (value > 0) {
-                            return (
-                                <div className="text-right">
-                                    <button
-                                        onClick={() => handleTransferClick(item)}
-                                        className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border transition-colors hover:opacity-80 focus:border-primary focus:outline-none bg-success/20 text-success border-success hover:bg-success/30"
-                                        title="Click to move money out of this category"
-                                    >
-                                        {formatCurrency(value)}
-                                    </button>
-                                </div>
-                            );
-                        } else {
-                            // Non-clickable display for $0 or negative amounts
-                            return (
-                                <div className="text-right">
-                                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${isOverspent
-                                        ? 'bg-error/20 text-error border border-error'
-                                        : 'bg-base-200 text-base-content/60 border border-base-300'
-                                        }`}>
-                                        {isOverspent && <span className="mr-1">⚠️</span>}
-                                        {formatCurrency(value || 0)}
-                                    </span>
-                                </div>
-                            );
-                        }
-                    }
-
-                    return null;
                 },
                 size: 120,
             }),
 
-            // Due date (simplified for groups)
+            // Due date
             columnHelper.accessor('dueDate', {
                 header: ({ column }) => (
                     <SortableHeader column={column}>
@@ -1063,26 +1157,17 @@ const GroupedBudgetCategoriesTable = ({
                     </SortableHeader>
                 ),
                 cell: ({ getValue, row }) => {
+                    if (row.original.isAddRow || row.original.isGroup) return null;
                     const item = row.original;
+                    const isSubItem = !item.isParent;
 
-                    if (item.isGroup) {
-                        // For groups, show a summary or leave empty
-                        return (
+                    if (isSubItem) {
+                        const originalDueDate = getValue();
+                        if (!originalDueDate) return (
                             <div className="text-center">
                                 <CalendarOff className="w-4 h-4 text-base-content/60 mx-auto" />
                             </div>
                         );
-                    }
-
-                    if (item.isCategory) {
-                        const originalDueDate = getValue();
-                        if (!originalDueDate) {
-                            return (
-                                <div className="text-center">
-                                    <CalendarOff className="w-4 h-4 text-base-content/60 mx-auto" />
-                                </div>
-                            );
-                        }
 
                         const nextDueDate = getNextOccurrence(originalDueDate, item.frequency);
                         const urgency = getDueDateUrgency(nextDueDate);
@@ -1099,12 +1184,49 @@ const GroupedBudgetCategoriesTable = ({
                                 </span>
                             </div>
                         );
-                    }
+                    } else {
+                        const categoryDateText = formatCategoryDueDate(item);
+                        const dateInfo = getCategoryDateInfo(item);
 
-                    return null;
+                        if (!dateInfo.earliestDate) {
+                            return (
+                                <div className="text-center">
+                                    <CalendarOff className="w-4 h-4 text-base-content/60 mx-auto" />
+                                </div>
+                            );
+                        }
+
+                        const urgency = getDueDateUrgency(dateInfo.earliestDate);
+                        const parts = categoryDateText.split(' +');
+                        const mainDate = parts[0];
+                        const countBadge = parts[1];
+
+                        return (
+                            <div className="text-center">
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getUrgencyStyles(urgency)}`}>
+                                    {mainDate}
+                                    {countBadge && (
+                                        <span className="ml-1 text-xs opacity-75">
+                                            +{countBadge}
+                                        </span>
+                                    )}
+                                </span>
+                            </div>
+                        );
+                    }
+                },
+                sortingFn: (rowA, rowB) => {
+                    const itemA = rowA.original;
+                    const itemB = rowB.original;
+
+                    const dateA = itemA.isParent ? getCategoryDateInfo(itemA).sortValue : (itemA.dueDate ? new Date(itemA.dueDate) : new Date('9999-12-31'));
+                    const dateB = itemB.isParent ? getCategoryDateInfo(itemB).sortValue : (itemB.dueDate ? new Date(itemB.dueDate) : new Date('9999-12-31'));
+
+                    return dateA.getTime() - dateB.getTime();
                 },
                 size: 140,
             }),
+
         ],
         [
             columnHelper,
@@ -1122,8 +1244,10 @@ const GroupedBudgetCategoriesTable = ({
             onEditCategory,
             onDeleteCategory,
             onToggleGroupCollapsed,
-            expandedCategories,
-            toggleCategoryExpanded
+            expanded,
+            onToggleItemActive,
+            formatCategoryDueDate,
+            getCategoryDateInfo
         ]
     );
 
@@ -1154,8 +1278,12 @@ const GroupedBudgetCategoriesTable = ({
         selectedRowIds.forEach(rowId => {
             const rowData = flattenedData.find(row => row.uniqueId === rowId);
 
-            if (rowData && rowData.isCategory) {
-                onDeleteCategory && onDeleteCategory(rowData.id);
+            if (rowData) {
+                if (rowData.isParent) {
+                    onDeleteCategory && onDeleteCategory(rowData.id);
+                } else if (!rowData.isAddRow) {
+                    onDeleteItem && onDeleteItem(rowData.id);
+                }
             }
         });
 
@@ -1170,21 +1298,21 @@ const GroupedBudgetCategoriesTable = ({
                     <div>
                         <h2 className="text-2xl font-bold text-base-content flex items-center gap-2">
                             <DollarSign className="w-7 h-7 text-success" />
-                            Budget Categories (Grouped)
+                            Budget Categories
                         </h2>
-                        <p className="text-base-content/60">Manage your envelope budgeting categories organized by groups</p>
+                        <p className="text-base-content/60">Manage your envelope budgeting categories and items</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => onAddGroup && onAddGroup()}
-                            className="flex items-center gap-2 px-4 py-2 btn-secondary text-secondary-content rounded-lg hover:bg-base-300 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 btn-secondary text-white rounded-lg hover transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             Add Group
                         </button>
                         <button
                             onClick={() => onAddCategory && onAddCategory()}
-                            className="flex items-center gap-2 px-4 py-2 btn-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 btn-primary text-white rounded-lg hover transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             Add Category
@@ -1205,40 +1333,20 @@ const GroupedBudgetCategoriesTable = ({
                         />
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        {selectedRowCount > 0 && (
-                            <>
-                                <span className="text-sm text-base-content/60">
-                                    {selectedRowCount} selected
-                                </span>
-                                <button
-                                    onClick={handleBulkDelete}
-                                    className="flex items-center gap-2 px-3 py-2 bg-error text-white rounded-lg hover:bg-error/80 transition-colors"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                    Delete Selected
-                                </button>
-                            </>
-                        )}
-
-                        {/* Group controls */}
-                        <button
-                            onClick={() => onToggleAllGroups && onToggleAllGroups(false)}
-                            className="flex items-center gap-2 px-3 py-2 bg-base-200 text-base-content rounded-lg hover:bg-base-300 transition-colors"
-                            title="Expand all groups"
-                        >
-                            <FolderOpen className="w-4 h-4" />
-                            Expand All
-                        </button>
-                        <button
-                            onClick={() => onToggleAllGroups && onToggleAllGroups(true)}
-                            className="flex items-center gap-2 px-3 py-2 bg-base-200 text-base-content rounded-lg hover:bg-base-300 transition-colors"
-                            title="Collapse all groups"
-                        >
-                            <Folder className="w-4 h-4" />
-                            Collapse All
-                        </button>
-                    </div>
+                    {selectedRowCount > 0 && (
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm text-base-content/60">
+                                {selectedRowCount} selected
+                            </span>
+                            <button
+                                onClick={handleBulkDelete}
+                                className="flex items-center gap-2 px-3 py-2 bg-error text-white rounded-lg hover transition-colors"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Delete Selected
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -1256,7 +1364,7 @@ const GroupedBudgetCategoriesTable = ({
 
                 if (availableToAllocate > 0) {
                     return (
-                        <div className="mb-4 bg-gradient-to-r from-success/10 to-primary/10 rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+                        <div className="mb-4 bg-gradient-primary-secondary rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
                             <div className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -1341,28 +1449,184 @@ const GroupedBudgetCategoriesTable = ({
                                 ))}
                             </thead>
                             <SortableContext
-                                items={flattenedData.map(item => item.id.toString())}
+                                items={[...groups.map(g => `group-${g.id}`), ...data.map(cat => cat.id.toString())]}
                                 strategy={verticalListSortingStrategy}
                             >
                                 <tbody className="bg-base-100">
-                                    {table.getRowModel().rows.map(row => (
-                                        <SortableRow
-                                            key={row.id}
-                                            row={row}
-                                            isDragging={isDragging}
-                                            dragOverGroupId={dragOverGroupId}
-                                        >
-                                            {row.getVisibleCells().map(cell => (
-                                                <td
-                                                    key={cell.id}
-                                                    className="px-4 py-2 whitespace-nowrap border-b border-base-300"
-                                                    style={{ width: cell.column.getSize() }}
-                                                >
-                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                </td>
-                                            ))}
-                                        </SortableRow>
-                                    ))}
+                                    {table.getRowModel().rows.map(row => {
+                                        const isGoalProgress = row.original.isGoalProgress;
+                                        const isExpenseDetails = row.original.isExpenseDetails;
+
+                                        if (isGoalProgress) {
+                                            const item = row.original;
+                                            const progressColor = item.progressPercentage >= 100 ? 'success' :
+                                                item.progressPercentage >= 75 ? 'primary' :
+                                                    item.progressPercentage >= 50 ? 'warning' : 'neutral';
+
+                                            return (
+                                                <tr key={row.id} className="bg-success-lighter/20">
+                                                    <td colSpan={columns.length} className="px-4 py-2">
+                                                        <div className="bg-success-lighter/20 rounded p-3 border border-success-light">
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-lg">🎯</span>
+                                                                        <span className="text-sm font-semibold text-success-dark">Goal Progress</span>
+                                                                    </div>
+                                                                    <div className="text-sm font-bold text-success-dark">
+                                                                        {item.progressPercentage.toFixed(1)}%
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="w-full bg-base-300 rounded-full h-2">
+                                                                    <div
+                                                                        className={`h-2 rounded-full transition-all duration-300 ${progressColor === 'success' ? 'bg-success' :
+                                                                            progressColor === 'primary' ? 'bg-info/50' :
+                                                                                progressColor === 'warning' ? 'bg-warning' :
+                                                                                    'bg-base-300'
+                                                                            }`}
+                                                                        style={{ width: `${Math.min(100, item.progressPercentage)}%` }}
+                                                                    />
+                                                                </div>
+
+                                                                <div className="grid grid-cols-4 gap-4 text-xs">
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Saved</div>
+                                                                        <div className="font-bold text-success">
+                                                                            ${(parseFloat(item.currentAmount) || 0).toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Target</div>
+                                                                        <div className="font-bold text-base-content">
+                                                                            ${(parseFloat(item.targetAmount) || 0).toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Per Paycheck</div>
+                                                                        <div className="font-bold text-info">
+                                                                            ${(parseFloat(item.perPaycheckContribution) || 0).toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">
+                                                                            {item.daysUntilTarget !== null ? (
+                                                                                item.daysUntilTarget > 0 ? 'Days Left' :
+                                                                                    item.daysUntilTarget === 0 ? 'Due Today' : 'Overdue'
+                                                                            ) : 'Target Date'}
+                                                                        </div>
+                                                                        <div className={`font-bold ${item.daysUntilTarget !== null ? (
+                                                                            item.daysUntilTarget > 30 ? 'text-base-content/60' :
+                                                                                item.daysUntilTarget > 7 ? 'text-warning' :
+                                                                                    item.daysUntilTarget >= 0 ? 'text-error' :
+                                                                                        'text-error-dark'
+                                                                        ) : 'text-base-content/60'
+                                                                            }`}>
+                                                                            {item.daysUntilTarget !== null ? (
+                                                                                item.daysUntilTarget > 0 ? `${item.daysUntilTarget} days` :
+                                                                                    item.daysUntilTarget === 0 ? 'Today!' :
+                                                                                        `${Math.abs(item.daysUntilTarget)} days ago`
+                                                                            ) : (
+                                                                                item.targetDate ? new Date(item.targetDate).toLocaleDateString() : 'Not set'
+                                                                            )}
+                                                                        </div>
+                                                                        {item.targetDate && (
+                                                                            <div className="text-xs text-base-content/60 mt-1">
+                                                                                ({new Date(item.targetDate).toLocaleDateString()})
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+
+                                                                {item.progressPercentage < 100 && (
+                                                                    <div className="text-center text-xs pt-1 border-t border-success-light">
+                                                                        <span className="text-base-content/60">Still need: </span>
+                                                                        <span className="font-bold text-warning">
+                                                                            ${(item.targetAmount - item.currentAmount).toFixed(2)}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
+
+                                        if (isExpenseDetails) {
+                                            const item = row.original;
+                                            return (
+                                                <tr key={row.id} className="bg-info/10">
+                                                    <td colSpan={columns.length} className="px-4 py-2">
+                                                        <div className="bg-info/10 rounded p-3 border border-info">
+                                                            <div className="space-y-2">
+                                                                <div className="flex items-center justify-between">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-lg">💸</span>
+                                                                        <span className="text-sm font-semibold text-info">Expense Details</span>
+                                                                    </div>
+                                                                    {item.paychecksLeft !== null && (
+                                                                        <div className="text-sm font-bold text-info">
+                                                                            {item.paychecksLeft === 0 ? 'Due Now!' :
+                                                                                item.paychecksLeft > 0 ? `${item.paychecksLeft} paychecks left` : 'Overdue'}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="grid grid-cols-3 gap-4 text-xs">
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Amount</div>
+                                                                        <div className="font-bold text-info">
+                                                                            ${(parseFloat(item.amount) || 0).toFixed(2)}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Frequency</div>
+                                                                        <div className="font-bold text-base-content capitalize">
+                                                                            {(item.frequency || 'monthly').replace('-', ' ')}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <div className="text-base-content/60">Type</div>
+                                                                        <div className="font-bold text-base-content">
+                                                                            {item.isRecurring ? 'Recurring' : 'One-time'}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {item.dueDate && (
+                                                                    <div className="text-center text-xs pt-1 border-t border-info">
+                                                                        <div className="text-base-content/60">Due Date</div>
+                                                                        <div className="font-bold text-warning">
+                                                                            {formatDueDate(item.dueDate)}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        }
+
+                                        return (
+                                            <SortableRow
+                                                key={row.id}
+                                                row={row}
+                                                dragOverGroupId={dragOverGroupId}
+                                            >
+                                                {row.getVisibleCells().map(cell => (
+                                                    <td
+                                                        key={cell.id}
+                                                        className="px-4 py-2 whitespace-nowrap border-b border-base-300"
+                                                        style={{ width: cell.column.getSize() }}
+                                                    >
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </td>
+                                                ))}
+                                            </SortableRow>
+                                        );
+                                    })}
                                 </tbody>
                             </SortableContext>
                         </table>
@@ -1372,7 +1636,7 @@ const GroupedBudgetCategoriesTable = ({
                     <div className="bg-base-300 border-t border-base-300 px-4 py-3">
                         <div className="flex items-center justify-between text-sm">
                             <div className="text-base-content/60">
-                                {groups.length} groups • {data.length} categories
+                                {data.length} categories • {data.reduce((sum, cat) => sum + (cat.subItems?.length || 0), 0)} total items
                             </div>
                             <div className="flex items-center gap-6 text-right">
                                 <div>
@@ -1406,10 +1670,6 @@ const GroupedBudgetCategoriesTable = ({
                     categories={data}
                     activeBudgetAllocations={[]}
                     onTransferComplete={(transferData) => {
-                        console.log('🎯 GroupedBudgetCategoriesTable: Transfer completed callback received');
-                        console.log('📊 Transfer data received:', transferData);
-
-                        // Handle the transfer completion here
                         if (transferData.type === 'allocation') {
                             const updatedData = data.map(category => {
                                 if (category.id === transferData.toCategory) {
@@ -1488,9 +1748,6 @@ const GroupedBudgetCategoriesTable = ({
                     categories={data}
                     accounts={accounts}
                     onBulkAllocate={(allocations) => {
-                        console.log('🚀 GroupedBudgetCategoriesTable: Bulk allocation received');
-                        console.log('📊 Allocations:', allocations);
-
                         const updatedData = data.map(category => {
                             const allocation = allocations.find(a => a.categoryId === category.id);
                             if (allocation) {
