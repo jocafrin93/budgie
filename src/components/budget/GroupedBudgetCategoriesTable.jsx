@@ -229,6 +229,7 @@ const GroupedBudgetCategoriesTable = ({
     const [quickAllocateModal, setQuickAllocateModal] = useState({ isOpen: false });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOverGroupId, setDragOverGroupId] = useState(null);
+    const [expandedCategories, setExpandedCategories] = useState(new Set());
 
     // Drag & Drop sensors
     const sensors = useSensors(
@@ -328,6 +329,19 @@ const GroupedBudgetCategoriesTable = ({
             isOpen: true,
             targetCategory: category,
             mode: 'transfer-into'
+        });
+    }, []);
+
+    // Handle category expand/collapse
+    const toggleCategoryExpanded = useCallback((categoryId) => {
+        setExpandedCategories(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(categoryId)) {
+                newSet.delete(categoryId);
+            } else {
+                newSet.add(categoryId);
+            }
+            return newSet;
         });
     }, []);
 
@@ -484,8 +498,43 @@ const GroupedBudgetCategoriesTable = ({
                         groupId: groupId
                     });
 
-                    // Add sub-items if category is expanded (using existing expanded state logic)
-                    // This would need to be implemented similar to the original table
+                    // Add sub-items if category is expanded
+                    if (expandedCategories.has(category.id)) {
+                        // For single categories, show expense details
+                        if (category.type === 'single') {
+                            result.push({
+                                id: `details-${category.id}`,
+                                uniqueId: `details-${category.id}`,
+                                name: 'Expense Details',
+                                isDetails: true,
+                                isCategory: false,
+                                isGroup: false,
+                                depth: 2,
+                                groupId: groupId,
+                                parentCategory: category,
+                                amount: category.amount,
+                                frequency: category.frequency,
+                                dueDate: category.dueDate,
+                                planningType: category.planningType
+                            });
+                        }
+
+                        // For multiple categories, show sub-items
+                        if (category.type === 'multiple' && category.subItems) {
+                            category.subItems.forEach((subItem) => {
+                                result.push({
+                                    ...subItem,
+                                    uniqueId: `subitem-${subItem.id}`,
+                                    isSubItem: true,
+                                    isCategory: false,
+                                    isGroup: false,
+                                    depth: 2,
+                                    groupId: groupId,
+                                    parentCategory: category
+                                });
+                            });
+                        }
+                    }
                 });
             }
         });
@@ -499,7 +548,7 @@ const GroupedBudgetCategoriesTable = ({
         })));
 
         return result;
-    }, [getCategoriesByGroup]);
+    }, [getCategoriesByGroup, expandedCategories]);
 
     // Custom header component with sorting
     const SortableHeader = ({ column, children }) => {
@@ -605,7 +654,27 @@ const GroupedBudgetCategoriesTable = ({
                         );
                     }
 
-                    // For categories, we could add individual expand/collapse for sub-items
+                    if (item.isCategory) {
+                        // Show expand/collapse button for categories that have sub-items or are single categories
+                        const hasExpandableContent = (item.type === 'single') || (item.type === 'multiple' && item.subItems && item.subItems.length > 0);
+
+                        if (hasExpandableContent) {
+                            const isExpanded = expandedCategories.has(item.id);
+                            return (
+                                <button
+                                    onClick={() => toggleCategoryExpanded(item.id)}
+                                    className="p-0.5 hover:bg-base-200 rounded transition-colors"
+                                >
+                                    {isExpanded ? (
+                                        <ChevronDown className="w-4 h-4 text-base-content/70" />
+                                    ) : (
+                                        <ChevronRight className="w-4 h-4 text-base-content/70" />
+                                    )}
+                                </button>
+                            );
+                        }
+                    }
+
                     return null;
                 },
                 size: 10,
@@ -735,6 +804,65 @@ const GroupedBudgetCategoriesTable = ({
                                         title="Delete Category"
                                     >
                                         <Trash2 className="w-4 h-4 text-base-content/60" />
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    } else if (item.isDetails) {
+                        // Expense details row for single categories
+                        return (
+                            <div style={{ marginLeft: item.depth * 20 }} className="text-sm text-base-content/70 bg-base-50 p-2 rounded">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <span className="font-medium">Amount:</span> {formatCurrency(item.amount || 0)}
+                                    </div>
+                                    <div>
+                                        <span className="font-medium">Frequency:</span> {item.frequency || 'monthly'}
+                                    </div>
+                                    {item.dueDate && (
+                                        <div>
+                                            <span className="font-medium">Due Date:</span> {formatDueDate(item.dueDate)}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <span className="font-medium">Type:</span> {item.planningType || 'expense'}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    } else if (item.isSubItem) {
+                        // Sub-item row for multiple categories
+                        return (
+                            <div style={{ marginLeft: item.depth * 20 }} className="flex items-center justify-between group">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 bg-base-content/40 rounded-full"></div>
+                                    <div className="text-sm text-base-content/80">{item.name}</div>
+                                    {item.type === 'savings-goal' && (
+                                        <Target className="w-3 h-3 text-base-content/40" />
+                                    )}
+                                </div>
+
+                                {/* Sub-item actions */}
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Handle edit sub-item
+                                        }}
+                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        title="Edit Item"
+                                    >
+                                        <Edit className="w-3 h-3 text-base-content/60" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            // Handle delete sub-item
+                                        }}
+                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        title="Delete Item"
+                                    >
+                                        <Trash2 className="w-3 h-3 text-base-content/60" />
                                     </button>
                                 </div>
                             </div>
@@ -989,10 +1117,13 @@ const GroupedBudgetCategoriesTable = ({
             isDragging,
             onAddCategory,
             onEditGroup,
+            onDeleteGroup,
             onAddItem,
             onEditCategory,
             onDeleteCategory,
-            onToggleGroupCollapsed
+            onToggleGroupCollapsed,
+            expandedCategories,
+            toggleCategoryExpanded
         ]
     );
 
