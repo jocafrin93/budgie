@@ -481,8 +481,9 @@ const GroupedBudgetCategoriesTable = ({
     const flattenedData = useMemo(() => {
         const result = [];
 
-        // Sort groups by their order
-        const sortedGroups = [...groups].sort((a, b) => (a.order || 0) - (b.order || 0));
+        // Ensure groups is an array and sort by their order
+        const groupsArray = Array.isArray(groups) ? groups : [];
+        const sortedGroups = [...groupsArray].sort((a, b) => (a.order || 0) - (b.order || 0));
 
         sortedGroups.forEach((group) => {
             // Add group header row
