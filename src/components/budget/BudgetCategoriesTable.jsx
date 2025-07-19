@@ -165,10 +165,24 @@ const BudgetCategoriesTable = ({
         })
     );
 
-    // Get only parent categories for drag & drop (no sub-items)
-    const parentCategories = useMemo(() => {
-        return data.filter(category => category.isParent !== false);
-    }, [data]);
+    // Get all sortable items (both groups and categories) for drag & drop
+    const sortableItems = useMemo(() => {
+        const items = [];
+
+        // Add all groups as sortable items
+        if (groups && groups.length > 0) {
+            groups.forEach(group => {
+                items.push(`group-${group.id}`);
+            });
+        }
+
+        // Add all parent categories as sortable items
+        data.filter(category => category.isParent !== false).forEach(category => {
+            items.push(category.id.toString());
+        });
+
+        return items;
+    }, [data, groups]);
 
     // Get sorted groups function - memoized to prevent infinite re-renders
     const getSortedGroups = useMemo(() => {
@@ -1490,7 +1504,7 @@ const BudgetCategoriesTable = ({
                                 ))}
                             </thead>
                             <SortableContext
-                                items={parentCategories.map(cat => cat.id.toString())}
+                                items={sortableItems}
                                 strategy={verticalListSortingStrategy}
                             >
                                 <tbody className="bg-base-100">
