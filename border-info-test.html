@@ -4,121 +4,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Border Info Test</title>
+    <title>Border Info Test - Abyss Theme</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="src/styles/daisy-themes.css">
+    <link rel="stylesheet" href="src/styles/daisy-tailux-bridge.css">
     <style>
-        /* Import the theme variables */
-        :root {
-            /* Abyss Theme */
-            --color-primary: 92% 0.2653 125;
-            --color-primary-focus: 82% 0.2653 125;
-            --color-primary-content: 50% 0.2653 125;
-
-            --color-secondary: 83.27% 0.0764 298.3;
-            --color-secondary-focus: 73.27% 0.0764 298.3;
-            --color-secondary-content: 43.27% 0.0764 298.3;
-
-            --color-accent: 43% 0 0;
-            --color-accent-focus: 33% 0 0;
-            --color-accent-content: 98% 0 0;
-
-            --color-neutral: 30% 0.08 209;
-            --color-neutral-focus: 25% 0.08 209;
-            --color-neutral-content: 90% 0.076 70.697;
-
-            --color-base-100: 20% 0.08 209;
-            --color-base-200: 15% 0.08 209;
-            --color-base-300: 10% 0.08 209;
-            --color-base-content: 90% 0.076 70.697;
-
-            --color-info: 74% 0.16 232.661;
-            --color-info-content: 29% 0.066 243.157;
-
-            --color-success: 79% 0.209 151.711;
-            --color-success-content: 26% 0.065 152.934;
-
-            --color-warning: 84.8% 0.1962 84.62;
-            --color-warning-content: 44.8% 0.1962 84.62;
-
-            --color-error: 65% 0.1985 24.22;
-            --color-error-content: 27% 0.1985 24.22;
-        }
-
-        body {
-            background-color: oklch(var(--color-base-100));
-            color: oklch(var(--color-base-content));
-            font-family: Arial, sans-serif;
-            padding: 20px;
-        }
-
-        /* Test classes */
-        .border-info-custom {
-            border-color: oklch(var(--color-info)) !important;
-        }
-
-        .border-base-content-custom {
-            border-color: oklch(var(--color-base-content)) !important;
-        }
-
-        .test-box {
-            width: 200px;
-            height: 100px;
-            border: 2px solid;
-            margin: 10px 0;
-            padding: 10px;
+        /* Debug styles to show what colors are being used */
+        .debug-info {
+            background: #1a1a1a;
+            color: #fff;
+            padding: 1rem;
+            margin: 1rem 0;
             border-radius: 8px;
         }
 
-        .bg-info-10 {
-            background-color: oklch(var(--color-info) / 0.1);
+        .color-swatch {
+            display: inline-block;
+            width: 50px;
+            height: 20px;
+            border: 1px solid #333;
+            margin-right: 10px;
+            vertical-align: middle;
         }
 
-        .text-info {
-            color: oklch(var(--color-info));
+        .info-color-swatch {
+            background-color: var(--color-info);
         }
 
-        .text-base-content {
-            color: oklch(var(--color-base-content));
+        .primary-color-swatch {
+            background-color: var(--color-primary);
+        }
+
+        .base-content-swatch {
+            background-color: var(--color-base-content);
         }
     </style>
 </head>
 
-<body>
-    <h1>Border Info Color Test - Abyss Theme</h1>
+<body class="bg-base-200 text-base-content p-8">
+    <h1 class="text-2xl font-bold mb-6">Border Info Test - Abyss Theme</h1>
 
-    <h2>Color Values:</h2>
-    <p>Info Color: <span class="text-info">oklch(74% 0.16 232.661)</span> - Should be blue</p>
-    <p>Base Content: <span class="text-base-content">oklch(90% 0.076 70.697)</span> - Should be light text</p>
-
-    <h2>Border Tests:</h2>
-
-    <div class="test-box border-info-custom bg-info-10">
-        <strong>Custom border-info</strong><br>
-        Should have BLUE border (info color)
+    <div class="debug-info">
+        <h2 class="text-lg font-semibold mb-4">Color Variables Debug</h2>
+        <div class="space-y-2">
+            <div>
+                <span class="color-swatch info-color-swatch"></span>
+                <strong>--color-info:</strong> <span id="info-color-value"></span>
+            </div>
+            <div>
+                <span class="color-swatch primary-color-swatch"></span>
+                <strong>--color-primary:</strong> <span id="primary-color-value"></span>
+            </div>
+            <div>
+                <span class="color-swatch base-content-swatch"></span>
+                <strong>--color-base-content:</strong> <span id="base-content-color-value"></span>
+            </div>
+        </div>
     </div>
 
-    <div class="test-box border-base-content-custom bg-info-10">
-        <strong>Custom border-base-content</strong><br>
-        Should have LIGHT border (text color)
-    </div>
+    <div class="space-y-6">
+        <div class="bg-base-100 p-6 rounded-lg">
+            <h2 class="text-lg font-semibold mb-4">Border Info Tests</h2>
 
-    <h2>Expected vs Actual:</h2>
-    <p>If the border in your app is showing the light text color instead of blue, then there's a CSS override happening.
-    </p>
+            <!-- Test 1: Simple border-info -->
+            <div class="mb-4">
+                <h3 class="font-medium mb-2">Test 1: Simple border-info</h3>
+                <div class="p-4 border-2 border-info bg-base-200 rounded">
+                    This should have an info-colored border (blue in Abyss theme)
+                </div>
+            </div>
 
-    <h2>Debugging Info:</h2>
-    <div style="font-family: monospace; font-size: 12px;">
-        <p>--color-info: <span id="info-color"></span></p>
-        <p>--color-base-content: <span id="base-content-color"></span></p>
+            <!-- Test 2: border-info with background -->
+            <div class="mb-4">
+                <h3 class="font-medium mb-2">Test 2: border-info with bg-info/10</h3>
+                <div class="p-4 border border-info bg-info/10 rounded">
+                    This should have info-colored border and background
+                </div>
+            </div>
+
+            <!-- Test 3: Expense Details simulation -->
+            <div class="mb-4">
+                <h3 class="font-medium mb-2">Test 3: Expense Details Simulation</h3>
+                <div class="bg-info/10 rounded p-3 border border-info">
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">💸</span>
+                                <span class="text-sm font-semibold text-info">Expense Details</span>
+                            </div>
+                            <div class="text-sm font-bold text-info">
+                                2 paychecks left
+                            </div>
+                        </div>
+                        <div class="text-center text-xs pt-1 border-t border-info">
+                            <div class="text-base-content/60">Due Date</div>
+                            <div class="font-bold text-warning">Aug 15</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test 4: Left border simulation -->
+            <div class="mb-4">
+                <h3 class="font-medium mb-2">Test 4: Left Border Simulation (border-l-2 border-info)</h3>
+                <div class="border-l-2 border-info pl-4 py-2">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg">💸</span>
+                                <span class="font-medium text-info">Expense Details</span>
+                            </div>
+                            <div class="text-sm font-medium text-info">
+                                2 paychecks left
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test 5: Compare with primary border -->
+            <div class="mb-4">
+                <h3 class="font-medium mb-2">Test 5: Comparison - border-primary vs border-info</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 border-2 border-primary bg-base-200 rounded">
+                        <strong>border-primary</strong><br>
+                        This should be primary colored
+                    </div>
+                    <div class="p-4 border-2 border-info bg-base-200 rounded">
+                        <strong>border-info</strong><br>
+                        This should be info colored (blue)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test 6: Text color comparison -->
+            <div class="mb-4">
+                <h3 class="font-medium mb-2">Test 6: Text Color Comparison</h3>
+                <div class="space-y-2">
+                    <div class="text-primary">This is text-primary color</div>
+                    <div class="text-info">This is text-info color</div>
+                    <div class="text-base-content">This is text-base-content color</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Display the computed CSS variable values
+        // Get computed CSS variable values
         const root = document.documentElement;
-        const infoColor = getComputedStyle(root).getPropertyValue('--color-info');
-        const baseContentColor = getComputedStyle(root).getPropertyValue('--color-base-content');
+        const computedStyle = getComputedStyle(root);
 
-        document.getElementById('info-color').textContent = infoColor;
-        document.getElementById('base-content-color').textContent = baseContentColor;
+        document.getElementById('info-color-value').textContent = computedStyle.getPropertyValue('--color-info').trim();
+        document.getElementById('primary-color-value').textContent = computedStyle.getPropertyValue('--color-primary').trim();
+        document.getElementById('base-content-color-value').textContent = computedStyle.getPropertyValue('--color-base-content').trim();
+
+        // Log to console for debugging
+        console.log('CSS Variables:');
+        console.log('--color-info:', computedStyle.getPropertyValue('--color-info').trim());
+        console.log('--color-primary:', computedStyle.getPropertyValue('--color-primary').trim());
+        console.log('--color-base-content:', computedStyle.getPropertyValue('--color-base-content').trim());
     </script>
 </body>
 

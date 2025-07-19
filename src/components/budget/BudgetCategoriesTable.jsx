@@ -128,6 +128,17 @@ const BudgetCategoriesTable = ({
     data = [],
     accounts = [], // Add accounts prop to calculate available to allocate
     getAllUpcomingPaycheckDates, // Add paycheck management function as prop
+    // Group management props
+    groups = [],
+    onAddGroup, // eslint-disable-line no-unused-vars
+    onEditGroup, // eslint-disable-line no-unused-vars
+    onDeleteGroup, // eslint-disable-line no-unused-vars
+    onToggleGroupCollapsed, // eslint-disable-line no-unused-vars
+    onReorderCategoriesInGroup, // eslint-disable-line no-unused-vars
+    onReorderGroups, // eslint-disable-line no-unused-vars
+    onMoveCategoryToGroup, // eslint-disable-line no-unused-vars
+    getCategoriesByGroup,
+    // Category and item management props
     onAddCategory,
     onEditCategory,
     onDeleteCategory,
@@ -420,145 +431,294 @@ const BudgetCategoriesTable = ({
         }
     }, []);
 
-    // Transform data to include sub-items as separate rows
+    // Transform data to include sub-items as separate rows, organized by groups
     const flattenedData = useMemo(() => {
         const result = [];
 
         console.log('🔍 TABLE COMPONENT DATA DEBUG:');
-        console.log('📊 Data prop received by table:', data.map(c => ({ id: c.id, name: c.name, sortOrder: c.sortOrder })));
+        console.log('📊 Data prop received by table:', data.map(c => ({ id: c.id, name: c.name, sortOrder: c.sortOrder, groupId: c.groupId })));
         console.log('📊 Data prop length:', data.length);
-        console.log('📊 First category full data:', data[0]);
+        console.log('📊 Groups prop:', groups);
+        console.log('📊 getCategoriesByGroup function:', !!getCategoriesByGroup);
 
-        // Sort data by sortOrder if no other sorting is applied, otherwise use original order
-        const sortedData = sorting.length === 0
-            ? [...data].sort((a, b) => {
-                // Use sortOrder if available, otherwise fall back to original index
-                const orderA = typeof a.sortOrder === 'number' ? a.sortOrder : data.indexOf(a);
-                const orderB = typeof b.sortOrder === 'number' ? b.sortOrder : data.indexOf(b);
-                console.log(`🔍 SORT COMPARISON: ${a.name} (sortOrder: ${a.sortOrder}, orderA: ${orderA}) vs ${b.name} (sortOrder: ${b.sortOrder}, orderB: ${orderB}) = ${orderA - orderB}`);
-                return orderA - orderB;
-            })
-            : data;
+        // Use grouped data if groups are available and getCategoriesByGroup function exists
+        if (groups && groups.length > 0 && getCategoriesByGroup) {
+            console.log('🏷️ Using grouped data organization');
+            const categoriesByGroup = getCategoriesByGroup();
+            console.log('📋 Categories by group:', categoriesByGroup);
 
-        console.log('🔍 FLATTENED DATA SORT DEBUG:');
-        console.log('📊 Original data order:', data.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
-        console.log('📊 Sorted data order:', sortedData.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
-        console.log('📊 Sorting state:', sorting);
+            // Process each group
+            Object.keys(categoriesByGroup).forEach(groupId => {
+                const groupData = categoriesByGroup[groupId];
+                const group = groupData.group;
+                const groupCategories = groupData.categories;
 
-        sortedData.forEach((category, index) => {
-            // Add the main category
-            result.push({
-                ...category,
-                uniqueId: `category-${category.id}`,
-                originalIndex: index,
-                isParent: true,
-                depth: 0,
-            });
+                console.log(`🏷️ Processing group: ${group.name} (${groupCategories.length} categories)`);
 
-            // Add sub-items and "Add Item" row if category is expanded
-            if (expanded[category.id]) {
-                // For goal categories, add a progress row first
-                if (category.planningType === 'goal' && category.targetAmount) {
-                    const currentAmount = category.alreadySaved || 0;
-                    const targetAmount = category.targetAmount || 0;
-                    const progressPercentage = targetAmount > 0 ? Math.min(100, (currentAmount / targetAmount) * 100) : 0;
+                // Add group header row
+                result.push({
+                    id: `group-${group.id}`,
+                    uniqueId: `group-${group.id}`,
+                    name: group.name,
+                    isGroup: true,
+                    isParent: false,
+                    depth: 0,
+                    group: group,
+                    totals: groupData.totals,
+                    isCollapsed: group.isCollapsed || false,
+                });
 
-                    // Calculate days until target date
-                    let daysUntilTarget = null;
-                    if (category.targetDate) {
-                        const today = new Date();
-                        const targetDate = new Date(category.targetDate);
-                        daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-                    }
+                // Add categories in this group (only if group is not collapsed)
+                if (!group.isCollapsed) {
+                    groupCategories.forEach((category, categoryIndex) => {
+                        // Add the main category
+                        result.push({
+                            ...category,
+                            uniqueId: `category-${category.id}`,
+                            originalIndex: categoryIndex,
+                            isParent: true,
+                            depth: 1, // Categories are indented under groups
+                            groupId: group.id,
+                        });
 
-                    // Calculate required per-paycheck contribution
-                    let calculatedPerPaycheck = category.perPaycheckContribution || 0;
+                        // Add sub-items if category is expanded
+                        if (expanded[category.id]) {
+                            // For goal categories, add a progress row first
+                            if (category.planningType === 'goal' && category.targetAmount) {
+                                const currentAmount = category.alreadySaved || 0;
+                                const targetAmount = category.targetAmount || 0;
+                                const progressPercentage = targetAmount > 0 ? Math.min(100, (currentAmount / targetAmount) * 100) : 0;
 
-                    // If no manual per-paycheck amount is set, calculate it based on remaining amount and time
-                    if (!calculatedPerPaycheck && category.targetDate && daysUntilTarget > 0) {
-                        const remainingAmount = targetAmount - currentAmount;
-                        if (remainingAmount > 0) {
-                            // Calculate number of paychecks until target date using account-specific filtering
-                            const paychecksUntilTarget = calculatePaychecksUntilDue(category.targetDate, upcomingPaychecks, category.accountId);
-                            if (paychecksUntilTarget > 0) {
-                                calculatedPerPaycheck = remainingAmount / paychecksUntilTarget;
+                                // Calculate days until target date
+                                let daysUntilTarget = null;
+                                if (category.targetDate) {
+                                    const today = new Date();
+                                    const targetDate = new Date(category.targetDate);
+                                    daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+                                }
+
+                                // Calculate required per-paycheck contribution
+                                let calculatedPerPaycheck = category.perPaycheckContribution || 0;
+
+                                // If no manual per-paycheck amount is set, calculate it based on remaining amount and time
+                                if (!calculatedPerPaycheck && category.targetDate && daysUntilTarget > 0) {
+                                    const remainingAmount = targetAmount - currentAmount;
+                                    if (remainingAmount > 0) {
+                                        // Calculate number of paychecks until target date using account-specific filtering
+                                        const paychecksUntilTarget = calculatePaychecksUntilDue(category.targetDate, upcomingPaychecks, category.accountId);
+                                        if (paychecksUntilTarget > 0) {
+                                            calculatedPerPaycheck = remainingAmount / paychecksUntilTarget;
+                                        }
+                                    }
+                                }
+
+                                result.push({
+                                    id: `goal-progress-${category.id}`,
+                                    uniqueId: `goal-progress-${category.id}`,
+                                    name: 'Goal Progress',
+                                    isGoalProgress: true,
+                                    originalIndex: categoryIndex,
+                                    isParent: false,
+                                    depth: 2,
+                                    parentCategory: category,
+                                    progressPercentage,
+                                    currentAmount,
+                                    targetAmount,
+                                    daysUntilTarget,
+                                    targetDate: category.targetDate,
+                                    perPaycheckContribution: calculatedPerPaycheck,
+                                });
+                            }
+
+                            // For single expense categories, add an expense details row
+                            if (category.type === 'single' && category.planningType === 'expense') {
+                                // Calculate paycheck countdown if there's a due date using account-specific filtering
+                                let paychecksLeft = null;
+                                if (category.dueDate) {
+                                    console.log('🔍 SINGLE CATEGORY PAYCHECK DEBUG:', {
+                                        categoryName: category.name,
+                                        categoryId: category.id,
+                                        dueDate: category.dueDate,
+                                        accountId: category.accountId,
+                                        upcomingPaychecksLength: upcomingPaychecks.length
+                                    });
+                                    paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks, category.accountId);
+                                    console.log('🔍 SINGLE CATEGORY RESULT:', {
+                                        categoryName: category.name,
+                                        paychecksLeft,
+                                        accountId: category.accountId
+                                    });
+                                }
+
+                                result.push({
+                                    id: `expense-details-${category.id}`,
+                                    uniqueId: `expense-details-${category.id}`,
+                                    name: 'Expense Details',
+                                    isExpenseDetails: true,
+                                    originalIndex: categoryIndex,
+                                    isParent: false,
+                                    depth: 2,
+                                    parentCategory: category,
+                                    paychecksLeft,
+                                    dueDate: category.dueDate,
+                                    frequency: category.frequency,
+                                    amount: category.amount,
+                                    isRecurring: category.isRecurring,
+                                });
+                            }
+
+                            // Add existing sub-items
+                            if (category.subItems?.length > 0) {
+                                category.subItems.forEach((subItem) => {
+                                    result.push({
+                                        ...subItem,
+                                        uniqueId: `item-${subItem.id}`,
+                                        originalIndex: categoryIndex,
+                                        isParent: false,
+                                        depth: 2,
+                                        parentCategory: category,
+                                    });
+                                });
                             }
                         }
-                    }
-
-                    result.push({
-                        id: `goal-progress-${category.id}`,
-                        uniqueId: `goal-progress-${category.id}`,
-                        name: 'Goal Progress',
-                        isGoalProgress: true,
-                        originalIndex: index,
-                        isParent: false,
-                        depth: 1,
-                        parentCategory: category,
-                        progressPercentage,
-                        currentAmount,
-                        targetAmount,
-                        daysUntilTarget,
-                        targetDate: category.targetDate,
-                        perPaycheckContribution: calculatedPerPaycheck,
                     });
                 }
+            });
+        } else {
+            console.log('🔍 Using non-grouped data organization (fallback)');
+            // Fallback to original non-grouped logic
+            // Sort data by sortOrder if no other sorting is applied, otherwise use original order
+            const sortedData = sorting.length === 0
+                ? [...data].sort((a, b) => {
+                    // Use sortOrder if available, otherwise fall back to original index
+                    const orderA = typeof a.sortOrder === 'number' ? a.sortOrder : data.indexOf(a);
+                    const orderB = typeof b.sortOrder === 'number' ? b.sortOrder : data.indexOf(b);
+                    console.log(`🔍 SORT COMPARISON: ${a.name} (sortOrder: ${a.sortOrder}, orderA: ${orderA}) vs ${b.name} (sortOrder: ${b.sortOrder}, orderB: ${orderB}) = ${orderA - orderB}`);
+                    return orderA - orderB;
+                })
+                : data;
 
-                // For single expense categories, add an expense details row
-                if (category.type === 'single' && category.planningType === 'expense') {
-                    // Calculate paycheck countdown if there's a due date using account-specific filtering
-                    let paychecksLeft = null;
-                    if (category.dueDate) {
-                        console.log('🔍 SINGLE CATEGORY PAYCHECK DEBUG:', {
-                            categoryName: category.name,
-                            categoryId: category.id,
-                            dueDate: category.dueDate,
-                            accountId: category.accountId,
-                            upcomingPaychecksLength: upcomingPaychecks.length
-                        });
-                        paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks, category.accountId);
-                        console.log('🔍 SINGLE CATEGORY RESULT:', {
-                            categoryName: category.name,
-                            paychecksLeft,
-                            accountId: category.accountId
-                        });
-                    }
+            console.log('🔍 FLATTENED DATA SORT DEBUG:');
+            console.log('📊 Original data order:', data.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
+            console.log('📊 Sorted data order:', sortedData.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
+            console.log('📊 Sorting state:', sorting);
 
-                    result.push({
-                        id: `expense-details-${category.id}`,
-                        uniqueId: `expense-details-${category.id}`,
-                        name: 'Expense Details',
-                        isExpenseDetails: true,
-                        originalIndex: index,
-                        isParent: false,
-                        depth: 1,
-                        parentCategory: category,
-                        paychecksLeft,
-                        dueDate: category.dueDate,
-                        frequency: category.frequency,
-                        amount: category.amount,
-                        isRecurring: category.isRecurring,
-                    });
-                }
+            sortedData.forEach((category, index) => {
+                // Add the main category
+                result.push({
+                    ...category,
+                    uniqueId: `category-${category.id}`,
+                    originalIndex: index,
+                    isParent: true,
+                    depth: 0,
+                });
 
-                // Add existing sub-items
-                if (category.subItems?.length > 0) {
-                    category.subItems.forEach((subItem) => {
+                // Add sub-items and "Add Item" row if category is expanded
+                if (expanded[category.id]) {
+                    // For goal categories, add a progress row first
+                    if (category.planningType === 'goal' && category.targetAmount) {
+                        const currentAmount = category.alreadySaved || 0;
+                        const targetAmount = category.targetAmount || 0;
+                        const progressPercentage = targetAmount > 0 ? Math.min(100, (currentAmount / targetAmount) * 100) : 0;
+
+                        // Calculate days until target date
+                        let daysUntilTarget = null;
+                        if (category.targetDate) {
+                            const today = new Date();
+                            const targetDate = new Date(category.targetDate);
+                            daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+                        }
+
+                        // Calculate required per-paycheck contribution
+                        let calculatedPerPaycheck = category.perPaycheckContribution || 0;
+
+                        // If no manual per-paycheck amount is set, calculate it based on remaining amount and time
+                        if (!calculatedPerPaycheck && category.targetDate && daysUntilTarget > 0) {
+                            const remainingAmount = targetAmount - currentAmount;
+                            if (remainingAmount > 0) {
+                                // Calculate number of paychecks until target date using account-specific filtering
+                                const paychecksUntilTarget = calculatePaychecksUntilDue(category.targetDate, upcomingPaychecks, category.accountId);
+                                if (paychecksUntilTarget > 0) {
+                                    calculatedPerPaycheck = remainingAmount / paychecksUntilTarget;
+                                }
+                            }
+                        }
+
                         result.push({
-                            ...subItem,
-                            uniqueId: `item-${subItem.id}`,
+                            id: `goal-progress-${category.id}`,
+                            uniqueId: `goal-progress-${category.id}`,
+                            name: 'Goal Progress',
+                            isGoalProgress: true,
                             originalIndex: index,
                             isParent: false,
                             depth: 1,
                             parentCategory: category,
+                            progressPercentage,
+                            currentAmount,
+                            targetAmount,
+                            daysUntilTarget,
+                            targetDate: category.targetDate,
+                            perPaycheckContribution: calculatedPerPaycheck,
                         });
-                    });
-                }
+                    }
 
-            }
-        });
+                    // For single expense categories, add an expense details row
+                    if (category.type === 'single' && category.planningType === 'expense') {
+                        // Calculate paycheck countdown if there's a due date using account-specific filtering
+                        let paychecksLeft = null;
+                        if (category.dueDate) {
+                            console.log('🔍 SINGLE CATEGORY PAYCHECK DEBUG:', {
+                                categoryName: category.name,
+                                categoryId: category.id,
+                                dueDate: category.dueDate,
+                                accountId: category.accountId,
+                                upcomingPaychecksLength: upcomingPaychecks.length
+                            });
+                            paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks, category.accountId);
+                            console.log('🔍 SINGLE CATEGORY RESULT:', {
+                                categoryName: category.name,
+                                paychecksLeft,
+                                accountId: category.accountId
+                            });
+                        }
+
+                        result.push({
+                            id: `expense-details-${category.id}`,
+                            uniqueId: `expense-details-${category.id}`,
+                            name: 'Expense Details',
+                            isExpenseDetails: true,
+                            originalIndex: index,
+                            isParent: false,
+                            depth: 1,
+                            parentCategory: category,
+                            paychecksLeft,
+                            dueDate: category.dueDate,
+                            frequency: category.frequency,
+                            amount: category.amount,
+                            isRecurring: category.isRecurring,
+                        });
+                    }
+
+                    // Add existing sub-items
+                    if (category.subItems?.length > 0) {
+                        category.subItems.forEach((subItem) => {
+                            result.push({
+                                ...subItem,
+                                uniqueId: `item-${subItem.id}`,
+                                originalIndex: index,
+                                isParent: false,
+                                depth: 1,
+                                parentCategory: category,
+                            });
+                        });
+                    }
+
+                }
+            });
+        }
+
         return result;
-    }, [data, expanded, upcomingPaychecks, sorting]);
+    }, [data, expanded, upcomingPaychecks, sorting, groups, getCategoriesByGroup, getNextOccurrence]);
 
     // Custom header component with sorting
     const SortableHeader = ({ column, children }) => {
