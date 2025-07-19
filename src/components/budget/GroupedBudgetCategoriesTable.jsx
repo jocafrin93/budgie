@@ -50,7 +50,7 @@ import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
 
 // Sortable Row Component
-const SortableRow = ({ row, children }) => {
+const SortableRow = ({ row, children, dragOverGroupId }) => {
     const {
         attributes,
         listeners,
@@ -60,7 +60,7 @@ const SortableRow = ({ row, children }) => {
         isDragging,
     } = useSortable({
         id: row.original.id.toString(),
-        disabled: !row.original.isCategory || row.original.isAddRow,
+        disabled: row.original.isAddRow,
     });
 
     const style = {
@@ -69,27 +69,31 @@ const SortableRow = ({ row, children }) => {
         opacity: isDragging ? 0.5 : 1,
     };
 
-    // Only apply sortable to category rows within groups
-    if (!row.original.isCategory || row.original.isAddRow || row.original.isGroup) {
+    // Determine if this group is being dragged over
+    const isGroupDragTarget = row.original.isGroup && dragOverGroupId === row.original.groupId;
+
+    // Base row classes
+    const baseClasses = `${row.original.isAddRow
+        ? 'bg-primary/10'
+        : row.original.isGroup
+            ? `bg-base-200 border-t-2 border-base-300 ${isGroupDragTarget ? 'ring-2 ring-primary bg-primary/10' : ''}`
+            : !row.original.isCategory && !row.original.isAddRow
+                ? 'bg-base-100'
+                : row.original.isCategory && !row.original.isActive
+                    ? 'bg-base-200 opacity-60'
+                    : ''
+        }`;
+
+    // Non-sortable rows (add rows)
+    if (row.original.isAddRow) {
         return (
-            <tr
-                className={`${row.original.isAddRow
-                    ? 'bg-primary/10'
-                    : row.original.isGroup
-                        ? 'bg-base-200 border-t-2 border-base-300'
-                        : !row.original.isCategory && !row.original.isAddRow
-                            ? 'bg-base-100'
-                            : row.original.isCategory && !row.original.isActive
-                                ? 'bg-base-200 opacity-60'
-                                : ''
-                    }`}
-            >
+            <tr className={baseClasses}>
                 {children}
             </tr>
         );
     }
 
-    // For sortable rows, we need to clone the children and add drag listeners to the first cell
+    // For sortable rows (both groups and categories), we need to clone the children and add drag listeners
     const childrenArray = Array.isArray(children) ? children : [children];
 
     return (
@@ -97,22 +101,24 @@ const SortableRow = ({ row, children }) => {
             ref={setNodeRef}
             style={style}
             {...attributes}
-            className={`${row.original.isAddRow
-                ? 'bg-primary/10'
-                : !row.original.isCategory && !row.original.isAddRow
-                    ? 'bg-base-100'
-                    : row.original.isCategory && !row.original.isActive
-                        ? 'bg-base-200 opacity-60'
-                        : ''
-                }`}
+            className={baseClasses}
         >
             {childrenArray.map((child, index) => {
-                // Add drag listeners to the first cell (drag handle column)
-                if (index === 0 && row.original.isCategory && !row.original.isAddRow) {
+                // Add drag listeners to the first cell (drag handle column) for categories
+                // For groups, add drag listeners to the name column (index 3)
+                const shouldAddListeners =
+                    (row.original.isCategory && index === 0) ||
+                    (row.original.isGroup && index === 3);
+
+                if (shouldAddListeners) {
                     return React.cloneElement(child, {
                         ...child.props,
                         ...listeners,
-                        key: child.key || index
+                        key: child.key || index,
+                        style: {
+                            ...child.props.style,
+                            cursor: isDragging ? 'grabbing' : 'grab'
+                        }
                     });
                 }
                 return child;
@@ -136,6 +142,8 @@ const GroupedBudgetCategoriesTable = ({
     onToggleGroupCollapsed,
     onToggleAllGroups,
     onReorderCategoriesInGroup,
+    onReorderGroups,
+    onMoveCategoryToGroup,
     getCategoriesByGroup
 }) => {
     const [sorting, setSorting] = useState([]);
@@ -144,6 +152,7 @@ const GroupedBudgetCategoriesTable = ({
     const [transferModal, setTransferModal] = useState({ isOpen: false, targetCategory: null });
     const [quickAllocateModal, setQuickAllocateModal] = useState({ isOpen: false });
     const [isDragging, setIsDragging] = useState(false);
+    const [dragOverGroupId, setDragOverGroupId] = useState(null);
 
     // Drag & Drop sensors
     const sensors = useSensors(
@@ -246,53 +255,117 @@ const GroupedBudgetCategoriesTable = ({
         });
     }, []);
 
-    // Handle drag end for category reordering within groups
-    const handleDragEnd = (event) => {
-        const { active, over } = event;
-        setIsDragging(false);
+    // Enhanced drag and drop handlers
+    const handleDragStart = (event) => {
+        setIsDragging(true);
+        console.log('🎯 Drag started:', event.active.id);
+    };
 
-        if (!over || active.id === over.id) {
+    const handleDragOver = (event) => {
+        const { over } = event;
+
+        if (!over) {
+            setDragOverGroupId(null);
             return;
         }
 
-        console.log('🏷️ GROUPS - Drag & drop reorder within group');
+        const overId = over.id.toString();
 
-        // Find which group this category belongs to
-        const categoriesByGroup = getCategoriesByGroup();
-        let sourceGroupId = null;
-        let sourceCategories = [];
-
-        for (const [groupId, groupData] of Object.entries(categoriesByGroup)) {
-            const categoryExists = groupData.categories.some(cat => cat.id.toString() === active.id.toString());
-            if (categoryExists) {
-                sourceGroupId = groupId;
-                sourceCategories = groupData.categories;
-                break;
-            }
+        // Check if we're dragging over a group header
+        if (overId.startsWith('group-')) {
+            const groupId = overId.replace('group-', '');
+            setDragOverGroupId(groupId);
+        } else {
+            setDragOverGroupId(null);
         }
+    };
 
-        if (!sourceGroupId) {
-            console.log('❌ Could not find source group for category');
+    const handleDragEnd = (event) => {
+        const { active, over } = event;
+        setIsDragging(false);
+        setDragOverGroupId(null);
+
+        if (!over || active.id === over.id) {
             return;
         }
 
         const activeId = active.id.toString();
         const overId = over.id.toString();
 
-        const oldIndex = sourceCategories.findIndex(cat => cat.id.toString() === activeId);
-        const newIndex = sourceCategories.findIndex(cat => cat.id.toString() === overId);
+        console.log('🎯 Drag ended - Active:', activeId, 'Over:', overId);
 
-        if (oldIndex === -1 || newIndex === -1) {
-            console.log('❌ Invalid indices for reorder');
+        // Handle group reordering
+        if (activeId.startsWith('group-') && overId.startsWith('group-')) {
+            const activeGroupId = activeId.replace('group-', '');
+            const overGroupId = overId.replace('group-', '');
+
+            const oldIndex = groups.findIndex(g => g.id.toString() === activeGroupId);
+            const newIndex = groups.findIndex(g => g.id.toString() === overGroupId);
+
+            if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+                const reorderedGroups = arrayMove(groups, oldIndex, newIndex);
+                console.log('🔄 Reordering groups:', { activeGroupId, overGroupId, oldIndex, newIndex });
+                onReorderGroups && onReorderGroups(reorderedGroups);
+            }
             return;
         }
 
-        const reorderedCategories = arrayMove(sourceCategories, oldIndex, newIndex);
-        onReorderCategoriesInGroup && onReorderCategoriesInGroup(sourceGroupId, reorderedCategories);
-    };
+        // Handle category operations
+        const categoriesByGroup = getCategoriesByGroup();
 
-    const handleDragStart = () => {
-        setIsDragging(true);
+        // Find source group for the dragged category
+        let sourceGroupId = null;
+        let draggedCategory = null;
+
+        for (const [groupId, groupData] of Object.entries(categoriesByGroup)) {
+            const category = groupData.categories.find(cat => cat.id.toString() === activeId);
+            if (category) {
+                sourceGroupId = groupId;
+                draggedCategory = category;
+                break;
+            }
+        }
+
+        if (!sourceGroupId || !draggedCategory) {
+            console.log('❌ Could not find source group or category');
+            return;
+        }
+
+        // Check if dropping on a group header (move category to different group)
+        if (overId.startsWith('group-')) {
+            const targetGroupId = overId.replace('group-', '');
+
+            if (sourceGroupId !== targetGroupId) {
+                console.log('🔄 Moving category between groups:', {
+                    categoryId: draggedCategory.id,
+                    from: sourceGroupId,
+                    to: targetGroupId
+                });
+                onMoveCategoryToGroup && onMoveCategoryToGroup(draggedCategory.id, targetGroupId);
+            }
+            return;
+        }
+
+        // Handle reordering within the same group
+        const targetCategory = flattenedData.find(item =>
+            item.isCategory && item.id.toString() === overId
+        );
+
+        if (targetCategory && targetCategory.groupId === sourceGroupId) {
+            const sourceCategories = categoriesByGroup[sourceGroupId].categories;
+            const oldIndex = sourceCategories.findIndex(cat => cat.id.toString() === activeId);
+            const newIndex = sourceCategories.findIndex(cat => cat.id.toString() === overId);
+
+            if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+                const reorderedCategories = arrayMove(sourceCategories, oldIndex, newIndex);
+                console.log('🔄 Reordering categories within group:', {
+                    groupId: sourceGroupId,
+                    oldIndex,
+                    newIndex
+                });
+                onReorderCategoriesInGroup && onReorderCategoriesInGroup(sourceGroupId, reorderedCategories);
+            }
+        }
     };
 
     // Transform data to include groups and categories organized by groups
@@ -1024,6 +1097,7 @@ const GroupedBudgetCategoriesTable = ({
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
             >
                 <div className="bg-base-100 rounded-lg border border-base-300 overflow-hidden shadow-sm">
@@ -1048,7 +1122,7 @@ const GroupedBudgetCategoriesTable = ({
                                 ))}
                             </thead>
                             <SortableContext
-                                items={flattenedData.filter(item => item.isCategory).map(cat => cat.id.toString())}
+                                items={flattenedData.map(item => item.id.toString())}
                                 strategy={verticalListSortingStrategy}
                             >
                                 <tbody className="bg-base-100">
@@ -1057,6 +1131,7 @@ const GroupedBudgetCategoriesTable = ({
                                             key={row.id}
                                             row={row}
                                             isDragging={isDragging}
+                                            dragOverGroupId={dragOverGroupId}
                                         >
                                             {row.getVisibleCells().map(cell => (
                                                 <td

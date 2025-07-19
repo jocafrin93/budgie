@@ -132,7 +132,7 @@ const Select = forwardRef((props, ref) => {
                 : [
                   disabled
                     ? "cursor-not-allowed border-base-300 bg-base-200 opacity-60 bg-base-100"
-                    : "peer border-base-300 hover:bg-base-200 focus:bg-base-200",
+                    : "peer border-primary/20 bg-transparent hover:border-primary/30 focus:border-primary focus:bg-base-100/50",
                 ],
             ],
             className,

@@ -1337,22 +1337,7 @@ const UnifiedCategoryForm = ({
 
                         {/* Account and Status */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Select
-                                label="Funding Account"
-                                name="accountId"
-                                value={form.values.accountId}
-                                onChange={form.handleChange}
-                                error={form.errors.accountId}
-                                required
-                                className="border-base-300 bg-base-100 text-base-content"
-                            >
-                                <option value="">Select Account</option>
-                                {accounts.map(account => (
-                                    <option key={account.id} value={account.id}>
-                                        {account.name}
-                                    </option>
-                                ))}
-                            </Select>
+
 
                             <Select
                                 label="Status"
