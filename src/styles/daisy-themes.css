@@ -755,60 +755,116 @@
 
 /* Silk Theme (Elegant Light with Soft Purple Accents) - OKLCH Colors */
 [data-theme="silk"] {
-    --color-base-100: oklch(97% 0.0035 67.78);
-    /* Very light warm white */
-    --color-base-200: oklch(95% 0.0081 61.42);
+    --color-base-100: oklch(98% 0.005 320);
+    /* Very light warm white with subtle purple tint */
+    --color-base-200: oklch(95% 0.01 320);
     /* Slightly darker warm white */
-    --color-base-300: oklch(90% 0.0081 61.42);
+    --color-base-300: oklch(90% 0.015 320);
     /* Light warm gray */
-    --color-base-content: oklch(40% 0.0081 61.42);
+    --color-base-content: oklch(25% 0.02 320);
     /* Dark warm gray text */
 
-    --color-primary: oklch(23.27% 0.0249 284.3);
-    /* Deep purple */
-    --color-primary-focus: oklch(18.27% 0.0249 284.3);
+    --color-primary: oklch(65% 0.15 280);
+    /* Elegant purple */
+    --color-primary-focus: oklch(55% 0.15 280);
     /* Darker purple for focus states */
-    --color-primary-content: oklch(94.22% 0.2505 117.44);
-    /* Light green content */
+    --color-primary-content: oklch(98% 0.005 280);
+    /* Light content */
 
-    --color-secondary: oklch(23.27% 0.0249 284.3);
-    /* Same deep purple as primary */
-    --color-secondary-focus: oklch(18.27% 0.0249 284.3);
-    /* Darker purple for focus states */
-    --color-secondary-content: oklch(73.92% 0.2135 50.94);
-    /* Warm orange content */
+    --color-secondary: oklch(70% 0.12 320);
+    /* Soft magenta */
+    --color-secondary-focus: oklch(60% 0.12 320);
+    /* Darker magenta for focus states */
+    --color-secondary-content: oklch(98% 0.005 320);
+    /* Light content */
 
-    --color-accent: oklch(23.27% 0.0249 284.3);
-    /* Same deep purple as primary */
-    --color-accent-focus: oklch(18.27% 0.0249 284.3);
-    /* Darker purple for focus states */
-    --color-accent-content: oklch(88.92% 0.2061 189.9);
-    /* Light blue content */
+    --color-accent: oklch(75% 0.10 200);
+    /* Soft blue accent */
+    --color-accent-focus: oklch(65% 0.10 200);
+    /* Darker blue for focus states */
+    --color-accent-content: oklch(98% 0.005 200);
+    /* Light content */
 
-    --color-neutral: oklch(20% 0 0);
-    /* Pure dark gray */
-    --color-neutral-focus: oklch(15% 0 0);
+    --color-neutral: oklch(50% 0.02 320);
+    /* Neutral gray with purple tint */
+    --color-neutral-focus: oklch(40% 0.02 320);
     /* Darker gray for focus states */
-    --color-neutral-content: oklch(80% 0.0081 61.42);
-    /* Light warm gray content */
+    --color-neutral-content: oklch(95% 0.005 320);
+    /* Light gray content */
 
-    --color-info: oklch(80.39% 0.1148 241.68);
-    /* Light blue */
-    --color-info-content: oklch(30.39% 0.1148 241.68);
+    --color-info: oklch(70% 0.12 240);
+    /* Soft blue */
+    --color-info-content: oklch(25% 0.02 240);
     /* Dark blue content */
 
-    --color-success: oklch(83.92% 0.0901 136.87);
-    /* Light green */
-    --color-success-content: oklch(23.92% 0.0901 136.87);
+    --color-success: oklch(75% 0.15 140);
+    /* Soft green */
+    --color-success-content: oklch(25% 0.02 140);
     /* Dark green content */
 
-    --color-warning: oklch(83.92% 0.1085 80);
-    /* Light orange */
-    --color-warning-content: oklch(43.92% 0.1085 80);
+    --color-warning: oklch(80% 0.12 80);
+    /* Soft orange */
+    --color-warning-content: oklch(30% 0.02 80);
     /* Dark orange content */
 
-    --color-error: oklch(75.1% 0.1814 22.37);
-    /* Light red */
-    --color-error-content: oklch(35.1% 0.1814 22.37);
-    /* Dark red content */
+    --color-error: oklch(70% 0.15 20);
+    /* Soft red */
+    --color-error-content: oklch(95% 0.005 20);
+    /* Light red content */
+}
+
+/* Midnight Theme (Deep dark theme with blue accents) - RGB Colors */
+[data-theme="midnight"] {
+    --color-base-100: 15 23 42;
+    --color-base-200: 30 41 59;
+    --color-base-300: 51 65 85;
+    --color-base-content: 248 250 252;
+    --color-primary: 59 130 246;
+    --color-primary-focus: 39 110 226;
+    --color-primary-content: 255 255 255;
+    --color-secondary: 139 92 246;
+    --color-secondary-focus: 119 72 226;
+    --color-secondary-content: 255 255 255;
+    --color-accent: 34 197 94;
+    --color-accent-focus: 14 177 74;
+    --color-accent-content: 255 255 255;
+    --color-neutral: 71 85 105;
+    --color-neutral-focus: 51 65 85;
+    --color-neutral-content: 248 250 252;
+    --color-info: 14 165 233;
+    --color-info-content: 255 255 255;
+    --color-success: 34 197 94;
+    --color-success-content: 255 255 255;
+    --color-warning: 245 158 11;
+    --color-warning-content: 255 255 255;
+    --color-error: 239 68 68;
+    --color-error-content: 255 255 255;
+}
+
+/* Aurora Theme (Mystical theme with OKLCH colors and aurora-inspired gradients) - OKLCH Colors */
+[data-theme="aurora"] {
+    --color-base-100: oklch(95% 0.01 180);
+    --color-base-200: oklch(90% 0.02 180);
+    --color-base-300: oklch(85% 0.03 180);
+    --color-base-content: oklch(25% 0.02 240);
+    --color-primary: oklch(65% 0.25 300);
+    --color-primary-focus: oklch(60% 0.25 300);
+    --color-primary-content: oklch(95% 0.01 300);
+    --color-secondary: oklch(70% 0.20 200);
+    --color-secondary-focus: oklch(65% 0.20 200);
+    --color-secondary-content: oklch(20% 0.02 200);
+    --color-accent: oklch(75% 0.15 120);
+    --color-accent-focus: oklch(70% 0.15 120);
+    --color-accent-content: oklch(20% 0.02 120);
+    --color-neutral: oklch(40% 0.05 240);
+    --color-neutral-focus: oklch(35% 0.05 240);
+    --color-neutral-content: oklch(90% 0.01 240);
+    --color-info: oklch(70% 0.18 220);
+    --color-info-content: oklch(20% 0.02 220);
+    --color-success: oklch(75% 0.20 140);
+    --color-success-content: oklch(20% 0.02 140);
+    --color-warning: oklch(80% 0.15 80);
+    --color-warning-content: oklch(25% 0.02 80);
+    --color-error: oklch(70% 0.25 20);
+    --color-error-content: oklch(95% 0.01 20);
 }

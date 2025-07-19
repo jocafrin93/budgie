@@ -8,7 +8,8 @@
     "build": "vite build",
     "vercel-build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "install-theme": "node scripts/install-daisy-theme.js"
   },
   "dependencies": {
     "@atlaskit/pragmatic-drag-and-drop": "^1.7.0",

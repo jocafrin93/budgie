@@ -22,7 +22,7 @@ export function Group({ data }) {
     <div className="pt-3">
       <div
         className={clsx(
-          "sticky top-0 z-10 bg-white px-6",
+          "sticky top-0 z-10 bg-base-200 px-6",
           cardSkin === "bordered" ? "dark:bg-dark-900" : "dark:bg-dark-750",
         )}
       >

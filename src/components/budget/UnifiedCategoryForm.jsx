@@ -1021,7 +1021,7 @@ const UnifiedCategoryForm = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
-            <Card skin="shadow" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 bg-base-200">
+            <Card skin="shadow" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 bg-base-100">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 bg-base-300 border-b border-base-300">
                     <h2 className="text-xl font-semibold text-base-content">

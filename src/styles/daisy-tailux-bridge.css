@@ -162,15 +162,16 @@
 /* Global overrides to ensure DaisyUI colors take precedence */
 /* Default RGB themes */
 body {
-    background-color: rgb(var(--color-base-100)) !important;
+    background-color: rgb(var(--color-base-200)) !important;
     color: rgb(var(--color-base-content)) !important;
 }
 
 /* OKLCH themes override */
 [data-theme*="abyss"] body,
 [data-theme*="vscode-dark"] body,
-[data-theme*="silk"] body {
-    background-color: var(--color-base-100) !important;
+[data-theme*="silk"] body,
+[data-theme*="aurora"] body {
+    background-color: var(--color-base-200) !important;
     color: var(--color-base-content) !important;
 }
 
@@ -394,416 +395,683 @@ body {
     color: rgb(var(--color-error-content)) !important;
 }
 
+
+/* midnight theme - RGB overrides */
+[data-theme="midnight"] .bg-primary {
+    background-color: rgb(var(--color-primary)) !important;
+}
+
+[data-theme="midnight"] .bg-secondary {
+    background-color: rgb(var(--color-secondary)) !important;
+}
+
+[data-theme="midnight"] .bg-accent {
+    background-color: rgb(var(--color-accent)) !important;
+}
+
 /* OKLCH theme overrides - Use direct values (no rgb() wrapper) */
 /* Add any OKLCH theme names here using [data-theme*="theme-name"] */
 [data-theme*="abyss"] .text-primary-600,
 [data-theme*="vscode-dark"] .text-primary-600,
-[data-theme*="silk"] .text-primary-600 {
+[data-theme*="silk"] .text-primary-600,
+[data-theme*="aurora"] .text-primary-600 {
     color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .bg-primary-600,
 [data-theme*="vscode-dark"] .bg-primary-600,
-[data-theme*="silk"] .bg-primary-600 {
+[data-theme*="silk"] .bg-primary-600,
+[data-theme*="aurora"] .bg-primary-600 {
     background-color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .border-primary-600,
 [data-theme*="vscode-dark"] .border-primary-600,
-[data-theme*="silk"] .border-primary-600 {
+[data-theme*="silk"] .border-primary-600,
+[data-theme*="aurora"] .border-primary-600 {
     border-color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .text-gray-500,
 [data-theme*="vscode-dark"] .text-gray-500,
-[data-theme*="silk"] .text-gray-500 {
+[data-theme*="silk"] .text-gray-500,
+[data-theme*="aurora"] .text-gray-500 {
     color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .bg-gray-100,
 [data-theme*="vscode-dark"] .bg-gray-100,
-[data-theme*="silk"] .bg-gray-100 {
+[data-theme*="silk"] .bg-gray-100,
+[data-theme*="aurora"] .bg-gray-100 {
     background-color: var(--color-base-200) !important;
 }
 
 [data-theme*="abyss"] .bg-white,
 [data-theme*="vscode-dark"] .bg-white,
-[data-theme*="silk"] .bg-white {
+[data-theme*="silk"] .bg-white,
+[data-theme*="aurora"] .bg-white {
     background-color: var(--color-base-100) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-50,
 [data-theme*="vscode-dark"] .bg-slate-50,
-[data-theme*="silk"] .bg-slate-50 {
+[data-theme*="silk"] .bg-slate-50,
+[data-theme*="aurora"] .bg-slate-50 {
     background-color: var(--color-base-100) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-100,
 [data-theme*="vscode-dark"] .bg-slate-100,
-[data-theme*="silk"] .bg-slate-100 {
+[data-theme*="silk"] .bg-slate-100,
+[data-theme*="aurora"] .bg-slate-100 {
     background-color: var(--color-base-200) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-200,
 [data-theme*="vscode-dark"] .bg-slate-200,
-[data-theme*="silk"] .bg-slate-200 {
+[data-theme*="silk"] .bg-slate-200,
+[data-theme*="aurora"] .bg-slate-200 {
     background-color: var(--color-base-300) !important;
 }
 
 [data-theme*="abyss"] .text-slate-900,
 [data-theme*="vscode-dark"] .text-slate-900,
-[data-theme*="silk"] .text-slate-900 {
+[data-theme*="silk"] .text-slate-900,
+[data-theme*="aurora"] .text-slate-900 {
     color: var(--color-base-content) !important;
 }
 
 [data-theme*="abyss"] .text-slate-800,
 [data-theme*="vscode-dark"] .text-slate-800,
-[data-theme*="silk"] .text-slate-800 {
+[data-theme*="silk"] .text-slate-800,
+[data-theme*="aurora"] .text-slate-800 {
     color: var(--color-base-content) !important;
 }
 
 [data-theme*="abyss"] .text-slate-700,
 [data-theme*="vscode-dark"] .text-slate-700,
-[data-theme*="silk"] .text-slate-700 {
+[data-theme*="silk"] .text-slate-700,
+[data-theme*="aurora"] .text-slate-700 {
     color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .text-slate-600,
 [data-theme*="vscode-dark"] .text-slate-600,
-[data-theme*="silk"] .text-slate-600 {
+[data-theme*="silk"] .text-slate-600,
+[data-theme*="aurora"] .text-slate-600 {
     color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .text-slate-500,
 [data-theme*="vscode-dark"] .text-slate-500,
-[data-theme*="silk"] .text-slate-500 {
+[data-theme*="silk"] .text-slate-500,
+[data-theme*="aurora"] .text-slate-500 {
     color: var(--color-neutral) !important;
 }
 
 /* OKLCH DaisyUI class overrides */
 [data-theme*="abyss"] .bg-base-100,
 [data-theme*="vscode-dark"] .bg-base-100,
-[data-theme*="silk"] .bg-base-100 {
+[data-theme*="silk"] .bg-base-100,
+[data-theme*="aurora"] .bg-base-100 {
     background-color: var(--color-base-100) !important;
 }
 
 [data-theme*="abyss"] .bg-base-200,
 [data-theme*="vscode-dark"] .bg-base-200,
-[data-theme*="silk"] .bg-base-200 {
+[data-theme*="silk"] .bg-base-200,
+[data-theme*="aurora"] .bg-base-200 {
     background-color: var(--color-base-200) !important;
 }
 
 [data-theme*="abyss"] .bg-base-300,
 [data-theme*="vscode-dark"] .bg-base-300,
-[data-theme*="silk"] .bg-base-300 {
+[data-theme*="silk"] .bg-base-300,
+[data-theme*="aurora"] .bg-base-300 {
     background-color: var(--color-base-300) !important;
 }
 
 [data-theme*="abyss"] .text-base-content,
 [data-theme*="vscode-dark"] .text-base-content,
-[data-theme*="silk"] .text-base-content {
+[data-theme*="silk"] .text-base-content,
+[data-theme*="aurora"] .text-base-content {
     color: var(--color-base-content) !important;
 }
 
 [data-theme*="abyss"] .text-base-content\/60,
 [data-theme*="vscode-dark"] .text-base-content\/60,
-[data-theme*="silk"] .text-base-content\/60 {
+[data-theme*="silk"] .text-base-content\/60,
+[data-theme*="aurora"] .text-base-content\/60 {
     color: var(--color-base-content) !important;
     opacity: 0.6;
 }
 
 [data-theme*="abyss"] .text-base-content\/70,
 [data-theme*="vscode-dark"] .text-base-content\/70,
-[data-theme*="silk"] .text-base-content\/70 {
+[data-theme*="silk"] .text-base-content\/70,
+[data-theme*="aurora"] .text-base-content\/70 {
     color: var(--color-base-content) !important;
     opacity: 0.7;
 }
 
 [data-theme*="abyss"] .border-base-300,
 [data-theme*="vscode-dark"] .border-base-300,
-[data-theme*="silk"] .border-base-300 {
+[data-theme*="silk"] .border-base-300,
+[data-theme*="aurora"] .border-base-300 {
     border-color: var(--color-base-300) !important;
 }
 
 [data-theme*="abyss"] .bg-primary,
 [data-theme*="vscode-dark"] .bg-primary,
-[data-theme*="silk"] .bg-primary {
+[data-theme*="silk"] .bg-primary,
+[data-theme*="aurora"] .bg-primary {
     background-color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .text-primary,
 [data-theme*="vscode-dark"] .text-primary,
-[data-theme*="silk"] .text-primary {
+[data-theme*="silk"] .text-primary,
+[data-theme*="aurora"] .text-primary {
     color: var(--color-primary) !important;
 }
 
 [data-theme*="abyss"] .bg-secondary,
 [data-theme*="vscode-dark"] .bg-secondary,
-[data-theme*="silk"] .bg-secondary {
+[data-theme*="silk"] .bg-secondary,
+[data-theme*="aurora"] .bg-secondary {
     background-color: var(--color-secondary) !important;
 }
 
 [data-theme*="abyss"] .text-secondary,
 [data-theme*="vscode-dark"] .text-secondary,
-[data-theme*="silk"] .text-secondary {
+[data-theme*="silk"] .text-secondary,
+[data-theme*="aurora"] .text-secondary {
     color: var(--color-secondary) !important;
 }
 
 [data-theme*="abyss"] .bg-accent,
 [data-theme*="vscode-dark"] .bg-accent,
-[data-theme*="silk"] .bg-accent {
+[data-theme*="silk"] .bg-accent,
+[data-theme*="aurora"] .bg-accent {
     background-color: var(--color-accent) !important;
 }
 
 [data-theme*="abyss"] .text-accent,
 [data-theme*="vscode-dark"] .text-accent,
-[data-theme*="silk"] .text-accent {
+[data-theme*="silk"] .text-accent,
+[data-theme*="aurora"] .text-accent {
     color: var(--color-accent) !important;
 }
 
 [data-theme*="abyss"] .bg-neutral,
 [data-theme*="vscode-dark"] .bg-neutral,
-[data-theme*="silk"] .bg-neutral {
+[data-theme*="silk"] .bg-neutral,
+[data-theme*="aurora"] .bg-neutral {
     background-color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .text-neutral,
 [data-theme*="vscode-dark"] .text-neutral,
-[data-theme*="silk"] .text-neutral {
+[data-theme*="silk"] .text-neutral,
+[data-theme*="aurora"] .text-neutral {
     color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .bg-info,
 [data-theme*="vscode-dark"] .bg-info,
-[data-theme*="silk"] .bg-info {
+[data-theme*="silk"] .bg-info,
+[data-theme*="aurora"] .bg-info {
     background-color: var(--color-info) !important;
 }
 
 [data-theme*="abyss"] .text-info,
 [data-theme*="vscode-dark"] .text-info,
-[data-theme*="silk"] .text-info {
+[data-theme*="silk"] .text-info,
+[data-theme*="aurora"] .text-info {
     color: var(--color-info) !important;
 }
 
 [data-theme*="abyss"] .border-info,
 [data-theme*="vscode-dark"] .border-info,
-[data-theme*="silk"] .border-info {
+[data-theme*="silk"] .border-info,
+[data-theme*="aurora"] .border-info {
     border-color: var(--color-info) !important;
 }
 
 [data-theme*="abyss"] .bg-success,
 [data-theme*="vscode-dark"] .bg-success,
-[data-theme*="silk"] .bg-success {
+[data-theme*="silk"] .bg-success,
+[data-theme*="aurora"] .bg-success {
     background-color: var(--color-success) !important;
 }
 
 [data-theme*="abyss"] .text-success,
 [data-theme*="vscode-dark"] .text-success,
-[data-theme*="silk"] .text-success {
+[data-theme*="silk"] .text-success,
+[data-theme*="aurora"] .text-success {
     color: var(--color-success) !important;
 }
 
 [data-theme*="abyss"] .border-success,
 [data-theme*="vscode-dark"] .border-success,
-[data-theme*="silk"] .border-success {
+[data-theme*="silk"] .border-success,
+[data-theme*="aurora"] .border-success {
     border-color: var(--color-success) !important;
 }
 
 [data-theme*="abyss"] .bg-warning,
 [data-theme*="vscode-dark"] .bg-warning,
-[data-theme*="silk"] .bg-warning {
+[data-theme*="silk"] .bg-warning,
+[data-theme*="aurora"] .bg-warning {
     background-color: var(--color-warning) !important;
 }
 
 [data-theme*="abyss"] .text-warning,
 [data-theme*="vscode-dark"] .text-warning,
-[data-theme*="silk"] .text-warning {
+[data-theme*="silk"] .text-warning,
+[data-theme*="aurora"] .text-warning {
     color: var(--color-warning) !important;
 }
 
 [data-theme*="abyss"] .border-warning,
 [data-theme*="vscode-dark"] .border-warning,
-[data-theme*="silk"] .border-warning {
+[data-theme*="silk"] .border-warning,
+[data-theme*="aurora"] .border-warning {
     border-color: var(--color-warning) !important;
 }
 
 [data-theme*="abyss"] .bg-error,
 [data-theme*="vscode-dark"] .bg-error,
-[data-theme*="silk"] .bg-error {
+[data-theme*="silk"] .bg-error,
+[data-theme*="aurora"] .bg-error {
     background-color: var(--color-error) !important;
 }
 
 [data-theme*="abyss"] .text-error,
 [data-theme*="vscode-dark"] .text-error,
-[data-theme*="silk"] .text-error {
+[data-theme*="silk"] .text-error,
+[data-theme*="aurora"] .text-error {
     color: var(--color-error) !important;
 }
 
 [data-theme*="abyss"] .border-error,
 [data-theme*="vscode-dark"] .border-error,
-[data-theme*="silk"] .border-error {
+[data-theme*="silk"] .border-error,
+[data-theme*="aurora"] .border-error {
     border-color: var(--color-error) !important;
+}
+
+/* Border color overrides - Default RGB format */
+.border-primary {
+    border-color: rgb(var(--color-primary)) !important;
+}
+
+.border-primary\/10 {
+    border-color: rgb(var(--color-primary) / 0.1) !important;
+}
+
+.border-primary\/20 {
+    border-color: rgb(var(--color-primary) / 0.2) !important;
+}
+
+.border-primary\/30 {
+    border-color: rgb(var(--color-primary) / 0.3) !important;
+}
+
+.border-primary\/40 {
+    border-color: rgb(var(--color-primary) / 0.4) !important;
+}
+
+.border-primary\/50 {
+    border-color: rgb(var(--color-primary) / 0.5) !important;
+}
+
+/* Background opacity overrides - Default RGB format */
+.bg-base-100\/50 {
+    background-color: rgb(var(--color-base-100) / 0.5) !important;
+}
+
+.bg-transparent {
+    background-color: transparent !important;
+}
+
+/* OKLCH Border opacity overrides */
+[data-theme*="abyss"] .border-primary\/10,
+[data-theme*="vscode-dark"] .border-primary\/10,
+[data-theme*="silk"] .border-primary\/10,
+[data-theme*="aurora"] .border-primary\/10 {
+    border-color: var(--color-primary) !important;
+    opacity: 0.1;
+}
+
+[data-theme*="abyss"] .border-primary\/20,
+[data-theme*="vscode-dark"] .border-primary\/20,
+[data-theme*="silk"] .border-primary\/20,
+[data-theme*="aurora"] .border-primary\/20 {
+    border-color: var(--color-primary) !important;
+    opacity: 0.2;
+}
+
+[data-theme*="abyss"] .border-primary\/30,
+[data-theme*="vscode-dark"] .border-primary\/30,
+[data-theme*="silk"] .border-primary\/30,
+[data-theme*="aurora"] .border-primary\/30 {
+    border-color: var(--color-primary) !important;
+    opacity: 0.3;
+}
+
+[data-theme*="abyss"] .border-primary,
+[data-theme*="vscode-dark"] .border-primary,
+[data-theme*="silk"] .border-primary,
+[data-theme*="aurora"] .border-primary {
+    border-color: var(--color-primary) !important;
+}
+
+[data-theme*="abyss"] .bg-base-100\/50,
+[data-theme*="vscode-dark"] .bg-base-100\/50,
+[data-theme*="silk"] .bg-base-100\/50,
+[data-theme*="aurora"] .bg-base-100\/50 {
+    background-color: var(--color-base-100) !important;
+    opacity: 0.5;
+}
+
+[data-theme*="abyss"] .bg-transparent,
+[data-theme*="vscode-dark"] .bg-transparent,
+[data-theme*="silk"] .bg-transparent,
+[data-theme*="aurora"] .bg-transparent {
+    background-color: transparent !important;
+}
+
+/* Override global border color for inputs with primary border classes */
+/* This overrides the global border-color: var(--color-gray-200) from base.css */
+input.peer.border-primary\/20,
+input.form-input.border-primary\/20,
+.form-input.peer.border-primary\/20,
+.form-input.border-primary\/20 {
+    border-color: rgb(var(--color-primary) / 0.2) !important;
+}
+
+input.peer.border-primary\/30,
+input.form-input.border-primary\/30,
+.form-input.peer.border-primary\/30,
+.form-input.border-primary\/30 {
+    border-color: rgb(var(--color-primary) / 0.3) !important;
+}
+
+input.peer.border-primary,
+input.form-input.border-primary,
+.form-input.peer.border-primary,
+.form-input.border-primary {
+    border-color: rgb(var(--color-primary)) !important;
+}
+
+/* Hover and focus states */
+input.peer.border-primary\/20:hover,
+input.form-input.border-primary\/20:hover,
+.form-input.peer.border-primary\/20:hover,
+.form-input.border-primary\/20:hover {
+    border-color: rgb(var(--color-primary) / 0.3) !important;
+}
+
+input.peer.border-primary\/30:focus,
+input.form-input.border-primary\/30:focus,
+.form-input.peer.border-primary\/30:focus,
+.form-input.border-primary\/30:focus {
+    border-color: rgb(var(--color-primary)) !important;
+}
+
+input.peer.border-primary:focus,
+input.form-input.border-primary:focus,
+.form-input.peer.border-primary:focus,
+.form-input.border-primary:focus {
+    border-color: rgb(var(--color-primary)) !important;
+}
+
+/* OKLCH input-specific overrides */
+[data-theme*="abyss"] input.border-primary\/20,
+[data-theme*="abyss"] .form-input.border-primary\/20,
+[data-theme*="vscode-dark"] input.border-primary\/20,
+[data-theme*="vscode-dark"] .form-input.border-primary\/20,
+[data-theme*="silk"] input.border-primary\/20,
+[data-theme*="silk"] .form-input.border-primary\/20,
+[data-theme*="aurora"] input.border-primary\/20,
+[data-theme*="aurora"] .form-input.border-primary\/20 {
+    border-color: var(--color-primary) !important;
+    opacity: 0.2;
+}
+
+[data-theme*="abyss"] input.border-primary\/30,
+[data-theme*="abyss"] .form-input.border-primary\/30,
+[data-theme*="vscode-dark"] input.border-primary\/30,
+[data-theme*="vscode-dark"] .form-input.border-primary\/30,
+[data-theme*="silk"] input.border-primary\/30,
+[data-theme*="silk"] .form-input.border-primary\/30,
+[data-theme*="aurora"] input.border-primary\/30,
+[data-theme*="aurora"] .form-input.border-primary\/30 {
+    border-color: var(--color-primary) !important;
+    opacity: 0.3;
+}
+
+[data-theme*="abyss"] input.border-primary,
+[data-theme*="abyss"] .form-input.border-primary,
+[data-theme*="vscode-dark"] input.border-primary,
+[data-theme*="vscode-dark"] .form-input.border-primary,
+[data-theme*="silk"] input.border-primary,
+[data-theme*="silk"] .form-input.border-primary,
+[data-theme*="aurora"] input.border-primary,
+[data-theme*="aurora"] .form-input.border-primary {
+    border-color: var(--color-primary) !important;
 }
 
 /* OKLCH DaisyUI button class overrides */
 [data-theme*="abyss"] .btn-primary,
-[data-theme*="vscode-dark"] .btn-primary {
+[data-theme*="vscode-dark"] .btn-primary,
+[data-theme*="silk"] .btn-primary,
+[data-theme*="aurora"] .btn-primary {
     background-color: var(--color-primary) !important;
     border-color: var(--color-primary) !important;
     color: var(--color-primary-content) !important;
 }
 
 [data-theme*="abyss"] .btn-primary:hover,
-[data-theme*="vscode-dark"] .btn-primary:hover {
+[data-theme*="vscode-dark"] .btn-primary:hover,
+[data-theme*="silk"] .btn-primary:hover,
+[data-theme*="aurora"] .btn-primary:hover {
     background-color: var(--color-primary-focus) !important;
     border-color: var(--color-primary-focus) !important;
 }
 
 [data-theme*="abyss"] .btn-secondary,
-[data-theme*="vscode-dark"] .btn-secondary {
+[data-theme*="vscode-dark"] .btn-secondary,
+[data-theme*="silk"] .btn-secondary,
+[data-theme*="aurora"] .btn-secondary {
     background-color: var(--color-secondary) !important;
     border-color: var(--color-secondary) !important;
     color: var(--color-secondary-content) !important;
 }
 
 [data-theme*="abyss"] .btn-secondary:hover,
-[data-theme*="vscode-dark"] .btn-secondary:hover {
+[data-theme*="vscode-dark"] .btn-secondary:hover,
+[data-theme*="silk"] .btn-secondary:hover,
+[data-theme*="aurora"] .btn-secondary:hover {
     background-color: var(--color-secondary-focus) !important;
     border-color: var(--color-secondary-focus) !important;
 }
 
 [data-theme*="abyss"] .btn-accent,
-[data-theme*="vscode-dark"] .btn-accent {
+[data-theme*="vscode-dark"] .btn-accent,
+[data-theme*="silk"] .btn-accent,
+[data-theme*="aurora"] .btn-accent {
     background-color: var(--color-accent) !important;
     border-color: var(--color-accent) !important;
     color: var(--color-accent-content) !important;
 }
 
 [data-theme*="abyss"] .btn-accent:hover,
-[data-theme*="vscode-dark"] .btn-accent:hover {
+[data-theme*="vscode-dark"] .btn-accent:hover,
+[data-theme*="silk"] .btn-accent:hover,
+[data-theme*="aurora"] .btn-accent:hover {
     background-color: var(--color-accent-focus) !important;
     border-color: var(--color-accent-focus) !important;
 }
 
 [data-theme*="abyss"] .btn-ghost,
-[data-theme*="vscode-dark"] .btn-ghost {
+[data-theme*="vscode-dark"] .btn-ghost,
+[data-theme*="silk"] .btn-ghost,
+[data-theme*="aurora"] .btn-ghost {
     background-color: transparent !important;
     border-color: transparent !important;
     color: var(--color-base-content) !important;
 }
 
 [data-theme*="abyss"] .btn-ghost:hover,
-[data-theme*="vscode-dark"] .btn-ghost:hover {
+[data-theme*="vscode-dark"] .btn-ghost:hover,
+[data-theme*="silk"] .btn-ghost:hover,
+[data-theme*="aurora"] .btn-ghost:hover {
     background-color: var(--color-base-200) !important;
 }
 
 /* OKLCH DaisyUI content color class overrides */
 [data-theme*="abyss"] .text-primary-content,
-[data-theme*="vscode-dark"] .text-primary-content {
+[data-theme*="vscode-dark"] .text-primary-content,
+[data-theme*="silk"] .text-primary-content,
+[data-theme*="aurora"] .text-primary-content {
     color: var(--color-primary-content) !important;
 }
 
 [data-theme*="abyss"] .text-secondary-content,
-[data-theme*="vscode-dark"] .text-secondary-content {
+[data-theme*="vscode-dark"] .text-secondary-content,
+[data-theme*="silk"] .text-secondary-content,
+[data-theme*="aurora"] .text-secondary-content {
     color: var(--color-secondary-content) !important;
 }
 
 [data-theme*="abyss"] .text-accent-content,
-[data-theme*="vscode-dark"] .text-accent-content {
+[data-theme*="vscode-dark"] .text-accent-content,
+[data-theme*="silk"] .text-accent-content,
+[data-theme*="aurora"] .text-accent-content {
     color: var(--color-accent-content) !important;
 }
 
 [data-theme*="abyss"] .text-neutral-content,
-[data-theme*="vscode-dark"] .text-neutral-content {
+[data-theme*="vscode-dark"] .text-neutral-content,
+[data-theme*="silk"] .text-neutral-content,
+[data-theme*="aurora"] .text-neutral-content {
     color: var(--color-neutral-content) !important;
 }
 
 [data-theme*="abyss"] .text-info-content,
-[data-theme*="vscode-dark"] .text-info-content {
+[data-theme*="vscode-dark"] .text-info-content,
+[data-theme*="silk"] .text-info-content,
+[data-theme*="aurora"] .text-info-content {
     color: var(--color-info-content) !important;
 }
 
 [data-theme*="abyss"] .text-success-content,
-[data-theme*="vscode-dark"] .text-success-content {
+[data-theme*="vscode-dark"] .text-success-content,
+[data-theme*="silk"] .text-success-content,
+[data-theme*="aurora"] .text-success-content {
     color: var(--color-success-content) !important;
 }
 
 [data-theme*="abyss"] .text-warning-content,
-[data-theme*="vscode-dark"] .text-warning-content {
+[data-theme*="vscode-dark"] .text-warning-content,
+[data-theme*="silk"] .text-warning-content,
+[data-theme*="aurora"] .text-warning-content {
     color: var(--color-warning-content) !important;
 }
 
 [data-theme*="abyss"] .text-error-content,
-[data-theme*="vscode-dark"] .text-error-content {
+[data-theme*="vscode-dark"] .text-error-content,
+[data-theme*="silk"] .text-error-content,
+[data-theme*="aurora"] .text-error-content {
     color: var(--color-error-content) !important;
-}
-
-[data-theme*="abyss"] body,
-[data-theme*="vscode-dark"] body {
-    background-color: var(--color-base-100) !important;
-    color: var(--color-base-content) !important;
 }
 
 /* Additional background class overrides for OKLCH themes */
 [data-theme*="abyss"] .bg-gray-50,
-[data-theme*="vscode-dark"] .bg-gray-50 {
+[data-theme*="vscode-dark"] .bg-gray-50,
+[data-theme*="silk"] .bg-gray-50,
+[data-theme*="aurora"] .bg-gray-50 {
     background-color: var(--color-base-100) !important;
 }
 
 [data-theme*="abyss"] .bg-gray-200,
-[data-theme*="vscode-dark"] .bg-gray-200 {
+[data-theme*="vscode-dark"] .bg-gray-200,
+[data-theme*="silk"] .bg-gray-200,
+[data-theme*="aurora"] .bg-gray-200 {
     background-color: var(--color-base-300) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-900,
-[data-theme*="vscode-dark"] .bg-slate-900 {
+[data-theme*="vscode-dark"] .bg-slate-900,
+[data-theme*="silk"] .bg-slate-900,
+[data-theme*="aurora"] .bg-slate-900 {
     background-color: var(--color-base-content) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-800,
-[data-theme*="vscode-dark"] .bg-slate-800 {
+[data-theme*="vscode-dark"] .bg-slate-800,
+[data-theme*="silk"] .bg-slate-800,
+[data-theme*="aurora"] .bg-slate-800 {
     background-color: var(--color-neutral-focus) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-700,
-[data-theme*="vscode-dark"] .bg-slate-700 {
+[data-theme*="vscode-dark"] .bg-slate-700,
+[data-theme*="silk"] .bg-slate-700,
+[data-theme*="aurora"] .bg-slate-700 {
     background-color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-600,
-[data-theme*="vscode-dark"] .bg-slate-600 {
+[data-theme*="vscode-dark"] .bg-slate-600,
+[data-theme*="silk"] .bg-slate-600,
+[data-theme*="aurora"] .bg-slate-600 {
     background-color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-500,
-[data-theme*="vscode-dark"] .bg-slate-500 {
+[data-theme*="vscode-dark"] .bg-slate-500,
+[data-theme*="silk"] .bg-slate-500,
+[data-theme*="aurora"] .bg-slate-500 {
     background-color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-400,
-[data-theme*="vscode-dark"] .bg-slate-400 {
+[data-theme*="vscode-dark"] .bg-slate-400,
+[data-theme*="silk"] .bg-slate-400,
+[data-theme*="aurora"] .bg-slate-400 {
     background-color: var(--color-neutral) !important;
 }
 
 [data-theme*="abyss"] .bg-slate-300,
-[data-theme*="vscode-dark"] .bg-slate-300 {
+[data-theme*="vscode-dark"] .bg-slate-300,
+[data-theme*="silk"] .bg-slate-300,
+[data-theme*="aurora"] .bg-slate-300 {
     background-color: var(--color-neutral) !important;
 }
 
 /* Ensure main content areas get proper background */
 [data-theme*="abyss"] main,
-[data-theme*="vscode-dark"] main {
-    background-color: var(--color-base-100) !important;
+[data-theme*="vscode-dark"] main,
+[data-theme*="silk"] main,
+[data-theme*="aurora"] main {
+    background-color: var(--color-base-200) !important;
 }
 
 [data-theme*="abyss"] .min-h-screen,
-[data-theme*="vscode-dark"] .min-h-screen {
-    background-color: var(--color-base-100) !important;
+[data-theme*="vscode-dark"] .min-h-screen,
+[data-theme*="silk"] .min-h-screen,
+[data-theme*="aurora"] .min-h-screen {
+    background-color: var(--color-base-200) !important;
 }
 
 [data-theme*="abyss"] .h-screen,
-[data-theme*="vscode-dark"] .h-screen {
-    background-color: var(--color-base-100) !important;
+[data-theme*="vscode-dark"] .h-screen,
+[data-theme*="silk"] .h-screen,
+[data-theme*="aurora"] .h-screen {
+    background-color: var(--color-base-200) !important;
 }
 
 /* Additional common overrides */
@@ -950,9 +1218,24 @@ body {
     background-color: var(--color-accent) !important;
 }
 
-/* 
+
+/* aurora theme - explicit overrides */
+[data-theme="aurora"] .bg-primary {
+    background-color: var(--color-primary) !important;
+}
+
+[data-theme="aurora"] .bg-secondary {
+    background-color: var(--color-secondary) !important;
+}
+
+[data-theme="aurora"] .bg-accent {
+    background-color: var(--color-accent) !important;
+}
+
+/*
 TO ADD MORE OKLCH THEMES IN THE FUTURE:
 Simply add the theme name to the selector like:
-[data-theme*="abyss"], [data-theme*="new-oklch-theme"] .bg-base-100 { ... }
+[data-theme*="abyss"], [data-theme*="new-oklch-theme"],
+[data-theme*="aurora"] .bg-base-100 { ... }
 Or create separate blocks for each theme if they need different handling.
 */

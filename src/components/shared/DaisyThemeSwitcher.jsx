@@ -17,6 +17,10 @@ const DAISY_THEMES = [
     { name: 'abyss', label: 'Abyss', description: 'Deep blue with green accents' },
     { name: 'vscode-dark', label: 'VSCode Dark', description: 'Editor-inspired purple theme' },
     { name: 'silk', label: 'Silk', description: 'Elegant light with soft purple accents' },
+
+    { name: 'midnight', label: 'Midnight', description: 'Deep dark theme with blue accents' },
+
+    { name: 'aurora', label: 'Aurora', description: 'Mystical theme with OKLCH colors and aurora-inspired gradients' },
 ];
 
 export default function DaisyThemeSwitcher({ className = '' }) {

@@ -1211,7 +1211,7 @@ const BudgetCategoriesTable = ({
     };
 
     return (
-        <div className="w-full p-6 bg-base-200 rounded-lg border border-base-300">
+        <div className="w-full p-6 bg-base-100 rounded-lg border border-base-300">
             {/* Header */}
             <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -1285,7 +1285,7 @@ const BudgetCategoriesTable = ({
 
                 if (availableToAllocate > 0) {
                     return (
-                        <div className="mb-4 bg-gradient-to-r from-primary/30 to-secondary/30 rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+                        <div className="mb-4 bg-gradient-primary-secondary rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
                             <div className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">

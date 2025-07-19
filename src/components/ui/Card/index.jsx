@@ -24,7 +24,7 @@ const Card = forwardRef((props, ref) => {
           skin === "bordered" &&
           "border border-base-300 print",
           (skin === "shadow" || skin === "shadowed") &&
-          "bg-base-200 shadow-soft print:shadow-none",
+          "bg-base-100 shadow-soft print:shadow-none",
         ],
         className,
       )}

@@ -913,7 +913,7 @@ export default function BudgetOverview() {
 
     return (
         <Page title="Budget Overview">
-            <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6 bg-base-100 text-base-content min-h-screen">
+            <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6 bg-base-200 text-base-content min-h-screen">
                 {/* Summary Cards */}
                 <div className="mb-6">
                     <SimplifiedSummaryCards

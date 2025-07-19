@@ -63,7 +63,7 @@ export default function BudgetSettings() {
 
                 <div className="mt-6 space-y-8">
                     {/* Cloud Storage Section */}
-                    <div className="bg-base-200 rounded-lg p-6 shadow-sm border border-base-300">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Cloud Storage & Sync
@@ -76,7 +76,7 @@ export default function BudgetSettings() {
                     </div>
 
                     {/* Theme Settings Section */}
-                    <div className="bg-base-200 rounded-lg p-6 shadow-sm border border-base-300">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Theme & Appearance
@@ -111,7 +111,7 @@ export default function BudgetSettings() {
                     </div>
 
                     {/* Account Management Section */}
-                    <div className="bg-base-200 rounded-lg p-6 shadow-sm border border-base-300">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Account Management
@@ -223,7 +223,7 @@ export default function BudgetSettings() {
                     </div>
 
                     {/* Payee Management Section */}
-                    <div className="bg-base-200 rounded-lg p-6 shadow-sm border border-base-300">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Payee Management
@@ -241,7 +241,7 @@ export default function BudgetSettings() {
                     </div>
 
                     {/* Paycheck Management Section */}
-                    <div className="bg-base-200 rounded-lg p-6 shadow-sm border border-base-300">
+                    <div className="bg-base-100 rounded-lg p-6 shadow-sm border border-base-300">
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-base-content mb-2">
                                 Paycheck Management
