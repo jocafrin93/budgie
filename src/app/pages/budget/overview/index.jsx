@@ -252,36 +252,15 @@ export default function BudgetOverview() {
         }
     }, [getTodayLocal, getPaychecksInDateRange, getUpcomingPaycheckDatesForAccount, accounts]);
 
-    // Helper function to calculate time-aware monthly amount for expenses with due dates
-    const calculateTimeAwareMonthlyAmount = useCallback((amount, frequency, dueDate, accountId) => {
-        if (!dueDate) {
-            // No due date, use standard frequency calculation
-            return calculateMonthlyAmount(amount, frequency);
-        }
+    // Helper function to calculate smart per-paycheck amount based on current allocation progress
+    const calculateSmartPerPaycheck = useCallback((monthlyTarget, currentlyAllocated) => {
+        const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+        const remainingNeeded = Math.max(0, monthlyTarget - currentlyAllocated);
 
-        // For expenses with due dates, calculate based on time remaining
-        const paychecksUntilDue = calculatePaychecksUntilDue(dueDate, accountId);
-
-        if (paychecksUntilDue && paychecksUntilDue > 0) {
-            // Calculate monthly amount based on how much we need to save per paycheck
-            const perPaycheck = amount / paychecksUntilDue;
-            const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
-            const monthlyAmount = perPaycheck * paycheckInfo.conservative; // 2 paychecks per month for bi-weekly
-
-            console.log(`💰 Time-aware calculation for $${amount} due ${dueDate}:`, {
-                paychecksUntilDue,
-                perPaycheck: perPaycheck.toFixed(2),
-                monthlyAmount: monthlyAmount.toFixed(2),
-                standardMonthly: calculateMonthlyAmount(amount, frequency).toFixed(2)
-            });
-
-            return monthlyAmount;
-        } else {
-            // Fallback to standard calculation if we can't determine paychecks
-            console.log(`⚠️ Could not calculate paychecks until due date ${dueDate}, using standard frequency calculation`);
-            return calculateMonthlyAmount(amount, frequency);
-        }
-    }, [calculateMonthlyAmount, calculatePaychecksUntilDue, getConservativePaycheckInfo]);
+        // For now, use simple division by conservative paycheck count
+        // TODO: Could be enhanced to consider actual remaining paychecks in current period
+        return remainingNeeded / paycheckInfo.conservative;
+    }, [getConservativePaycheckInfo]);
 
     // Transform data for the budget table
     const transformDataForBudgetTable = useCallback((categories = [], planningItems = []) => {
@@ -306,12 +285,10 @@ export default function BudgetOverview() {
             if (category.type === 'single') {
                 // For single categories, use the category's own data
                 if (category.planningType === 'expense') {
-                    // Use time-aware calculation for expenses with due dates
-                    monthlyNeed = calculateTimeAwareMonthlyAmount(
+                    // Use simple frequency-based calculation for monthly amount (static reference)
+                    monthlyNeed = calculateMonthlyAmount(
                         category.amount || 0,
-                        category.frequency || 'monthly',
-                        category.dueDate,
-                        category.accountId
+                        category.frequency || 'monthly'
                     );
                     categoryDueDate = category.dueDate || null;
                 } else if (category.planningType === 'goal') {
@@ -335,12 +312,10 @@ export default function BudgetOverview() {
                     if (item.type === 'savings-goal') {
                         return sum + (item.monthlyContribution || 0);
                     } else {
-                        // For expenses, use time-aware calculation
-                        return sum + calculateTimeAwareMonthlyAmount(
+                        // For expenses, use simple frequency-based calculation (static reference)
+                        return sum + calculateMonthlyAmount(
                             item.amount || 0,
-                            item.frequency || 'monthly',
-                            item.dueDate,
-                            item.accountId
+                            item.frequency || 'monthly'
                         );
                     }
                 }, 0);
@@ -403,35 +378,12 @@ export default function BudgetOverview() {
                 });
             }
 
-            // Calculate per paycheck amount - use real paycheck schedule for single categories with due dates
-            let perPaycheck;
-            if (category.type === 'single' && categoryDueDate) {
-                // Debug the accountId for single categories
-                console.log(`🔍 SINGLE CATEGORY ACCOUNT DEBUG for ${category.name}:`, {
-                    categoryAccountId: category.accountId,
-                    categoryAccountIdType: typeof category.accountId,
-                    categoryData: category,
-                    dueDate: categoryDueDate
-                });
-
-                const paychecksUntilDue = calculatePaychecksUntilDue(categoryDueDate, category.accountId);
-                if (paychecksUntilDue > 0) {
-                    // For single categories with due dates, calculate based on actual paychecks until due
-                    perPaycheck = (category.amount || 0) / paychecksUntilDue;
-                } else {
-                    // Fallback to conservative approach
-                    const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
-                    perPaycheck = monthlyNeed / paycheckInfo.conservative;
-                }
-            } else {
-                // For categories without due dates or multiple categories, use conservative approach
-                const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
-                perPaycheck = monthlyNeed / paycheckInfo.conservative; // Conservative: 2 paychecks per month for bi-weekly
-            }
+            // Calculate smart per-paycheck amount based on current allocation progress
+            const allocated = category.allocated || 0;
+            const perPaycheck = calculateSmartPerPaycheck(monthlyNeed, allocated);
 
             // Calculate actual spent amount from transactions
             const actualSpent = calculateCategorySpent(category.id);
-            const allocated = category.allocated || 0;
             const available = allocated - actualSpent;
 
             return {
@@ -465,7 +417,7 @@ export default function BudgetOverview() {
                 sortOrder: typeof category.sortOrder === 'number' ? category.sortOrder : index
             };
         });
-    }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateTimeAwareMonthlyAmount, calculateCategorySpent]);
+    }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateCategorySpent, calculateSmartPerPaycheck]);
 
     // Transform the real data for the table
     const tableData = useMemo(() =>
