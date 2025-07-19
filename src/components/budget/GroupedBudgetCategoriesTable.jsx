@@ -496,14 +496,15 @@ const GroupedBudgetCategoriesTable = ({
                 depth: 0,
                 groupId: group.id,
                 isCollapsed: group.isCollapsed,
-                categoryCount: getCategoriesByGroup(group.id).length
+                categoryCount: (getCategoriesByGroup ? getCategoriesByGroup(group.id) : []).length
             });
 
             // Add categories in this group if not collapsed
             if (!group.isCollapsed) {
-                const categoriesInGroup = getCategoriesByGroup(group.id);
+                const categoriesInGroup = getCategoriesByGroup ? getCategoriesByGroup(group.id) : [];
+                const categoriesArray = Array.isArray(categoriesInGroup) ? categoriesInGroup : [];
 
-                categoriesInGroup.forEach((category) => {
+                categoriesArray.forEach((category) => {
                     // Add the main category
                     result.push({
                         ...category,
