@@ -130,13 +130,10 @@ const BudgetCategoriesTable = ({
     getAllUpcomingPaycheckDates, // Add paycheck management function as prop
     // Group management props
     groups = [],
-    onAddGroup, // eslint-disable-line no-unused-vars
-    onEditGroup, // eslint-disable-line no-unused-vars
-    onDeleteGroup, // eslint-disable-line no-unused-vars
-    onToggleGroupCollapsed, // eslint-disable-line no-unused-vars
-    onReorderCategoriesInGroup, // eslint-disable-line no-unused-vars
-    onReorderGroups, // eslint-disable-line no-unused-vars
-    onMoveCategoryToGroup, // eslint-disable-line no-unused-vars
+    onEditGroup,
+    onDeleteGroup,
+    onToggleGroupCollapsed,
+    onReorderGroups,
     getCategoriesByGroup,
     // Category and item management props
     onAddCategory,
@@ -173,6 +170,12 @@ const BudgetCategoriesTable = ({
         return data.filter(category => category.isParent !== false);
     }, [data]);
 
+    // Get sorted groups function - memoized to prevent infinite re-renders
+    const getSortedGroups = useMemo(() => {
+        if (!groups || groups.length === 0) return () => [];
+        return () => [...groups].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }, [groups]);
+
     // Handle drag end
     const handleDragEnd = (event) => {
         const { active, over } = event;
@@ -181,34 +184,42 @@ const BudgetCategoriesTable = ({
         console.log('🎯 DRAG & DROP DEBUG - handleDragEnd called');
         console.log('📋 Active ID:', active?.id);
         console.log('📋 Over ID:', over?.id);
-        console.log('📋 Event details:', { active, over });
 
         if (!over || active.id === over.id) {
             console.log('❌ No drop target or same position - exiting');
             return;
         }
 
-        console.log('🔄 Processing drag & drop reorder...');
+        // Handle group reordering
+        if (active.id.toString().startsWith('group-') && over.id.toString().startsWith('group-')) {
+            console.log('🏷️ Group reordering detected');
+            const activeGroupId = active.id.toString().replace('group-', '');
+            const overGroupId = over.id.toString().replace('group-', '');
 
-        // Clear any existing sorting to allow manual ordering
-        console.log('📊 Current sorting before clear:', sorting);
+            const sortedGroups = getSortedGroups();
+            const oldIndex = sortedGroups.findIndex(g => g.id === activeGroupId);
+            const newIndex = sortedGroups.findIndex(g => g.id === overGroupId);
+
+            if (oldIndex !== -1 && newIndex !== -1) {
+                const reorderedGroups = arrayMove(sortedGroups, oldIndex, newIndex);
+                onReorderGroups && onReorderGroups(reorderedGroups);
+            }
+            return;
+        }
+
+        // Handle category reordering within groups
+        console.log('🔄 Processing category drag & drop reorder...');
         setSorting([]);
-        console.log('✅ Sorting cleared');
 
-        // Find the old and new indices
-        console.log('📋 Parent categories:', parentCategories.map(c => ({ id: c.id, name: c.name, sortOrder: c.sortOrder })));
+        // Get only draggable categories (not groups)
+        const draggableCategories = data.filter(cat => cat.isParent && !cat.isGroup);
 
-        // Convert IDs to ensure proper comparison (handle both string and number IDs)
+        // Convert IDs to ensure proper comparison
         const activeId = active.id.toString();
         const overId = over.id.toString();
 
-        console.log('🔍 Looking for activeId:', activeId, 'overId:', overId);
-
-        const oldIndex = parentCategories.findIndex(cat => cat.id.toString() === activeId);
-        const newIndex = parentCategories.findIndex(cat => cat.id.toString() === overId);
-
-        console.log('📍 Old index:', oldIndex);
-        console.log('📍 New index:', newIndex);
+        const oldIndex = draggableCategories.findIndex(cat => cat.id.toString() === activeId);
+        const newIndex = draggableCategories.findIndex(cat => cat.id.toString() === overId);
 
         if (oldIndex === -1 || newIndex === -1) {
             console.log('❌ Invalid indices - exiting');
@@ -216,45 +227,24 @@ const BudgetCategoriesTable = ({
         }
 
         // Reorder the categories
-        console.log('🔄 Before arrayMove:', parentCategories.map(c => c.name));
-        const reorderedCategories = arrayMove(parentCategories, oldIndex, newIndex);
-        console.log('🔄 After arrayMove:', reorderedCategories.map(c => c.name));
+        const reorderedCategories = arrayMove(draggableCategories, oldIndex, newIndex);
 
         // Add sortOrder field to maintain the new order
         const reorderedWithSortOrder = reorderedCategories.map((category, index) => ({
             ...category,
             sortOrder: index
         }));
-        console.log('📊 Reordered with sortOrder:', reorderedWithSortOrder.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
 
-        // Update the full data array, not just parent categories
-        console.log('📋 Original data length:', data.length);
+        // Update the full data array
         const updatedData = data.map(category => {
             const reorderedCategory = reorderedWithSortOrder.find(rc => rc.id === category.id);
-            if (reorderedCategory) {
-                console.log(`🔄 Updating category ${category.name} with sortOrder ${reorderedCategory.sortOrder}`);
-            }
             return reorderedCategory || category;
         });
-        console.log('📋 Updated data length:', updatedData.length);
-        console.log('📊 Updated data sortOrders:', updatedData.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
 
         // Update the data through the parent component
-        console.log('🔄 Calling onDataUpdate with updated data...');
-        console.log('🔍 onDataUpdate callback exists?', !!onDataUpdate);
-        console.log('🔍 onDataUpdate callback type:', typeof onDataUpdate);
-
         if (onDataUpdate) {
-            console.log('🚀 ABOUT TO CALL onDataUpdate - this should trigger parent logs');
-            // Pass a special flag to indicate this is a reorder operation
             onDataUpdate(updatedData, { type: 'reorder', preserveAllFields: true });
-            console.log('✅ onDataUpdate called successfully with reorder flag');
-        } else {
-            console.log('❌ onDataUpdate callback not provided!');
         }
-
-        // Note: The parent component should handle the data update through onDataUpdate callback
-        console.log('✅ Drag & drop reorder complete - data sent to parent component');
     };
 
     const handleDragStart = (event) => {
@@ -477,96 +467,12 @@ const BudgetCategoriesTable = ({
                             uniqueId: `category-${category.id}`,
                             originalIndex: categoryIndex,
                             isParent: true,
-                            depth: 0, // ✅ Categories should be at root level for drag & drop
+                            depth: 0,
                             groupId: group.id,
                         });
 
                         // Add sub-items if category is expanded
                         if (expanded[category.id]) {
-                            // For goal categories, add a progress row first
-                            if (category.planningType === 'goal' && category.targetAmount) {
-                                const currentAmount = category.alreadySaved || 0;
-                                const targetAmount = category.targetAmount || 0;
-                                const progressPercentage = targetAmount > 0 ? Math.min(100, (currentAmount / targetAmount) * 100) : 0;
-
-                                // Calculate days until target date
-                                let daysUntilTarget = null;
-                                if (category.targetDate) {
-                                    const today = new Date();
-                                    const targetDate = new Date(category.targetDate);
-                                    daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-                                }
-
-                                // Calculate required per-paycheck contribution
-                                let calculatedPerPaycheck = category.perPaycheckContribution || 0;
-
-                                // If no manual per-paycheck amount is set, calculate it based on remaining amount and time
-                                if (!calculatedPerPaycheck && category.targetDate && daysUntilTarget > 0) {
-                                    const remainingAmount = targetAmount - currentAmount;
-                                    if (remainingAmount > 0) {
-                                        // Calculate number of paychecks until target date using account-specific filtering
-                                        const paychecksUntilTarget = calculatePaychecksUntilDue(category.targetDate, upcomingPaychecks, category.accountId);
-                                        if (paychecksUntilTarget > 0) {
-                                            calculatedPerPaycheck = remainingAmount / paychecksUntilTarget;
-                                        }
-                                    }
-                                }
-
-                                result.push({
-                                    id: `goal-progress-${category.id}`,
-                                    uniqueId: `goal-progress-${category.id}`,
-                                    name: 'Goal Progress',
-                                    isGoalProgress: true,
-                                    originalIndex: categoryIndex,
-                                    isParent: false,
-                                    depth: 2,
-                                    parentCategory: category,
-                                    progressPercentage,
-                                    currentAmount,
-                                    targetAmount,
-                                    daysUntilTarget,
-                                    targetDate: category.targetDate,
-                                    perPaycheckContribution: calculatedPerPaycheck,
-                                });
-                            }
-
-                            // For single expense categories, add an expense details row
-                            if (category.type === 'single' && category.planningType === 'expense') {
-                                // Calculate paycheck countdown if there's a due date using account-specific filtering
-                                let paychecksLeft = null;
-                                if (category.dueDate) {
-                                    console.log('🔍 SINGLE CATEGORY PAYCHECK DEBUG:', {
-                                        categoryName: category.name,
-                                        categoryId: category.id,
-                                        dueDate: category.dueDate,
-                                        accountId: category.accountId,
-                                        upcomingPaychecksLength: upcomingPaychecks.length
-                                    });
-                                    paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks, category.accountId);
-                                    console.log('🔍 SINGLE CATEGORY RESULT:', {
-                                        categoryName: category.name,
-                                        paychecksLeft,
-                                        accountId: category.accountId
-                                    });
-                                }
-
-                                result.push({
-                                    id: `expense-details-${category.id}`,
-                                    uniqueId: `expense-details-${category.id}`,
-                                    name: 'Expense Details',
-                                    isExpenseDetails: true,
-                                    originalIndex: categoryIndex,
-                                    isParent: false,
-                                    depth: 2,
-                                    parentCategory: category,
-                                    paychecksLeft,
-                                    dueDate: category.dueDate,
-                                    frequency: category.frequency,
-                                    amount: category.amount,
-                                    isRecurring: category.isRecurring,
-                                });
-                            }
-
                             // Add existing sub-items
                             if (category.subItems?.length > 0) {
                                 category.subItems.forEach((subItem) => {
@@ -587,23 +493,7 @@ const BudgetCategoriesTable = ({
         } else {
             console.log('🔍 Using non-grouped data organization (fallback)');
             // Fallback to original non-grouped logic
-            // Sort data by sortOrder if no other sorting is applied, otherwise use original order
-            const sortedData = sorting.length === 0
-                ? [...data].sort((a, b) => {
-                    // Use sortOrder if available, otherwise fall back to original index
-                    const orderA = typeof a.sortOrder === 'number' ? a.sortOrder : data.indexOf(a);
-                    const orderB = typeof b.sortOrder === 'number' ? b.sortOrder : data.indexOf(b);
-                    console.log(`🔍 SORT COMPARISON: ${a.name} (sortOrder: ${a.sortOrder}, orderA: ${orderA}) vs ${b.name} (sortOrder: ${b.sortOrder}, orderB: ${orderB}) = ${orderA - orderB}`);
-                    return orderA - orderB;
-                })
-                : data;
-
-            console.log('🔍 FLATTENED DATA SORT DEBUG:');
-            console.log('📊 Original data order:', data.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
-            console.log('📊 Sorted data order:', sortedData.map(c => ({ name: c.name, sortOrder: c.sortOrder })));
-            console.log('📊 Sorting state:', sorting);
-
-            sortedData.forEach((category, index) => {
+            data.forEach((category, index) => {
                 // Add the main category
                 result.push({
                     ...category,
@@ -613,92 +503,8 @@ const BudgetCategoriesTable = ({
                     depth: 0,
                 });
 
-                // Add sub-items and "Add Item" row if category is expanded
+                // Add sub-items if category is expanded
                 if (expanded[category.id]) {
-                    // For goal categories, add a progress row first
-                    if (category.planningType === 'goal' && category.targetAmount) {
-                        const currentAmount = category.alreadySaved || 0;
-                        const targetAmount = category.targetAmount || 0;
-                        const progressPercentage = targetAmount > 0 ? Math.min(100, (currentAmount / targetAmount) * 100) : 0;
-
-                        // Calculate days until target date
-                        let daysUntilTarget = null;
-                        if (category.targetDate) {
-                            const today = new Date();
-                            const targetDate = new Date(category.targetDate);
-                            daysUntilTarget = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-                        }
-
-                        // Calculate required per-paycheck contribution
-                        let calculatedPerPaycheck = category.perPaycheckContribution || 0;
-
-                        // If no manual per-paycheck amount is set, calculate it based on remaining amount and time
-                        if (!calculatedPerPaycheck && category.targetDate && daysUntilTarget > 0) {
-                            const remainingAmount = targetAmount - currentAmount;
-                            if (remainingAmount > 0) {
-                                // Calculate number of paychecks until target date using account-specific filtering
-                                const paychecksUntilTarget = calculatePaychecksUntilDue(category.targetDate, upcomingPaychecks, category.accountId);
-                                if (paychecksUntilTarget > 0) {
-                                    calculatedPerPaycheck = remainingAmount / paychecksUntilTarget;
-                                }
-                            }
-                        }
-
-                        result.push({
-                            id: `goal-progress-${category.id}`,
-                            uniqueId: `goal-progress-${category.id}`,
-                            name: 'Goal Progress',
-                            isGoalProgress: true,
-                            originalIndex: index,
-                            isParent: false,
-                            depth: 1,
-                            parentCategory: category,
-                            progressPercentage,
-                            currentAmount,
-                            targetAmount,
-                            daysUntilTarget,
-                            targetDate: category.targetDate,
-                            perPaycheckContribution: calculatedPerPaycheck,
-                        });
-                    }
-
-                    // For single expense categories, add an expense details row
-                    if (category.type === 'single' && category.planningType === 'expense') {
-                        // Calculate paycheck countdown if there's a due date using account-specific filtering
-                        let paychecksLeft = null;
-                        if (category.dueDate) {
-                            console.log('🔍 SINGLE CATEGORY PAYCHECK DEBUG:', {
-                                categoryName: category.name,
-                                categoryId: category.id,
-                                dueDate: category.dueDate,
-                                accountId: category.accountId,
-                                upcomingPaychecksLength: upcomingPaychecks.length
-                            });
-                            paychecksLeft = calculatePaychecksUntilDue(category.dueDate, upcomingPaychecks, category.accountId);
-                            console.log('🔍 SINGLE CATEGORY RESULT:', {
-                                categoryName: category.name,
-                                paychecksLeft,
-                                accountId: category.accountId
-                            });
-                        }
-
-                        result.push({
-                            id: `expense-details-${category.id}`,
-                            uniqueId: `expense-details-${category.id}`,
-                            name: 'Expense Details',
-                            isExpenseDetails: true,
-                            originalIndex: index,
-                            isParent: false,
-                            depth: 1,
-                            parentCategory: category,
-                            paychecksLeft,
-                            dueDate: category.dueDate,
-                            frequency: category.frequency,
-                            amount: category.amount,
-                            isRecurring: category.isRecurring,
-                        });
-                    }
-
                     // Add existing sub-items
                     if (category.subItems?.length > 0) {
                         category.subItems.forEach((subItem) => {
@@ -712,13 +518,12 @@ const BudgetCategoriesTable = ({
                             });
                         });
                     }
-
                 }
             });
         }
 
         return result;
-    }, [data, expanded, upcomingPaychecks, sorting, groups, getCategoriesByGroup, getNextOccurrence]);
+    }, [data, expanded, groups, getCategoriesByGroup]);
 
     // Custom header component with sorting
     const SortableHeader = ({ column, children }) => {
@@ -938,9 +743,9 @@ const BudgetCategoriesTable = ({
                                             onToggleGroupCollapsed && onToggleGroupCollapsed(item.group.id);
                                         }}
                                         className="p-1 hover:bg-base-200 rounded transition-colors"
-                                        title={item.isCollapsed ? "Expand group" : "Collapse group"}
+                                        title={item.group.isCollapsed ? "Expand group" : "Collapse group"}
                                     >
-                                        {item.isCollapsed ? (
+                                        {item.group.isCollapsed ? (
                                             <ChevronRight className="w-4 h-4 text-base-content/60" />
                                         ) : (
                                             <ChevronDown className="w-4 h-4 text-base-content/60" />
@@ -1426,6 +1231,7 @@ const BudgetCategoriesTable = ({
             columnHelper,
             expanded,
             formatCategoryDueDate,
+            getCategoriesByGroup,
             getCategoryDateInfo,
             getDueDateUrgency,
             getUrgencyStyles,
@@ -1439,7 +1245,10 @@ const BudgetCategoriesTable = ({
             onToggleItemActive,
             upcomingPaychecks,
             handleTransferClick,
-            isDragging
+            isDragging,
+            onEditGroup,
+            onDeleteGroup,
+            onToggleGroupCollapsed
         ]
     );
 
