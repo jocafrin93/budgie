@@ -190,11 +190,14 @@ const BudgetCategoriesTable = ({
             return;
         }
 
+        const activeId = active.id.toString();
+        const overId = over.id.toString();
+
         // Handle group reordering
-        if (active.id.toString().startsWith('group-') && over.id.toString().startsWith('group-')) {
+        if (activeId.startsWith('group-') && overId.startsWith('group-')) {
             console.log('🏷️ Group reordering detected');
-            const activeGroupId = active.id.toString().replace('group-', '');
-            const overGroupId = over.id.toString().replace('group-', '');
+            const activeGroupId = activeId.replace('group-', '');
+            const overGroupId = overId.replace('group-', '');
 
             const sortedGroups = getSortedGroups();
             const oldIndex = sortedGroups.findIndex(g => g.id === activeGroupId);
@@ -207,43 +210,76 @@ const BudgetCategoriesTable = ({
             return;
         }
 
-        // Handle category reordering within groups
-        console.log('🔄 Processing category drag & drop reorder...');
-        setSorting([]);
+        // Handle category dropped onto group (assign category to group)
+        if (!activeId.startsWith('group-') && overId.startsWith('group-')) {
+            console.log('🏷️ Category dropped onto group - assigning category to group');
+            const categoryId = activeId;
+            const targetGroupId = overId.replace('group-', '');
 
-        // Get only draggable categories (not groups)
-        const draggableCategories = data.filter(cat => cat.isParent && !cat.isGroup);
+            console.log(`📋 Assigning category ${categoryId} to group ${targetGroupId}`);
 
-        // Convert IDs to ensure proper comparison
-        const activeId = active.id.toString();
-        const overId = over.id.toString();
+            // Find the category being moved
+            const categoryToMove = data.find(cat => cat.id.toString() === categoryId);
+            if (!categoryToMove) {
+                console.log('❌ Category not found - exiting');
+                return;
+            }
 
-        const oldIndex = draggableCategories.findIndex(cat => cat.id.toString() === activeId);
-        const newIndex = draggableCategories.findIndex(cat => cat.id.toString() === overId);
+            // Update the category's groupId
+            const updatedData = data.map(category => {
+                if (category.id.toString() === categoryId) {
+                    console.log(`✅ Updating category ${category.name} groupId from ${category.groupId} to ${targetGroupId}`);
+                    return {
+                        ...category,
+                        groupId: targetGroupId
+                    };
+                }
+                return category;
+            });
 
-        if (oldIndex === -1 || newIndex === -1) {
-            console.log('❌ Invalid indices - exiting');
+            // Update the data through the parent component
+            if (onDataUpdate) {
+                console.log('🔄 Calling onDataUpdate to persist group assignment');
+                onDataUpdate(updatedData, { type: 'group-assignment', preserveAllFields: true });
+            }
             return;
         }
 
-        // Reorder the categories
-        const reorderedCategories = arrayMove(draggableCategories, oldIndex, newIndex);
+        // Handle category reordering within groups
+        if (!activeId.startsWith('group-') && !overId.startsWith('group-')) {
+            console.log('🔄 Processing category drag & drop reorder...');
+            setSorting([]);
 
-        // Add sortOrder field to maintain the new order
-        const reorderedWithSortOrder = reorderedCategories.map((category, index) => ({
-            ...category,
-            sortOrder: index
-        }));
+            // Get only draggable categories (not groups)
+            const draggableCategories = data.filter(cat => cat.isParent && !cat.isGroup);
 
-        // Update the full data array
-        const updatedData = data.map(category => {
-            const reorderedCategory = reorderedWithSortOrder.find(rc => rc.id === category.id);
-            return reorderedCategory || category;
-        });
+            const oldIndex = draggableCategories.findIndex(cat => cat.id.toString() === activeId);
+            const newIndex = draggableCategories.findIndex(cat => cat.id.toString() === overId);
 
-        // Update the data through the parent component
-        if (onDataUpdate) {
-            onDataUpdate(updatedData, { type: 'reorder', preserveAllFields: true });
+            if (oldIndex === -1 || newIndex === -1) {
+                console.log('❌ Invalid indices - exiting');
+                return;
+            }
+
+            // Reorder the categories
+            const reorderedCategories = arrayMove(draggableCategories, oldIndex, newIndex);
+
+            // Add sortOrder field to maintain the new order
+            const reorderedWithSortOrder = reorderedCategories.map((category, index) => ({
+                ...category,
+                sortOrder: index
+            }));
+
+            // Update the full data array
+            const updatedData = data.map(category => {
+                const reorderedCategory = reorderedWithSortOrder.find(rc => rc.id === category.id);
+                return reorderedCategory || category;
+            });
+
+            // Update the data through the parent component
+            if (onDataUpdate) {
+                onDataUpdate(updatedData, { type: 'reorder', preserveAllFields: true });
+            }
         }
     };
 
