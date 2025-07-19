@@ -509,7 +509,15 @@ const BudgetCategoriesTable = ({
                 });
 
                 // Add categories in this group (only if group is not collapsed)
-                if (!group.isCollapsed) {
+                console.log(`🔍 Group ${group.name} collapsed state:`, group.isCollapsed);
+                console.log(`🔍 Group object:`, group);
+
+                // Check both group.isCollapsed and group.collapsed for compatibility
+                const isGroupCollapsed = group.isCollapsed === true || group.collapsed === true;
+                console.log(`🔍 Final collapsed state for ${group.name}:`, isGroupCollapsed);
+
+                if (!isGroupCollapsed) {
+                    console.log(`✅ Group ${group.name} is expanded - adding ${groupCategories.length} categories`);
                     groupCategories.forEach((category, categoryIndex) => {
                         // Add the main category with proper indentation under the group
                         result.push({
@@ -538,6 +546,8 @@ const BudgetCategoriesTable = ({
                             }
                         }
                     });
+                } else {
+                    console.log(`❌ Group ${group.name} is collapsed - skipping ${groupCategories.length} categories`);
                 }
             });
         } else {
