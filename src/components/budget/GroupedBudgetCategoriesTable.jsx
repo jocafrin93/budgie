@@ -214,6 +214,7 @@ const GroupedBudgetCategoriesTable = ({
     groups = [],
     onAddGroup,
     onEditGroup,
+    onDeleteGroup,
     onToggleGroupCollapsed,
     onToggleAllGroups,
     onReorderCategoriesInGroup,
@@ -668,6 +669,18 @@ const GroupedBudgetCategoriesTable = ({
                                     >
                                         <Settings className="w-4 h-4 text-base-content/60" />
                                     </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm(`Are you sure you want to delete the group "${item.name}"? Categories in this group will be moved to "Miscellaneous".`)) {
+                                                onDeleteGroup && onDeleteGroup(item.groupId);
+                                            }
+                                        }}
+                                        className="p-1 hover:bg-error/20 rounded transition-colors"
+                                        title="Delete Group"
+                                    >
+                                        <Trash2 className="w-4 h-4 text-error" />
+                                    </button>
                                 </div>
                             </div>
                         );
@@ -1033,7 +1046,7 @@ const GroupedBudgetCategoriesTable = ({
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => onAddGroup && onAddGroup()}
-                            className="flex items-center gap-2 px-4 py-2 btn-secondary text-base-content rounded-lg hover:bg-base-300 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 btn-secondary text-secondary-content rounded-lg hover:bg-base-300 transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             Add Group
