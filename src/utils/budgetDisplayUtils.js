@@ -33,11 +33,12 @@ export const getFrequencyDisplayText = (frequency) => {
  * Calculate monthly equivalent amount from frequency-based amount
  * @param {number} amount - The amount at the given frequency
  * @param {string} frequency - The frequency value
+ * @param {string} dueDate - Optional due date for one-time expenses (YYYY-MM-DD format)
  * @returns {number} Monthly equivalent amount
  */
-export const calculateMonthlyAmount = (amount, frequency) => {
+export const calculateMonthlyAmount = (amount, frequency, dueDate = null) => {
     if (!amount || amount <= 0) return 0;
-    const occurrencesPerMonth = getOccurrencesPerMonth(frequency);
+    const occurrencesPerMonth = getOccurrencesPerMonth(frequency, dueDate);
     return amount * occurrencesPerMonth;
 };
 

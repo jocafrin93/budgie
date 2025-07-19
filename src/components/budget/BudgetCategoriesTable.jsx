@@ -314,9 +314,10 @@ const BudgetCategoriesTable = ({
     }, []);
 
     // Get upcoming paychecks for countdown calculations - memoize to prevent infinite re-renders
+    // Increased from 3 to 50 to cover a full year of paychecks for accurate countdown
     const upcomingPaychecks = useMemo(() => {
         if (typeof getAllUpcomingPaycheckDates === 'function') {
-            return getAllUpcomingPaycheckDates(3);
+            return getAllUpcomingPaycheckDates(50);
         }
         return [];
     }, [getAllUpcomingPaycheckDates]); // Depend on the passed function
@@ -1027,7 +1028,8 @@ const BudgetCategoriesTable = ({
 
                     if (isSubItem && row.original.amount && row.original.frequency) {
                         // For sub-items, calculate and display monthly equivalent
-                        const monthlyAmount = calculateMonthlyAmount(row.original.amount, row.original.frequency);
+                        // Pass due date for one-time expenses to get accurate monthly calculation
+                        const monthlyAmount = calculateMonthlyAmount(row.original.amount, row.original.frequency, row.original.dueDate);
                         return (
                             <div className="text-right">
                                 <div className="font-medium text-base-content/60">

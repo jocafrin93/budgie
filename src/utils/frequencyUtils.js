@@ -52,9 +52,10 @@ export const getOccurrencesPerYear = (frequency) => {
 /**
  * Get the number of occurrences per month for a frequency
  * @param {string} frequency - The frequency value
+ * @param {string} dueDate - Optional due date for one-time expenses (YYYY-MM-DD format)
  * @returns {number} Number of occurrences per month
  */
-export const getOccurrencesPerMonth = (frequency) => {
+export const getOccurrencesPerMonth = (frequency, dueDate = null) => {
     switch (frequency) {
         case 'weekly': return 4.33;
         case 'bi-weekly': return 2.17;
@@ -67,9 +68,50 @@ export const getOccurrencesPerMonth = (frequency) => {
         case 'quarterly': return 0.33;
         case 'annually': return 0.08;
         case 'per-paycheck': return 2.17; // Assuming bi-weekly by default
-        case 'once': return 0.08; // Roughly once per year
+        case 'once':
+            // For one-time expenses, calculate based on due date
+            if (dueDate) {
+                return calculateOneTimeOccurrencesPerMonth(dueDate);
+            }
+            return 0.08; // Fallback to roughly once per year if no due date
         default: return 2.17; // Default to bi-weekly
     }
+};
+
+/**
+ * Calculate occurrences per month for one-time expenses based on due date
+ * @param {string} dueDate - The due date in YYYY-MM-DD format
+ * @returns {number} Occurrences per month (amount needed per month to reach goal by due date)
+ */
+export const calculateOneTimeOccurrencesPerMonth = (dueDate) => {
+    if (!dueDate) return 0.08; // Fallback
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Parse due date safely
+    let dueDateObj;
+    if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dueDate.split('-').map(Number);
+        dueDateObj = new Date(year, month - 1, day); // month is 0-indexed
+    } else {
+        dueDateObj = new Date(dueDate);
+    }
+    dueDateObj.setHours(0, 0, 0, 0);
+
+    // Calculate months until due date
+    const monthsUntilDue = (dueDateObj.getFullYear() - today.getFullYear()) * 12 +
+        (dueDateObj.getMonth() - today.getMonth()) +
+        (dueDateObj.getDate() - today.getDate()) / 30; // Approximate days as fraction of month
+
+    // If due date is in the past or today, need full amount this month
+    if (monthsUntilDue <= 0) {
+        return 1; // Need full amount this month
+    }
+
+    // Return the fraction per month needed to reach the goal
+    // For example, if due in 5 months, return 1/5 = 0.2 occurrences per month
+    return 1 / monthsUntilDue;
 };
 
 /**
@@ -130,10 +172,10 @@ export const getPayFrequencyOptions = () => [
 export const convertBetweenFrequencies = (amount, fromFrequency, toFrequency) => {
     if (!amount || amount <= 0) return 0;
     if (fromFrequency === toFrequency) return amount;
-    
+
     const fromOccurrences = getOccurrencesPerYear(fromFrequency);
     const toOccurrences = getOccurrencesPerYear(toFrequency);
-    
+
     // Convert to yearly first, then to target frequency
     const yearlyAmount = amount * fromOccurrences;
     return yearlyAmount / toOccurrences;
@@ -148,16 +190,16 @@ export const convertBetweenFrequencies = (amount, fromFrequency, toFrequency) =>
  */
 export const getOccurrencesBetweenDates = (startDate, endDate, frequency) => {
     if (!startDate || !endDate) return 0;
-    
+
     const start = typeof startDate === 'string' ? new Date(startDate) : startDate;
     const end = typeof endDate === 'string' ? new Date(endDate) : endDate;
-    
+
     // Calculate days between dates
     const daysDiff = Math.floor((end - start) / (1000 * 60 * 60 * 24));
-    
+
     // Get days between occurrences for this frequency
     const daysBetween = getDaysBetweenOccurrences(frequency);
-    
+
     // Calculate number of occurrences
     return Math.floor(daysDiff / daysBetween) + 1; // +1 to include the start date
 };
