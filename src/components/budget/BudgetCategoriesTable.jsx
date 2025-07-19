@@ -543,6 +543,26 @@ const BudgetCategoriesTable = ({
                                         parentCategory: category,
                                     });
                                 });
+                            } else {
+                                // For single-item categories, show expense details
+                                result.push({
+                                    id: `expense-details-${category.id}`,
+                                    uniqueId: `expense-details-${category.id}`,
+                                    name: 'Expense Details',
+                                    isExpenseDetails: true,
+                                    isParent: false,
+                                    depth: 2,
+                                    parentCategory: category,
+                                    amount: category.amount,
+                                    frequency: category.frequency,
+                                    dueDate: category.dueDate,
+                                    isRecurring: category.frequency && category.frequency !== 'once',
+                                    paychecksLeft: category.dueDate ? calculatePaychecksUntilDue(
+                                        category.dueDate,
+                                        upcomingPaychecks,
+                                        category.accountId
+                                    ) : null,
+                                });
                             }
                         }
                     });
@@ -576,6 +596,26 @@ const BudgetCategoriesTable = ({
                                 depth: 1,
                                 parentCategory: category,
                             });
+                        });
+                    } else {
+                        // For single-item categories, show expense details
+                        result.push({
+                            id: `expense-details-${category.id}`,
+                            uniqueId: `expense-details-${category.id}`,
+                            name: 'Expense Details',
+                            isExpenseDetails: true,
+                            isParent: false,
+                            depth: 1,
+                            parentCategory: category,
+                            amount: category.amount,
+                            frequency: category.frequency,
+                            dueDate: category.dueDate,
+                            isRecurring: category.frequency && category.frequency !== 'once',
+                            paychecksLeft: category.dueDate ? calculatePaychecksUntilDue(
+                                category.dueDate,
+                                upcomingPaychecks,
+                                category.accountId
+                            ) : null,
                         });
                     }
                 }
