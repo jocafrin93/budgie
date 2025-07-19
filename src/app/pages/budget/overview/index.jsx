@@ -2,9 +2,11 @@ import { useBreakpointsContext } from "app/contexts/breakpoint/context";
 import { Page } from "components/shared/Page";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import BudgetCategoriesTable from "../../../../components/budget/BudgetCategoriesTable";
+import GroupedBudgetCategoriesTable from "../../../../components/budget/GroupedBudgetCategoriesTable";
 import SimplifiedSummaryCards from "../../../../components/budget/SimplifiedSummaryCards";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
 import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
+import { useCategoryGroups } from "../../../../hooks/useCategoryGroups";
 import { useDataModel } from "../../../../hooks/useDataModel";
 import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
 import { useMonthlyBudgeting } from "../../../../hooks/useMonthlyBudgeting";
@@ -64,6 +66,18 @@ export default function BudgetOverview() {
         migrateCategoriesWithTypes,
         setCategories
     } = useCategoryManagement();
+
+    // Category groups management hook
+    const {
+        groups,
+        addGroup,
+        updateGroup,
+        deleteGroup,
+        toggleGroupCollapsed,
+        toggleAllGroups,
+        getSortedGroups,
+        getDefaultGroup
+    } = useCategoryGroups();
 
     // Use transaction management hook properly (same as transactions page)
     const {
@@ -911,6 +925,83 @@ export default function BudgetOverview() {
         }
     }, [currentBudgetMonth, carryForwardFromPreviousMonth, getMonthDisplayName]);
 
+    // Group management functions
+    const handleAddGroup = useCallback(() => {
+        const groupName = prompt('Enter group name:');
+        if (groupName) {
+            addGroup({
+                name: groupName,
+                description: '',
+                color: '#10B981' // Default emerald color
+            });
+        }
+    }, [addGroup]);
+
+    const handleEditGroup = useCallback((groupId) => {
+        const group = groups.find(g => g.id === groupId);
+        if (group) {
+            const newName = prompt('Enter new group name:', group.name);
+            if (newName && newName !== group.name) {
+                updateGroup(groupId, { name: newName });
+            }
+        }
+    }, [groups, updateGroup]);
+
+    const handleDeleteGroup = useCallback((groupId) => {
+        const group = groups.find(g => g.id === groupId);
+        if (group && confirm(`Are you sure you want to delete the group "${group.name}"?`)) {
+            deleteGroup(groupId);
+        }
+    }, [groups, deleteGroup]);
+
+    const handleMoveCategoryToGroup = useCallback((categoryId, groupId) => {
+        updateCategory(categoryId, { groupId });
+    }, [updateCategory]);
+
+    const handleReorderCategoriesInGroup = useCallback((groupId, reorderedCategories) => {
+        // Update the sortOrder for each category in the reordered list
+        reorderedCategories.forEach((category, index) => {
+            updateCategory(category.id, { sortOrder: index });
+        });
+    }, [updateCategory]);
+
+    // Function to organize categories by groups
+    const getCategoriesByGroup = useCallback(() => {
+        const result = {};
+        const sortedGroups = getSortedGroups();
+
+        sortedGroups.forEach(group => {
+            // Get categories for this group
+            const groupCategories = tableData.filter(category =>
+                category.groupId === group.id ||
+                (!category.groupId && group.id === 'miscellaneous')
+            );
+
+            // Calculate group totals
+            const totals = groupCategories.reduce((acc, category) => ({
+                monthlyNeed: acc.monthlyNeed + (category.monthlyNeed || 0),
+                perPaycheck: acc.perPaycheck + (category.perPaycheck || 0),
+                allocated: acc.allocated + (category.allocated || 0),
+                spent: acc.spent + (category.spent || 0),
+                available: acc.available + (category.available || 0)
+            }), {
+                monthlyNeed: 0,
+                perPaycheck: 0,
+                allocated: 0,
+                spent: 0,
+                available: 0
+            });
+
+            result[group.id] = {
+                group,
+                categories: groupCategories,
+                totals
+            };
+        });
+
+        return result;
+    }, [tableData, getSortedGroups]);
+
     return (
         <Page title="Budget Overview">
             <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6 bg-base-200 text-base-content min-h-screen">
@@ -973,15 +1064,13 @@ export default function BudgetOverview() {
                         />
                     </React.Suspense>
                 ) : (
-                    <BudgetCategoriesTable
+                    <GroupedBudgetCategoriesTable
                         data={tableData}
                         accounts={accounts || []} // Pass accounts for "Available to Allocate" calculation
                         getAllUpcomingPaycheckDates={getAllUpcomingPaycheckDates} // Pass paycheck function for account-specific countdown
-                        currentBudgetMonth={currentBudgetMonth}
-                        monthlyBudgetingHook={monthlyBudgetingHook}
                         onDataUpdate={(updatedTableData, options) => {
                             console.log('🎯 PARENT COMPONENT: onDataUpdate callback triggered!');
-                            console.log('🔄 BudgetOverview: Received data update from BudgetCategoriesTable');
+                            console.log('🔄 BudgetOverview: Received data update from GroupedBudgetCategoriesTable');
                             console.log('📊 Updated table data:', updatedTableData);
                             console.log('🎯 Update options:', options);
                             console.log('🔍 Options type check:', options?.type);
@@ -1042,7 +1131,16 @@ export default function BudgetOverview() {
                         onEditItem={handleEditItem}
                         onDeleteItem={handleDeleteItem}
                         onToggleItemActive={handleToggleItemActive}
-                        onToggleCategoryActive={handleToggleCategoryActive}
+                        // Group management props
+                        groups={groups}
+                        onAddGroup={handleAddGroup}
+                        onEditGroup={handleEditGroup}
+                        onDeleteGroup={handleDeleteGroup}
+                        onToggleGroupCollapsed={toggleGroupCollapsed}
+                        onToggleAllGroups={toggleAllGroups}
+                        onMoveCategoryToGroup={handleMoveCategoryToGroup}
+                        onReorderCategoriesInGroup={handleReorderCategoriesInGroup}
+                        getCategoriesByGroup={getCategoriesByGroup}
                     />
                 )}
 
