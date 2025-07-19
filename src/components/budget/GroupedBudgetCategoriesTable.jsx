@@ -16,7 +16,6 @@ import {
     useDroppable,
 } from '@dnd-kit/core';
 import {
-    arrayMove,
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
@@ -227,7 +226,6 @@ const GroupedBudgetCategoriesTable = ({
     onEditGroup,
     onDeleteGroup,
     onToggleGroupCollapsed,
-    onToggleAllGroups,
     onReorderCategoriesInGroup,
     onReorderGroups,
     onMoveCategoryToGroup,
@@ -602,7 +600,7 @@ const GroupedBudgetCategoriesTable = ({
         });
 
         return result;
-    }, [groups, getCategoriesByGroup, expanded, upcomingPaychecks, data]);
+    }, [groups, getCategoriesByGroup, expanded, upcomingPaychecks]);
 
     // Custom header component with sorting
     const SortableHeader = ({ column, children }) => {
@@ -1247,7 +1245,8 @@ const GroupedBudgetCategoriesTable = ({
             expanded,
             onToggleItemActive,
             formatCategoryDueDate,
-            getCategoryDateInfo
+            getCategoryDateInfo,
+            upcomingPaychecks
         ]
     );
 
