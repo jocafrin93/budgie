@@ -13,6 +13,7 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
+    useDroppable,
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -49,8 +50,76 @@ import { getDaysBetweenOccurrences } from '../../utils/frequencyUtils';
 import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
 
-// Sortable Row Component
-const SortableRow = ({ row, children, dragOverGroupId }) => {
+// Droppable Group Row Component
+const DroppableGroupRow = ({ row, children, dragOverGroupId }) => {
+    const {
+        setNodeRef: setDroppableRef,
+        isOver,
+    } = useDroppable({
+        id: `group-${row.original.groupId}`,
+    });
+
+    const {
+        attributes,
+        listeners,
+        setNodeRef: setSortableRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: row.original.id.toString(),
+        disabled: false, // Groups can be dragged for reordering
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    // Combine refs for both droppable and sortable functionality
+    const setNodeRef = (node) => {
+        setDroppableRef(node);
+        setSortableRef(node);
+    };
+
+    // Determine if this group is being dragged over
+    const isGroupDragTarget = isOver || (row.original.isGroup && dragOverGroupId === row.original.groupId);
+
+    // Base row classes with enhanced drop target styling
+    const baseClasses = `bg-base-200 border-t-2 border-base-300 transition-all duration-200 ${isGroupDragTarget ? 'ring-2 ring-primary bg-primary/10 border-primary' : ''
+        }`;
+
+    const childrenArray = Array.isArray(children) ? children : [children];
+
+    return (
+        <tr
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            className={baseClasses}
+        >
+            {childrenArray.map((child, index) => {
+                // Add drag listeners to the name column (index 3) for group reordering
+                if (index === 3) {
+                    return React.cloneElement(child, {
+                        ...child.props,
+                        ...listeners,
+                        key: child.key || index,
+                        style: {
+                            ...child.props.style,
+                            cursor: isDragging ? 'grabbing' : 'grab'
+                        }
+                    });
+                }
+                return child;
+            })}
+        </tr>
+    );
+};
+
+// Sortable Category Row Component
+const SortableCategoryRow = ({ row, children }) => {
     const {
         attributes,
         listeners,
@@ -69,19 +138,14 @@ const SortableRow = ({ row, children, dragOverGroupId }) => {
         opacity: isDragging ? 0.5 : 1,
     };
 
-    // Determine if this group is being dragged over
-    const isGroupDragTarget = row.original.isGroup && dragOverGroupId === row.original.groupId;
-
     // Base row classes
     const baseClasses = `${row.original.isAddRow
         ? 'bg-primary/10'
-        : row.original.isGroup
-            ? `bg-base-200 border-t-2 border-base-300 ${isGroupDragTarget ? 'ring-2 ring-primary bg-primary/10' : ''}`
-            : !row.original.isCategory && !row.original.isAddRow
-                ? 'bg-base-100'
-                : row.original.isCategory && !row.original.isActive
-                    ? 'bg-base-200 opacity-60'
-                    : ''
+        : !row.original.isCategory && !row.original.isAddRow
+            ? 'bg-base-100'
+            : row.original.isCategory && !row.original.isActive
+                ? 'bg-base-200 opacity-60'
+                : ''
         }`;
 
     // Non-sortable rows (add rows)
@@ -93,7 +157,6 @@ const SortableRow = ({ row, children, dragOverGroupId }) => {
         );
     }
 
-    // For sortable rows (both groups and categories), we need to clone the children and add drag listeners
     const childrenArray = Array.isArray(children) ? children : [children];
 
     return (
@@ -105,12 +168,7 @@ const SortableRow = ({ row, children, dragOverGroupId }) => {
         >
             {childrenArray.map((child, index) => {
                 // Add drag listeners to the first cell (drag handle column) for categories
-                // For groups, add drag listeners to the name column (index 3)
-                const shouldAddListeners =
-                    (row.original.isCategory && index === 0) ||
-                    (row.original.isGroup && index === 3);
-
-                if (shouldAddListeners) {
+                if (index === 0) {
                     return React.cloneElement(child, {
                         ...child.props,
                         ...listeners,
@@ -125,6 +183,23 @@ const SortableRow = ({ row, children, dragOverGroupId }) => {
             })}
         </tr>
     );
+};
+
+// Combined Row Component
+const SortableRow = ({ row, children, dragOverGroupId }) => {
+    if (row.original.isGroup) {
+        return (
+            <DroppableGroupRow row={row} dragOverGroupId={dragOverGroupId}>
+                {children}
+            </DroppableGroupRow>
+        );
+    } else {
+        return (
+            <SortableCategoryRow row={row}>
+                {children}
+            </SortableCategoryRow>
+        );
+    }
 };
 
 const GroupedBudgetCategoriesTable = ({
