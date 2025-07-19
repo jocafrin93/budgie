@@ -38,19 +38,12 @@ import {
     Plus,
     Search,
     Target,
-    ToggleLeft,
-    ToggleRight,
     Trash2,
     FolderOpen,
     Folder,
     Settings
 } from 'lucide-react';
 import React, { useMemo, useState, useCallback } from 'react';
-import {
-    calculateMonthlyAmount,
-    calculatePaychecksUntilDue,
-    formatAmountWithFrequency
-} from '../../utils/budgetDisplayUtils';
 import { getGradientStyle } from '../../utils/gradientUtils';
 import { getDaysBetweenOccurrences } from '../../utils/frequencyUtils';
 import QuickAllocateModal from './QuickAllocateModal';
@@ -131,23 +124,17 @@ const SortableRow = ({ row, children }) => {
 const GroupedBudgetCategoriesTable = ({
     data = [],
     accounts = [],
-    getAllUpcomingPaycheckDates,
     onAddCategory,
     onEditCategory,
     onDeleteCategory,
     onAddItem,
-    onEditItem,
-    onDeleteItem,
     onDataUpdate,
-    onToggleItemActive,
     // Group management props
     groups = [],
     onAddGroup,
     onEditGroup,
-    onDeleteGroup,
     onToggleGroupCollapsed,
     onToggleAllGroups,
-    onMoveCategoryToGroup,
     onReorderCategoriesInGroup,
     getCategoriesByGroup
 }) => {
@@ -170,13 +157,6 @@ const GroupedBudgetCategoriesTable = ({
         })
     );
 
-    // Get upcoming paychecks for countdown calculations
-    const upcomingPaychecks = useMemo(() => {
-        if (typeof getAllUpcomingPaycheckDates === 'function') {
-            return getAllUpcomingPaycheckDates(3);
-        }
-        return [];
-    }, [getAllUpcomingPaycheckDates]);
 
     // Helper functions
     const formatCurrency = useCallback((amount) => {
@@ -311,7 +291,7 @@ const GroupedBudgetCategoriesTable = ({
         onReorderCategoriesInGroup && onReorderCategoriesInGroup(sourceGroupId, reorderedCategories);
     };
 
-    const handleDragStart = (event) => {
+    const handleDragStart = () => {
         setIsDragging(true);
     };
 
@@ -882,12 +862,8 @@ const GroupedBudgetCategoriesTable = ({
         selectedRowIds.forEach(rowId => {
             const rowData = flattenedData.find(row => row.uniqueId === rowId);
 
-            if (rowData) {
-                if (rowData.isCategory) {
-                    onDeleteCategory && onDeleteCategory(rowData.id);
-                } else if (!rowData.isAddRow && !rowData.isGroup) {
-                    onDeleteItem && onDeleteItem(rowData.id);
-                }
+            if (rowData && rowData.isCategory) {
+                onDeleteCategory && onDeleteCategory(rowData.id);
             }
         });
 
