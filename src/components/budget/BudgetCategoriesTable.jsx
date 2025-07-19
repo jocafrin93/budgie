@@ -671,16 +671,39 @@ const BudgetCategoriesTable = ({
                 cell: ({ row }) => {
                     if (row.original.isAddRow || !row.original.isParent) return null;
 
-                    // All categories should be expandable
-                    const category = row.original;
-                    const isExpanded = expanded[category.id];
+                    const item = row.original;
+
+                    // Handle groups
+                    if (item.isGroup) {
+                        const group = item.group;
+                        const isGroupCollapsed = group.isCollapsed === true || group.collapsed === true;
+
+                        return (
+                            <button
+                                onClick={() => {
+                                    onToggleGroupCollapsed && onToggleGroupCollapsed(group.id);
+                                }}
+                                className="p-0.5 hover rounded transition-colors"
+                                title={isGroupCollapsed ? "Expand group" : "Collapse group"}
+                            >
+                                {isGroupCollapsed ? (
+                                    <ChevronRight className="w-4 h-4 text-base-content/70" />
+                                ) : (
+                                    <ChevronDown className="w-4 h-4 text-base-content/70" />
+                                )}
+                            </button>
+                        );
+                    }
+
+                    // Handle categories
+                    const isExpanded = expanded[item.id];
 
                     return (
                         <button
                             onClick={() => {
                                 setExpanded(prev => ({
                                     ...prev,
-                                    [category.id]: !prev[category.id]
+                                    [item.id]: !prev[item.id]
                                 }));
                             }}
                             className="p-0.5 hover rounded transition-colors"
@@ -797,20 +820,6 @@ const BudgetCategoriesTable = ({
 
                                 {/* Group actions */}
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onToggleGroupCollapsed && onToggleGroupCollapsed(item.group.id);
-                                        }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
-                                        title={item.group.isCollapsed ? "Expand group" : "Collapse group"}
-                                    >
-                                        {item.group.isCollapsed ? (
-                                            <ChevronRight className="w-4 h-4 text-base-content/60" />
-                                        ) : (
-                                            <ChevronDown className="w-4 h-4 text-base-content/60" />
-                                        )}
-                                    </button>
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();

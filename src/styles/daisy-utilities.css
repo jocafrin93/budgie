@@ -1067,38 +1067,51 @@
 
 /* Special gradient for Available to Allocate section that works with OKLCH */
 .bg-gradient-primary-secondary {
-    /* Direct approach using CSS variables - works for both RGB and OKLCH */
+    /* Direct approach using CSS variables with alpha - works for RGB themes */
     background: linear-gradient(to right,
-            var(--color-primary),
-            var(--color-secondary));
-    opacity: 0.3;
+            rgb(var(--color-primary) / 0.2),
+            rgb(var(--color-secondary) / 0.2));
 }
 
 /* For themes that define colors as OKLCH strings, we need a different approach */
 [data-theme="abyss"] .bg-gradient-primary-secondary {
     background: linear-gradient(to right,
-            oklch(92% 0.2653 125 / 0.3),
-            oklch(83.27% 0.0764 298.3 / 0.3));
-    opacity: 1;
+            oklch(92% 0.2653 125 / 0.2),
+            oklch(83.27% 0.0764 298.3 / 0.2));
 }
 
 [data-theme="vscode-dark"] .bg-gradient-primary-secondary {
     background: linear-gradient(to right,
-            oklch(72.5% 0.089 285 / 0.3),
-            oklch(76.8% 0.115 310 / 0.3));
-    opacity: 1;
+            oklch(72.5% 0.089 285 / 0.2),
+            oklch(76.8% 0.115 310 / 0.2));
 }
 
 [data-theme="silk"] .bg-gradient-primary-secondary {
     background: linear-gradient(to right,
-            oklch(65% 0.15 280 / 0.3),
-            oklch(70% 0.12 320 / 0.3));
-    opacity: 1;
+            oklch(65% 0.15 280 / 0.2),
+            oklch(70% 0.12 320 / 0.2));
 }
 
 [data-theme="aurora"] .bg-gradient-primary-secondary {
     background: linear-gradient(to right,
-            oklch(65% 0.25 300 / 0.3),
-            oklch(70% 0.20 200 / 0.3));
-    opacity: 1;
+            oklch(65% 0.25 300 / 0.2),
+            oklch(70% 0.20 200 / 0.2));
+}
+
+/* Additional RGB theme support */
+[data-theme="light"] .bg-gradient-primary-secondary,
+[data-theme="dark"] .bg-gradient-primary-secondary,
+[data-theme="cupcake"] .bg-gradient-primary-secondary,
+[data-theme="corporate"] .bg-gradient-primary-secondary,
+[data-theme="synthwave"] .bg-gradient-primary-secondary,
+[data-theme="retro"] .bg-gradient-primary-secondary,
+[data-theme="cyberpunk"] .bg-gradient-primary-secondary,
+[data-theme="valentine"] .bg-gradient-primary-secondary,
+[data-theme="forest"] .bg-gradient-primary-secondary,
+[data-theme="aqua"] .bg-gradient-primary-secondary,
+[data-theme="dracula"] .bg-gradient-primary-secondary,
+[data-theme="midnight"] .bg-gradient-primary-secondary {
+    background: linear-gradient(to right,
+            rgb(var(--color-primary) / 0.2),
+            rgb(var(--color-secondary) / 0.2));
 }
