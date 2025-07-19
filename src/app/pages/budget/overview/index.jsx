@@ -70,6 +70,7 @@ export default function BudgetOverview() {
         addGroup,
         updateGroup,
         deleteGroup,
+        reorderGroups,
         toggleGroupCollapsed,
         toggleAllGroups,
         getSortedGroups
@@ -925,8 +926,7 @@ export default function BudgetOverview() {
                         onReorderCategoriesInGroup={handleReorderCategoriesInGroup}
                         onReorderGroups={(reorderedGroups) => {
                             console.log('🔄 Reordering groups:', reorderedGroups);
-                            // Update group order - this would need to be implemented in the groups hook
-                            // For now, just log it
+                            reorderGroups(reorderedGroups);
                         }}
                         getCategoriesByGroup={getCategoriesByGroup}
                     />
