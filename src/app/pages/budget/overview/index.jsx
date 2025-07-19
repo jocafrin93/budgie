@@ -396,6 +396,7 @@ export default function BudgetOverview() {
                 type: category.type || 'multiple',
                 planningType: category.planningType, // Pass through planning type for single categories
                 accountId: category.accountId, // Pass through account ID for paycheck calculations
+                groupId: category.groupId, // CRITICAL: Pass through groupId for group organization
                 monthlyNeed,
                 perPaycheck,
                 allocated,
@@ -734,8 +735,13 @@ export default function BudgetOverview() {
 
     // Function to organize categories by groups
     const getCategoriesByGroup = useCallback(() => {
+        console.log('🏷️ getCategoriesByGroup called - organizing categories by groups');
+        console.log('📊 Current tableData:', tableData.map(cat => ({ id: cat.id, name: cat.name, groupId: cat.groupId })));
+
         const result = {};
         const sortedGroups = getSortedGroups();
+
+        console.log('📋 Available groups:', sortedGroups.map(g => ({ id: g.id, name: g.name })));
 
         sortedGroups.forEach(group => {
             // Get categories for this group
@@ -743,6 +749,9 @@ export default function BudgetOverview() {
                 category.groupId === group.id ||
                 (!category.groupId && group.id === 'miscellaneous')
             );
+
+            console.log(`📂 Group "${group.name}" (${group.id}): ${groupCategories.length} categories`);
+            console.log(`   Categories: ${groupCategories.map(cat => cat.name).join(', ')}`);
 
             // Calculate group totals
             const totals = groupCategories.reduce((acc, category) => ({
@@ -765,6 +774,13 @@ export default function BudgetOverview() {
                 totals
             };
         });
+
+        console.log('✅ getCategoriesByGroup result:', Object.keys(result).map(groupId => ({
+            groupId,
+            groupName: result[groupId].group.name,
+            categoryCount: result[groupId].categories.length,
+            categoryNames: result[groupId].categories.map(cat => cat.name)
+        })));
 
         return result;
     }, [tableData, getSortedGroups]);
@@ -907,6 +923,11 @@ export default function BudgetOverview() {
                         onToggleAllGroups={toggleAllGroups}
                         onMoveCategoryToGroup={handleMoveCategoryToGroup}
                         onReorderCategoriesInGroup={handleReorderCategoriesInGroup}
+                        onReorderGroups={(reorderedGroups) => {
+                            console.log('🔄 Reordering groups:', reorderedGroups);
+                            // Update group order - this would need to be implemented in the groups hook
+                            // For now, just log it
+                        }}
                         getCategoriesByGroup={getCategoriesByGroup}
                     />
                 )}
