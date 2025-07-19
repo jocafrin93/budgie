@@ -458,6 +458,7 @@ export default function BudgetOverview() {
                     description: categoryData.description,
                     autoFunding: categoryData.autoFunding,
                     accountId: categoryData.accountId,
+                    groupId: categoryData.groupId, // Include groupId
                     isActive: categoryData.status === 'active',
                     // Include planning data for single categories
                     planningType: categoryData.planningType,
@@ -931,6 +932,7 @@ export default function BudgetOverview() {
                             onSave={handleSaveCategory}
                             category={editingCategory}
                             accounts={accounts}
+                            groups={groups}
                         />
                     </React.Suspense>
                 )}

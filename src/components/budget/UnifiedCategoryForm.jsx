@@ -512,6 +512,7 @@ const UnifiedCategoryForm = ({
     onSave,
     onCancel,
     accounts = [],
+    groups = [], // Add groups prop
     currentPay = 0,
 }) => {
     // Use centralized gradient colors
@@ -585,6 +586,7 @@ const UnifiedCategoryForm = ({
 
         // Account and status
         accountId: category?.accountId || (accounts[0]?.id || ''),
+        groupId: category?.groupId || (groups.length > 0 ? groups[0]?.id : ''), // Default to first group or empty
         status: category?.status || 'active',
         priority: category?.priority || 'medium',
 
@@ -805,6 +807,7 @@ const UnifiedCategoryForm = ({
             type: form.values.type,
             account: selectedAccount,
             accountId: accountId, // Use the converted numeric accountId
+            groupId: form.values.groupId || null, // Include groupId
             status: form.values.status,
             priority: form.values.priority,
             color: form.values.color,
@@ -1068,6 +1071,26 @@ const UnifiedCategoryForm = ({
                                 </Select>
                             </div>
                         </div>
+
+                        {/* Group Selection Row */}
+                        {groups && groups.length > 0 && (
+                            <div>
+                                <Select
+                                    label="Group (Optional)"
+                                    name="groupId"
+                                    value={form.values.groupId}
+                                    onChange={form.handleChange}
+                                    className="border-base-300 bg-base-100 text-base-content"
+                                >
+                                    <option value="">No Group</option>
+                                    {groups.map(group => (
+                                        <option key={group.id} value={group.id}>
+                                            {group.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </div>
+                        )}
 
                         {/* Category Type and Planning Type Row */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
