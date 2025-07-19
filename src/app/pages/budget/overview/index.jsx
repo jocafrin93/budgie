@@ -191,37 +191,6 @@ export default function BudgetOverview() {
         return amount * (multipliers[frequency] || 1);
     }, []);
 
-    // Helper function to calculate time-aware monthly amount for expenses with due dates
-    const calculateTimeAwareMonthlyAmount = useCallback((amount, frequency, dueDate, accountId) => {
-        if (!dueDate) {
-            // No due date, use standard frequency calculation
-            return calculateMonthlyAmount(amount, frequency);
-        }
-
-        // For expenses with due dates, calculate based on time remaining
-        const paychecksUntilDue = calculatePaychecksUntilDue(dueDate, accountId);
-
-        if (paychecksUntilDue && paychecksUntilDue > 0) {
-            // Calculate monthly amount based on how much we need to save per paycheck
-            const perPaycheck = amount / paychecksUntilDue;
-            const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
-            const monthlyAmount = perPaycheck * paycheckInfo.conservative; // 2 paychecks per month for bi-weekly
-
-            console.log(`💰 Time-aware calculation for $${amount} due ${dueDate}:`, {
-                paychecksUntilDue,
-                perPaycheck: perPaycheck.toFixed(2),
-                monthlyAmount: monthlyAmount.toFixed(2),
-                standardMonthly: calculateMonthlyAmount(amount, frequency).toFixed(2)
-            });
-
-            return monthlyAmount;
-        } else {
-            // Fallback to standard calculation if we can't determine paychecks
-            console.log(`⚠️ Could not calculate paychecks until due date ${dueDate}, using standard frequency calculation`);
-            return calculateMonthlyAmount(amount, frequency);
-        }
-    }, [calculateMonthlyAmount, calculatePaychecksUntilDue, getConservativePaycheckInfo]);
-
     // Helper function to calculate paychecks until due date using account-specific paycheck schedule
     const calculatePaychecksUntilDue = useCallback((dueDate, accountId) => {
         if (!dueDate) return null;
@@ -282,6 +251,37 @@ export default function BudgetOverview() {
             return Math.ceil(daysUntilDue / 14); // Assuming bi-weekly pay
         }
     }, [getTodayLocal, getPaychecksInDateRange, getUpcomingPaycheckDatesForAccount, accounts]);
+
+    // Helper function to calculate time-aware monthly amount for expenses with due dates
+    const calculateTimeAwareMonthlyAmount = useCallback((amount, frequency, dueDate, accountId) => {
+        if (!dueDate) {
+            // No due date, use standard frequency calculation
+            return calculateMonthlyAmount(amount, frequency);
+        }
+
+        // For expenses with due dates, calculate based on time remaining
+        const paychecksUntilDue = calculatePaychecksUntilDue(dueDate, accountId);
+
+        if (paychecksUntilDue && paychecksUntilDue > 0) {
+            // Calculate monthly amount based on how much we need to save per paycheck
+            const perPaycheck = amount / paychecksUntilDue;
+            const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+            const monthlyAmount = perPaycheck * paycheckInfo.conservative; // 2 paychecks per month for bi-weekly
+
+            console.log(`💰 Time-aware calculation for $${amount} due ${dueDate}:`, {
+                paychecksUntilDue,
+                perPaycheck: perPaycheck.toFixed(2),
+                monthlyAmount: monthlyAmount.toFixed(2),
+                standardMonthly: calculateMonthlyAmount(amount, frequency).toFixed(2)
+            });
+
+            return monthlyAmount;
+        } else {
+            // Fallback to standard calculation if we can't determine paychecks
+            console.log(`⚠️ Could not calculate paychecks until due date ${dueDate}, using standard frequency calculation`);
+            return calculateMonthlyAmount(amount, frequency);
+        }
+    }, [calculateMonthlyAmount, calculatePaychecksUntilDue, getConservativePaycheckInfo]);
 
     // Transform data for the budget table
     const transformDataForBudgetTable = useCallback((categories = [], planningItems = []) => {
@@ -465,7 +465,7 @@ export default function BudgetOverview() {
                 sortOrder: typeof category.sortOrder === 'number' ? category.sortOrder : index
             };
         });
-    }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateCategorySpent]);
+    }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateTimeAwareMonthlyAmount, calculateCategorySpent]);
 
     // Transform the real data for the table
     const tableData = useMemo(() =>
