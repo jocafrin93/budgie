@@ -556,7 +556,7 @@ const UpcomingPaychecks = ({
                                                 return (
                                                     <div
                                                         key={`budget-${idx}`}
-                                                        className={`text-xs px-1 py-0.5 rounded mb-1 truncate text-white ${!hasGradient ? (item.color || 'bg-info') : ''}`}
+                                                        className={`text-xs px-1 py-0.5 rounded mb-1 truncate text-secondary-content ${!hasGradient ? (item.color || 'bg-info') : ''}`}
                                                         style={hasGradient ? gradientStyle : {}}
                                                     >
                                                         💳 {item.name}

@@ -170,6 +170,7 @@ export default function BudgetOverview() {
     }, []);
 
     // Helper function to calculate monthly amount based on frequency
+    // This is used for recurring expenses without specific due dates
     const calculateMonthlyAmount = useCallback((amount, frequency) => {
         const multipliers = {
             'daily': 30.44,
@@ -180,14 +181,46 @@ export default function BudgetOverview() {
             'quarterly': 1 / 3,
             'semi-annually': 1 / 6,
             'annually': 1 / 12,
-            'every-6-weeks': 52 / 6 / 12,
-            'every-8-weeks': 52 / 8 / 12,
-            'every-3-months': 4,
-            'every-6-months': 2,
+            'every-6-weeks': 52 / 6 / 12,  // ~0.72 times per month
+            'every-7-weeks': 52 / 7 / 12,  // ~0.62 times per month
+            'every-8-weeks': 52 / 8 / 12,  // ~0.54 times per month
+            'every-3-months': 1 / 3,       // Fixed: was 4, should be 1/3
+            'every-6-months': 1 / 6,       // Fixed: was 2, should be 1/6
             'yearly': 1 / 12
         };
         return amount * (multipliers[frequency] || 1);
     }, []);
+
+    // Helper function to calculate time-aware monthly amount for expenses with due dates
+    const calculateTimeAwareMonthlyAmount = useCallback((amount, frequency, dueDate, accountId) => {
+        if (!dueDate) {
+            // No due date, use standard frequency calculation
+            return calculateMonthlyAmount(amount, frequency);
+        }
+
+        // For expenses with due dates, calculate based on time remaining
+        const paychecksUntilDue = calculatePaychecksUntilDue(dueDate, accountId);
+
+        if (paychecksUntilDue && paychecksUntilDue > 0) {
+            // Calculate monthly amount based on how much we need to save per paycheck
+            const perPaycheck = amount / paychecksUntilDue;
+            const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+            const monthlyAmount = perPaycheck * paycheckInfo.conservative; // 2 paychecks per month for bi-weekly
+
+            console.log(`💰 Time-aware calculation for $${amount} due ${dueDate}:`, {
+                paychecksUntilDue,
+                perPaycheck: perPaycheck.toFixed(2),
+                monthlyAmount: monthlyAmount.toFixed(2),
+                standardMonthly: calculateMonthlyAmount(amount, frequency).toFixed(2)
+            });
+
+            return monthlyAmount;
+        } else {
+            // Fallback to standard calculation if we can't determine paychecks
+            console.log(`⚠️ Could not calculate paychecks until due date ${dueDate}, using standard frequency calculation`);
+            return calculateMonthlyAmount(amount, frequency);
+        }
+    }, [calculateMonthlyAmount, calculatePaychecksUntilDue, getConservativePaycheckInfo]);
 
     // Helper function to calculate paychecks until due date using account-specific paycheck schedule
     const calculatePaychecksUntilDue = useCallback((dueDate, accountId) => {
@@ -273,8 +306,13 @@ export default function BudgetOverview() {
             if (category.type === 'single') {
                 // For single categories, use the category's own data
                 if (category.planningType === 'expense') {
-                    // Calculate monthly need from category's amount and frequency
-                    monthlyNeed = calculateMonthlyAmount(category.amount || 0, category.frequency || 'monthly');
+                    // Use time-aware calculation for expenses with due dates
+                    monthlyNeed = calculateTimeAwareMonthlyAmount(
+                        category.amount || 0,
+                        category.frequency || 'monthly',
+                        category.dueDate,
+                        category.accountId
+                    );
                     categoryDueDate = category.dueDate || null;
                 } else if (category.planningType === 'goal') {
                     // For goals, use monthly contribution
@@ -297,8 +335,13 @@ export default function BudgetOverview() {
                     if (item.type === 'savings-goal') {
                         return sum + (item.monthlyContribution || 0);
                     } else {
-                        // For expenses, calculate monthly amount based on frequency
-                        return sum + calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly');
+                        // For expenses, use time-aware calculation
+                        return sum + calculateTimeAwareMonthlyAmount(
+                            item.amount || 0,
+                            item.frequency || 'monthly',
+                            item.dueDate,
+                            item.accountId
+                        );
                     }
                 }, 0);
 
