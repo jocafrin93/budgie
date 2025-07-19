@@ -461,13 +461,13 @@ const BudgetCategoriesTable = ({
                 // Add categories in this group (only if group is not collapsed)
                 if (!group.isCollapsed) {
                     groupCategories.forEach((category, categoryIndex) => {
-                        // Add the main category
+                        // Add the main category with proper indentation under the group
                         result.push({
                             ...category,
                             uniqueId: `category-${category.id}`,
                             originalIndex: categoryIndex,
                             isParent: true,
-                            depth: 0,
+                            depth: 1, // ✅ Categories should be indented under groups
                             groupId: group.id,
                         });
 
@@ -481,7 +481,7 @@ const BudgetCategoriesTable = ({
                                         uniqueId: `item-${subItem.id}`,
                                         originalIndex: categoryIndex,
                                         isParent: false,
-                                        depth: 2,
+                                        depth: 2, // ✅ Sub-items should be further indented
                                         parentCategory: category,
                                     });
                                 });
