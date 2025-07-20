@@ -439,6 +439,15 @@ const TransactionFormModal = ({
             transferAccountId: isTransfer ? formData.transferToAccountId : undefined
         };
 
+        // Debug logging for "to-be-allocated" transactions
+        console.log('🔥 TRANSACTION FORM SUBMIT DEBUG:', {
+            formData,
+            transactionType,
+            categoryId: formData.categoryId,
+            isToBeAllocated: formData.categoryId === 'to-be-allocated',
+            finalTransactionData: transactionData
+        });
+
         onSave(transactionData);
         onClose();
     };

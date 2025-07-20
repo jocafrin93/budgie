@@ -356,7 +356,9 @@ export default function BudgetTransactions() {
             const processedData = {
                 ...transactionData,
                 accountId: parseInt(transactionData.accountId),
-                categoryId: transactionData.categoryId ? parseInt(transactionData.categoryId) : null,
+                categoryId: transactionData.categoryId === 'to-be-allocated'
+                    ? 'to-be-allocated'
+                    : (transactionData.categoryId ? parseInt(transactionData.categoryId) : null),
                 amount: parseFloat(transactionData.amount) || 0,
                 transferAccountId: transactionData.transferAccountId ? parseInt(transactionData.transferAccountId) : undefined
             };
@@ -371,7 +373,9 @@ export default function BudgetTransactions() {
         const processedData = {
             ...updatedTransaction,
             accountId: parseInt(updatedTransaction.accountId),
-            categoryId: updatedTransaction.categoryId ? parseInt(updatedTransaction.categoryId) : null,
+            categoryId: updatedTransaction.categoryId === 'to-be-allocated'
+                ? 'to-be-allocated'
+                : (updatedTransaction.categoryId ? parseInt(updatedTransaction.categoryId) : null),
             amount: parseFloat(updatedTransaction.amount) || 0,
             transferAccountId: updatedTransaction.transferAccountId ? parseInt(updatedTransaction.transferAccountId) : undefined
         };
