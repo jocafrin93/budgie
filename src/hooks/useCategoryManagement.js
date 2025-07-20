@@ -142,9 +142,6 @@ export const useCategoryManagement = () => {
   /**
    * Update an existing category - ENHANCED to handle type changes
    */
-  /**
-   * Update an existing category - ENHANCED to handle type changes and ensure transfer persistence
-   */
   const updateCategory = useCallback((categoryId, categoryData) => {
     console.log('=== UPDATE CATEGORY HOOK DEBUG ===');
     console.log('Category ID:', categoryId, 'type:', typeof categoryId);
@@ -189,35 +186,6 @@ export const useCategoryManagement = () => {
               }
             };
             console.log('Updated category (type change):', updatedCategory);
-            return updatedCategory;
-          }
-
-          // Check if this is a transfer update (only available property is being updated)
-          const isTransferUpdate =
-            categoryData.available !== undefined &&
-            Object.keys(categoryData).length === 1;
-
-          if (isTransferUpdate) {
-            console.log('TRANSFER UPDATE DETECTED:', categoryData);
-            console.log('Previous available:', cat.available, 'New available:', categoryData.available);
-
-            // Calculate how much the available amount changed
-            const availableDelta = categoryData.available - (cat.available || 0);
-
-            // Update both available AND allocated by the same amount
-            // This is critical for persistence - allocated must change when available changes
-            const newAllocated = (cat.allocated || 0) + availableDelta;
-
-            console.log('Available delta:', availableDelta);
-            console.log('Previous allocated:', cat.allocated, 'New allocated:', newAllocated);
-
-            // For transfers, update BOTH available and allocated properties
-            const updatedCategory = {
-              ...cat,
-              available: categoryData.available,
-              allocated: newAllocated
-            };
-            console.log('Updated category (transfer):', updatedCategory);
             return updatedCategory;
           }
 

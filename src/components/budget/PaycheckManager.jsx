@@ -455,7 +455,7 @@ const PaycheckManager = ({
         if (accounts.length > 0) {
             cleanupOrphanedReferences();
         }
-    }, [accounts, cleanupOrphanedReferences]);
+    }, [accounts]);
 
     return (
         <Card className="p-6 bg-base-300">

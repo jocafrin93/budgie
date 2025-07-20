@@ -252,14 +252,31 @@ export default function BudgetOverview() {
     }, [getTodayLocal, getPaychecksInDateRange, getUpcomingPaycheckDatesForAccount, accounts]);
 
     // Helper function to calculate smart per-paycheck amount based on current allocation progress
-    const calculateSmartPerPaycheck = useCallback((monthlyTarget, currentlyAllocated) => {
-        const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+    const calculateSmartPerPaycheck = useCallback((monthlyTarget, currentlyAllocated, dueDate, accountId) => {
         const remainingNeeded = Math.max(0, monthlyTarget - currentlyAllocated);
 
-        // For now, use simple division by conservative paycheck count
-        // TODO: Could be enhanced to consider actual remaining paychecks in current period
+        // If nothing more is needed, return 0
+        if (remainingNeeded <= 0) {
+            return 0;
+        }
+
+        // If there's a due date, calculate based on actual paychecks remaining until due date
+        if (dueDate) {
+            const paychecksUntilDue = calculatePaychecksUntilDue(dueDate, accountId);
+
+            if (paychecksUntilDue > 0) {
+                // Divide remaining needed by actual paychecks left
+                return remainingNeeded / paychecksUntilDue;
+            } else {
+                // Due now or overdue - need full remaining amount immediately
+                return remainingNeeded;
+            }
+        }
+
+        // Fallback: use conservative paycheck count for ongoing expenses without due dates
+        const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
         return remainingNeeded / paycheckInfo.conservative;
-    }, [getConservativePaycheckInfo]);
+    }, [getConservativePaycheckInfo, calculatePaychecksUntilDue]);
 
     // Transform data for the budget table
     const transformDataForBudgetTable = useCallback((categories = [], planningItems = []) => {
@@ -393,7 +410,7 @@ export default function BudgetOverview() {
             if (category.type === 'single' && category.planningType === 'expense' && category.amount && !category.dueDate) {
                 perPaycheck = category.amount; // Amount is already per-paycheck
             } else {
-                perPaycheck = calculateSmartPerPaycheck(monthlyNeed, allocated);
+                perPaycheck = calculateSmartPerPaycheck(monthlyNeed, allocated, categoryDueDate, category.accountId);
             }
 
             // Calculate actual spent amount from transactions
@@ -915,77 +932,14 @@ export default function BudgetOverview() {
                                 });
 
                                 console.log('✅ REORDER UPDATE COMPLETE - sortOrder fields preserved');
-                            }
-                            // Handle transfers with preserveAllFields flag - critical fix for category-to-category transfers
-                            else if (options && options.type === 'transfer' && options.preserveAllFields) {
-                                console.log('💰 TRANSFER WITH PRESERVE_ALL_FIELDS DETECTED - Updating both available and allocated balances');
-
-                                // For transfers, we need to update both 'available' and 'allocated' properties
-                                updatedTableData.forEach(updatedCategory => {
-                                    if (updatedCategory.isParent) {
-                                        // Find the original category to compare values
-                                        const originalCategory = categories.find(c => c.id === updatedCategory.id);
-
-                                        if (originalCategory && originalCategory.available !== updatedCategory.available) {
-                                            console.log(`💸 Transfer detected for category ${updatedCategory.name}: available ${originalCategory.available} → ${updatedCategory.available}`);
-
-                                            // Calculate transfer amount and update allocated to match
-                                            const transferAmount = updatedCategory.available - originalCategory.available;
-                                            const newAllocated = originalCategory.allocated + transferAmount;
-
-                                            console.log(`💰 Updating category ${updatedCategory.name}: allocated ${originalCategory.allocated} → ${newAllocated}`);
-
-                                            // Critical fix: Update BOTH available AND allocated properties
-                                            updateCategory(updatedCategory.id, {
-                                                available: updatedCategory.available,
-                                                allocated: newAllocated
-                                            });
-                                        }
-                                    }
-                                });
-
-                                console.log('✅ TRANSFER UPDATE COMPLETE - both available and allocated balances updated');
-                            }
-                            // Handle regular transfers without preserveAllFields flag
-                            else if (options && options.type === 'transfer') {
-                                console.log('💰 TRANSFER OPERATION DETECTED - Updating both available and allocated balances');
-
-                                // For transfers, we need to update both 'available' and 'allocated' properties
-                                // to ensure persistence to localStorage
-                                updatedTableData.forEach(updatedCategory => {
-                                    if (updatedCategory.isParent) {
-                                        // Find the original category to compare values
-                                        const originalCategory = categories.find(c => c.id === updatedCategory.id);
-
-                                        if (originalCategory && originalCategory.available !== updatedCategory.available) {
-                                            console.log(`💸 Transfer detected for category ${updatedCategory.name}: available ${originalCategory.available} → ${updatedCategory.available}`);
-
-                                            // Critical fix: Update both available AND allocated properties
-                                            // The difference between old and new available is the transfer amount
-                                            const transferAmount = updatedCategory.available - originalCategory.available;
-                                            const newAllocated = originalCategory.allocated + transferAmount;
-
-                                            console.log(`💰 Updating category ${updatedCategory.name}: allocated ${originalCategory.allocated} → ${newAllocated}`);
-
-                                            updateCategory(updatedCategory.id, {
-                                                available: updatedCategory.available,
-                                                allocated: newAllocated
-                                            });
-                                            console.log(`✅ Updated BOTH available and allocated for ${updatedCategory.name}`);
-                                        }
-                                    }
-                                });
-
-                                console.log('✅ TRANSFER UPDATE COMPLETE - both available and allocated balances updated');
-                            }
-                            else {
-                                console.log('🔄 REGULAR UPDATE - Updating allocated/available/spent');
+                            } else {
+                                console.log('🔄 REGULAR UPDATE - Only updating allocated/available/spent');
                                 console.log('🔍 Reason for regular update:');
                                 if (!options) console.log('  - No options provided');
                                 if (options && options.type !== 'reorder') console.log('  - Type is not reorder:', options.type);
                                 if (options && !options.preserveAllFields) console.log('  - preserveAllFields is false');
 
-                                // Regular update - update all financial fields
+                                // Regular update - only update financial fields
                                 updatedTableData.forEach(updatedCategory => {
                                     if (updatedCategory.isParent) {
                                         // Update the category in the categories state
