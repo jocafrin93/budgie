@@ -309,48 +309,68 @@ export default function BudgetTransactions() {
 
         // Check if this is a transfer and create inverse transaction
         if (transactionData.isTransfer && transactionData.transferToAccountId) {
-            // Enhanced account lookup with type coercion
-            const sourceAccount = accounts.find(acc => String(acc.id) === String(transactionData.accountId));
-            const destinationAccount = accounts.find(acc => String(acc.id) === String(transactionData.transferToAccountId));
+            // Normalize account IDs first to ensure consistent handling
+            const normalizedData = {
+                ...transactionData,
+                accountId: transactionData.accountId ? parseInt(transactionData.accountId, 10) : transactionData.accountId,
+                transferToAccountId: transactionData.transferToAccountId ? parseInt(transactionData.transferToAccountId, 10) : transactionData.transferToAccountId,
+                amount: parseFloat(transactionData.amount) || 0,
+            };
+
+            // Enhanced account lookup with normalized IDs
+            const sourceAccount = accounts.find(acc => parseInt(acc.id, 10) === normalizedData.accountId);
+            const destinationAccount = accounts.find(acc => parseInt(acc.id, 10) === normalizedData.transferToAccountId);
 
             // Debug account lookup
             console.log('🔍 Transfer Debug:', {
-                sourceAccountId: transactionData.accountId,
-                destinationAccountId: transactionData.transferToAccountId,
+                sourceAccountId: normalizedData.accountId,
+                destinationAccountId: normalizedData.transferToAccountId,
                 sourceAccount,
                 destinationAccount,
                 allAccounts: accounts,
                 accountsStructure: accounts.map(acc => ({ id: acc.id, name: acc.name, type: typeof acc.id }))
             });
 
-            // Update main transaction to have destination account as payee
-            const mainTransaction = {
-                ...transactionData,
-                accountId: parseInt(transactionData.accountId),
-                categoryId: 'transfer', // Use 'transfer' as category identifier
-                amount: parseFloat(transactionData.amount) || 0,
-                payee: destinationAccount?.name || destinationAccount?.accountName || `Account ${transactionData.transferToAccountId}`,
-                transferToAccountId: parseInt(transactionData.transferToAccountId)
-            };
+            if (!sourceAccount || !destinationAccount) {
+                console.error('❌ Transfer error: Could not find source or destination account', {
+                    sourceAccount,
+                    destinationAccount,
+                    normalizedData
+                });
+                return;
+            }
 
-            console.log("Processed main transfer transaction:", mainTransaction);
-            addTransaction(mainTransaction);
+            try {
+                // Update main transaction to have destination account as payee
+                const mainTransaction = {
+                    ...normalizedData,
+                    categoryId: 'transfer', // Use 'transfer' as category identifier
+                    payee: destinationAccount.name || `Account ${normalizedData.transferToAccountId}`,
+                };
 
-            // Create the inverse transaction for the destination account
-            const inverseTransaction = {
-                ...transactionData,
-                id: `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique ID
-                accountId: parseInt(transactionData.transferToAccountId),
-                transferToAccountId: parseInt(transactionData.accountId),
-                amount: -(parseFloat(transactionData.amount) || 0), // Opposite sign
-                payee: sourceAccount?.name || sourceAccount?.accountName || `Account ${transactionData.accountId}`, // Source account as payee
-                categoryId: 'transfer', // Use 'transfer' as category identifier
-                isTransfer: true
-            };
+                console.log("Processed main transfer transaction:", mainTransaction);
+                const createdMain = addTransaction(mainTransaction);
 
-            console.log("Processed inverse transfer transaction:", inverseTransaction);
-            // Add the inverse transaction
-            addTransaction(inverseTransaction);
+                // Create the inverse transaction for the destination account
+                // Don't reuse the original transactionData, but build a fresh object
+                const inverseTransaction = {
+                    date: normalizedData.date,
+                    accountId: normalizedData.transferToAccountId,
+                    transferToAccountId: normalizedData.accountId,
+                    amount: -normalizedData.amount, // Opposite sign
+                    payee: sourceAccount.name || `Account ${normalizedData.accountId}`,
+                    memo: normalizedData.memo || 'Transfer',
+                    categoryId: 'transfer', // Use 'transfer' as category identifier
+                    isTransfer: true,
+                    isCleared: normalizedData.isCleared || false
+                };
+
+                console.log("Processed inverse transfer transaction:", inverseTransaction);
+                // Add the inverse transaction
+                addTransaction(inverseTransaction);
+            } catch (error) {
+                console.error('❌ Error creating transfer transaction:', error);
+            }
         } else {
             // Regular transaction
             const processedData = {

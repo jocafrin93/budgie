@@ -1337,7 +1337,7 @@ export default function TransactionsTab({
         return () => {
             window.removeEventListener('bulkDelete', handleBulkDeleteRequest);
         };
-    }, [selectedRows, handleBulkDelete]);
+    }, [selectedRows, handleBulkDelete, handleDeleteTransaction]);
 
     // Update header actions in main page when selection changes
     useEffect(() => {

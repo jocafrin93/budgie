@@ -17,6 +17,32 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
     console.log('addTransaction called with:', transactionData);
     console.log('addTransaction called from:', new Error().stack);
 
+    // Verify accounts exist before proceeding
+    if (transactionData.accountId && !accounts.some(a => String(a.id) === String(transactionData.accountId))) {
+      console.error(`ERROR: Source account ID ${transactionData.accountId} does not exist!`, {
+        providedAccountId: transactionData.accountId,
+        availableAccounts: accounts.map(a => ({ id: a.id, name: a.name }))
+      });
+      return null;
+    }
+
+    if (transactionData.transferToAccountId && !accounts.some(a => String(a.id) === String(transactionData.transferToAccountId))) {
+      console.error(`ERROR: Target account ID ${transactionData.transferToAccountId} does not exist!`, {
+        providedAccountId: transactionData.transferToAccountId,
+        availableAccounts: accounts.map(a => ({ id: a.id, name: a.name }))
+      });
+      return null;
+    }
+
+    // Normalize account IDs to ensure consistent type handling
+    const normalizedData = {
+      ...transactionData,
+      accountId: transactionData.accountId ? parseInt(transactionData.accountId, 10) : transactionData.accountId,
+      transferToAccountId: transactionData.transferToAccountId ? parseInt(transactionData.transferToAccountId, 10) : transactionData.transferToAccountId
+    };
+
+    console.log('Normalized transaction data:', normalizedData);
+
     let createdTransaction;
 
     // Update transactions array and generate ID inside state setter
@@ -24,10 +50,10 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
       console.log('Previous array length:', prev.length);
 
       // Generate ID based on current state, not stale closure
-      const newId = Math.max(...prev.map(t => t.id), 0) + 1;
+      const newId = Math.max(...prev.map(t => t.id || 0), 0) + 1;
 
       createdTransaction = {
-        ...transactionData,
+        ...normalizedData, // Use normalized data instead of original
         id: newId,
         createdAt: new Date().toISOString()
       };
@@ -39,17 +65,80 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
       return updated;
     });
 
-    // Update account balance for main transaction
-    setAccounts(prev => prev.map(account => {
-      if (account.id === createdTransaction.accountId) {
-        return { ...account, balance: (account.balance || 0) + createdTransaction.amount };
+    // Update account balance for main transaction (with extra safety)
+    setAccounts(prev => {
+      // Make sure accounts are valid before proceeding
+      if (!Array.isArray(prev) || prev.length === 0) {
+        console.error('Invalid accounts array:', prev);
+        return prev;
       }
-      // Handle transfer to another account
-      if (createdTransaction.transferToAccountId && account.id === createdTransaction.transferToAccountId) {
-        return { ...account, balance: (account.balance || 0) - createdTransaction.amount };
+
+      // Safety check for createdTransaction
+      if (!createdTransaction) {
+        console.error('createdTransaction is undefined');
+        return prev;
       }
-      return account;
-    }));
+
+      // Safety check for createdTransaction.accountId
+      if (createdTransaction.accountId === undefined || createdTransaction.accountId === null) {
+        console.error('createdTransaction.accountId is undefined or null');
+        return prev;
+      }
+
+      // Debugging account lookup
+      const sourceAccount = prev.find(a => String(a.id) === String(createdTransaction.accountId));
+      const destAccount = createdTransaction.transferToAccountId ?
+        prev.find(a => String(a.id) === String(createdTransaction.transferToAccountId)) :
+        null;
+
+      console.log('Account balance update - account lookup:', {
+        sourceAccountId: createdTransaction.accountId,
+        sourceAccountFound: !!sourceAccount,
+        destAccountId: createdTransaction.transferToAccountId,
+        destAccountFound: !!destAccount,
+        allAccountIds: prev.map(a => a.id)
+      });
+
+      return prev.map(account => {
+        // Skip null or undefined accounts
+        if (!account) return account;
+
+        // Skip accounts without an id
+        if (account.id === undefined || account.id === null) {
+          console.warn('Account without ID found:', account);
+          return account;
+        }
+
+        try {
+          // Ensure consistent ID type comparison by converting to strings for comparison
+          const accountIdStr = String(account.id);
+          const transactionAccountIdStr = String(createdTransaction.accountId);
+          const transferToAccountIdStr = createdTransaction.transferToAccountId ? String(createdTransaction.transferToAccountId) : null;
+
+          if (accountIdStr === transactionAccountIdStr) {
+            console.log(`Updating balance for account ${account.id} (transaction account)`);
+            return {
+              ...account,
+              balance: (parseFloat(account.balance) || 0) + parseFloat(createdTransaction.amount)
+            };
+          }
+
+          // Handle transfer to another account
+          if (transferToAccountIdStr && accountIdStr === transferToAccountIdStr) {
+            console.log(`Updating balance for account ${account.id} (transfer destination account)`);
+            return {
+              ...account,
+              balance: (parseFloat(account.balance) || 0) - parseFloat(createdTransaction.amount)
+            };
+          }
+
+          return account;
+        } catch (error) {
+          console.error(`Error processing account ${account.id}:`, error);
+          return account;
+        }
+      });
+    });
 
     // Handle category spending for different transaction types
     if (createdTransaction.isSplit && createdTransaction.splits) {
@@ -101,26 +190,84 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
   const updateTransaction = useCallback((transactionId, transactionData) => {
     // Find the old transaction
     const oldTransaction = transactions.find(t => t.id === transactionId);
-    if (!oldTransaction) return;
+    if (!oldTransaction) {
+      console.error(`Transaction with ID ${transactionId} not found for update`);
+      return null;
+    }
 
-    console.log('Updating transaction:', transactionId, 'old:', oldTransaction, 'new:', transactionData);
+    // Verify accounts exist before proceeding
+    if (transactionData.accountId && !accounts.some(a => String(a.id) === String(transactionData.accountId))) {
+      console.error(`ERROR: Source account ID ${transactionData.accountId} does not exist!`, {
+        providedAccountId: transactionData.accountId,
+        availableAccounts: accounts.map(a => ({ id: a.id, name: a.name }))
+      });
+      return null;
+    }
+
+    if (transactionData.transferToAccountId && !accounts.some(a => String(a.id) === String(transactionData.transferToAccountId))) {
+      console.error(`ERROR: Target account ID ${transactionData.transferToAccountId} does not exist!`, {
+        providedAccountId: transactionData.transferToAccountId,
+        availableAccounts: accounts.map(a => ({ id: a.id, name: a.name }))
+      });
+      return null;
+    }
+
+    // Normalize account IDs to ensure consistent type handling
+    const normalizedData = {
+      ...transactionData,
+      accountId: transactionData.accountId ? parseInt(transactionData.accountId, 10) : transactionData.accountId,
+      transferToAccountId: transactionData.transferToAccountId ? parseInt(transactionData.transferToAccountId, 10) : transactionData.transferToAccountId
+    };
+
+    console.log('Updating transaction:', transactionId, 'old:', oldTransaction, 'new:', normalizedData);
 
     // Reverse old transaction effects on account
-    setAccounts(prev => prev.map(account => {
-      if (account.id === oldTransaction.accountId) {
-        return {
-          ...account,
-          balance: (account.balance || 0) - oldTransaction.amount
-        };
+    setAccounts(prev => {
+      // Make sure accounts are valid before proceeding
+      if (!Array.isArray(prev) || prev.length === 0) {
+        console.error('Invalid accounts array:', prev);
+        return prev;
       }
-      if (oldTransaction.transferToAccountId && account.id === oldTransaction.transferToAccountId) {
-        return {
-          ...account,
-          balance: (account.balance || 0) + oldTransaction.amount
-        };
-      }
-      return account;
-    }));
+
+      return prev.map(account => {
+        // Skip null or undefined accounts
+        if (!account) return account;
+
+        // Skip accounts without an id
+        if (account.id === undefined || account.id === null) {
+          console.warn('Account without ID found when reversing transaction:', account);
+          return account;
+        }
+
+        try {
+          // Ensure consistent ID comparison with string conversion
+          const accountIdStr = String(account.id);
+          const oldTransactionAccountIdStr = String(oldTransaction.accountId);
+          const oldTransferToAccountIdStr = oldTransaction.transferToAccountId ? String(oldTransaction.transferToAccountId) : null;
+
+          if (accountIdStr === oldTransactionAccountIdStr) {
+            console.log(`Reversing balance for account ${account.id} from old transaction`);
+            return {
+              ...account,
+              balance: (parseFloat(account.balance) || 0) - parseFloat(oldTransaction.amount)
+            };
+          }
+
+          if (oldTransferToAccountIdStr && accountIdStr === oldTransferToAccountIdStr) {
+            console.log(`Reversing transfer balance for account ${account.id} from old transaction`);
+            return {
+              ...account,
+              balance: (parseFloat(account.balance) || 0) + parseFloat(oldTransaction.amount)
+            };
+          }
+
+          return account;
+        } catch (error) {
+          console.error(`Error processing account ${account.id} during transaction reversal:`, error);
+          return account;
+        }
+      });
+    });
 
     // Reverse old transaction effects on category spending
     if (oldTransaction.isSplit && oldTransaction.splits) {
@@ -156,7 +303,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
     // Update the transaction
     const updatedTransaction = {
       ...oldTransaction,
-      ...transactionData,
+      ...normalizedData, // Use normalized data instead of original
       lastModified: new Date().toISOString()
     };
 
@@ -164,22 +311,69 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
       txn.id === transactionId ? updatedTransaction : txn
     ));
 
-    // Apply new transaction effects on account
-    setAccounts(prev => prev.map(account => {
-      if (account.id === updatedTransaction.accountId) {
-        return {
-          ...account,
-          balance: (account.balance || 0) + updatedTransaction.amount
-        };
+    // Apply new transaction effects on account (with extra safety)
+    setAccounts(prev => {
+      // Make sure accounts are valid before proceeding
+      if (!Array.isArray(prev) || prev.length === 0) {
+        console.error('Invalid accounts array:', prev);
+        return prev;
       }
-      if (updatedTransaction.transferToAccountId && account.id === updatedTransaction.transferToAccountId) {
-        return {
-          ...account,
-          balance: (account.balance || 0) - updatedTransaction.amount
-        };
-      }
-      return account;
-    }));
+
+      // Debugging account lookup
+      const sourceAccount = prev.find(a => String(a.id) === String(updatedTransaction.accountId));
+      const destAccount = updatedTransaction.transferToAccountId ?
+        prev.find(a => String(a.id) === String(updatedTransaction.transferToAccountId)) :
+        null;
+
+      console.log('Account balance update for updated transaction - account lookup:', {
+        sourceAccountId: updatedTransaction.accountId,
+        sourceAccountFound: !!sourceAccount,
+        destAccountId: updatedTransaction.transferToAccountId,
+        destAccountFound: !!destAccount,
+        allAccountIds: prev.map(a => a.id)
+      });
+
+      return prev.map(account => {
+        // Skip null or undefined accounts
+        if (!account) return account;
+
+        // Skip accounts without an id
+        if (account.id === undefined || account.id === null) {
+          console.warn('Account without ID found:', account);
+          return account;
+        }
+
+        try {
+          // Ensure consistent ID type comparison using strings
+          const accountIdStr = String(account.id);
+          const transactionAccountIdStr = String(updatedTransaction.accountId);
+          const transferToAccountIdStr = updatedTransaction.transferToAccountId ?
+            String(updatedTransaction.transferToAccountId) :
+            null;
+
+          if (accountIdStr === transactionAccountIdStr) {
+            console.log(`Updating balance for account ${account.id} (updated transaction account)`);
+            return {
+              ...account,
+              balance: (parseFloat(account.balance) || 0) + parseFloat(updatedTransaction.amount)
+            };
+          }
+
+          if (transferToAccountIdStr && accountIdStr === transferToAccountIdStr) {
+            console.log(`Updating balance for account ${account.id} (updated transfer destination account)`);
+            return {
+              ...account,
+              balance: (parseFloat(account.balance) || 0) - parseFloat(updatedTransaction.amount)
+            };
+          }
+
+          return account;
+        } catch (error) {
+          console.error(`Error processing account ${account.id} during update:`, error);
+          return account;
+        }
+      });
+    });
 
     // Apply new transaction effects on category spending
     if (updatedTransaction.isSplit && updatedTransaction.splits) {
@@ -228,26 +422,76 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
   const deleteTransaction = useCallback((transactionId) => {
     // Find the transaction to delete
     const transactionToDelete = transactions.find(t => t.id === transactionId);
-    if (!transactionToDelete) return;
+    if (!transactionToDelete) {
+      console.error(`Transaction with ID ${transactionId} not found for deletion`);
+      return null;
+    }
 
     console.log('Deleting transaction:', transactionToDelete);
 
     // Reverse transaction effects on account
-    setAccounts(prev => prev.map(account => {
-      if (account.id === transactionToDelete.accountId) {
-        return {
-          ...account,
-          balance: (account.balance || 0) - transactionToDelete.amount
-        };
+    setAccounts(prev => {
+      // Make sure accounts are valid before proceeding
+      if (!Array.isArray(prev) || prev.length === 0) {
+        console.error('Invalid accounts array:', prev);
+        return prev;
       }
-      if (transactionToDelete.transferToAccountId && account.id === transactionToDelete.transferToAccountId) {
-        return {
-          ...account,
-          balance: (account.balance || 0) + transactionToDelete.amount
-        };
-      }
-      return account;
-    }));
+
+      // Debugging account lookup
+      const sourceAccount = prev.find(a => String(a.id) === String(transactionToDelete.accountId));
+      const destAccount = transactionToDelete.transferToAccountId ?
+        prev.find(a => String(a.id) === String(transactionToDelete.transferToAccountId)) :
+        null;
+
+      console.log('Account balance update for deleted transaction - account lookup:', {
+        sourceAccountId: transactionToDelete.accountId,
+        sourceAccountFound: !!sourceAccount,
+        destAccountId: transactionToDelete.transferToAccountId,
+        destAccountFound: !!destAccount,
+        allAccountIds: prev.map(a => a.id)
+      });
+
+      return prev.map(account => {
+        // Skip null or undefined accounts
+        if (!account) return account;
+
+        // Skip accounts without an id
+        if (account.id === undefined || account.id === null) {
+          console.warn('Account without ID found when deleting transaction:', account);
+          return account;
+        }
+
+        try {
+          // Ensure consistent ID comparison with string conversion
+          const accountIdStr = String(account.id);
+          const transactionAccountIdStr = String(transactionToDelete.accountId);
+          const transferToAccountIdStr = transactionToDelete.transferToAccountId ?
+            String(transactionToDelete.transferToAccountId) :
+            null;
+
+          if (accountIdStr === transactionAccountIdStr) {
+            console.log(`Updating balance for account ${account.id} (deleting from account)`);
+            return {
+              ...account,
+              balance: (parseFloat(account.balance) || 0) - parseFloat(transactionToDelete.amount)
+            };
+          }
+
+          if (transferToAccountIdStr && accountIdStr === transferToAccountIdStr) {
+            console.log(`Updating balance for account ${account.id} (deleting from transfer destination)`);
+            return {
+              ...account,
+              balance: (parseFloat(account.balance) || 0) + parseFloat(transactionToDelete.amount)
+            };
+          }
+
+          return account;
+        } catch (error) {
+          console.error(`Error processing account ${account.id} during deletion:`, error);
+          return account;
+        }
+      });
+    });
 
     // Reverse transaction effects on category spending
     if (transactionToDelete.isSplit && transactionToDelete.splits) {
