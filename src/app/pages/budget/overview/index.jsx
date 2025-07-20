@@ -765,18 +765,33 @@ export default function BudgetOverview() {
             console.log(`   Categories: ${groupCategories.map(cat => cat.name).join(', ')}`);
 
             // Calculate group totals
-            const totals = groupCategories.reduce((acc, category) => ({
-                monthlyNeed: acc.monthlyNeed + (category.monthlyNeed || 0),
-                perPaycheck: acc.perPaycheck + (category.perPaycheck || 0),
-                allocated: acc.allocated + (category.allocated || 0),
-                spent: acc.spent + (category.spent || 0),
-                available: acc.available + (category.available || 0)
-            }), {
+            const totals = groupCategories.reduce((acc, category) => {
+                console.log(`🔍 GROUP TOTAL DEBUG - ${group.name}:`, {
+                    categoryName: category.name,
+                    categoryPerPaycheck: category.perPaycheck,
+                    runningTotal: acc.perPaycheck,
+                    newTotal: acc.perPaycheck + (category.perPaycheck || 0)
+                });
+
+                return {
+                    monthlyNeed: acc.monthlyNeed + (category.monthlyNeed || 0),
+                    perPaycheck: acc.perPaycheck + (category.perPaycheck || 0),
+                    allocated: acc.allocated + (category.allocated || 0),
+                    spent: acc.spent + (category.spent || 0),
+                    available: acc.available + (category.available || 0)
+                };
+            }, {
                 monthlyNeed: 0,
                 perPaycheck: 0,
                 allocated: 0,
                 spent: 0,
                 available: 0
+            });
+
+            console.log(`✅ GROUP TOTAL FINAL - ${group.name}:`, {
+                totalPerPaycheck: totals.perPaycheck,
+                categoryCount: groupCategories.length,
+                categoryDetails: groupCategories.map(cat => ({ name: cat.name, perPaycheck: cat.perPaycheck }))
             });
 
             result[group.id] = {
