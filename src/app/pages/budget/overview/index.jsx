@@ -252,14 +252,31 @@ export default function BudgetOverview() {
     }, [getTodayLocal, getPaychecksInDateRange, getUpcomingPaycheckDatesForAccount, accounts]);
 
     // Helper function to calculate smart per-paycheck amount based on current allocation progress
-    const calculateSmartPerPaycheck = useCallback((monthlyTarget, currentlyAllocated) => {
-        const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+    const calculateSmartPerPaycheck = useCallback((monthlyTarget, currentlyAllocated, dueDate, accountId) => {
         const remainingNeeded = Math.max(0, monthlyTarget - currentlyAllocated);
 
-        // For now, use simple division by conservative paycheck count
-        // TODO: Could be enhanced to consider actual remaining paychecks in current period
+        // If nothing more is needed, return 0
+        if (remainingNeeded <= 0) {
+            return 0;
+        }
+
+        // If there's a due date, calculate based on actual paychecks remaining until due date
+        if (dueDate) {
+            const paychecksUntilDue = calculatePaychecksUntilDue(dueDate, accountId);
+
+            if (paychecksUntilDue > 0) {
+                // Divide remaining needed by actual paychecks left
+                return remainingNeeded / paychecksUntilDue;
+            } else {
+                // Due now or overdue - need full remaining amount immediately
+                return remainingNeeded;
+            }
+        }
+
+        // Fallback: use conservative paycheck count for ongoing expenses without due dates
+        const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
         return remainingNeeded / paycheckInfo.conservative;
-    }, [getConservativePaycheckInfo]);
+    }, [getConservativePaycheckInfo, calculatePaychecksUntilDue]);
 
     // Transform data for the budget table
     const transformDataForBudgetTable = useCallback((categories = [], planningItems = []) => {
@@ -393,7 +410,7 @@ export default function BudgetOverview() {
             if (category.type === 'single' && category.planningType === 'expense' && category.amount && !category.dueDate) {
                 perPaycheck = category.amount; // Amount is already per-paycheck
             } else {
-                perPaycheck = calculateSmartPerPaycheck(monthlyNeed, allocated);
+                perPaycheck = calculateSmartPerPaycheck(monthlyNeed, allocated, categoryDueDate, category.accountId);
             }
 
             // Calculate actual spent amount from transactions

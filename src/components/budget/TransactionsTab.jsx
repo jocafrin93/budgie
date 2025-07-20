@@ -1290,6 +1290,12 @@ export default function TransactionsTab({
             pagination: {
                 pageSize: 20,
             },
+            sorting: [
+                {
+                    id: 'date',
+                    desc: true // Sort by date descending (newest first)
+                }
+            ],
         },
         meta: {
             setTableSettings,
@@ -1548,169 +1554,176 @@ export default function TransactionsTab({
                                     </Tr>
                                 </THead>
                                 <TBody>
-                                    {scheduledTransactions.map(scheduledTxn => {
-                                        // Use local timezone parsing like the rest of the app
-                                        const dueDate = new Date((scheduledTxn.nextDueDate || scheduledTxn.dueDate) + 'T00:00:00');
-                                        const today = new Date();
-                                        today.setHours(0, 0, 0, 0); // Reset to start of day
+                                    {scheduledTransactions
+                                        .sort((a, b) => {
+                                            // Sort by due date ascending (soonest first, which will appear at bottom)
+                                            const dateA = new Date((a.nextDueDate || a.dueDate) + 'T00:00:00');
+                                            const dateB = new Date((b.nextDueDate || b.dueDate) + 'T00:00:00');
+                                            return dateA - dateB;
+                                        })
+                                        .map(scheduledTxn => {
+                                            // Use local timezone parsing like the rest of the app
+                                            const dueDate = new Date((scheduledTxn.nextDueDate || scheduledTxn.dueDate) + 'T00:00:00');
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0); // Reset to start of day
 
-                                        const isOverdue = dueDate < today;
-                                        const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                                            const isOverdue = dueDate < today;
+                                            const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
-                                        // Get account and category names
-                                        const getAccountName = (accountId) => {
-                                            const account = accounts.find(acc => acc.id === accountId);
-                                            return account ? account.name : 'Unknown';
-                                        };
+                                            // Get account and category names
+                                            const getAccountName = (accountId) => {
+                                                const account = accounts.find(acc => acc.id === accountId);
+                                                return account ? account.name : 'Unknown';
+                                            };
 
-                                        const getCategoryName = (categoryId) => {
-                                            if (!categoryId) return 'Uncategorized';
+                                            const getCategoryName = (categoryId) => {
+                                                if (!categoryId) return 'Uncategorized';
 
-                                            // Regular category lookup using numeric comparison
-                                            const category = categories.find(cat => Number(cat.id) === Number(categoryId));
+                                                // Regular category lookup using numeric comparison
+                                                const category = categories.find(cat => Number(cat.id) === Number(categoryId));
 
-                                            return category ? category.name : 'Unknown';
-                                        };
+                                                return category ? category.name : 'Unknown';
+                                            };
 
-                                        return (
-                                            <Tr
-                                                key={scheduledTxn.id}
-                                                className={`${isOverdue ? 'border-l-4 border-l-error bg-error/5' : 'border-l-4 border-l-warning bg-warning/5'}`}
-                                            >
-                                                {/* Due Date */}
-                                                <Td>
-                                                    <div className="space-y-1">
-                                                        <div className="font-medium text-base-content">
-                                                            {dueDate.toLocaleDateString('en-US', {
-                                                                month: 'short',
-                                                                day: '2-digit',
-                                                                year: 'numeric'
-                                                            })}
-                                                        </div>
-                                                        <div className={`text-xs px-2 py-1 rounded-full inline-block ${isOverdue
-                                                            ? 'bg-error/20 text-error'
-                                                            : daysDiff === 0
-                                                                ? 'bg-warning/20 text-warning'
-                                                                : 'bg-info/20 text-info'
-                                                            }`}>
-                                                            {isOverdue
-                                                                ? 'Overdue'
-                                                                : daysDiff === 0
-                                                                    ? 'Due Today'
-                                                                    : `Due in ${daysDiff} day${daysDiff > 1 ? 's' : ''}`
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                </Td>
-
-                                                {/* Payee */}
-                                                <Td>
-                                                    <div className="space-y-1">
-                                                        <div className="font-medium text-base-content">
-                                                            {scheduledTxn.payee || 'No Payee'}
-                                                        </div>
-                                                        {scheduledTxn.memo && (
-                                                            <div className="text-sm text-base-content/60 truncate max-w-32">
-                                                                {scheduledTxn.memo}
+                                            return (
+                                                <Tr
+                                                    key={scheduledTxn.id}
+                                                    className={`${isOverdue ? 'border-l-4 border-l-error bg-error/5' : 'border-l-4 border-l-warning bg-warning/5'}`}
+                                                >
+                                                    {/* Due Date */}
+                                                    <Td>
+                                                        <div className="space-y-1">
+                                                            <div className="font-medium text-base-content">
+                                                                {dueDate.toLocaleDateString('en-US', {
+                                                                    month: 'short',
+                                                                    day: '2-digit',
+                                                                    year: 'numeric'
+                                                                })}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </Td>
+                                                            <div className={`text-xs px-2 py-1 rounded-full inline-block ${isOverdue
+                                                                ? 'bg-error/20 text-error'
+                                                                : daysDiff === 0
+                                                                    ? 'bg-warning/20 text-warning'
+                                                                    : 'bg-info/20 text-info'
+                                                                }`}>
+                                                                {isOverdue
+                                                                    ? 'Overdue'
+                                                                    : daysDiff === 0
+                                                                        ? 'Due Today'
+                                                                        : `Due in ${daysDiff} day${daysDiff > 1 ? 's' : ''}`
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </Td>
 
-                                                {/* Category */}
-                                                <Td>
-                                                    <Badge variant="soft" className="text-xs">
-                                                        {getCategoryName(scheduledTxn.categoryId, scheduledTxn)}
-                                                    </Badge>
-                                                </Td>
+                                                    {/* Payee */}
+                                                    <Td>
+                                                        <div className="space-y-1">
+                                                            <div className="font-medium text-base-content">
+                                                                {scheduledTxn.payee || 'No Payee'}
+                                                            </div>
+                                                            {scheduledTxn.memo && (
+                                                                <div className="text-sm text-base-content/60 truncate max-w-32">
+                                                                    {scheduledTxn.memo}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </Td>
 
-                                                {/* Account */}
-                                                <Td>
-                                                    <div className="text-sm text-base-content">
-                                                        {getAccountName(scheduledTxn.accountId)}
-                                                    </div>
-                                                </Td>
+                                                    {/* Category */}
+                                                    <Td>
+                                                        <Badge variant="soft" className="text-xs">
+                                                            {getCategoryName(scheduledTxn.categoryId, scheduledTxn)}
+                                                        </Badge>
+                                                    </Td>
 
-                                                {/* Amount */}
-                                                <Td>
-                                                    <div className={`font-semibold ${scheduledTxn.amount >= 0
-                                                        ? 'text-success'
-                                                        : 'text-error'
-                                                        }`}>
-                                                        {scheduledTxn.amount >= 0 ? '+' : '-'}{formatCurrency(scheduledTxn.amount)}
-                                                    </div>
-                                                </Td>
+                                                    {/* Account */}
+                                                    <Td>
+                                                        <div className="text-sm text-base-content">
+                                                            {getAccountName(scheduledTxn.accountId)}
+                                                        </div>
+                                                    </Td>
 
-                                                {/* Frequency */}
-                                                <Td>
-                                                    <div className="text-sm text-base-content/60">
-                                                        {scheduledTxn.frequency}
-                                                    </div>
-                                                </Td>
+                                                    {/* Amount */}
+                                                    <Td>
+                                                        <div className={`font-semibold ${scheduledTxn.amount >= 0
+                                                            ? 'text-success'
+                                                            : 'text-error'
+                                                            }`}>
+                                                            {scheduledTxn.amount >= 0 ? '+' : '-'}{formatCurrency(scheduledTxn.amount)}
+                                                        </div>
+                                                    </Td>
 
-                                                {/* Status */}
-                                                <Td>
-                                                    <div className={`flex items-center gap-2 text-xs ${isOverdue ? 'text-error' : 'text-warning'}`}>
-                                                        <div className={`w-2 h-2 rounded-full ${isOverdue ? 'bg-error' : 'bg-warning'}`}></div>
-                                                        Scheduled
-                                                    </div>
-                                                </Td>
+                                                    {/* Frequency */}
+                                                    <Td>
+                                                        <div className="text-sm text-base-content/60">
+                                                            {scheduledTxn.frequency}
+                                                        </div>
+                                                    </Td>
 
-                                                {/* Actions */}
-                                                <Td>
-                                                    <div className="flex items-center gap-1">
-                                                        {/* Activate Early */}
-                                                        <Button
-                                                            onClick={() => onActivateScheduledTransactionEarly?.(scheduledTxn.id)}
-                                                            variant="flat"
-                                                            size="sm"
-                                                            isIcon
-                                                            className="text-base-content/60 hover:text-base-content"
-                                                            title="Activate Now"
-                                                        >
-                                                            <TbPlayerPlay className="size-4" />
-                                                        </Button>
+                                                    {/* Status */}
+                                                    <Td>
+                                                        <div className={`flex items-center gap-2 text-xs ${isOverdue ? 'text-error' : 'text-warning'}`}>
+                                                            <div className={`w-2 h-2 rounded-full ${isOverdue ? 'bg-error' : 'bg-warning'}`}></div>
+                                                            Scheduled
+                                                        </div>
+                                                    </Td>
 
-                                                        {/* Skip */}
-                                                        <Button
-                                                            onClick={() => onSkipScheduledTransaction?.(scheduledTxn.id)}
-                                                            variant="flat"
-                                                            size="sm"
-                                                            isIcon
-                                                            className="text-base-content/60 hover:text-base-content"
-                                                            title="Skip This Occurrence"
-                                                        >
-                                                            <TbPlayerSkipForward className="size-4" />
-                                                        </Button>
+                                                    {/* Actions */}
+                                                    <Td>
+                                                        <div className="flex items-center gap-1">
+                                                            {/* Activate Early */}
+                                                            <Button
+                                                                onClick={() => onActivateScheduledTransactionEarly?.(scheduledTxn.id)}
+                                                                variant="flat"
+                                                                size="sm"
+                                                                isIcon
+                                                                className="text-base-content/60 hover:text-base-content"
+                                                                title="Activate Now"
+                                                            >
+                                                                <TbPlayerPlay className="size-4" />
+                                                            </Button>
 
-                                                        {/* Edit */}
-                                                        <Button
-                                                            onClick={() => onEditScheduledTransaction?.(scheduledTxn.id, scheduledTxn)}
-                                                            variant="flat"
-                                                            size="sm"
-                                                            isIcon
-                                                            className="text-base-content/60 hover:text-base-content"
-                                                            title="Edit Schedule"
-                                                        >
-                                                            <TbEdit className="size-4" />
-                                                        </Button>
+                                                            {/* Skip */}
+                                                            <Button
+                                                                onClick={() => onSkipScheduledTransaction?.(scheduledTxn.id)}
+                                                                variant="flat"
+                                                                size="sm"
+                                                                isIcon
+                                                                className="text-base-content/60 hover:text-base-content"
+                                                                title="Skip This Occurrence"
+                                                            >
+                                                                <TbPlayerSkipForward className="size-4" />
+                                                            </Button>
 
-                                                        {/* Delete */}
-                                                        <Button
-                                                            onClick={() => onDeleteScheduledTransaction?.(scheduledTxn.id)}
-                                                            variant="flat"
-                                                            size="sm"
-                                                            isIcon
-                                                            className="text-base-content/60 hover:text-base-content"
-                                                            title="Delete Schedule"
-                                                        >
-                                                            <TbTrash className="size-4" />
-                                                        </Button>
-                                                    </div>
-                                                </Td>
-                                            </Tr>
-                                        );
-                                    })}
+                                                            {/* Edit */}
+                                                            <Button
+                                                                onClick={() => onEditScheduledTransaction?.(scheduledTxn.id, scheduledTxn)}
+                                                                variant="flat"
+                                                                size="sm"
+                                                                isIcon
+                                                                className="text-base-content/60 hover:text-base-content"
+                                                                title="Edit Schedule"
+                                                            >
+                                                                <TbEdit className="size-4" />
+                                                            </Button>
+
+                                                            {/* Delete */}
+                                                            <Button
+                                                                onClick={() => onDeleteScheduledTransaction?.(scheduledTxn.id)}
+                                                                variant="flat"
+                                                                size="sm"
+                                                                isIcon
+                                                                className="text-base-content/60 hover:text-base-content"
+                                                                title="Delete Schedule"
+                                                            >
+                                                                <TbTrash className="size-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </Td>
+                                                </Tr>
+                                            );
+                                        })}
                                 </TBody>
                             </Table>
                         </div>
