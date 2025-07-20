@@ -1945,10 +1945,15 @@ const BudgetCategoriesTable = ({
                                         allocated: c.allocated
                                     }))));
 
-                                // Notify parent component to update its data with transfer type
+                                // Notify parent component to update its data with transfer type AND update functions
                                 if (onDataUpdate) {
                                     console.log('🔄 TRANSFER DEBUG: Calling onDataUpdate with update functions result');
-                                    onDataUpdate(updatedData, { type: 'transfer', preserveAllFields: true });
+                                    onDataUpdate(updatedData, {
+                                        type: 'transfer',
+                                        preserveAllFields: true,
+                                        // Critical: Pass the original update functions to the parent component
+                                        updateFunctions: transferData.updateFunctions
+                                    });
                                 }
                             } else {
                                 // Ensure we have a valid transfer before proceeding
