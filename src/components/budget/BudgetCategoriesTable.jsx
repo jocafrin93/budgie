@@ -1952,7 +1952,11 @@ const BudgetCategoriesTable = ({
                                         type: 'transfer',
                                         preserveAllFields: true,
                                         // Critical: Pass the original update functions to the parent component
-                                        updateFunctions: transferData.updateFunctions
+                                        updateFunctions: transferData.updateFunctions,
+                                        // Add explicit source and target category IDs for clarity
+                                        fromCategoryId: transferData.fromCategory,
+                                        toCategoryId: transferData.toCategory,
+                                        amount: transferData.amount
                                     });
                                 }
                             } else {

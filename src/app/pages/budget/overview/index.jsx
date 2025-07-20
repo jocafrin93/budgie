@@ -935,28 +935,35 @@ export default function BudgetOverview() {
                             }
                             // Handle category-to-category transfers specifically
                             else if (options && options.type === 'transfer') {
-                                console.log('💰 TRANSFER OPERATION DETECTED - Updating only available balances');
+                                console.log('💰 TRANSFER OPERATION DETECTED - Updating both available and allocated balances');
 
-                                // For transfers, we only update the 'available' property,
-                                // not the 'allocated' or 'spent' properties
+                                // For transfers, we need to update both 'available' and 'allocated' properties
+                                // to ensure persistence to localStorage
                                 updatedTableData.forEach(updatedCategory => {
                                     if (updatedCategory.isParent) {
-                                        // Find the original category to compare available amount
+                                        // Find the original category to compare values
                                         const originalCategory = categories.find(c => c.id === updatedCategory.id);
 
                                         if (originalCategory && originalCategory.available !== updatedCategory.available) {
                                             console.log(`💸 Transfer detected for category ${updatedCategory.name}: available ${originalCategory.available} → ${updatedCategory.available}`);
 
-                                            // Only update the available property for transfers
+                                            // Critical fix: Update both available AND allocated properties
+                                            // The difference between old and new available is the transfer amount
+                                            const transferAmount = updatedCategory.available - originalCategory.available;
+                                            const newAllocated = originalCategory.allocated + transferAmount;
+
+                                            console.log(`💰 Updating category ${updatedCategory.name}: allocated ${originalCategory.allocated} → ${newAllocated}`);
+
                                             updateCategory(updatedCategory.id, {
-                                                available: updatedCategory.available
+                                                available: updatedCategory.available,
+                                                allocated: newAllocated
                                             });
-                                            console.log(`✅ Updated ONLY available balance for ${updatedCategory.name}`);
+                                            console.log(`✅ Updated BOTH available and allocated for ${updatedCategory.name}`);
                                         }
                                     }
                                 });
 
-                                console.log('✅ TRANSFER UPDATE COMPLETE - only available balances updated');
+                                console.log('✅ TRANSFER UPDATE COMPLETE - both available and allocated balances updated');
                             }
                             else {
                                 console.log('🔄 REGULAR UPDATE - Updating allocated/available/spent');
