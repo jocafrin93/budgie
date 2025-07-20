@@ -247,17 +247,47 @@ const TransferModal = ({
                 const transferUpdates = createMoveMoneyUpdates(fromCategoryId, toCategoryId, transferAmount);
                 console.log('📊 Transfer updates result:', transferUpdates);
 
-                if (transferUpdates) {
+                if (transferUpdates && transferUpdates.updates) {
+                    // Create custom update functions that explicitly modify both available AND allocated
+                    const enhancedUpdates = transferUpdates.updates.map(updateObj => {
+                        const originalUpdate = updateObj.update;
+
+                        // Create a wrapper that logs and ensures both properties are updated
+                        return {
+                            ...updateObj,
+                            update: (category) => {
+                                // Apply the original update function to get the changes
+                                const updatedCategory = originalUpdate(category);
+
+                                // Calculate how much available changed
+                                const availableDelta = updatedCategory.available - (category.available || 0);
+
+                                // Explicitly set both available AND allocated by the same amount
+                                // This is critical for persistence - allocated must change when available changes
+                                const finalCategory = {
+                                    ...updatedCategory,
+                                    allocated: (category.allocated || 0) + availableDelta
+                                };
+
+                                console.log(`💰 Enhanced update for ${category.name}:`);
+                                console.log(`   Available: ${category.available} → ${finalCategory.available}`);
+                                console.log(`   Allocated: ${category.allocated} → ${finalCategory.allocated}`);
+
+                                return finalCategory;
+                            }
+                        };
+                    });
+
                     const transferData = {
                         type: 'transfer',
                         fromCategory: fromCategoryId,
                         toCategory: toCategoryId,
                         amount: transferAmount,
-                        updateFunctions: transferUpdates.updates, // Renamed from 'updates' to 'updateFunctions'
+                        updateFunctions: enhancedUpdates, // Use enhanced updates that modify both properties
                         alerts: alerts.filter(alert => alert.type !== 'error')
                     };
                     console.log('📤 Calling onTransferComplete with:', transferData);
-                    console.log('🧩 Transfer update functions included:', !!transferUpdates.updates);
+                    console.log('🧩 Transfer update functions included:', !!enhancedUpdates);
                     onTransferComplete?.(transferData);
                 } else {
                     console.log('❌ createMoveMoneyUpdates returned null/undefined');

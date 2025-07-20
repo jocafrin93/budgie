@@ -201,10 +201,21 @@ export const useCategoryManagement = () => {
             console.log('TRANSFER UPDATE DETECTED:', categoryData);
             console.log('Previous available:', cat.available, 'New available:', categoryData.available);
 
-            // For transfers, only update the available property but preserve everything else
+            // Calculate how much the available amount changed
+            const availableDelta = categoryData.available - (cat.available || 0);
+
+            // Update both available AND allocated by the same amount
+            // This is critical for persistence - allocated must change when available changes
+            const newAllocated = (cat.allocated || 0) + availableDelta;
+
+            console.log('Available delta:', availableDelta);
+            console.log('Previous allocated:', cat.allocated, 'New allocated:', newAllocated);
+
+            // For transfers, update BOTH available and allocated properties
             const updatedCategory = {
               ...cat,
-              available: categoryData.available
+              available: categoryData.available,
+              allocated: newAllocated
             };
             console.log('Updated category (transfer):', updatedCategory);
             return updatedCategory;
