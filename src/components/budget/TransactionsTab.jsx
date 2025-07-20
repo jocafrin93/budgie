@@ -655,6 +655,9 @@ const TransactionFormModal = ({
                                     className="border-base-300 bg-base-100 text-base-content"
                                 >
                                     <option value="">Select Category</option>
+                                    {transactionType === 'inflow' && (
+                                        <option value="to-be-allocated">💰 To Be Allocated</option>
+                                    )}
                                     {categories.map(category => (
                                         <option key={category.id} value={category.id}>
                                             {category.name}
@@ -1137,11 +1140,21 @@ export default function TransactionsTab({
                     const isTransfer = row.original.isTransfer || row.original.transferToAccountId;
                     // Check if this is a split transaction
                     const isSplit = row.original.isSplit || (row.original.splits && row.original.splits.length > 0);
+                    // Check if this is "to-be-allocated"
+                    const isToBeAllocated = getValue() === 'to-be-allocated';
 
                     if (isTransfer) {
                         return (
                             <Badge variant="soft" color="info" className="text-xs">
                                 Transfer
+                            </Badge>
+                        );
+                    }
+
+                    if (isToBeAllocated) {
+                        return (
+                            <Badge variant="soft" color="success" className="text-xs">
+                                💰 To Be Allocated
                             </Badge>
                         );
                     }

@@ -25,8 +25,15 @@ const SimplifiedSummaryCards = ({
             return sum + workingBalance;
         }, 0);
 
+        // Calculate total allocated, excluding "to-be-allocated" transactions
         const totalAllocated = categories.reduce((sum, category) => sum + (category.allocated || 0), 0);
-        const availableToAllocate = totalWorkingBalance - totalAllocated;
+
+        // Add transactions with "to-be-allocated" category to available funds
+        const toBeAllocatedAmount = transactions
+            .filter(t => t.categoryId === 'to-be-allocated')
+            .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+        const availableToAllocate = totalWorkingBalance - totalAllocated + toBeAllocatedAmount;
 
         // Calculate budget progress
         const totalPlanned = planningItems.reduce((sum, item) => {

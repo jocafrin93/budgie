@@ -1467,7 +1467,12 @@ const BudgetCategoriesTable = ({
                 }, 0);
 
                 const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
-                const availableToAllocate = totalWorkingBalance - totalAllocated;
+
+                // Add transactions with "to-be-allocated" category to available funds
+                const toBeAllocatedAmount = [].filter(t => t.categoryId === 'to-be-allocated')
+                    .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+                const availableToAllocate = totalWorkingBalance - totalAllocated + toBeAllocatedAmount;
 
                 // Debug logging
                 console.log('🔍 Quick Allocate Debug:');
