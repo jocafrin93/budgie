@@ -764,21 +764,21 @@ export default function BudgetOverview() {
             console.log(`📂 Group "${group.name}" (${group.id}): ${groupCategories.length} categories`);
             console.log(`   Categories: ${groupCategories.map(cat => cat.name).join(', ')}`);
 
-            // Calculate group totals
+            // Calculate group totals - ensure all values are converted to numbers
             const totals = groupCategories.reduce((acc, category) => {
-                console.log(`🔍 GROUP TOTAL DEBUG - ${group.name}:`, {
-                    categoryName: category.name,
-                    categoryPerPaycheck: category.perPaycheck,
-                    runningTotal: acc.perPaycheck,
-                    newTotal: acc.perPaycheck + (category.perPaycheck || 0)
-                });
+                // Convert string values to numbers to prevent string concatenation
+                const categoryMonthlyNeed = parseFloat(category.monthlyNeed) || 0;
+                const categoryPerPaycheck = parseFloat(category.perPaycheck) || 0;
+                const categoryAllocated = parseFloat(category.allocated) || 0;
+                const categorySpent = parseFloat(category.spent) || 0;
+                const categoryAvailable = parseFloat(category.available) || 0;
 
                 return {
-                    monthlyNeed: acc.monthlyNeed + (category.monthlyNeed || 0),
-                    perPaycheck: acc.perPaycheck + (category.perPaycheck || 0),
-                    allocated: acc.allocated + (category.allocated || 0),
-                    spent: acc.spent + (category.spent || 0),
-                    available: acc.available + (category.available || 0)
+                    monthlyNeed: acc.monthlyNeed + categoryMonthlyNeed,
+                    perPaycheck: acc.perPaycheck + categoryPerPaycheck,
+                    allocated: acc.allocated + categoryAllocated,
+                    spent: acc.spent + categorySpent,
+                    available: acc.available + categoryAvailable
                 };
             }, {
                 monthlyNeed: 0,
@@ -786,12 +786,6 @@ export default function BudgetOverview() {
                 allocated: 0,
                 spent: 0,
                 available: 0
-            });
-
-            console.log(`✅ GROUP TOTAL FINAL - ${group.name}:`, {
-                totalPerPaycheck: totals.perPaycheck,
-                categoryCount: groupCategories.length,
-                categoryDetails: groupCategories.map(cat => ({ name: cat.name, perPaycheck: cat.perPaycheck }))
             });
 
             result[group.id] = {
