@@ -307,8 +307,18 @@ export default function BudgetTransactions() {
     const handleAddTransaction = (transactionData) => {
         console.log("Raw transaction data received:", transactionData);
 
-        // Check if this is a transfer and create inverse transaction
+        // Check if this is a transfer 
         if (transactionData.isTransfer && transactionData.transferToAccountId) {
+            // Check if this is already part of a transfer pair (coming from TransactionsTab)
+            // If it has a transferToAccountId and isTransfer=true, it's already being handled as part of a pair
+            const isAlreadyPartOfPair = transactionData.id && transactionData.id.toString().includes('transfer_');
+
+            if (isAlreadyPartOfPair) {
+                // Just process this transaction as-is, without creating an inverse
+                console.log("Processing transaction that's already part of a transfer pair:", transactionData);
+                addTransaction(transactionData);
+                return;
+            }
             // Normalize account IDs first to ensure consistent handling
             const normalizedData = {
                 ...transactionData,
