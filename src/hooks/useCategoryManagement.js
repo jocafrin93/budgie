@@ -142,6 +142,9 @@ export const useCategoryManagement = () => {
   /**
    * Update an existing category - ENHANCED to handle type changes
    */
+  /**
+   * Update an existing category - ENHANCED to handle type changes and ensure transfer persistence
+   */
   const updateCategory = useCallback((categoryId, categoryData) => {
     console.log('=== UPDATE CATEGORY HOOK DEBUG ===');
     console.log('Category ID:', categoryId, 'type:', typeof categoryId);
@@ -186,6 +189,24 @@ export const useCategoryManagement = () => {
               }
             };
             console.log('Updated category (type change):', updatedCategory);
+            return updatedCategory;
+          }
+
+          // Check if this is a transfer update (only available property is being updated)
+          const isTransferUpdate =
+            categoryData.available !== undefined &&
+            Object.keys(categoryData).length === 1;
+
+          if (isTransferUpdate) {
+            console.log('TRANSFER UPDATE DETECTED:', categoryData);
+            console.log('Previous available:', cat.available, 'New available:', categoryData.available);
+
+            // For transfers, only update the available property but preserve everything else
+            const updatedCategory = {
+              ...cat,
+              available: categoryData.available
+            };
+            console.log('Updated category (transfer):', updatedCategory);
             return updatedCategory;
           }
 
