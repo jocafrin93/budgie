@@ -933,7 +933,37 @@ export default function BudgetOverview() {
 
                                 console.log('✅ REORDER UPDATE COMPLETE - sortOrder fields preserved');
                             }
-                            // Handle category-to-category transfers specifically
+                            // Handle transfers with preserveAllFields flag - critical fix for category-to-category transfers
+                            else if (options && options.type === 'transfer' && options.preserveAllFields) {
+                                console.log('💰 TRANSFER WITH PRESERVE_ALL_FIELDS DETECTED - Updating both available and allocated balances');
+
+                                // For transfers, we need to update both 'available' and 'allocated' properties
+                                updatedTableData.forEach(updatedCategory => {
+                                    if (updatedCategory.isParent) {
+                                        // Find the original category to compare values
+                                        const originalCategory = categories.find(c => c.id === updatedCategory.id);
+
+                                        if (originalCategory && originalCategory.available !== updatedCategory.available) {
+                                            console.log(`💸 Transfer detected for category ${updatedCategory.name}: available ${originalCategory.available} → ${updatedCategory.available}`);
+
+                                            // Calculate transfer amount and update allocated to match
+                                            const transferAmount = updatedCategory.available - originalCategory.available;
+                                            const newAllocated = originalCategory.allocated + transferAmount;
+
+                                            console.log(`💰 Updating category ${updatedCategory.name}: allocated ${originalCategory.allocated} → ${newAllocated}`);
+
+                                            // Critical fix: Update BOTH available AND allocated properties
+                                            updateCategory(updatedCategory.id, {
+                                                available: updatedCategory.available,
+                                                allocated: newAllocated
+                                            });
+                                        }
+                                    }
+                                });
+
+                                console.log('✅ TRANSFER UPDATE COMPLETE - both available and allocated balances updated');
+                            }
+                            // Handle regular transfers without preserveAllFields flag
                             else if (options && options.type === 'transfer') {
                                 console.log('💰 TRANSFER OPERATION DETECTED - Updating both available and allocated balances');
 

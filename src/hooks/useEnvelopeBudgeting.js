@@ -420,9 +420,11 @@ export const useEnvelopeBudgeting = ({
           update: (category) => {
             if (category.id === fromCategoryId) {
               const currentAvailable = validateAmount(category.available || 0);
+              const currentAllocated = validateAmount(category.allocated || 0);
               return {
                 ...category,
-                available: validateAmount(currentAvailable - validatedAmount)
+                available: validateAmount(currentAvailable - validatedAmount),
+                allocated: validateAmount(currentAllocated - validatedAmount)
               };
             }
             return category;
@@ -433,9 +435,11 @@ export const useEnvelopeBudgeting = ({
           update: (category) => {
             if (category.id === toCategoryId) {
               const currentAvailable = validateAmount(category.available || 0);
+              const currentAllocated = validateAmount(category.allocated || 0);
               return {
                 ...category,
-                available: validateAmount(currentAvailable + validatedAmount)
+                available: validateAmount(currentAvailable + validatedAmount),
+                allocated: validateAmount(currentAllocated + validatedAmount)
               };
             }
             return category;

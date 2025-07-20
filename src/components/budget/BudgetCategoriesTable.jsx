@@ -1952,6 +1952,8 @@ const BudgetCategoriesTable = ({
                                         type: 'transfer',
                                         preserveAllFields: true,
                                         // Critical: Pass the original update functions to the parent component
+                                        // These are needed to ensure both available AND allocated amounts are updated
+                                        rawUpdateFunctions: transferData.updateFunctions,
                                         updateFunctions: transferData.updateFunctions,
                                         // Add explicit source and target category IDs for clarity
                                         fromCategoryId: transferData.fromCategory,
