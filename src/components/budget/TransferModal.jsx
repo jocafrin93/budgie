@@ -253,10 +253,11 @@ const TransferModal = ({
                         fromCategory: fromCategoryId,
                         toCategory: toCategoryId,
                         amount: transferAmount,
-                        updates: transferUpdates.updates,
+                        updateFunctions: transferUpdates.updates, // Renamed from 'updates' to 'updateFunctions'
                         alerts: alerts.filter(alert => alert.type !== 'error')
                     };
                     console.log('📤 Calling onTransferComplete with:', transferData);
+                    console.log('🧩 Transfer update functions included:', !!transferUpdates.updates);
                     onTransferComplete?.(transferData);
                 } else {
                     console.log('❌ createMoveMoneyUpdates returned null/undefined');

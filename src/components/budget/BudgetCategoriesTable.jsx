@@ -307,6 +307,11 @@ const BudgetCategoriesTable = ({
 
     // Handle transfer button click
     const handleTransferClick = useCallback((category) => {
+        console.log('🚀 TRANSFER DEBUG: Transfer button clicked');
+        console.log('📊 Category being transferred from:', category);
+        console.log('💰 Available amount:', category.available);
+        console.log('💰 ID type:', typeof category.id);
+
         setTransferModal({
             isOpen: true,
             targetCategory: category,
@@ -1866,108 +1871,195 @@ const BudgetCategoriesTable = ({
 
                         } else if (transferData.type === 'transfer') {
                             // Category-to-category transfer
-                            console.log('🔄 Processing category-to-category transfer');
-                            console.log(`📤 Moving $${transferData.amount} from category ${transferData.fromCategory} to category ${transferData.toCategory}`);
+                            console.log('🔄 TRANSFER DEBUG: Processing category-to-category transfer');
+                            console.log(`📤 TRANSFER DEBUG: Moving $${transferData.amount} from category ${transferData.fromCategory} to category ${transferData.toCategory}`);
 
                             // Debug the data before making changes
-                            console.log('📋 CURRENT DATA STATE BEFORE TRANSFER:', JSON.stringify(data.map(c => ({
+                            console.log('📋 TRANSFER DEBUG: CURRENT DATA STATE BEFORE TRANSFER:', JSON.stringify(data.map(c => ({
                                 id: c.id,
                                 name: c.name,
                                 available: c.available,
                                 allocated: c.allocated,
+                                spent: c.spent,
                                 idType: typeof c.id
                             }))));
 
-                            console.log('📋 TRANSFER DATA:', JSON.stringify({
+                            console.log('📋 TRANSFER DEBUG: TRANSFER DATA:', JSON.stringify({
                                 fromCategory: transferData.fromCategory,
                                 fromCategoryType: typeof transferData.fromCategory,
                                 toCategory: transferData.toCategory,
                                 toCategoryType: typeof transferData.toCategory,
                                 amount: transferData.amount,
-                                amountType: typeof transferData.amount
+                                amountType: typeof transferData.amount,
+                                updateFunctions: !!transferData.updateFunctions
                             }));
 
-                            // Ensure we have a valid transfer before proceeding
-                            if (!transferData.fromCategory || !transferData.toCategory || !transferData.amount) {
-                                console.error('❌ Invalid transfer data - missing required properties');
-                                return;
-                            }
+                            // Check if we received update functions from the envelope budgeting hook
+                            if (transferData.updateFunctions) {
+                                console.log('🔧 TRANSFER DEBUG: Using update functions from envelope budgeting hook');
+                                console.log('📋 TRANSFER DEBUG: Update functions:', transferData.updateFunctions);
 
-                            // Convert all values to the right types to ensure consistency
-                            const fromCategoryId = String(transferData.fromCategory);
-                            const toCategoryId = String(transferData.toCategory);
-                            const transferAmount = Number(transferData.amount);
+                                // Apply update functions if available
+                                let updatedData = [...data];
 
-                            // Find the actual category objects to confirm they exist
-                            const sourceCategory = data.find(c => String(c.id) === fromCategoryId);
-                            const targetCategory = data.find(c => String(c.id) === toCategoryId);
+                                if (transferData.updateFunctions.source) {
+                                    console.log('🔧 TRANSFER DEBUG: Applying source update function');
+                                    // Find the source category
+                                    const sourceIndex = updatedData.findIndex(c =>
+                                        String(c.id) === String(transferData.fromCategory));
 
-                            console.log('🔍 Source category found:', sourceCategory ? `${sourceCategory.name} (id: ${sourceCategory.id})` : 'NOT FOUND');
-                            console.log('🔍 Target category found:', targetCategory ? `${targetCategory.name} (id: ${targetCategory.id})` : 'NOT FOUND');
+                                    if (sourceIndex >= 0) {
+                                        const sourceCategory = updatedData[sourceIndex];
+                                        console.log('📊 TRANSFER DEBUG: Source category before update:', {
+                                            id: sourceCategory.id,
+                                            name: sourceCategory.name,
+                                            available: sourceCategory.available,
+                                            allocated: sourceCategory.allocated
+                                        });
 
-                            if (!sourceCategory || !targetCategory) {
-                                console.error('❌ Could not find source or target category');
-                                return;
-                            }
+                                        // Create updated category by applying the update function
+                                        const updatedSource = transferData.updateFunctions.source(sourceCategory);
+                                        console.log('📊 TRANSFER DEBUG: Source category after update:', {
+                                            id: updatedSource.id,
+                                            name: updatedSource.name,
+                                            available: updatedSource.available,
+                                            allocated: updatedSource.allocated
+                                        });
 
-                            // Create a new array with updated objects to ensure React detects the change
-                            let updatedData = [...data];
-
-                            // First pass - create a completely new array with all unchanged categories
-                            updatedData = data.map(category => {
-                                return { ...category }; // Create shallow copy of each category
-                            });
-
-                            // Second pass - update the specific categories with new values
-                            updatedData = updatedData.map(category => {
-                                const categoryId = String(category.id);
-
-                                if (categoryId === fromCategoryId) {
-                                    // Source category - reduce available amount
-                                    const currentAvailable = Number(category.available) || 0;
-                                    const newAvailable = Math.max(0, currentAvailable - transferAmount); // Prevent negative
-
-                                    console.log(`📉 Source category ${category.name}: available ${currentAvailable} → ${newAvailable}`);
-
-                                    // Create a new object with updated values
-                                    return {
-                                        ...category,
-                                        available: newAvailable
-                                    };
-                                }
-                                else if (categoryId === toCategoryId) {
-                                    // Target category - increase available amount
-                                    const currentAvailable = Number(category.available) || 0;
-                                    const newAvailable = currentAvailable + transferAmount;
-
-                                    console.log(`📈 Target category ${category.name}: available ${currentAvailable} → ${newAvailable}`);
-
-                                    // Create a new object with updated values
-                                    return {
-                                        ...category,
-                                        available: newAvailable
-                                    };
+                                        // Replace the category in our data array
+                                        updatedData[sourceIndex] = updatedSource;
+                                    } else {
+                                        console.error('❌ TRANSFER DEBUG: Source category not found:', transferData.fromCategory);
+                                    }
                                 }
 
-                                return category;
-                            });
+                                if (transferData.updateFunctions.destination) {
+                                    console.log('🔧 TRANSFER DEBUG: Applying destination update function');
+                                    // Find the destination category
+                                    const destIndex = updatedData.findIndex(c =>
+                                        String(c.id) === String(transferData.toCategory));
 
-                            // Verify the changes were made correctly
-                            console.log('📋 UPDATED DATA AFTER TRANSFER:', JSON.stringify(updatedData.map(c => ({
-                                id: c.id,
-                                name: c.name,
-                                available: c.available,
-                                allocated: c.allocated
-                            }))));
+                                    if (destIndex >= 0) {
+                                        const destCategory = updatedData[destIndex];
+                                        console.log('📊 TRANSFER DEBUG: Destination category before update:', {
+                                            id: destCategory.id,
+                                            name: destCategory.name,
+                                            available: destCategory.available,
+                                            allocated: destCategory.allocated
+                                        });
 
-                            console.log('📋 Updated categories data after applying update functions:', updatedData);
+                                        // Create updated category by applying the update function
+                                        const updatedDest = transferData.updateFunctions.destination(destCategory);
+                                        console.log('📊 TRANSFER DEBUG: Destination category after update:', {
+                                            id: updatedDest.id,
+                                            name: updatedDest.name,
+                                            available: updatedDest.available,
+                                            allocated: updatedDest.allocated
+                                        });
 
-                            // Notify parent component to update its data and re-render with transfer type
-                            if (onDataUpdate) {
-                                console.log('🔄 Calling onDataUpdate with transfer type to trigger parent re-render');
-                                onDataUpdate(updatedData, { type: 'transfer' });
+                                        // Replace the category in our data array
+                                        updatedData[destIndex] = updatedDest;
+                                    } else {
+                                        console.error('❌ TRANSFER DEBUG: Destination category not found:', transferData.toCategory);
+                                    }
+                                }
+
+                                // Log the final updated data
+                                console.log('📋 TRANSFER DEBUG: UPDATED DATA AFTER APPLYING UPDATE FUNCTIONS:',
+                                    JSON.stringify(updatedData.map(c => ({
+                                        id: c.id,
+                                        name: c.name,
+                                        available: c.available,
+                                        allocated: c.allocated
+                                    }))));
+
+                                // Notify parent component to update its data with transfer type
+                                if (onDataUpdate) {
+                                    console.log('🔄 TRANSFER DEBUG: Calling onDataUpdate with update functions result');
+                                    onDataUpdate(updatedData, { type: 'transfer', preserveAllFields: true });
+                                }
                             } else {
-                                console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                                // Ensure we have a valid transfer before proceeding
+                                if (!transferData.fromCategory || !transferData.toCategory || !transferData.amount) {
+                                    console.error('❌ TRANSFER DEBUG: Invalid transfer data - missing required properties');
+                                    return;
+                                }
+
+                                // Convert all values to the right types to ensure consistency
+                                const fromCategoryId = String(transferData.fromCategory);
+                                const toCategoryId = String(transferData.toCategory);
+                                const transferAmount = Number(transferData.amount);
+
+                                // Find the actual category objects to confirm they exist
+                                const sourceCategory = data.find(c => String(c.id) === fromCategoryId);
+                                const targetCategory = data.find(c => String(c.id) === toCategoryId);
+
+                                console.log('🔍 TRANSFER DEBUG: Source category found:', sourceCategory ? `${sourceCategory.name} (id: ${sourceCategory.id})` : 'NOT FOUND');
+                                console.log('🔍 TRANSFER DEBUG: Target category found:', targetCategory ? `${targetCategory.name} (id: ${targetCategory.id})` : 'NOT FOUND');
+
+                                if (!sourceCategory || !targetCategory) {
+                                    console.error('❌ TRANSFER DEBUG: Could not find source or target category');
+                                    return;
+                                }
+
+                                // Create a new array with updated objects to ensure React detects the change
+                                let updatedData = [...data];
+
+                                // First pass - create a completely new array with all unchanged categories
+                                updatedData = data.map(category => {
+                                    return { ...category }; // Create shallow copy of each category
+                                });
+
+                                // Second pass - update the specific categories with new values
+                                updatedData = updatedData.map(category => {
+                                    const categoryId = String(category.id);
+
+                                    if (categoryId === fromCategoryId) {
+                                        // Source category - reduce available amount
+                                        const currentAvailable = Number(category.available) || 0;
+                                        const newAvailable = Math.max(0, currentAvailable - transferAmount); // Prevent negative
+
+                                        console.log(`📉 TRANSFER DEBUG: Source category ${category.name}: available ${currentAvailable} → ${newAvailable}`);
+
+                                        // Create a new object with updated values
+                                        return {
+                                            ...category,
+                                            available: newAvailable
+                                        };
+                                    }
+                                    else if (categoryId === toCategoryId) {
+                                        // Target category - increase available amount
+                                        const currentAvailable = Number(category.available) || 0;
+                                        const newAvailable = currentAvailable + transferAmount;
+
+                                        console.log(`📈 TRANSFER DEBUG: Target category ${category.name}: available ${currentAvailable} → ${newAvailable}`);
+
+                                        // Create a new object with updated values
+                                        return {
+                                            ...category,
+                                            available: newAvailable
+                                        };
+                                    }
+
+                                    return category;
+                                });
+
+                                // Verify the changes were made correctly
+                                console.log('📋 TRANSFER DEBUG: UPDATED DATA AFTER MANUAL UPDATES:',
+                                    JSON.stringify(updatedData.map(c => ({
+                                        id: c.id,
+                                        name: c.name,
+                                        available: c.available,
+                                        allocated: c.allocated
+                                    }))));
+
+                                // Notify parent component to update its data and re-render with transfer type
+                                if (onDataUpdate) {
+                                    console.log('🔄 TRANSFER DEBUG: Calling onDataUpdate with manual updates and transfer type');
+                                    onDataUpdate(updatedData, { type: 'transfer', preserveAllFields: true });
+                                } else {
+                                    console.log('⚠️ TRANSFER DEBUG: onDataUpdate callback not provided - parent component will not re-render');
+                                }
                             }
                         }
 
