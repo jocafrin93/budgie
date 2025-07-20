@@ -349,7 +349,7 @@ export default function BudgetTransactions() {
                 };
 
                 console.log("Processed main transfer transaction:", mainTransaction);
-                const createdMain = addTransaction(mainTransaction);
+                addTransaction(mainTransaction);
 
                 // Create the inverse transaction for the destination account
                 // Don't reuse the original transactionData, but build a fresh object
