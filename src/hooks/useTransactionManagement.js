@@ -57,8 +57,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
       console.log('Processing split transaction category updates:', createdTransaction.splits);
 
       createdTransaction.splits.forEach(split => {
-        if (split.categoryId && split.amount < 0) {
-          // Only track spending for expense splits (negative amounts)
+        if (split.categoryId && split.amount < 0 && split.categoryId !== 'to-be-allocated') {
+          // Only track spending for expense splits (negative amounts), excluding "to-be-allocated"
           setCategories(prev => prev.map(category =>
             category.id === split.categoryId
               ? {
@@ -71,8 +71,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           console.log(`Updated category ${split.categoryId} spending by ${Math.abs(split.amount)}`);
         }
       });
-    } else if (createdTransaction.categoryId && createdTransaction.amount < 0 && !createdTransaction.transferAccountId) {
-      // REGULAR EXPENSE: Update category spending
+    } else if (createdTransaction.categoryId && createdTransaction.amount < 0 && !createdTransaction.transferAccountId && createdTransaction.categoryId !== 'to-be-allocated') {
+      // REGULAR EXPENSE: Update category spending (excluding "to-be-allocated")
       setCategories(prev => prev.map(category =>
         category.id === createdTransaction.categoryId
           ? {
@@ -83,6 +83,13 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           : category
       ));
       console.log(`Updated category ${createdTransaction.categoryId} spending by ${Math.abs(createdTransaction.amount)}`);
+    }
+
+    // Handle "to-be-allocated" transactions - these increase available funds for allocation
+    if (createdTransaction.categoryId === 'to-be-allocated' && createdTransaction.amount > 0) {
+      console.log(`Transaction categorized as "to-be-allocated" with amount: ${createdTransaction.amount}`);
+      // Note: The actual "to-be-allocated" amount calculation is handled in the summary components
+      // by filtering transactions with categoryId === 'to-be-allocated'
     }
 
     return createdTransaction;
@@ -119,7 +126,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
     if (oldTransaction.isSplit && oldTransaction.splits) {
       // REVERSE SPLIT TRANSACTION: Remove spending from each split category
       oldTransaction.splits.forEach(split => {
-        if (split.categoryId && split.amount < 0) {
+        if (split.categoryId && split.amount < 0 && split.categoryId !== 'to-be-allocated') {
           setCategories(prev => prev.map(category =>
             category.id === split.categoryId
               ? {
@@ -132,8 +139,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           console.log(`Reversed category ${split.categoryId} spending by $${Math.abs(split.amount)}`);
         }
       });
-    } else if (oldTransaction.categoryId && oldTransaction.amount < 0) {
-      // REVERSE REGULAR EXPENSE: Remove spending from category
+    } else if (oldTransaction.categoryId && oldTransaction.amount < 0 && oldTransaction.categoryId !== 'to-be-allocated') {
+      // REVERSE REGULAR EXPENSE: Remove spending from category (excluding "to-be-allocated")
       setCategories(prev => prev.map(category =>
         category.id === oldTransaction.categoryId
           ? {
@@ -178,7 +185,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
     if (updatedTransaction.isSplit && updatedTransaction.splits) {
       // APPLY SPLIT TRANSACTION: Add spending to each split category
       updatedTransaction.splits.forEach(split => {
-        if (split.categoryId && split.amount < 0) {
+        if (split.categoryId && split.amount < 0 && split.categoryId !== 'to-be-allocated') {
           setCategories(prev => prev.map(category =>
             category.id === split.categoryId
               ? {
@@ -191,8 +198,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           console.log(`Applied category ${split.categoryId} spending by $${Math.abs(split.amount)}`);
         }
       });
-    } else if (updatedTransaction.categoryId && updatedTransaction.amount < 0 && !updatedTransaction.transferAccountId) {
-      // APPLY REGULAR EXPENSE: Add spending to category
+    } else if (updatedTransaction.categoryId && updatedTransaction.amount < 0 && !updatedTransaction.transferAccountId && updatedTransaction.categoryId !== 'to-be-allocated') {
+      // APPLY REGULAR EXPENSE: Add spending to category (excluding "to-be-allocated")
       setCategories(prev => prev.map(category =>
         category.id === updatedTransaction.categoryId
           ? {
@@ -203,6 +210,13 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           : category
       ));
       console.log(`Applied category ${updatedTransaction.categoryId} spending by $${Math.abs(updatedTransaction.amount)}`);
+    }
+
+    // Handle "to-be-allocated" transactions - these increase available funds for allocation
+    if (updatedTransaction.categoryId === 'to-be-allocated' && updatedTransaction.amount > 0) {
+      console.log(`Updated transaction categorized as "to-be-allocated" with amount: ${updatedTransaction.amount}`);
+      // Note: The actual "to-be-allocated" amount calculation is handled in the summary components
+      // by filtering transactions with categoryId === 'to-be-allocated'
     }
 
     return updatedTransaction;
@@ -239,7 +253,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
     if (transactionToDelete.isSplit && transactionToDelete.splits) {
       // REVERSE SPLIT TRANSACTION: Remove spending from each split category
       transactionToDelete.splits.forEach(split => {
-        if (split.categoryId && split.amount < 0) {
+        if (split.categoryId && split.amount < 0 && split.categoryId !== 'to-be-allocated') {
           setCategories(prev => prev.map(category =>
             category.id === split.categoryId
               ? {
@@ -252,8 +266,8 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           console.log(`Deleted - reversed category ${split.categoryId} spending by $${Math.abs(split.amount)}`);
         }
       });
-    } else if (transactionToDelete.categoryId && transactionToDelete.amount < 0) {
-      // REVERSE REGULAR EXPENSE: Remove spending from category
+    } else if (transactionToDelete.categoryId && transactionToDelete.amount < 0 && transactionToDelete.categoryId !== 'to-be-allocated') {
+      // REVERSE REGULAR EXPENSE: Remove spending from category (excluding "to-be-allocated")
       setCategories(prev => prev.map(category =>
         category.id === transactionToDelete.categoryId
           ? {
@@ -264,6 +278,13 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           : category
       ));
       console.log(`Deleted - reversed category ${transactionToDelete.categoryId} spending by $${Math.abs(transactionToDelete.amount)}`);
+    }
+
+    // Handle deletion of "to-be-allocated" transactions
+    if (transactionToDelete.categoryId === 'to-be-allocated') {
+      console.log(`Deleted "to-be-allocated" transaction with amount: ${transactionToDelete.amount}`);
+      // Note: The actual "to-be-allocated" amount calculation is handled in the summary components
+      // by filtering transactions with categoryId === 'to-be-allocated'
     }
 
     // Remove the transaction
