@@ -932,14 +932,40 @@ export default function BudgetOverview() {
                                 });
 
                                 console.log('✅ REORDER UPDATE COMPLETE - sortOrder fields preserved');
-                            } else {
-                                console.log('🔄 REGULAR UPDATE - Only updating allocated/available/spent');
+                            }
+                            // Handle category-to-category transfers specifically
+                            else if (options && options.type === 'transfer') {
+                                console.log('💰 TRANSFER OPERATION DETECTED - Updating only available balances');
+
+                                // For transfers, we only update the 'available' property,
+                                // not the 'allocated' or 'spent' properties
+                                updatedTableData.forEach(updatedCategory => {
+                                    if (updatedCategory.isParent) {
+                                        // Find the original category to compare available amount
+                                        const originalCategory = categories.find(c => c.id === updatedCategory.id);
+
+                                        if (originalCategory && originalCategory.available !== updatedCategory.available) {
+                                            console.log(`💸 Transfer detected for category ${updatedCategory.name}: available ${originalCategory.available} → ${updatedCategory.available}`);
+
+                                            // Only update the available property for transfers
+                                            updateCategory(updatedCategory.id, {
+                                                available: updatedCategory.available
+                                            });
+                                            console.log(`✅ Updated ONLY available balance for ${updatedCategory.name}`);
+                                        }
+                                    }
+                                });
+
+                                console.log('✅ TRANSFER UPDATE COMPLETE - only available balances updated');
+                            }
+                            else {
+                                console.log('🔄 REGULAR UPDATE - Updating allocated/available/spent');
                                 console.log('🔍 Reason for regular update:');
                                 if (!options) console.log('  - No options provided');
                                 if (options && options.type !== 'reorder') console.log('  - Type is not reorder:', options.type);
                                 if (options && !options.preserveAllFields) console.log('  - preserveAllFields is false');
 
-                                // Regular update - only update financial fields
+                                // Regular update - update all financial fields
                                 updatedTableData.forEach(updatedCategory => {
                                     if (updatedCategory.isParent) {
                                         // Update the category in the categories state
