@@ -1470,18 +1470,25 @@ export default function TransactionsTab({
                     accountsStructure: accounts.map(acc => ({ id: acc.id, name: acc.name, type: typeof acc.id }))
                 });
 
+                // Add a special transfer pair marker for both transactions
+                const transferId = `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
                 // Update main transaction to have destination account as payee
                 const mainTransaction = {
                     ...transactionData,
+                    id: `${transferId}_main`, // Add unique transfer ID
+                    _isTransferPairMember: true, // Add special marker
                     payee: destinationAccount?.name || destinationAccount?.accountName || `Account ${transactionData.transferToAccountId}`,
                     categoryId: 'transfer' // Use 'transfer' as category identifier
                 };
+                console.log("🔄 Creating main transfer transaction:", mainTransaction);
                 onAddTransaction(mainTransaction);
 
                 // Create the inverse transaction for the destination account
                 const inverseTransaction = {
                     ...transactionData,
-                    id: `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique ID
+                    id: `${transferId}_inverse`, // Add unique transfer ID
+                    _isTransferPairMember: true, // Add special marker
                     accountId: transactionData.transferToAccountId,
                     transferToAccountId: transactionData.accountId,
                     amount: -transactionData.amount, // Opposite sign
@@ -1491,7 +1498,11 @@ export default function TransactionsTab({
                 };
 
                 // Add the inverse transaction
+                console.log("🔄 Creating inverse transfer transaction:", inverseTransaction);
                 onAddTransaction(inverseTransaction);
+
+                // Close the modal explicitly
+                setShowModal(false);
             } else {
                 // Regular transaction
                 onAddTransaction(transactionData);

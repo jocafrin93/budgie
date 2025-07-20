@@ -309,13 +309,23 @@ export default function BudgetTransactions() {
 
         // Check if this is a transfer 
         if (transactionData.isTransfer && transactionData.transferToAccountId) {
-            // Check if this is already part of a transfer pair (coming from TransactionsTab)
-            // If it has a transferToAccountId and isTransfer=true, it's already being handled as part of a pair
-            const isAlreadyPartOfPair = transactionData.id && transactionData.id.toString().includes('transfer_');
+            // Determine if this is already part of a transfer pair using multiple checks
+            // 1. Check ID for transfer marker
+            // 2. Check if we have transaction metadata indicating it's part of a pair
+            const isAlreadyPartOfPair =
+                (transactionData.id && transactionData.id.toString().includes('transfer_')) ||
+                transactionData._isTransferPairMember === true;
+
+            console.log("🔎 TRANSFER DETECTION:", {
+                transactionData,
+                isAlreadyPartOfPair,
+                hasTransferMarker: transactionData.id && transactionData.id.toString().includes('transfer_'),
+                hasMetadata: transactionData._isTransferPairMember === true
+            });
 
             if (isAlreadyPartOfPair) {
                 // Just process this transaction as-is, without creating an inverse
-                console.log("Processing transaction that's already part of a transfer pair:", transactionData);
+                console.log("✅ Processing transaction that's already part of a transfer pair:", transactionData);
                 addTransaction(transactionData);
                 return;
             }
