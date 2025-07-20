@@ -127,6 +127,7 @@ const SortableRow = ({ row, children }) => {
 const BudgetCategoriesTable = ({
     data = [],
     accounts = [], // Add accounts prop to calculate available to allocate
+    transactions = [], // Add transactions prop to calculate "to-be-allocated" amount
     getAllUpcomingPaycheckDates, // Add paycheck management function as prop
     // Group management props
     groups = [],
@@ -1460,7 +1461,7 @@ const BudgetCategoriesTable = ({
             {(() => {
                 // Calculate available to allocate the same way SimplifiedSummaryCards does
                 const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
-                    const accountTransactions = []; // Empty for now - will be populated when transaction management is implemented
+                    const accountTransactions = (transactions || []).filter(t => t.accountId === account.id);
                     const startingBalance = account.startingBalance || account.balance || 0;
                     const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
                     return sum + workingBalance;
@@ -1469,7 +1470,7 @@ const BudgetCategoriesTable = ({
                 const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
 
                 // Add transactions with "to-be-allocated" category to available funds
-                const toBeAllocatedAmount = [].filter(t => t.categoryId === 'to-be-allocated')
+                const toBeAllocatedAmount = (transactions || []).filter(t => t.categoryId === 'to-be-allocated')
                     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
                 const availableToAllocate = totalWorkingBalance - totalAllocated + toBeAllocatedAmount;

@@ -284,11 +284,19 @@ export default function BudgetOverview() {
             if (category.type === 'single') {
                 // For single categories, use the category's own data
                 if (category.planningType === 'expense') {
-                    // Use simple frequency-based calculation for monthly amount (static reference)
-                    monthlyNeed = calculateMonthlyAmount(
-                        category.amount || 0,
-                        category.frequency || 'monthly'
-                    );
+                    // NEW LOGIC: If amount exists but no due date, interpret as "per paycheck"
+                    if (category.amount && !category.dueDate) {
+                        // Amount without due date = per paycheck amount
+                        // Convert to monthly by multiplying by conservative paycheck count (2 for bi-weekly)
+                        const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+                        monthlyNeed = (category.amount || 0) * paycheckInfo.conservative;
+                    } else {
+                        // Use frequency-based calculation for monthly amount (existing logic)
+                        monthlyNeed = calculateMonthlyAmount(
+                            category.amount || 0,
+                            category.frequency || 'monthly'
+                        );
+                    }
                     categoryDueDate = category.dueDate || null;
                 } else if (category.planningType === 'goal') {
                     // For goals, use monthly contribution
@@ -379,7 +387,14 @@ export default function BudgetOverview() {
 
             // Calculate smart per-paycheck amount based on current allocation progress
             const allocated = category.allocated || 0;
-            const perPaycheck = calculateSmartPerPaycheck(monthlyNeed, allocated);
+            let perPaycheck;
+
+            // NEW LOGIC: If this is a single expense category with amount but no due date, use the amount directly as per-paycheck
+            if (category.type === 'single' && category.planningType === 'expense' && category.amount && !category.dueDate) {
+                perPaycheck = category.amount; // Amount is already per-paycheck
+            } else {
+                perPaycheck = calculateSmartPerPaycheck(monthlyNeed, allocated);
+            }
 
             // Calculate actual spent amount from transactions
             const actualSpent = calculateCategorySpent(category.id);
@@ -846,6 +861,7 @@ export default function BudgetOverview() {
                     <BudgetCategoriesTable
                         data={tableData}
                         accounts={accounts || []} // Pass accounts for "Available to Allocate" calculation
+                        transactions={transactions || []} // Pass transactions for "to-be-allocated" calculation
                         getAllUpcomingPaycheckDates={getAllUpcomingPaycheckDates} // Pass paycheck function for account-specific countdown
                         // Group management props
                         groups={groups}

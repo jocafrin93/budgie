@@ -671,15 +671,16 @@ const UnifiedCategoryForm = ({
             // Type-specific validations
             if (values.type === 'single') {
                 if (values.planningType === 'expense') {
-                    if (values.usePercentage) {
-                        if (!values.percentageAmount) {
-                            errors.percentageAmount = 'Percentage is required';
-                        }
-                    } else {
-                        if (!values.amount) {
-                            errors.amount = 'Amount is required';
-                        }
-                    }
+                    // Amount is now optional - no validation needed
+                    // if (values.usePercentage) {
+                    //     if (!values.percentageAmount) {
+                    //         errors.percentageAmount = 'Percentage is required';
+                    //     }
+                    // } else {
+                    //     if (!values.amount) {
+                    //         errors.amount = 'Amount is required';
+                    //     }
+                    // }
                 } else if (values.planningType === 'goal') {
                     // Goal validation
                     if (!values.targetAmount) {
