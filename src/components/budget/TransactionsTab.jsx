@@ -10,9 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
     TbEdit,
     TbPlus,
-    TbTrash,
-    TbPlayerSkipForward,
-    TbPlayerPlay
+    TbTrash
 } from 'react-icons/tb';
 import { LuCalendarClock } from 'react-icons/lu';
 
@@ -911,11 +909,7 @@ export default function TransactionsTab({
     onDeleteTransaction,
     viewAccount = 'all',
     // Scheduled transactions props
-    scheduledTransactions = [],
-    onEditScheduledTransaction,
-    onSkipScheduledTransaction,
-    onActivateScheduledTransactionEarly,
-    onDeleteScheduledTransaction
+    scheduledTransactions = []
 }) {
     const [showModal, setShowModal] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
@@ -1324,7 +1318,7 @@ export default function TransactionsTab({
         return () => {
             window.removeEventListener('bulkDelete', handleBulkDeleteRequest);
         };
-    }, [selectedRows, handleBulkDelete]);
+    }, [selectedRows, handleBulkDelete, handleDeleteTransaction]);
 
     // Update header actions in main page when selection changes
     useEffect(() => {

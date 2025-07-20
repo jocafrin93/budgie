@@ -243,7 +243,7 @@ export const useDataModel = ({
       console.error('🔥 DATAMODEL - Error adding item:', error);
       throw error;
     }
-  }, [setPlanningItems, setActiveBudgetAllocations, categories, accounts, payFrequency, payFrequencyOptions]);
+  }, [setPlanningItems, setActiveBudgetAllocations, categories, accounts, payFrequency, payFrequencyOptions, planningItems]);
 
 
 
@@ -362,7 +362,7 @@ export const useDataModel = ({
 
       return updatedItems;
     });
-  }, [setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, categories, setExpenses, setSavingsGoals, planningItems]);
+  }, [setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, categories, setExpenses, setSavingsGoals]);
 
   // Toggle a planning item's active status
   const toggleItemActive = useCallback((itemId, isActive) => {
