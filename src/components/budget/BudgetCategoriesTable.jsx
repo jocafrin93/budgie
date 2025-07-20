@@ -1895,74 +1895,46 @@ const BudgetCategoriesTable = ({
                             }));
 
                             // Check if we received update functions from the envelope budgeting hook
-                            if (transferData.updateFunctions) {
+                            if (transferData.updateFunctions && Array.isArray(transferData.updateFunctions)) {
                                 console.log('🔧 TRANSFER DEBUG: Using update functions from envelope budgeting hook');
                                 console.log('📋 TRANSFER DEBUG: Update functions:', transferData.updateFunctions);
 
-                                // Apply update functions if available
+                                // Start with a fresh copy of the data
                                 let updatedData = [...data];
 
-                                if (transferData.updateFunctions.source) {
-                                    console.log('🔧 TRANSFER DEBUG: Applying source update function');
-                                    // Find the source category
-                                    const sourceIndex = updatedData.findIndex(c =>
-                                        String(c.id) === String(transferData.fromCategory));
+                                // Process each update function in the array
+                                transferData.updateFunctions.forEach(updateObj => {
+                                    if (!updateObj || !updateObj.update || typeof updateObj.update !== 'function') {
+                                        console.error('❌ TRANSFER DEBUG: Invalid update object:', updateObj);
+                                        return; // Skip this update
+                                    }
 
-                                    if (sourceIndex >= 0) {
-                                        const sourceCategory = updatedData[sourceIndex];
-                                        console.log('📊 TRANSFER DEBUG: Source category before update:', {
-                                            id: sourceCategory.id,
-                                            name: sourceCategory.name,
-                                            available: sourceCategory.available,
-                                            allocated: sourceCategory.allocated
+                                    // Find the category to update
+                                    const categoryId = updateObj.categoryId;
+                                    const categoryIndex = updatedData.findIndex(c => c.id === categoryId);
+
+                                    if (categoryIndex >= 0) {
+                                        const category = updatedData[categoryIndex];
+                                        console.log(`📊 TRANSFER DEBUG: Category ${category.name} before update:`, {
+                                            id: category.id,
+                                            available: category.available,
+                                            allocated: category.allocated
                                         });
 
-                                        // Create updated category by applying the update function
-                                        const updatedSource = transferData.updateFunctions.source(sourceCategory);
-                                        console.log('📊 TRANSFER DEBUG: Source category after update:', {
-                                            id: updatedSource.id,
-                                            name: updatedSource.name,
-                                            available: updatedSource.available,
-                                            allocated: updatedSource.allocated
+                                        // Apply the update function to get the updated category
+                                        const updatedCategory = updateObj.update(category);
+                                        console.log(`📊 TRANSFER DEBUG: Category ${category.name} after update:`, {
+                                            id: updatedCategory.id,
+                                            available: updatedCategory.available,
+                                            allocated: updatedCategory.allocated
                                         });
 
                                         // Replace the category in our data array
-                                        updatedData[sourceIndex] = updatedSource;
+                                        updatedData[categoryIndex] = updatedCategory;
                                     } else {
-                                        console.error('❌ TRANSFER DEBUG: Source category not found:', transferData.fromCategory);
+                                        console.error('❌ TRANSFER DEBUG: Category not found:', categoryId);
                                     }
-                                }
-
-                                if (transferData.updateFunctions.destination) {
-                                    console.log('🔧 TRANSFER DEBUG: Applying destination update function');
-                                    // Find the destination category
-                                    const destIndex = updatedData.findIndex(c =>
-                                        String(c.id) === String(transferData.toCategory));
-
-                                    if (destIndex >= 0) {
-                                        const destCategory = updatedData[destIndex];
-                                        console.log('📊 TRANSFER DEBUG: Destination category before update:', {
-                                            id: destCategory.id,
-                                            name: destCategory.name,
-                                            available: destCategory.available,
-                                            allocated: destCategory.allocated
-                                        });
-
-                                        // Create updated category by applying the update function
-                                        const updatedDest = transferData.updateFunctions.destination(destCategory);
-                                        console.log('📊 TRANSFER DEBUG: Destination category after update:', {
-                                            id: updatedDest.id,
-                                            name: updatedDest.name,
-                                            available: updatedDest.available,
-                                            allocated: updatedDest.allocated
-                                        });
-
-                                        // Replace the category in our data array
-                                        updatedData[destIndex] = updatedDest;
-                                    } else {
-                                        console.error('❌ TRANSFER DEBUG: Destination category not found:', transferData.toCategory);
-                                    }
-                                }
+                                });
 
                                 // Log the final updated data
                                 console.log('📋 TRANSFER DEBUG: UPDATED DATA AFTER APPLYING UPDATE FUNCTIONS:',
