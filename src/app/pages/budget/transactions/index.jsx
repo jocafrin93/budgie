@@ -360,7 +360,7 @@ export default function BudgetTransactions() {
                     ? 'to-be-allocated'
                     : (transactionData.categoryId ? parseInt(transactionData.categoryId) : null),
                 amount: parseFloat(transactionData.amount) || 0,
-                transferAccountId: transactionData.transferAccountId ? parseInt(transactionData.transferAccountId) : undefined
+                transferToAccountId: transactionData.transferToAccountId ? parseInt(transactionData.transferToAccountId) : undefined
             };
 
             console.log("Processed regular transaction:", processedData);
@@ -377,7 +377,7 @@ export default function BudgetTransactions() {
                 ? 'to-be-allocated'
                 : (updatedTransaction.categoryId ? parseInt(updatedTransaction.categoryId) : null),
             amount: parseFloat(updatedTransaction.amount) || 0,
-            transferAccountId: updatedTransaction.transferAccountId ? parseInt(updatedTransaction.transferAccountId) : undefined
+            transferToAccountId: updatedTransaction.transferToAccountId ? parseInt(updatedTransaction.transferToAccountId) : undefined
         };
 
         updateTransaction(updatedTransaction.id, processedData);

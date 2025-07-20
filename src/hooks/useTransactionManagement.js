@@ -45,7 +45,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
         return { ...account, balance: (account.balance || 0) + createdTransaction.amount };
       }
       // Handle transfer to another account
-      if (createdTransaction.transferAccountId && account.id === createdTransaction.transferAccountId) {
+      if (createdTransaction.transferToAccountId && account.id === createdTransaction.transferToAccountId) {
         return { ...account, balance: (account.balance || 0) - createdTransaction.amount };
       }
       return account;
@@ -71,7 +71,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           console.log(`Updated category ${split.categoryId} spending by ${Math.abs(split.amount)}`);
         }
       });
-    } else if (createdTransaction.categoryId && createdTransaction.amount < 0 && !createdTransaction.transferAccountId && createdTransaction.categoryId !== 'to-be-allocated') {
+    } else if (createdTransaction.categoryId && createdTransaction.amount < 0 && !createdTransaction.transferToAccountId && createdTransaction.categoryId !== 'to-be-allocated') {
       // REGULAR EXPENSE: Update category spending (excluding "to-be-allocated")
       setCategories(prev => prev.map(category =>
         category.id === createdTransaction.categoryId
@@ -113,7 +113,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           balance: (account.balance || 0) - oldTransaction.amount
         };
       }
-      if (oldTransaction.transferAccountId && account.id === oldTransaction.transferAccountId) {
+      if (oldTransaction.transferToAccountId && account.id === oldTransaction.transferToAccountId) {
         return {
           ...account,
           balance: (account.balance || 0) + oldTransaction.amount
@@ -172,7 +172,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           balance: (account.balance || 0) + updatedTransaction.amount
         };
       }
-      if (updatedTransaction.transferAccountId && account.id === updatedTransaction.transferAccountId) {
+      if (updatedTransaction.transferToAccountId && account.id === updatedTransaction.transferToAccountId) {
         return {
           ...account,
           balance: (account.balance || 0) - updatedTransaction.amount
@@ -198,7 +198,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           console.log(`Applied category ${split.categoryId} spending by $${Math.abs(split.amount)}`);
         }
       });
-    } else if (updatedTransaction.categoryId && updatedTransaction.amount < 0 && !updatedTransaction.transferAccountId && updatedTransaction.categoryId !== 'to-be-allocated') {
+    } else if (updatedTransaction.categoryId && updatedTransaction.amount < 0 && !updatedTransaction.transferToAccountId && updatedTransaction.categoryId !== 'to-be-allocated') {
       // APPLY REGULAR EXPENSE: Add spending to category (excluding "to-be-allocated")
       setCategories(prev => prev.map(category =>
         category.id === updatedTransaction.categoryId
@@ -240,7 +240,7 @@ export const useTransactionManagement = (accounts, setAccounts, categories, setC
           balance: (account.balance || 0) - transactionToDelete.amount
         };
       }
-      if (transactionToDelete.transferAccountId && account.id === transactionToDelete.transferAccountId) {
+      if (transactionToDelete.transferToAccountId && account.id === transactionToDelete.transferToAccountId) {
         return {
           ...account,
           balance: (account.balance || 0) + transactionToDelete.amount
