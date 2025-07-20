@@ -1546,7 +1546,8 @@ export default function TransactionsTab({
                             <span>Add Transaction</span>
                         </Button>
                     </div>
-                </div>
+                </Card>
+            )}
 
             {/* Table Container */}
             <Card className="overflow-hidden">
