@@ -1350,29 +1350,193 @@ export default function TransactionsTab({
                     </p>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                    <Button
-                        onClick={() => setShowFilters(!showFilters)}
-                        variant="outlined"
-                        size="sm"
-                        className="flex items-center space-x-2"
-                    >
-                        <svg className={`size-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                        </svg>
-                        <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
-                    </Button>
-                    <Button
-                        onClick={() => setShowModal(true)}
-                        variant="filled"
-                        size="sm"
-                        className="flex items-center space-x-2"
-                    >
-                        <TbPlus className="size-4" />
-                        <span>Add Transaction</span>
-                    </Button>
-                </div>
-            </div>
+                {/* Scheduled Transactions Table */}
+                {showScheduledTransactions && (
+                    <div className="overflow-x-auto">
+                        <Table hoverable className="min-w-full">
+                            <THead>
+                                <Tr>
+                                    <Th>Due Date</Th>
+                                    <Th>Payee</Th>
+                                    <Th>Category</Th>
+                                    <Th>Account</Th>
+                                    <Th>Amount</Th>
+                                    <Th>Frequency</Th>
+                                    <Th>Status</Th>
+                                    <Th>Actions</Th>
+                                </Tr>
+                            </THead>
+                            <TBody>
+                                {scheduledTransactions.map(scheduledTxn => {
+                                    // Use local timezone parsing like the rest of the app
+                                    const dueDate = new Date((scheduledTxn.nextDueDate || scheduledTxn.dueDate) + 'T00:00:00');
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0); // Reset to start of day
+
+                                    const isOverdue = dueDate < today;
+                                    const daysDiff = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+
+                                    // Get account and category names
+                                    const getAccountName = (accountId) => {
+                                        const account = accounts.find(acc => acc.id === accountId);
+                                        return account ? account.name : 'Unknown';
+                                    };
+
+                                    const getCategoryName = (categoryId) => {
+                                        if (!categoryId) return 'Uncategorized';
+
+                                        // Regular category lookup using numeric comparison
+                                        const category = categories.find(cat => Number(cat.id) === Number(categoryId));
+
+                                        return category ? category.name : 'Unknown';
+                                    };
+
+                                    return (
+                                        <Tr
+                                            key={scheduledTxn.id}
+                                            className={`${isOverdue ? 'border-l-4 border-l-error bg-error/5' : 'border-l-4 border-l-warning bg-warning/5'}`}
+                                        >
+                                            {/* Due Date */}
+                                            <Td>
+                                                <div className="space-y-1">
+                                                    <div className="font-medium text-base-content">
+                                                        {dueDate.toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: '2-digit',
+                                                            year: 'numeric'
+                                                        })}
+                                                    </div>
+                                                    <div className={`text-xs px-2 py-1 rounded-full inline-block ${isOverdue
+                                                        ? 'bg-error/20 text-error'
+                                                        : daysDiff === 0
+                                                            ? 'bg-warning/20 text-warning'
+                                                            : 'bg-info/20 text-info'
+                                                        }`}>
+                                                        {isOverdue
+                                                            ? 'Overdue'
+                                                            : daysDiff === 0
+                                                                ? 'Due Today'
+                                                                : `Due in ${daysDiff} day${daysDiff > 1 ? 's' : ''}`
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </Td>
+
+                                            {/* Payee */}
+                                            <Td>
+                                                <div className="space-y-1">
+                                                    <div className="font-medium text-base-content">
+                                                        {scheduledTxn.payee || 'No Payee'}
+                                                    </div>
+                                                    {scheduledTxn.memo && (
+                                                        <div className="text-sm text-base-content/60 truncate max-w-32">
+                                                            {scheduledTxn.memo}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </Td>
+
+                                            {/* Category */}
+                                            <Td>
+                                                <Badge variant="soft" className="text-xs">
+                                                    {getCategoryName(scheduledTxn.categoryId, scheduledTxn)}
+                                                </Badge>
+                                            </Td>
+
+                                            {/* Account */}
+                                            <Td>
+                                                <div className="text-sm text-base-content">
+                                                    {getAccountName(scheduledTxn.accountId)}
+                                                </div>
+                                            </Td>
+
+                                            {/* Amount */}
+                                            <Td>
+                                                <div className={`font-semibold ${scheduledTxn.amount >= 0
+                                                    ? 'text-success'
+                                                    : 'text-error'
+                                                    }`}>
+                                                    {scheduledTxn.amount >= 0 ? '+' : '-'}{formatCurrency(scheduledTxn.amount)}
+                                                </div>
+                                            </Td>
+
+                                            {/* Frequency */}
+                                            <Td>
+                                                <div className="text-sm text-base-content/60">
+                                                    {scheduledTxn.frequency}
+                                                </div>
+                                            </Td>
+
+                                            {/* Status */}
+                                            <Td>
+                                                <div className={`flex items-center gap-2 text-xs ${isOverdue ? 'text-error' : 'text-warning'}`}>
+                                                    <div className={`w-2 h-2 rounded-full ${isOverdue ? 'bg-error' : 'bg-warning'}`}></div>
+                                                    Scheduled
+                                                </div>
+                                            </Td>
+
+                                            {/* Actions */}
+                                            <Td>
+                                                <div className="flex items-center gap-1">
+                                                    {/* Activate Early */}
+                                                    <Button
+                                                        onClick={() => onActivateScheduledTransactionEarly?.(scheduledTxn.id)}
+                                                        variant="flat"
+                                                        size="sm"
+                                                        isIcon
+                                                        className="text-base-content/60 hover:text-base-content"
+                                                        title="Activate Now"
+                                                    >
+                                                        <TbPlayerPlay className="size-4" />
+                                                    </Button>
+
+                                                    {/* Skip */}
+                                                    <Button
+                                                        onClick={() => onSkipScheduledTransaction?.(scheduledTxn.id)}
+                                                        variant="flat"
+                                                        size="sm"
+                                                        isIcon
+                                                        className="text-base-content/60 hover:text-base-content"
+                                                        title="Skip This Occurrence"
+                                                    >
+                                                        <TbPlayerSkipForward className="size-4" />
+                                                    </Button>
+
+                                                    {/* Edit */}
+                                                    <Button
+                                                        onClick={() => onEditScheduledTransaction?.(scheduledTxn.id, scheduledTxn)}
+                                                        variant="flat"
+                                                        size="sm"
+                                                        isIcon
+                                                        className="text-base-content/60 hover:text-base-content"
+                                                        title="Edit Schedule"
+                                                    >
+                                                        <TbEdit className="size-4" />
+                                                    </Button>
+
+                                                    {/* Delete */}
+                                                    <Button
+                                                        onClick={() => onDeleteScheduledTransaction?.(scheduledTxn.id)}
+                                                        variant="flat"
+                                                        size="sm"
+                                                        isIcon
+                                                        className="text-base-content/60 hover:text-base-content"
+                                                        title="Delete Schedule"
+                                                    >
+                                                        <TbTrash className="size-4" />
+                                                    </Button>
+                                                </div>
+                                            </Td>
+                                        </Tr>
+                                    );
+                                })}
+                            </TBody>
+                        </Table>
+                    </div>
+                )}
+            </Card>
+            )}
+
 
             {/* Table Container */}
             <Card className="overflow-hidden">
