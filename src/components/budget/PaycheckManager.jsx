@@ -5,7 +5,7 @@ import { CurrencyField } from '../form';
 import { Card } from '../ui/Card/index.jsx';
 import { Checkbox } from '../ui/Form/Checkbox.jsx';
 
-/**
+/*
  * Component for managing multiple paychecks
  * Updated to use the new PaydayWorkflow approach and modern UI components
  */
