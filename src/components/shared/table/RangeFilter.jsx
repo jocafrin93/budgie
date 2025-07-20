@@ -1,7 +1,7 @@
 // Import Dependencies
-import { useEffect, useRef } from "react";
 import clsx from "clsx";
 import PropTypes from "prop-types";
+import { useEffect, useRef } from "react";
 
 // Local Imports
 import { Button, Input } from "components/ui";
@@ -32,7 +32,7 @@ export function RangeFilter({
 
           {selectedValues && selectedValues.length > 0 && (
             <>
-              <div className="h-full w-px bg-gray-300 dark:bg-dark-450" />
+              <div className="h-full w-px bg-base-300 bg-base-200" />
               <span>
                 {buttonText({
                   min: selectedValues?.[0],
@@ -58,8 +58,8 @@ function FilterContent({ column, title, MinPrefixIcon, MaxPrefixIcon }) {
 
   return (
     <div className="sm:w-72">
-      <div className="flex items-center justify-between bg-gray-150 px-2.5 py-2 dark:bg-dark-900">
-        <p className="truncate py-1 text-start font-medium text-gray-800 dark:text-dark-50">
+      <div className="flex items-center justify-between bg-base-200 px-2.5 py-2 bg-base-100">
+        <p className="truncate py-1 text-start font-medium text-base-content">
           {title}
         </p>
         {selectedValues && (

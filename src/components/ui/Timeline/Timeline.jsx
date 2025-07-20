@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import clsx from "clsx";
 
 // Local Imports
-import { TimelineContext } from "./context";
+import { TimelineContext } from "./context.js";
 
 // ----------------------------------------------------------------------
 

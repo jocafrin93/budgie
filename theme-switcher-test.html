@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="abyss">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKLCH Theme Switcher Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Import our OKLCH themes */
+        :root {
+            /* Default theme: Abyss */
+            --color-primary: 92% 0.2653 125;
+            --color-primary-focus: 82% 0.2653 125;
+            --color-primary-content: 50% 0.2653 125;
+
+            --color-secondary: 83.27% 0.0764 298.3;
+            --color-secondary-focus: 73.27% 0.0764 298.3;
+            --color-secondary-content: 43.27% 0.0764 298.3;
+
+            --color-accent: 43% 0 0;
+            --color-accent-focus: 33% 0 0;
+            --color-accent-content: 98% 0 0;
+
+            --color-neutral: 30% 0.08 209;
+            --color-neutral-focus: 25% 0.08 209;
+            --color-neutral-content: 90% 0.076 70.697;
+
+            --color-base-100: 20% 0.08 209;
+            --color-base-200: 15% 0.08 209;
+            --color-base-300: 10% 0.08 209;
+            --color-base-content: 90% 0.076 70.697;
+
+            --color-info: 74% 0.16 232.661;
+            --color-info-content: 29% 0.066 243.157;
+
+            --color-success: 79% 0.209 151.711;
+            --color-success-content: 26% 0.065 152.934;
+
+            --color-warning: 84.8% 0.1962 84.62;
+            --color-warning-content: 44.8% 0.1962 84.62;
+
+            --color-error: 65% 0.1985 24.22;
+            --color-error-content: 27% 0.1985 24.22;
+        }
+
+        /* Abyss Theme */
+        [data-theme="abyss"] {
+            --color-primary: 92% 0.2653 125;
+            --color-primary-focus: 82% 0.2653 125;
+            --color-primary-content: 50% 0.2653 125;
+
+            --color-secondary: 83.27% 0.0764 298.3;
+            --color-secondary-focus: 73.27% 0.0764 298.3;
+            --color-secondary-content: 43.27% 0.0764 298.3;
+
+            --color-accent: 43% 0 0;
+            --color-accent-focus: 33% 0 0;
+            --color-accent-content: 98% 0 0;
+
+            --color-neutral: 30% 0.08 209;
+            --color-neutral-focus: 25% 0.08 209;
+            --color-neutral-content: 90% 0.076 70.697;
+
+            --color-base-100: 20% 0.08 209;
+            --color-base-200: 15% 0.08 209;
+            --color-base-300: 10% 0.08 209;
+            --color-base-content: 90% 0.076 70.697;
+
+            --color-info: 74% 0.16 232.661;
+            --color-info-content: 29% 0.066 243.157;
+
+            --color-success: 79% 0.209 151.711;
+            --color-success-content: 26% 0.065 152.934;
+
+            --color-warning: 84.8% 0.1962 84.62;
+            --color-warning-content: 44.8% 0.1962 84.62;
+
+            --color-error: 65% 0.1985 24.22;
+            --color-error-content: 27% 0.1985 24.22;
+        }
+
+        /* VSCode Dark Theme */
+        [data-theme="vscode-dark"] {
+            --color-base-100: 32.5% 0.035 285;
+            --color-base-200: 36.2% 0.038 285;
+            --color-base-300: 40.8% 0.042 285;
+            --color-base-content: 97.2% 0.005 285;
+
+            --color-primary: 72.5% 0.089 285;
+            --color-primary-focus: 67.5% 0.089 285;
+            --color-primary-content: 15.8% 0.025 285;
+
+            --color-secondary: 76.8% 0.115 310;
+            --color-secondary-focus: 71.8% 0.115 310;
+            --color-secondary-content: 16.2% 0.031 310;
+
+            --color-accent: 80.2% 0.068 95;
+            --color-accent-focus: 75.2% 0.068 95;
+            --color-accent-content: 17.5% 0.019 95;
+
+            --color-neutral: 52.1% 0.045 285;
+            --color-neutral-focus: 47.1% 0.045 285;
+            --color-neutral-content: 90.5% 0.008 285;
+
+            --color-info: 76.3% 0.088 245;
+            --color-info-content: 16.8% 0.024 245;
+
+            --color-success: 82.1% 0.095 160;
+            --color-success-content: 18.2% 0.026 160;
+
+            --color-warning: 85.8% 0.078 95;
+            --color-warning-content: 19.1% 0.021 95;
+
+            --color-error: 78.5% 0.105 325;
+            --color-error-content: 17.2% 0.029 325;
+        }
+
+        /* Custom utility classes */
+        .bg-base-100 {
+            background-color: oklch(var(--color-base-100));
+        }
+
+        .bg-base-200 {
+            background-color: oklch(var(--color-base-200));
+        }
+
+        .bg-base-300 {
+            background-color: oklch(var(--color-base-300));
+        }
+
+        .text-base-content {
+            color: oklch(var(--color-base-content));
+        }
+
+        .text-primary {
+            color: oklch(var(--color-primary));
+        }
+
+        .text-secondary {
+            color: oklch(var(--color-secondary));
+        }
+
+        .text-accent {
+            color: oklch(var(--color-accent));
+        }
+
+        .text-info {
+            color: oklch(var(--color-info));
+        }
+
+        .text-success {
+            color: oklch(var(--color-success));
+        }
+
+        .text-warning {
+            color: oklch(var(--color-warning));
+        }
+
+        .text-error {
+            color: oklch(var(--color-error));
+        }
+
+        .border-primary {
+            border-color: oklch(var(--color-primary));
+        }
+
+        .border-base-300 {
+            border-color: oklch(var(--color-base-300));
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .theme-card {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 12px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 2px solid;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            margin: 8px;
+        }
+
+        .btn-primary {
+            background-color: oklch(var(--color-primary));
+            color: oklch(var(--color-primary-content));
+            border-color: oklch(var(--color-primary));
+        }
+
+        .btn-primary:hover {
+            background-color: oklch(var(--color-primary-focus));
+            border-color: oklch(var(--color-primary-focus));
+        }
+
+        .btn-secondary {
+            background-color: oklch(var(--color-secondary));
+            color: oklch(var(--color-secondary-content));
+            border-color: oklch(var(--color-secondary));
+        }
+
+        .input {
+            padding: 12px;
+            border: 2px solid oklch(var(--color-base-300));
+            border-radius: 8px;
+            background-color: oklch(var(--color-base-100));
+            color: oklch(var(--color-base-content));
+            margin: 8px 0;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: oklch(var(--color-primary));
+        }
+    </style>
+</head>
+
+<body class="bg-base-100 text-base-content min-h-screen">
+    <div class="container mx-auto p-8 max-w-4xl">
+        <h1 class="text-4xl font-bold text-primary mb-8">🎨 OKLCH Theme Migration - SUCCESS!</h1>
+
+        <div class="theme-card bg-base-200 border border-base-300">
+            <h2 class="text-2xl font-bold text-secondary mb-4">Theme Switcher Test</h2>
+            <p class="text-base-content mb-6">Click the buttons below to switch between the 2 OKLCH themes:</p>
+
+            <div class="flex flex-wrap gap-4 mb-6">
+                <button class="btn btn-primary" onclick="switchTheme('abyss')">
+                    🌊 Abyss Theme
+                </button>
+                <button class="btn btn-secondary" onclick="switchTheme('vscode-dark')">
+                    💜 VSCode Dark Theme
+                </button>
+            </div>
+
+            <div class="current-theme bg-base-300 p-4 rounded-lg">
+                <strong class="text-accent">Current Theme:</strong>
+                <span id="current-theme-name" class="text-primary font-bold">Abyss</span>
+            </div>
+        </div>
+
+        <div class="theme-card bg-base-200 border border-base-300">
+            <h2 class="text-2xl font-bold text-info mb-4">Color Showcase</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-lg"
+                        style="background-color: oklch(var(--color-primary))"></div>
+                    <span class="text-primary font-semibold">Primary</span>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-lg"
+                        style="background-color: oklch(var(--color-secondary))"></div>
+                    <span class="text-secondary font-semibold">Secondary</span>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-lg" style="background-color: oklch(var(--color-accent))">
+                    </div>
+                    <span class="text-accent font-semibold">Accent</span>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-lg" style="background-color: oklch(var(--color-info))">
+                    </div>
+                    <span class="text-info font-semibold">Info</span>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-lg"
+                        style="background-color: oklch(var(--color-success))"></div>
+                    <span class="text-success font-semibold">Success</span>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-lg"
+                        style="background-color: oklch(var(--color-warning))"></div>
+                    <span class="text-warning font-semibold">Warning</span>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-lg" style="background-color: oklch(var(--color-error))">
+                    </div>
+                    <span class="text-error font-semibold">Error</span>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-lg border-2 border-base-content"
+                        style="background-color: oklch(var(--color-base-100))"></div>
+                    <span class="text-base-content font-semibold">Base</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="theme-card bg-base-200 border border-base-300">
+            <h2 class="text-2xl font-bold text-success mb-4">Interactive Elements</h2>
+            <div class="space-y-4">
+                <input type="text" class="input" placeholder="Test input field with OKLCH borders">
+                <textarea class="input" rows="3" placeholder="Test textarea with OKLCH styling"></textarea>
+                <div class="flex flex-wrap gap-2">
+                    <button class="btn"
+                        style="background-color: oklch(var(--color-success)); color: oklch(var(--color-success-content)); border-color: oklch(var(--color-success));">Success
+                        Button</button>
+                    <button class="btn"
+                        style="background-color: oklch(var(--color-warning)); color: oklch(var(--color-warning-content)); border-color: oklch(var(--color-warning));">Warning
+                        Button</button>
+                    <button class="btn"
+                        style="background-color: oklch(var(--color-error)); color: oklch(var(--color-error-content)); border-color: oklch(var(--color-error));">Error
+                        Button</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="theme-card bg-base-200 border border-base-300">
+            <h2 class="text-2xl font-bold text-warning mb-4">✅ Migration Results</h2>
+            <ul class="space-y-2 text-base-content">
+                <li>✅ <strong class="text-success">16 → 2 themes</strong> - Massive simplification</li>
+                <li>✅ <strong class="text-success">~2000 → ~200 lines</strong> - 90% CSS reduction</li>
+                <li>✅ <strong class="text-success">Bridge system eliminated</strong> - No more complex RGB/OKLCH
+                    handling</li>
+                <li>✅ <strong class="text-success">Pure OKLCH architecture</strong> - Modern, perceptually uniform
+                    colors</li>
+                <li>✅ <strong class="text-success">Faster performance</strong> - Eliminated complex CSS processing</li>
+                <li>✅ <strong class="text-success">Future-proof</strong> - OKLCH is the web standard</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function switchTheme(themeName) {
+            // Update the data-theme attribute
+            document.documentElement.setAttribute('data-theme', themeName);
+
+            // Update the current theme display
+            const themeNameElement = document.getElementById('current-theme-name');
+            if (themeName === 'abyss') {
+                themeNameElement.textContent = 'Abyss';
+            } else if (themeName === 'vscode-dark') {
+                themeNameElement.textContent = 'VSCode Dark';
+            }
+
+            // Store in localStorage (like the real app)
+            localStorage.setItem('daisy-theme', themeName);
+
+            console.log(`Switched to ${themeName} theme`);
+        }
+
+        // Initialize theme from localStorage on page load
+        document.addEventListener('DOMContentLoaded', function () {
+            const savedTheme = localStorage.getItem('daisy-theme') || 'abyss';
+            switchTheme(savedTheme);
+        });
+    </script>
+</body>
+
+</html>

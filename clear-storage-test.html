@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Clear Storage Test</title>
+</head>
+
+<body>
+    <h1>Storage Debugging</h1>
+    <button onclick="clearAllStorage()">Clear All Storage</button>
+    <button onclick="showAllStorage()">Show All Storage</button>
+    <div id="output"></div>
+
+    <script>
+        function clearAllStorage() {
+            // Clear localStorage
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith('budgetCalc_')) {
+                    localStorage.removeItem(key);
+                    console.log('Removed:', key);
+                }
+            });
+
+            // Clear Google tokens
+            localStorage.removeItem('google_access_token');
+            localStorage.removeItem('google_token_expiry');
+
+            document.getElementById('output').innerHTML = '<p>Storage cleared!</p>';
+        }
+
+        function showAllStorage() {
+            const output = document.getElementById('output');
+            let html = '<h2>Current Storage:</h2>';
+
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith('budgetCalc_') || key.startsWith('google_')) {
+                    const value = localStorage.getItem(key);
+                    html += `<p><strong>${key}:</strong> ${value.substring(0, 100)}${value.length > 100 ? '...' : ''}</p>`;
+                }
+            });
+
+            if (keys.filter(k => k.startsWith('budgetCalc_')).length === 0) {
+                html += '<p>No budgetCalc data found</p>';
+            }
+
+            output.innerHTML = html;
+        }
+
+        // Show storage on load
+        showAllStorage();
+    </script>
+</body>
+
+</html>

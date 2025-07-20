@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnifiedCategoryForm Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bg-blue-500 {
+            background-color: #3b82f6;
+        }
+
+        .bg-green-500 {
+            background-color: #10b981;
+        }
+
+        .bg-orange-500 {
+            background-color: #f59e0b;
+        }
+
+        .bg-red-500 {
+            background-color: #ef4444;
+        }
+
+        .bg-purple-500 {
+            background-color: #8b5cf6;
+        }
+
+        .bg-pink-500 {
+            background-color: #ec4899;
+        }
+
+        .bg-teal-500 {
+            background-color: #14b8a6;
+        }
+
+        .bg-lime-500 {
+            background-color: #84cc16;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Mock components
+        const Button = ({ children, onClick, variant = 'filled', color = 'primary', disabled = false, className = '', isIcon = false, type = 'button' }) => {
+            const baseClasses = 'px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2';
+            const variantClasses = {
+                filled: color === 'primary' ? 'bg-blue-600 text-white hover:bg-blue-700' :
+                    color === 'success' ? 'bg-green-600 text-white hover:bg-green-700' :
+                        'bg-gray-600 text-white hover:bg-gray-700',
+                outlined: 'border-2 border-gray-300 text-gray-700 hover:bg-gray-50',
+                flat: 'text-gray-600 hover:bg-gray-100'
+            };
+
+            return (
+                <button
+                    type={type}
+                    onClick={onClick}
+                    disabled={disabled}
+                    className={`${baseClasses} ${variantClasses[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${isIcon ? 'p-2' : ''} ${className}`}
+                >
+                    {children}
+                </button>
+            );
+        };
+
+        const Card = ({ children, className = '' }) => (
+            <div className={`bg-white rounded-lg shadow-lg ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Input = ({ label, error, description, autoFocus, ...props }) => (
+            <div className="space-y-1">
+                {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+                <input
+                    {...props}
+                    autoFocus={autoFocus}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                />
+                {error && <p className="text-sm text-red-600">{error}</p>}
+                {description && <p className="text-sm text-gray-500">{description}</p>}
+            </div>
+        );
+
+        const Select = ({ label, data, error, ...props }) => (
+            <div className="space-y-1">
+                {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+                <select
+                    {...props}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                >
+                    <option value="">Select...</option>
+                    {data.map(item => (
+                        <option key={item.value} value={item.value}>{item.label}</option>
+                    ))}
+                </select>
+                {error && <p className="text-sm text-red-600">{error}</p>}
+            </div>
+        );
+
+        const Checkbox = ({ label, ...props }) => (
+            <div className="flex items-center space-x-2">
+                <input
+                    type="checkbox"
+                    {...props}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <label className="text-sm text-gray-700">{label}</label>
+            </div>
+        );
+
+        const Textarea = ({ label, error, rows = 3, ...props }) => (
+            <div className="space-y-1">
+                {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+                <textarea
+                    {...props}
+                    rows={rows}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                />
+                {error && <p className="text-sm text-red-600">{error}</p>}
+            </div>
+        );
+
+        const CurrencyField = ({ label, error, description, hideLabel, ...props }) => (
+            <div className="space-y-1">
+                {!hideLabel && label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+                <div className="relative">
+                    <span className="absolute left-3 top-2 text-gray-500">$</span>
+                    <input
+                        {...props}
+                        type="number"
+                        step="0.01"
+                        className={`w-full pl-8 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'
+                            }`}
+                    />
+                </div>
+                {error && <p className="text-sm text-red-600">{error}</p>}
+                {description && <p className="text-sm text-gray-500">{description}</p>}
+            </div>
+        );
+
+        const X = () => (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        );
+
+        // Mock form hook
+        const useForm = ({ initialValues, onSubmit, validate }) => {
+            const [values, setValues] = useState(initialValues);
+            const [errors, setErrors] = useState({});
+
+            const setFieldValue = (name, value) => {
+                setValues(prev => ({ ...prev, [name]: value }));
+            };
+
+            const getFieldProps = (name) => ({
+                name,
+                value: values[name] || '',
+                onChange: (e) => setFieldValue(name, e.target.value)
+            });
+
+            const isValid = Object.keys(validate ? validate(values) : {}).length === 0;
+
+            useEffect(() => {
+                if (validate) {
+                    setErrors(validate(values));
+                }
+            }, [values, validate]);
+
+            return {
+                values,
+                errors,
+                isValid,
+                setFieldValue,
+                getFieldProps,
+                handleSubmit: onSubmit
+            };
+        };
+
+        // Test component
+        const CategoryFormTest = () => {
+            const [showForm, setShowForm] = useState(false);
+            const [savedCategories, setSavedCategories] = useState([]);
+
+            const mockAccounts = [
+                { id: '1', name: 'Checking Account' },
+                { id: '2', name: 'Savings Account' }
+            ];
+
+            const handleSave = (categoryData, addAnother) => {
+                console.log('Category saved:', categoryData);
+                setSavedCategories(prev => [...prev, { ...categoryData, id: Date.now() }]);
+
+                if (!addAnother) {
+                    setShowForm(false);
+                }
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-4">UnifiedCategoryForm Test</h1>
+                        <p className="text-gray-600 mb-6">
+                            This test demonstrates the comprehensive category form with all features.
+                        </p>
+
+                        <Button onClick={() => setShowForm(true)} variant="filled" color="primary">
+                            Open Category Form
+                        </Button>
+                    </div>
+
+                    {savedCategories.length > 0 && (
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold mb-4">Saved Categories</h2>
+                            <div className="space-y-2">
+                                {savedCategories.map(category => (
+                                    <div key={category.id} className="p-4 bg-white rounded-lg shadow border">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-4 h-4 rounded-full ${category.color}`}></div>
+                                            <span className="font-medium">{category.name}</span>
+                                            <span className="text-sm text-gray-500">({category.type} - {category.planningType})</span>
+                                        </div>
+                                        <pre className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded overflow-auto">
+                                            {JSON.stringify(category, null, 2)}
+                                        </pre>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {showForm && (
+                        <SimpleCategoryForm
+                            onSave={handleSave}
+                            onCancel={() => setShowForm(false)}
+                            accounts={mockAccounts}
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        // Simplified category form for testing
+        const SimpleCategoryForm = ({ onSave, onCancel, accounts }) => {
+            const form = useForm({
+                initialValues: {
+                    name: '',
+                    type: 'single',
+                    planningType: 'expense',
+                    accountId: accounts[0]?.id || '',
+                    status: 'active',
+                    priority: 'medium',
+                    color: 'bg-blue-500',
+                    autoFunding: false,
+                    description: ''
+                },
+                validate: (values) => {
+                    const errors = {};
+                    if (!values.name) errors.name = 'Category name is required';
+                    if (!values.accountId) errors.accountId = 'Funding account is required';
+                    return errors;
+                }
+            });
+
+            const colorOptions = [
+                { value: 'bg-blue-500', label: 'Blue' },
+                { value: 'bg-green-500', label: 'Green' },
+                { value: 'bg-orange-500', label: 'Orange' },
+                { value: 'bg-red-500', label: 'Red' },
+                { value: 'bg-purple-500', label: 'Purple' },
+                { value: 'bg-pink-500', label: 'Pink' },
+                { value: 'bg-teal-500', label: 'Teal' },
+                { value: 'bg-lime-500', label: 'Lime' },
+            ];
+
+            const accountOptions = accounts.map(account => ({
+                value: account.id,
+                label: account.name
+            }));
+
+            const statusOptions = [
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' }
+            ];
+
+            const priorityOptions = [
+                { value: 'high', label: 'High' },
+                { value: 'medium', label: 'Medium' },
+                { value: 'low', label: 'Low' }
+            ];
+
+            const handleSubmit = () => {
+                if (!form.isValid) return;
+
+                const categoryData = {
+                    ...form.values,
+                    account: accounts.find(acc => acc.id === form.values.accountId)
+                };
+
+                onSave(categoryData, false);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-semibold text-gray-900">Add New Category</h2>
+                                <Button onClick={onCancel} variant="flat" color="neutral" isIcon>
+                                    <X />
+                                </Button>
+                            </div>
+
+                            <p className="text-sm text-gray-600 mb-6">
+                                Categories organize your expenses and goals for easier budgeting
+                            </p>
+
+                            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
+                                <Input
+                                    {...form.getFieldProps('name')}
+                                    label="Category Name"
+                                    placeholder="Enter category name"
+                                    autoFocus
+                                    error={form.errors.name}
+                                />
+
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-medium text-gray-900">
+                                        Category Type
+                                    </label>
+                                    <div className="space-y-3">
+                                        <div
+                                            className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${form.values.type === 'single'
+                                                ? 'border-blue-500 bg-blue-50'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                                }`}
+                                            onClick={() => form.setFieldValue('type', 'single')}
+                                        >
+                                            <div className="flex items-start space-x-3">
+                                                <div className={`w-4 h-4 rounded-full border-2 mt-0.5 ${form.values.type === 'single'
+                                                    ? 'border-blue-500 bg-blue-500'
+                                                    : 'border-gray-300'

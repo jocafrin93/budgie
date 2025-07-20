@@ -164,9 +164,9 @@ const PayeeAutocomplete = ({
     return (
         <div className="relative" ref={dropdownRef}>
             {label && (
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-base-content mb-1">
                     {label}
-                    {required && <span className="text-red-500 ml-1">*</span>}
+                    {required && <span className="text-error ml-1">*</span>}
                 </label>
             )}
 
@@ -180,11 +180,11 @@ const PayeeAutocomplete = ({
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     required={required}
-                    className="w-full px-3 py-2 pr-10 border border-gray-400 dark:border-gray-500 rounded-lg 
-                             bg-white dark:bg-gray-800 
-                             text-gray-900 dark:text-gray-100
-                             placeholder-gray-500 dark:placeholder-gray-400
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                    className="w-full px-3 py-2 pr-10 border border-base-300 rounded-lg 
+                             bg-base-100 
+                             text-base-content
+                             placeholder:text-base-content/60
+                             focus:outline-none focus:border-primary
                              transition-colors"
                     {...props}
                 />
@@ -192,7 +192,7 @@ const PayeeAutocomplete = ({
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-base-content/60 hover"
                 >
                     <TbChevronDown className={`size-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -200,7 +200,7 @@ const PayeeAutocomplete = ({
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {/* Existing payees */}
                     {filteredPayees.length > 0 && (
                         <div>
@@ -209,8 +209,8 @@ const PayeeAutocomplete = ({
                                     key={index}
                                     type="button"
                                     onClick={() => handleSelectPayee(payee)}
-                                    className="w-full px-3 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 
-                                             text-gray-900 dark:text-gray-100 transition-colors
+                                    className="w-full px-3 py-2 text-left hover 
+                                             text-base-content transition-colors
                                              first:rounded-t-lg last:rounded-b-lg"
                                 >
                                     {payee}
@@ -224,25 +224,25 @@ const PayeeAutocomplete = ({
                         <button
                             type="button"
                             onClick={handleAddNewPayee}
-                            className="w-full px-3 py-2 text-left hover:bg-blue-50 dark:hover:bg-blue-900/20 
-                                     text-blue-600 dark:text-blue-400 transition-colors
-                                     border-t border-gray-200 dark:border-gray-600 flex items-center space-x-2"
+                            className="w-full px-3 py-2 text-left hover 
+                                     text-info transition-colors
+                                     border-t border-base-300 flex items-center space-x-2"
                         >
                             <TbPlus className="size-4" />
-                            <span>Add "{inputValue}"</span>
+                            <span>Add &#34;{inputValue}&quot;</span>
                         </button>
                     )}
 
                     {/* No results */}
                     {filteredPayees.length === 0 && !showAddOption && inputValue.trim() && (
-                        <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
+                        <div className="px-3 py-2 text-base-content/60 text-sm">
                             No payees found
                         </div>
                     )}
 
                     {/* Show all payees when input is empty */}
                     {!inputValue.trim() && payees.length === 0 && (
-                        <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm">
+                        <div className="px-3 py-2 text-base-content/60 text-sm">
                             Start typing to add your first payee
                         </div>
                     )}

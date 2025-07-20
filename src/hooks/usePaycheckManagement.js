@@ -1,6 +1,6 @@
 // src/hooks/usePaycheckManagement.js
-import { useCallback } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useCallback, useEffect } from 'react';
+import { useSimpleStorage } from './useSimpleStorage';
 
 /**
  * Custom hook for managing multiple paychecks
@@ -13,88 +13,51 @@ export const usePaycheckManagement = (accounts = []) => {
     // Cap at reasonable maximum (e.g., $100,000) and minimum (-$100,000)
     return Math.min(Math.max(amount, -100000), 100000);
   };
-  // Migrate from old paySchedule format if needed
-  const migrateFromLegacyPaySchedule = (legacyPaySchedule, legacyCurrentPay) => {
-    // Default paycheck to create if no legacy data exists
-    const defaultPaycheck = {
-      id: 1,
-      name: "Main Paycheck",
-      frequency: "biweekly",
-      startDate: new Date().toISOString().split('T')[0],
-      baseAmount: 2000,
-      variableAmount: false,
-      accountDistribution: [
-        {
-          accountId: accounts.length > 0 ? accounts[0].id : 1,
-          amount: 2000,
-          distributionType: "fixed",
-          distributionValue: 2000
-        }
-      ],
-      historyEntries: [],
-      isActive: true
-    };
 
-    // If no legacy data, return default
-    if (!legacyPaySchedule && !legacyCurrentPay) {
-      return [defaultPaycheck];
-    }
-
-    // Create paycheck from legacy data
-    const paycheck = {
-      id: 1,
-      name: "Main Paycheck",
-      frequency: legacyPaySchedule?.frequency || "biweekly",
-      startDate: legacyPaySchedule?.startDate?.split('T')[0] || new Date().toISOString().split('T')[0],
-      baseAmount: legacyCurrentPay || 2000,
-      variableAmount: false,
-      accountDistribution: [],
-      historyEntries: [],
-      isActive: true
-    };
-
-    // Handle split paycheck if configured in legacy data
-    if (legacyPaySchedule?.splitPaycheck && legacyPaySchedule?.primaryAccountId && legacyPaySchedule?.secondaryAccountId) {
-      paycheck.accountDistribution = [
-        {
-          accountId: legacyPaySchedule.primaryAccountId,
-          amount: legacyPaySchedule.primaryAmount || (legacyCurrentPay * 0.7),
-          distributionType: "fixed",
-          distributionValue: legacyPaySchedule.primaryAmount || (legacyCurrentPay * 0.7)
-        },
-        {
-          accountId: legacyPaySchedule.secondaryAccountId,
-          amount: legacyPaySchedule.secondaryAmount || (legacyCurrentPay * 0.3),
-          distributionType: "fixed",
-          distributionValue: legacyPaySchedule.secondaryAmount || (legacyCurrentPay * 0.3)
-        }
-      ];
-    } else {
-      // Single account distribution
-      paycheck.accountDistribution = [
-        {
-          accountId: accounts.length > 0 ? accounts[0].id : 1,
-          amount: legacyCurrentPay || 2000,
-          distributionType: "fixed",
-          distributionValue: legacyCurrentPay || 2000
-        }
-      ];
-    }
-
-    return [paycheck];
-  };
-
-  // Try to get legacy data for migration
-  const oldPaySchedule = localStorage.getItem('budgetCalc_paySchedule');
-  const oldCurrentPay = localStorage.getItem('budgetCalc_currentPay');
-  const parsedOldPaySchedule = oldPaySchedule ? JSON.parse(oldPaySchedule) : null;
-  const parsedOldCurrentPay = oldCurrentPay ? parseFloat(oldCurrentPay) : null;
-
-  // Paychecks state - migrate from old format if needed
-  const [paychecks, setPaychecks] = useLocalStorage(
+  // Paychecks state - force empty array to remove mock data
+  const [paychecks, setPaychecks] = useSimpleStorage(
     'budgetCalc_paychecks',
-    migrateFromLegacyPaySchedule(parsedOldPaySchedule, parsedOldCurrentPay)
+    [] // Always start with empty array - no mock data
   );
+
+  // Clean up any mock data that might be stored in cloud storage
+  useEffect(() => {
+    console.log('🔍 PAYCHECK CLEANUP - Checking for mock data:', paychecks);
+
+    if (paychecks && Array.isArray(paychecks) && paychecks.length > 0) {
+      console.log('🔍 PAYCHECK CLEANUP - Found paychecks:', paychecks.length);
+
+      // Check for multiple patterns of mock data
+      const hasMockData = paychecks.some(paycheck => {
+        const isMockPattern1 = paycheck.name === "Main Paycheck" && paycheck.baseAmount === 2000 && paycheck.id === 1;
+        const isMockPattern2 = paycheck.name === "Main Paycheck" && paycheck.baseAmount === 2000;
+        const isMockPattern3 = paycheck.baseAmount === 2000 && paycheck.frequency === "biweekly" && paycheck.id === 1;
+
+        console.log('🔍 PAYCHECK CLEANUP - Checking paycheck:', {
+          name: paycheck.name,
+          baseAmount: paycheck.baseAmount,
+          id: paycheck.id,
+          frequency: paycheck.frequency,
+          isMockPattern1,
+          isMockPattern2,
+          isMockPattern3
+        });
+
+        return isMockPattern1 || isMockPattern2 || isMockPattern3;
+      });
+
+      console.log('🔍 PAYCHECK CLEANUP - Has mock data:', hasMockData);
+
+      if (hasMockData) {
+        console.log('🧹 DETECTED MOCK PAYCHECK DATA - CLEARING IT NOW!');
+        console.log('🧹 Current paychecks before clearing:', paychecks);
+        setPaychecks([]);
+        console.log('🧹 Paychecks cleared - should be empty now');
+      }
+    } else {
+      console.log('🔍 PAYCHECK CLEANUP - No paychecks found or empty array');
+    }
+  }, [paychecks, setPaychecks]); // Include dependencies but this will only run when paychecks change
 
   /**
    * Add a new paycheck
@@ -213,20 +176,55 @@ export const usePaycheckManagement = (accounts = []) => {
     }
   }, []);
 
+  // Helper function to get today's date in local timezone (avoiding timezone issues)
+  const getTodayLocal = useCallback(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
   // Helper function to add days to a date
-  const addDays = (date, days) => {
+  const addDays = useCallback((date, days) => {
     const result = new Date(date);
     result.setDate(result.getDate() + days);
     return result;
-  };
+  }, []);
 
   // Helper function to format date as YYYY-MM-DD
-  const formatDate = (date) => {
+  const formatDate = useCallback((date) => {
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }, []);
+
+  // Helper function to create a date from YYYY-MM-DD string in local timezone
+  const createLocalDate = useCallback((dateString) => {
+    if (!dateString) return new Date();
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // month is 0-indexed
+  }, []);
+
+  // Helper function to check if a date is today or in the future
+  const isUpcoming = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    return compareDate >= today;
+  };
+
+  // Helper function to calculate days until a date
+  const daysUntil = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+    const diffTime = targetDate - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   /**
@@ -240,7 +238,8 @@ export const usePaycheckManagement = (accounts = []) => {
     let currentDate;
 
     try {
-      currentDate = new Date(paycheck.startDate);
+      // Use createLocalDate to avoid timezone issues
+      currentDate = createLocalDate(paycheck.startDate);
     } catch {
       // Fallback if date parsing fails
       currentDate = new Date();
@@ -276,7 +275,7 @@ export const usePaycheckManagement = (accounts = []) => {
     }
 
     return dates;
-  }, [paychecks]);
+  }, [paychecks, addDays, createLocalDate]);
 
   /**
    * Calculate total monthly income from all active paychecks
@@ -296,9 +295,12 @@ export const usePaycheckManagement = (accounts = []) => {
   /**
    * Get all upcoming paycheck dates across all active paychecks
    * Returns dates sorted chronologically with paycheck information
+   * Uses timezone-safe date handling
    */
   const getAllUpcomingPaycheckDates = useCallback((numberOfMonths = 3) => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+
     const endDate = new Date(today);
     endDate.setMonth(today.getMonth() + numberOfMonths);
 
@@ -308,14 +310,23 @@ export const usePaycheckManagement = (accounts = []) => {
       .filter(p => p.isActive)
       .forEach(paycheck => {
         // Get more dates than we need to ensure we cover the time period
-        const dates = generatePaycheckDates(paycheck.id, getPaychecksPerYear(paycheck.frequency) / 4 * numberOfMonths);
+        const dates = generatePaycheckDates(paycheck.id, Math.ceil(getPaychecksPerYear(paycheck.frequency) / 12 * numberOfMonths) + 2);
 
         dates.forEach(date => {
-          if (date >= today && date <= endDate) {
+          const paycheckDate = new Date(date);
+          paycheckDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+
+          if (paycheckDate >= today && paycheckDate <= endDate) {
+            const daysFromToday = daysUntil(paycheckDate);
+
             allDates.push({
-              date,
+              date: paycheckDate,
               paycheck: { ...paycheck },
-              formattedDate: formatDate(date)
+              formattedDate: formatDate(paycheckDate),
+              daysUntil: daysFromToday,
+              isToday: daysFromToday === 0,
+              isThisWeek: daysFromToday <= 7,
+              isThisMonth: paycheckDate.getMonth() === today.getMonth() && paycheckDate.getFullYear() === today.getFullYear()
             });
           }
         });
@@ -323,7 +334,114 @@ export const usePaycheckManagement = (accounts = []) => {
 
     // Sort dates chronologically
     return allDates.sort((a, b) => a.date - b.date);
-  }, [paychecks, generatePaycheckDates, getPaychecksPerYear]);
+  }, [paychecks, generatePaycheckDates, getPaychecksPerYear, formatDate]);
+
+  /**
+   * Get upcoming paycheck dates for a specific account
+   * Returns only paychecks that distribute money to the specified account
+   * @param {number|string} accountId - The account ID to filter by
+   * @param {number} numberOfMonths - Number of months to look ahead
+   * @returns {Array} Array of paycheck dates for the specified account
+   */
+  const getUpcomingPaycheckDatesForAccount = useCallback((accountId, numberOfMonths = 3) => {
+    if (!accountId) return [];
+
+    const allPaychecks = getAllUpcomingPaycheckDates(numberOfMonths);
+
+    return allPaychecks.filter(paycheckEntry => {
+      // Check if this paycheck distributes money to the specified account
+      if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
+        return paycheckEntry.paycheck.accountDistribution.some(dist =>
+          String(dist.accountId) === String(accountId)
+        );
+      }
+      return false;
+    });
+  }, [getAllUpcomingPaycheckDates]);
+
+  /**
+   * Get the next paycheck date across all active paychecks
+   * Returns the soonest upcoming paycheck
+   */
+  const getNextPaycheckDate = useCallback(() => {
+    const upcomingPaychecks = getAllUpcomingPaycheckDates(1);
+    return upcomingPaychecks.length > 0 ? upcomingPaychecks[0] : null;
+  }, [getAllUpcomingPaycheckDates]);
+
+  /**
+   * Get paychecks for a specific date range
+   * Useful for calendar integration and budget planning
+   */
+  const getPaychecksInDateRange = useCallback((startDate, endDate) => {
+    const start = createLocalDate(startDate);
+    const end = createLocalDate(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+
+    const paychecksInRange = [];
+
+    paychecks
+      .filter(p => p.isActive)
+      .forEach(paycheck => {
+        // Calculate how many paychecks we might need to cover the date range
+        const daysDiff = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+        const estimatedPaychecks = Math.ceil(daysDiff / (getPaychecksPerYear(paycheck.frequency) / 365)) + 2;
+
+        const dates = generatePaycheckDates(paycheck.id, estimatedPaychecks);
+
+        dates.forEach(date => {
+          const paycheckDate = new Date(date);
+          paycheckDate.setHours(0, 0, 0, 0);
+
+          if (paycheckDate >= start && paycheckDate <= end) {
+            paychecksInRange.push({
+              date: paycheckDate,
+              paycheck: { ...paycheck },
+              formattedDate: formatDate(paycheckDate),
+              daysFromStart: Math.ceil((paycheckDate - start) / (1000 * 60 * 60 * 24))
+            });
+          }
+        });
+      });
+
+    return paychecksInRange.sort((a, b) => a.date - b.date);
+  }, [paychecks, generatePaycheckDates, getPaychecksPerYear, createLocalDate, formatDate]);
+
+  /**
+   * Calculate expected income for a specific month
+   * Takes into account all active paychecks and their schedules
+   */
+  const calculateMonthlyExpectedIncome = useCallback((year, month) => {
+    const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+    const endDate = new Date(year, month, 0); // Last day of the month
+    const endDateString = formatDate(endDate);
+
+    const monthlyPaychecks = getPaychecksInDateRange(startDate, endDateString);
+
+    return monthlyPaychecks.reduce((total, paycheckEntry) => {
+      return total + paycheckEntry.paycheck.baseAmount;
+    }, 0);
+  }, [getPaychecksInDateRange, formatDate]);
+
+  /**
+   * Force clear all paycheck data (including cloud storage)
+   */
+  const clearAllPaycheckData = useCallback(() => {
+    console.log('🧹 FORCE CLEARING ALL PAYCHECK DATA');
+    setPaychecks([]);
+
+    // Also clear localStorage as backup
+    localStorage.removeItem('budgetCalc_paychecks');
+    localStorage.removeItem('budgetCalc_paySchedule');
+    localStorage.removeItem('budgetCalc_currentPay');
+
+    console.log('🧹 All paycheck data cleared');
+  }, [setPaychecks]);
+
+  // Expose clearAllPaycheckData globally for debugging
+  if (typeof window !== 'undefined') {
+    window.clearPaycheckData = clearAllPaycheckData;
+  }
 
   return {
     paychecks,
@@ -337,6 +455,15 @@ export const usePaycheckManagement = (accounts = []) => {
     getPaychecksPerYear,
     generatePaycheckDates,
     calculateTotalMonthlyIncome,
-    getAllUpcomingPaycheckDates
+    getAllUpcomingPaycheckDates,
+    getUpcomingPaycheckDatesForAccount,
+    getNextPaycheckDate,
+    getPaychecksInDateRange,
+    calculateMonthlyExpectedIncome,
+    clearAllPaycheckData,
+    // Utility functions for timezone-safe date handling
+    getTodayLocal,
+    isUpcoming,
+    daysUntil
   };
 };

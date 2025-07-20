@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google API Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-4">Google API Test</h1>
+
+        <div id="status" class="mb-4 p-3 rounded bg-blue-100 text-blue-800">
+            Initializing...
+        </div>
+
+        <button id="signInBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+            disabled>
+            Sign in with Google
+        </button>
+
+        <div id="result" class="mt-4 p-3 rounded hidden"></div>
+    </div>
+
+    <script>
+        const API_KEY = 'AIzaSyDhuZbiG6QkNk1p80I_cye3-nnkk5yfYuk';
+        const CLIENT_ID = '355249316219-ff3etqvp5n84uki2b5stb56knlq2si8d.apps.googleusercontent.com';
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+
+        const statusDiv = document.getElementById('status');
+        const signInBtn = document.getElementById('signInBtn');
+        const resultDiv = document.getElementById('result');
+
+        function updateStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `mb-4 p-3 rounded ${type === 'error' ? 'bg-red-100 text-red-800' :
+                    type === 'success' ? 'bg-green-100 text-green-800' :
+                        'bg-blue-100 text-blue-800'
+                }`;
+        }
+
+        function showResult(message, type = 'info') {
+            resultDiv.textContent = message;
+            resultDiv.className = `mt-4 p-3 rounded ${type === 'error' ? 'bg-red-100 text-red-800' :
+                    type === 'success' ? 'bg-green-100 text-green-800' :
+                        'bg-blue-100 text-blue-800'
+                }`;
+            resultDiv.classList.remove('hidden');
+        }
+
+        async function initializeGapi() {
+            try {
+                updateStatus('Loading Google API...');
+
+                // Load the Google API
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://apis.google.com/js/api.js';
+                    script.onload = () => {
+                        gapi.load('client:auth2', resolve);
+                    };
+                    script.onerror = () => reject(new Error('Failed to load Google API'));
+                    document.head.appendChild(script);
+                });
+
+                updateStatus('Initializing Google API client...');
+
+                // Initialize the API client
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    clientId: CLIENT_ID,
+                    discoveryDocs: [DISCOVERY_DOC],
+                    scope: SCOPES
+                });
+
+                updateStatus('Google API initialized successfully!', 'success');
+                signInBtn.disabled = false;
+
+                // Check if already signed in
+                const authInstance = gapi.auth2.getAuthInstance();
+                if (authInstance.isSignedIn.get()) {
+                    updateStatus('Already signed in to Google Drive!', 'success');
+                    signInBtn.textContent = 'Sign Out';
+                }
+
+            } catch (error) {
+                console.error('Initialization failed:', error);
+                updateStatus(`Initialization failed: ${error.message}`, 'error');
+            }
+        }
+
+        signInBtn.addEventListener('click', async () => {
+            try {
+                const authInstance = gapi.auth2.getAuthInstance();
+
+                if (authInstance.isSignedIn.get()) {
+                    // Sign out
+                    await authInstance.signOut();
+                    updateStatus('Signed out successfully', 'success');
+                    signInBtn.textContent = 'Sign in with Google';
+                } else {
+                    // Sign in
+                    updateStatus('Signing in...');
+                    await authInstance.signIn();
+                    updateStatus('Signed in successfully!', 'success');
+                    signInBtn.textContent = 'Sign Out';
+
+                    // Test basic Drive API access
+                    showResult('Testing Drive API access...', 'info');
+                    const response = await gapi.client.drive.files.list({
+                        q: "parents in 'appDataFolder'",
+                        spaces: 'appDataFolder'
+                    });
+                    showResult(`Drive API test successful! Found ${response.result.files.length} files in app data folder.`, 'success');
+                }
+            } catch (error) {
+                console.error('Sign in failed:', error);
+                showResult(`Sign in failed: ${error.message}`, 'error');
+            }
+        });
+
+        // Initialize when page loads
+        initializeGapi();
+    </script>
+</body>
+
+</html>

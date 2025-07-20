@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Paycheck Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .debug {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            border-radius: 4px;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Fixed Paycheck Debug Code</h1>
+
+    <div class="info">
+        <strong>Instructions:</strong><br>
+        1. Go to your budget page<br>
+        2. Open Developer Tools (F12)<br>
+        3. Go to Console tab<br>
+        4. Copy and paste the code below<br>
+        5. Press Enter
+    </div>
+
+    <div class="debug">// Debug code to run in browser console on your budget page
+        console.log('=== PAYCHECK DEBUG START ===');
+
+        // Get paycheck data from localStorage
+        const paychecks = JSON.parse(localStorage.getItem('budgetCalc_paychecks') || '[]');
+        console.log('Raw paycheck data:', paychecks);
+
+        // Get categories data
+        const categories = JSON.parse(localStorage.getItem('budgetCalc_categories') || '[]');
+        console.log('Categories data:', categories);
+
+        // Test the calculatePaychecksUntilDue function with your actual data
+        function calculatePaychecksUntilDue_Debug(dueDate, upcomingPaychecks = [], accountId = null) {
+        console.log('\n--- calculatePaychecksUntilDue Debug ---');
+        console.log('Due date:', dueDate);
+        console.log('Account ID:', accountId);
+        console.log('Upcoming paychecks:', upcomingPaychecks);
+
+        if (!dueDate || !upcomingPaychecks.length) {
+        console.log('Early return: no due date or no paychecks');
+        return 0;
+        }
+
+        // Parse due date safely
+        let dueDateObj;
+        if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dueDate.split('-').map(Number);
+        dueDateObj = new Date(year, month - 1, day);
+        } else {
+        dueDateObj = new Date(dueDate);
+        }
+        console.log('Parsed due date:', dueDateObj);
+
+        // Filter paychecks by account if specified
+        let relevantPaychecks = upcomingPaychecks;
+        if (accountId !== null) {
+        console.log('Filtering by account ID:', accountId);
+        relevantPaychecks = upcomingPaychecks.filter(paycheckEntry => {
+        if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
+        const hasAccount = paycheckEntry.paycheck.accountDistribution.some(dist =>
+        String(dist.accountId) === String(accountId)
+        );
+        console.log(`Paycheck ${paycheckEntry.formattedDate}: has account ${accountId}? ${hasAccount}`);
+        console.log(' Distribution:', paycheckEntry.paycheck.accountDistribution);
+        return hasAccount;
+        }
+        console.log(`Paycheck ${paycheckEntry.formattedDate}: no distribution data`);
+        return false;
+        });
+        }
+        console.log('Relevant paychecks after filtering:', relevantPaychecks);
+
+        // Count paychecks that occur before the due date
+        const result = relevantPaychecks.filter(paycheck => {
+        const paycheckDate = new Date(paycheck.date);
+        const isBeforeDue = paycheckDate < dueDateObj; console.log(`${paycheck.formattedDate} (${paycheckDate}) <
+            ${dueDateObj}? ${isBeforeDue}`); return isBeforeDue; }).length; console.log('Final result:', result); return
+            result; } // Simulate the getAllUpcomingPaycheckDates function function
+            simulateGetAllUpcomingPaycheckDates(numberOfMonths=3) { console.log('\n--- Simulating
+            getAllUpcomingPaycheckDates ---'); const today=new Date(); today.setHours(0, 0, 0, 0); const endDate=new
+            Date(today); endDate.setMonth(today.getMonth() + numberOfMonths); console.log('Date range:', today, 'to' ,
+            endDate); const allDates=[]; paychecks.filter(p=> p.isActive).forEach(paycheck => {
+            console.log('Processing paycheck:', paycheck.name);
+
+            // Generate some upcoming dates for this paycheck
+            let currentDate = new Date(paycheck.startDate || today);
+
+            for (let i = 0; i < 10; i++) { if (currentDate>= today && currentDate <= endDate) { const
+                    formattedDate=currentDate.toISOString().split('T')[0]; allDates.push({ date: new Date(currentDate),
+                    paycheck: { ...paycheck }, formattedDate: formattedDate, daysUntil: Math.ceil((currentDate - today)
+                    / (1000 * 60 * 60 * 24)) }); console.log(` Added date: ${formattedDate}, account distribution:`,
+                    paycheck.accountDistribution); } // Move to next paycheck date based on frequency switch
+                    (paycheck.frequency) { case 'weekly' : currentDate.setDate(currentDate.getDate() + 7); break;
+                    case 'biweekly' : currentDate.setDate(currentDate.getDate() + 14); break; case 'monthly' :
+                    currentDate.setMonth(currentDate.getMonth() + 1); break; default:
+                    currentDate.setDate(currentDate.getDate() + 14); } } }); return allDates.sort((a, b)=> a.date -
+                    b.date);
+                    }
+
+                    // Test with your actual data
+                    const upcomingPaychecks = simulateGetAllUpcomingPaycheckDates();
+                    console.log('\nGenerated upcoming paychecks:', upcomingPaychecks);
+
+                    // Test scenarios
+                    console.log('\n=== TESTING SCENARIOS ===');
+
+                    // Find a category with a due date and account ID
+                    const testCategory = categories.find(cat => cat.dueDate && cat.accountId);
+                    if (testCategory) {
+                    console.log('Testing with category:', testCategory.name);
+                    console.log('Due date:', testCategory.dueDate);
+                    console.log('Account ID:', testCategory.accountId);
+
+                    const result = calculatePaychecksUntilDue_Debug(testCategory.dueDate, upcomingPaychecks,
+                    testCategory.accountId);
+                    console.log('Result:', result, 'paychecks');
+
+                    if (result === 0) {
+                    console.log('🚨 ISSUE: Showing "Due Now" - this might be the problem!');
+                    } else {
+                    console.log('✅ Showing', result, 'paychecks left');
+                    }
+                    } else {
+                    console.log('No test category found with due date and account ID');
+                    console.log('Available categories:', categories.map(c => ({ name: c.name, dueDate: c.dueDate,
+                    accountId: c.accountId })));
+                    }
+
+                    console.log('=== PAYCHECK DEBUG END ===');</div>
+
+</body>
+
+</html>

@@ -1,7 +1,7 @@
 // Import Dependencies
+import { ChevronLeftIcon } from "@heroicons/react/20/solid";
 import clsx from "clsx";
 import PropTypes from "prop-types";
-import { ChevronLeftIcon } from "@heroicons/react/20/solid";
 import { useTranslation } from "react-i18next";
 
 // Local Imports
@@ -26,18 +26,18 @@ export function PrimePanel({
       className={clsx(
         "prime-panel flex h-full flex-col",
         cardSkin === "shadow"
-          ? "shadow-soft dark:shadow-dark-900/60"
-          : "dark:border-dark-600/80 ltr:border-r rtl:border-l",
+          ? "shadow-lg"
+          : "border-base-300 ltr:border-r rtl:border-l",
       )}
     >
       <div
         className={clsx(
-          "flex h-full grow flex-col bg-white ltr:pl-(--main-panel-width) rtl:pr-(--main-panel-width)",
-          cardSkin === "shadow" ? "dark:bg-dark-750" : "dark:bg-dark-900",
+          "flex h-full grow flex-col bg-base-100 ltr:pl-(--main-panel-width) rtl:pr-(--main-panel-width)",
+          cardSkin === "shadow" ? "bg-base-100" : "bg-base-100",
         )}
       >
         <div className="relative flex h-16 w-full shrink-0 items-center justify-between pl-4 pr-1 rtl:pl-1 rtl:pr-4">
-          <p className="truncate text-base tracking-wider text-gray-800 dark:text-dark-100">
+          <p className="truncate text-base tracking-wider text-base-content">
             {title}
           </p>
           <Button

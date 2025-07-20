@@ -1,22 +1,24 @@
 // src/hooks/useCategoryManagement.js - UPDATED
 import { useCallback } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useSimpleStorage } from './useSimpleStorage';
 
 /**
  * Custom hook for managing categories with Enhanced Category Structure
  * Now supports 'single' and 'multiple' category types
  */
 export const useCategoryManagement = () => {
-  // Categories state - UPDATED with type field
-  const [categories, setCategories] = useLocalStorage('budgetCalc_categories', [
+  // Categories state - now using simple localStorage
+  const [categories, setCategories] = useSimpleStorage('budgetCalc_categories', [
     {
       id: 1,
       name: 'Personal Care',
       type: 'multiple', // NEW: Added type field
+      accountId: 1, // NEW: Account assignment
       color: 'bg-gradient-to-r from-purple-500 to-pink-500',
       collapsed: false,
       allocated: 0,
       spent: 0,
+      available: 0, // NEW: Available balance for envelope budgeting
       lastFunded: null,
       targetBalance: 0,
       autoFunding: {
@@ -29,10 +31,12 @@ export const useCategoryManagement = () => {
       id: 2,
       name: 'Pet Care',
       type: 'multiple', // NEW: Added type field
-      color: 'bg-gradient-to-r from-green-500 to-blue-500',
+      accountId: 1, // NEW: Account assignment
+      color: 'bg-gradient-to-r from-green-500 to-info-500',
       collapsed: false,
       allocated: 0,
       spent: 0,
+      available: 0, // NEW: Available balance for envelope budgeting
       lastFunded: null,
       targetBalance: 0,
       autoFunding: {
@@ -45,10 +49,12 @@ export const useCategoryManagement = () => {
       id: 3,
       name: 'Savings Goals',
       type: 'multiple', // NEW: Added type field
+      accountId: 2, // NEW: Account assignment (Savings account)
       color: 'bg-gradient-to-r from-purple-600 to-indigo-600',
       collapsed: false,
       allocated: 0,
       spent: 0,
+      available: 0, // NEW: Available balance for envelope budgeting
       lastFunded: null,
       targetBalance: 0,
       autoFunding: {
@@ -80,10 +86,14 @@ export const useCategoryManagement = () => {
       throw new Error('Category type must be either "single" or "multiple"');
     }
 
+    // Generate ID first to ensure it's not overwritten
+    const newCategoryId = generateNextCategoryId();
+
     const newCategory = {
+      id: newCategoryId, // ID FIRST - CRITICAL!
       name: categoryData.name.trim(),
       type: categoryData.type, // NEW: Required type field
-      color: categoryData.color || 'bg-gradient-to-r from-blue-500 to-purple-500',
+      color: categoryData.color || 'bg-gradient-to-r from-info-500 to-purple-500',
       collapsed: false,
       allocated: 0,
       spent: 0,
@@ -95,6 +105,18 @@ export const useCategoryManagement = () => {
         maxAmount: categoryData.autoFunding?.maxAmount || 500,
         priority: categoryData.autoFunding?.priority || 'medium'
       },
+      // Store planning data directly on category for single categories
+      ...(categoryData.type === 'single' && {
+        planningType: categoryData.planningType,
+        amount: categoryData.amount || 0,
+        frequency: categoryData.frequency || 'monthly',
+        dueDate: categoryData.dueDate || null,
+        isRecurring: categoryData.isRecurring || false,
+        targetAmount: categoryData.targetAmount || 0,
+        targetDate: categoryData.targetDate,
+        monthlyContribution: categoryData.monthlyContribution || 0,
+        alreadySaved: categoryData.alreadySaved || 0
+      }),
       // NEW: Category type specific settings
       settings: {
         // For single categories - the main expense details
@@ -108,9 +130,10 @@ export const useCategoryManagement = () => {
           allowInactiveItems: true,
           autoDistribution: false // Whether to auto-distribute funds among items
         })
-      },
-      id: generateNextCategoryId()
+      }
     };
+
+    console.log('DEBUG - Creating new category with ID:', newCategoryId, newCategory);
 
     setCategories(prev => [...prev, newCategory]);
     return newCategory;
@@ -119,48 +142,177 @@ export const useCategoryManagement = () => {
   /**
    * Update an existing category - ENHANCED to handle type changes
    */
+  /**
+   * Update an existing category - ENHANCED to handle type changes and ensure transfer persistence
+   */
   const updateCategory = useCallback((categoryId, categoryData) => {
-    setCategories(prev => prev.map(cat => {
-      if (cat.id === categoryId) {
-        // If changing type, preserve important fields but update structure
-        if (categoryData.type && categoryData.type !== cat.type) {
+    console.log('=== UPDATE CATEGORY HOOK DEBUG ===');
+    console.log('Category ID:', categoryId, 'type:', typeof categoryId);
+    console.log('Category data to update:', categoryData);
+
+    setCategories(prev => {
+      console.log('Current categories before update:', prev);
+
+      const updated = prev.map(cat => {
+        if (cat.id === categoryId) {
+          console.log('Found category to update:', cat);
+
+          // If changing type, preserve important fields but update structure
+          if (categoryData.type && categoryData.type !== cat.type) {
+            console.log('Type change detected:', cat.type, '->', categoryData.type);
+            const updatedCategory = {
+              ...cat,
+              ...categoryData,
+              // Store planning data directly on category for single categories
+              ...(categoryData.type === 'single' && {
+                planningType: categoryData.planningType,
+                amount: categoryData.amount || 0,
+                frequency: categoryData.frequency || 'monthly',
+                dueDate: categoryData.dueDate || null,
+                isRecurring: categoryData.isRecurring || false,
+                targetAmount: categoryData.targetAmount || 0,
+                targetDate: categoryData.targetDate,
+                monthlyContribution: categoryData.monthlyContribution || 0,
+                alreadySaved: categoryData.alreadySaved || 0
+              }),
+              // Reset type-specific settings when changing type
+              settings: {
+                ...(categoryData.type === 'single' && {
+                  amount: categoryData.amount || 0,
+                  frequency: categoryData.frequency || 'monthly',
+                  dueDate: categoryData.dueDate || null
+                }),
+                ...(categoryData.type === 'multiple' && {
+                  allowInactiveItems: true,
+                  autoDistribution: false
+                })
+              }
+            };
+            console.log('Updated category (type change):', updatedCategory);
+            return updatedCategory;
+          }
+
+          // Check if this is a transfer update (only available property is being updated)
+          const isTransferUpdate =
+            categoryData.available !== undefined &&
+            Object.keys(categoryData).length === 1;
+
+          if (isTransferUpdate) {
+            console.log('TRANSFER UPDATE DETECTED:', categoryData);
+            console.log('Previous available:', cat.available, 'New available:', categoryData.available);
+
+            // Calculate how much the available amount changed
+            const availableDelta = categoryData.available - (cat.available || 0);
+
+            // Update both available AND allocated by the same amount
+            // This is critical for persistence - allocated must change when available changes
+            const newAllocated = (cat.allocated || 0) + availableDelta;
+
+            console.log('Available delta:', availableDelta);
+            console.log('Previous allocated:', cat.allocated, 'New allocated:', newAllocated);
+
+            // For transfers, update BOTH available and allocated properties
+            const updatedCategory = {
+              ...cat,
+              available: categoryData.available,
+              allocated: newAllocated
+            };
+            console.log('Updated category (transfer):', updatedCategory);
+            return updatedCategory;
+          }
+
+          // Normal update - preserve ALL fields including sortOrder
           const updatedCategory = {
             ...cat,
             ...categoryData,
-            // Reset type-specific settings when changing type
-            settings: {
-              ...(categoryData.type === 'single' && {
-                amount: categoryData.amount || 0,
-                frequency: categoryData.frequency || 'monthly',
-                dueDate: categoryData.dueDate || null
-              }),
-              ...(categoryData.type === 'multiple' && {
-                allowInactiveItems: true,
-                autoDistribution: false
-              })
-            }
+            // Store planning data directly on category for single categories
+            ...(cat.type === 'single' && {
+              planningType: categoryData.planningType !== undefined ? categoryData.planningType : cat.planningType,
+              amount: categoryData.amount !== undefined ? categoryData.amount : cat.amount,
+              frequency: categoryData.frequency !== undefined ? categoryData.frequency : cat.frequency,
+              dueDate: categoryData.dueDate !== undefined ? categoryData.dueDate : cat.dueDate,
+              isRecurring: categoryData.isRecurring !== undefined ? categoryData.isRecurring : cat.isRecurring,
+              targetAmount: categoryData.targetAmount !== undefined ? categoryData.targetAmount : cat.targetAmount,
+              targetDate: categoryData.targetDate !== undefined ? categoryData.targetDate : cat.targetDate,
+              monthlyContribution: categoryData.monthlyContribution !== undefined ? categoryData.monthlyContribution : cat.monthlyContribution,
+              alreadySaved: categoryData.alreadySaved !== undefined ? categoryData.alreadySaved : cat.alreadySaved
+            }),
+            // CRITICAL: Preserve sortOrder field for drag & drop functionality
+            ...(categoryData.sortOrder !== undefined && {
+              sortOrder: categoryData.sortOrder
+            })
           };
+          console.log('Updated category (normal update):', updatedCategory);
           return updatedCategory;
         }
+        return cat;
+      });
 
-        // Normal update
-        return { ...cat, ...categoryData };
-      }
-      return cat;
-    }));
+      console.log('Categories after update:', updated);
+      console.log('=== UPDATE CATEGORY HOOK COMPLETE ===');
+      return updated;
+    });
   }, [setCategories]);
 
   /**
    * Delete a category - ENHANCED with type-aware cleanup
    */
   const deleteCategory = useCallback((categoryId, planningItems = []) => {
-    const categoryToDelete = categories.find(cat => cat.id === categoryId);
-    if (!categoryToDelete) return { success: false, error: 'Category not found' };
+    console.log('=== DELETE CATEGORY DEBUG ===');
+    console.log('Input categoryId:', categoryId, 'type:', typeof categoryId);
+    console.log('Input planningItems:', planningItems);
+    console.log('All categories:', categories);
+    console.log('Category types breakdown:', categories.map(cat => ({ id: cat.id, name: cat.name, type: cat.type })));
 
-    // Check for associated items
-    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+    // Show item count for each category
+    const categoryItemCounts = categories.map(cat => {
+      const itemCount = planningItems.filter(item => {
+        const itemCategoryId = parseInt(item.categoryId, 10);
+        const catId = parseInt(cat.id, 10);
+        return !isNaN(itemCategoryId) && !isNaN(catId) && itemCategoryId === catId;
+      }).length;
+      return { id: cat.id, name: cat.name, type: cat.type, itemCount };
+    });
+    console.log('Category item counts:', categoryItemCounts);
+
+    const categoryToDelete = categories.find(cat => cat.id === categoryId);
+    console.log('Category to delete:', categoryToDelete);
+
+    if (!categoryToDelete) {
+      console.log('Category not found, returning error');
+      return { success: false, error: 'Category not found' };
+    }
+
+    console.log('Category type:', categoryToDelete.type);
+
+    // For single categories, the category IS the item, so we can delete it directly
+    if (categoryToDelete.type === 'single') {
+      console.log('Single category - deleting directly');
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      return { success: true };
+    }
+
+    // For multiple categories, check for associated items
+    console.log('Multiple category - checking for associated items');
+    console.log('Planning items to check:', planningItems.length);
+
+    // Convert both to numbers for proper comparison to handle string/number mismatch
+    const associatedItems = planningItems.filter(item => {
+      const itemCategoryId = parseInt(item.categoryId, 10);
+      const targetCategoryId = parseInt(categoryId, 10);
+      const matches = !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+      const isActive = item.isActive !== false; // Default to true if not specified
+
+      console.log(`Item ${item.id}: categoryId=${item.categoryId} (${typeof item.categoryId}) -> parsed=${itemCategoryId}, target=${targetCategoryId}, matches=${matches}, isActive=${isActive}`);
+
+      return matches; // Count ALL items (active and inactive)
+    });
+
+    console.log('Associated items found:', associatedItems.length);
+    console.log('Associated items:', associatedItems);
 
     if (associatedItems.length > 0) {
+      console.log('Cannot delete - has associated items');
       return {
         success: false,
         error: `Cannot delete category "${categoryToDelete.name}" because it has ${associatedItems.length} item(s). Please move or delete the items first.`,
@@ -168,7 +320,9 @@ export const useCategoryManagement = () => {
       };
     }
 
+    console.log('No associated items - deleting category');
     setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+    console.log('=== DELETE CATEGORY COMPLETE ===');
     return { success: true };
   }, [setCategories, categories]);
 
@@ -182,7 +336,12 @@ export const useCategoryManagement = () => {
 
     if (category.type === newType) return { success: true }; // Already correct type
 
-    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+    // Convert both to numbers for proper comparison to handle string/number mismatch
+    const associatedItems = planningItems.filter(item => {
+      const itemCategoryId = parseInt(item.categoryId, 10);
+      const targetCategoryId = parseInt(categoryId, 10);
+      return !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+    });
 
     // Validate conversion rules
     if (newType === 'single' && associatedItems.length > 1) {
@@ -218,7 +377,12 @@ export const useCategoryManagement = () => {
     const category = categories.find(cat => cat.id === categoryId);
     if (!category) return null;
 
-    const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+    // Convert both to numbers for proper comparison to handle string/number mismatch
+    const associatedItems = planningItems.filter(item => {
+      const itemCategoryId = parseInt(item.categoryId, 10);
+      const targetCategoryId = parseInt(categoryId, 10);
+      return !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+    });
     const activeItems = associatedItems.filter(item => item.isActive);
 
     return {
@@ -237,7 +401,12 @@ export const useCategoryManagement = () => {
    */
   const suggestCategoryType = useCallback((planningItems = []) => {
     return (categoryId) => {
-      const associatedItems = planningItems.filter(item => item.categoryId === categoryId);
+      // Convert both to numbers for proper comparison to handle string/number mismatch
+      const associatedItems = planningItems.filter(item => {
+        const itemCategoryId = parseInt(item.categoryId, 10);
+        const targetCategoryId = parseInt(categoryId, 10);
+        return !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+      });
 
       if (associatedItems.length === 0) {
         return 'single'; // Default for empty categories
@@ -362,6 +531,24 @@ export const useCategoryManagement = () => {
     return { migrated: migratedCount };
   }, [categories, setCategories]);
 
+  /**
+   * DEBUG HELPER: Create a test single category for deletion testing
+   */
+  const createTestSingleCategory = useCallback(() => {
+    const testCategory = {
+      name: 'Test Single Category',
+      type: 'single',
+      color: 'bg-gradient-to-r from-red-500 to-orange-500',
+      planningType: 'expense',
+      amount: 100,
+      frequency: 'monthly'
+    };
+
+    const newCategory = addCategory(testCategory);
+    console.log('Created test single category:', newCategory);
+    return newCategory;
+  }, [addCategory]);
+
   return {
     // Existing functions
     categories,
@@ -378,6 +565,9 @@ export const useCategoryManagement = () => {
     convertCategoryType,
     getCategoryTypeInfo,
     suggestCategoryType,
-    migrateCategoriesWithTypes
+    migrateCategoriesWithTypes,
+
+    // DEBUG HELPER
+    createTestSingleCategory
   };
 };

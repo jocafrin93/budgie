@@ -40,13 +40,11 @@ const protectedRoutes = {
           children: [
             {
               index: true,
-              element: <Navigate to="/budget/accounts" />,
+              element: <Navigate to="/budget/overview" />,
             },
             {
               path: "accounts",
-              lazy: async () => ({
-                Component: (await import("app/pages/budget/accounts")).default,
-              }),
+              element: <Navigate to="/budget/settings" />,
             },
             {
               path: "overview",
@@ -58,12 +56,6 @@ const protectedRoutes = {
               path: "transactions",
               lazy: async () => ({
                 Component: (await import("app/pages/budget/transactions")).default,
-              }),
-            },
-            {
-              path: "calendar",
-              lazy: async () => ({
-                Component: (await import("app/pages/budget/calendar")).default,
               }),
             },
             {
@@ -103,6 +95,13 @@ const protectedRoutes = {
                 Component: (
                   await import("app/pages/settings/sections/Appearance")
                 ).default,
+              }),
+            },
+            {
+              path: "daisy-theme-test",
+              lazy: async () => ({
+                Component: (await import("app/pages/settings/daisy-theme-test"))
+                  .default,
               }),
             },
           ],

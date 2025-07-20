@@ -1,6 +1,6 @@
 // src/hooks/useEnvelopeBudgeting.js
-import { useCallback, useEffect } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useCallback } from 'react';
+import { useSimpleStorage } from './useSimpleStorage';
 
 /**
  * Custom hook for YNAB-style envelope budgeting system
@@ -17,22 +17,24 @@ import { useLocalStorage } from './useLocalStorage';
  */
 export const useEnvelopeBudgeting = ({
   categories = [],
-  setCategories,
   planningItems = [],
   transactions = [],
   accounts = []
 } = {}) => {
-  // State for tracking category funding history
-  const [categoryFundingHistory, setCategoryFundingHistory] = useLocalStorage('budgetCalc_categoryFundingHistory', []);
+  // State for tracking category funding history - now using simple localStorage
+  const [categoryFundingHistory, setCategoryFundingHistory] = useSimpleStorage('budgetCalc_categoryFundingHistory', []);
 
-  // State for tracking money movements between categories
-  const [categoryTransfers, setCategoryTransfers] = useLocalStorage('budgetCalc_categoryTransfers', []);
+  // State for tracking money movements between categories - now using simple localStorage
+  const [categoryTransfers, setCategoryTransfers] = useSimpleStorage('budgetCalc_categoryTransfers', []);
 
-  // Monthly budget settings - to store the amount allocated per month to each category
-  const [monthlyBudget, setMonthlyBudget] = useLocalStorage('budgetCalc_monthlyBudget', {});
+  // Monthly budget settings - to store the amount allocated per month to each category - now using simple localStorage
+  const [monthlyBudget, setMonthlyBudget] = useSimpleStorage('budgetCalc_monthlyBudget', {});
+
+  // State for tracking pending account transfers (NEW - for cross-account allocation) - now using simple localStorage
+  const [pendingTransfers, setPendingTransfers] = useSimpleStorage('budgetCalc_pendingTransfers', []);
 
   /**
-   * Calculate the total amount available to be allocated
+   * Calculate the total amount available to be allocated (legacy - global)
    * Available to allocate = Sum of account balances - Sum of category available balances
    */
   const calculateToBeAllocated = useCallback(() => {
@@ -49,6 +51,199 @@ export const useEnvelopeBudgeting = ({
     // Money available to allocate = Account balances - Already in envelopes
     return validateAmount(totalAccountBalance - totalInEnvelopes);
   }, [accounts, categories]);
+
+  /**
+   * Calculate available to allocate per account (NEW - account-based allocation)
+   * This is the proper way to handle envelope budgeting with multiple accounts
+   */
+  const calculateAccountBasedToBeAllocated = useCallback((activeBudgetAllocations = []) => {
+    const accountAllocations = {};
+
+    // Initialize with account balances
+    accounts.forEach(account => {
+      accountAllocations[account.id] = {
+        accountId: account.id,
+        accountName: account.name,
+        accountBalance: validateAmount(account.balance || 0),
+        totalAllocated: 0,
+        availableToAllocate: 0,
+        categories: []
+      };
+    });
+
+    // Calculate allocated amounts per account based on active budget allocations
+    activeBudgetAllocations.forEach(allocation => {
+      const accountId = allocation.sourceAccountId;
+      if (accountAllocations[accountId]) {
+        const category = categories.find(c => c.id === allocation.categoryId);
+        if (category) {
+          const allocatedAmount = validateAmount(category.available || 0);
+          accountAllocations[accountId].totalAllocated += allocatedAmount;
+          accountAllocations[accountId].categories.push({
+            categoryId: category.id,
+            categoryName: category.name,
+            allocated: allocatedAmount
+          });
+        }
+      }
+    });
+
+    // Calculate available to allocate for each account
+    Object.values(accountAllocations).forEach(account => {
+      account.availableToAllocate = validateAmount(account.accountBalance - account.totalAllocated);
+    });
+
+    return accountAllocations;
+  }, [accounts, categories]);
+
+  /**
+   * Get available to allocate for a specific account
+   */
+  const getAccountAvailableToAllocate = useCallback((accountId, activeBudgetAllocations = []) => {
+    const accountAllocations = calculateAccountBasedToBeAllocated(activeBudgetAllocations);
+    return accountAllocations[accountId]?.availableToAllocate || 0;
+  }, [calculateAccountBasedToBeAllocated]);
+
+  /**
+   * Validate cross-account allocation (NEW - Smart Cross-Account Allocation)
+   * Determines if allocation is possible and what transfers are needed
+   */
+  const validateCrossAccountAllocation = useCallback((categoryId, amount, activeBudgetAllocations = []) => {
+    const validatedAmount = validateAmount(amount);
+    if (validatedAmount <= 0) {
+      return { isValid: false, reason: 'Invalid amount' };
+    }
+
+    // Find the category and its funding account
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) {
+      return { isValid: false, reason: 'Category not found' };
+    }
+
+    // Find the category's funding account from active budget allocations
+    const allocation = activeBudgetAllocations.find(a => a.categoryId === categoryId);
+    const targetAccountId = allocation?.sourceAccountId;
+
+    if (!targetAccountId) {
+      return { isValid: false, reason: 'No funding account assigned to category' };
+    }
+
+    const targetAccount = accounts.find(a => a.id === targetAccountId);
+    if (!targetAccount) {
+      return { isValid: false, reason: 'Target account not found' };
+    }
+
+    // Check if target account has sufficient funds
+    const targetAccountAvailable = getAccountAvailableToAllocate(targetAccountId, activeBudgetAllocations);
+
+    if (targetAccountAvailable >= validatedAmount) {
+      // Simple case: target account has enough funds
+      return {
+        isValid: true,
+        requiresTransfer: false,
+        targetAccount,
+        amount: validatedAmount
+      };
+    }
+
+    // Calculate shortfall and find potential source accounts
+    const shortfall = validatedAmount - targetAccountAvailable;
+    const availableSourceAccounts = accounts
+      .filter(acc => acc.id !== targetAccountId)
+      .map(acc => ({
+        id: acc.id,
+        name: acc.name,
+        available: getAccountAvailableToAllocate(acc.id, activeBudgetAllocations)
+      }))
+      .filter(acc => acc.available >= shortfall)
+      .sort((a, b) => b.available - a.available); // Sort by available amount descending
+
+    if (availableSourceAccounts.length === 0) {
+      // Check total funds across all accounts
+      const totalAvailable = accounts.reduce((sum, acc) => {
+        return sum + getAccountAvailableToAllocate(acc.id, activeBudgetAllocations);
+      }, 0);
+
+      return {
+        isValid: false,
+        reason: totalAvailable < validatedAmount
+          ? 'Insufficient funds across all accounts'
+          : 'No single account has enough funds for transfer'
+      };
+    }
+
+    return {
+      isValid: true,
+      requiresTransfer: true,
+      targetAccount,
+      amount: validatedAmount,
+      shortfall,
+      availableSourceAccounts,
+      transferAmount: shortfall
+    };
+  }, [categories, accounts, getAccountAvailableToAllocate]);
+
+  /**
+   * Create a pending transfer record (NEW)
+   */
+  const createPendingTransfer = useCallback((fromAccountId, toAccountId, amount, reason, categoryId = null) => {
+    const validatedAmount = validateAmount(amount);
+    if (validatedAmount <= 0) return null;
+
+    const newTransfer = {
+      id: `transfer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      fromAccountId,
+      toAccountId,
+      amount: validatedAmount,
+      reason,
+      categoryId,
+      createdAt: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    setPendingTransfers(prev => [...prev, newTransfer]);
+    return newTransfer;
+  }, [setPendingTransfers]);
+
+  /**
+   * Get all pending transfers (NEW)
+   */
+  const getPendingTransfers = useCallback(() => {
+    return pendingTransfers.filter(transfer => transfer.status === 'pending');
+  }, [pendingTransfers]);
+
+  /**
+   * Calculate total pending transfer amount (NEW)
+   */
+  const getTotalPendingTransferAmount = useCallback(() => {
+    return getPendingTransfers().reduce((sum, transfer) => sum + validateAmount(transfer.amount), 0);
+  }, [getPendingTransfers]);
+
+  /**
+   * Mark pending transfer as completed (NEW)
+   */
+  const completePendingTransfer = useCallback((transferId) => {
+    setPendingTransfers(prev =>
+      prev.map(transfer =>
+        transfer.id === transferId
+          ? { ...transfer, status: 'completed', completedAt: new Date().toISOString() }
+          : transfer
+      )
+    );
+  }, [setPendingTransfers]);
+
+  /**
+   * Cancel a pending transfer (NEW)
+   */
+  const cancelPendingTransfer = useCallback((transferId) => {
+    setPendingTransfers(prev =>
+      prev.map(transfer =>
+        transfer.id === transferId
+          ? { ...transfer, status: 'cancelled', cancelledAt: new Date().toISOString() }
+          : transfer
+      )
+    );
+  }, [setPendingTransfers]);
 
   /**
    * Calculate needed funding for each category based on active planning items
@@ -81,48 +276,6 @@ export const useEnvelopeBudgeting = ({
     return needed;
   }, [planningItems]);
 
-  /**
-   * Calculate the available balance for each category
-   * Available = Allocated - Spent
-   */
-  const calculateCategoryBalances = useCallback(() => {
-    // Create a map of category ID to spent amount from transactions
-    const categorySpending = {};
-
-    transactions.forEach(transaction => {
-      if (transaction.categoryId && transaction.amount < 0) {
-        if (!categorySpending[transaction.categoryId]) {
-          categorySpending[transaction.categoryId] = 0;
-        }
-        const validatedAmount = validateAmount(Math.abs(transaction.amount));
-        if (validatedAmount > 0) {
-          categorySpending[transaction.categoryId] = validateAmount(
-            categorySpending[transaction.categoryId] + validatedAmount
-          );
-        }
-      }
-    });
-
-    // Update category available balances
-    setCategories(currentCategories =>
-      currentCategories.map(category => {
-        const spent = validateAmount(categorySpending[category.id] || 0);
-        const allocated = validateAmount(category.allocated || 0);
-        const available = validateAmount(allocated - spent);
-
-        return {
-          ...category,
-          spent,
-          available
-        };
-      })
-    );
-  }, [transactions, setCategories]);
-
-  /**
-   * Fund a category with a specific amount
-   * This increases the category's allocated and available amounts
-   */
   // Helper function to validate amounts
   const validateAmount = (amount) => {
     if (typeof amount !== 'number' || isNaN(amount)) return 0;
@@ -130,13 +283,55 @@ export const useEnvelopeBudgeting = ({
     return Math.min(Math.max(amount, -100000), 100000);
   };
 
-  const fundCategory = useCallback((categoryId, amount, paycheckId = null, date = new Date()) => {
+  /**
+   * Calculate the available balance for each category
+   * Available = Allocated - Spent
+   */
+  // const calculateCategoryBalances = useCallback(() => {
+  //   // Create a map of category ID to spent amount from transactions
+  //   const categorySpending = {};
+
+  //   transactions.forEach(transaction => {
+  //     if (transaction.categoryId && transaction.amount < 0) {
+  //       if (!categorySpending[transaction.categoryId]) {
+  //         categorySpending[transaction.categoryId] = 0;
+  //       }
+  //       const validatedAmount = validateAmount(Math.abs(transaction.amount));
+  //       if (validatedAmount > 0) {
+  //         categorySpending[transaction.categoryId] = validateAmount(
+  //           categorySpending[transaction.categoryId] + validatedAmount
+  //         );
+  //       }
+  //     }
+  //   });
+
+  //   // Update category available balances
+  //   setCategories(currentCategories =>
+  //     currentCategories.map(category => {
+  //       const spent = validateAmount(categorySpending[category.id] || 0);
+  //       const allocated = validateAmount(category.allocated || 0);
+  //       const available = validateAmount(allocated - spent);
+
+  //       return {
+  //         ...category,
+  //         spent,
+  //         available
+  //       };
+  //     })
+  //   );
+  // }, [transactions, setCategories]);
+
+  /**
+   * Create category update for funding
+   * Returns the update object instead of directly modifying categories
+   */
+  const createFundingUpdate = useCallback((categoryId, amount, paycheckId = null, date = new Date()) => {
     // Validate inputs
-    if (!categoryId || amount === 0) return false;
+    if (!categoryId || amount === 0) return null;
 
     // Validate and cap the amount
     const validatedAmount = validateAmount(amount);
-    if (validatedAmount === 0) return false;
+    if (validatedAmount === 0) return null;
 
     // Check if we're removing money (negative amount)
     const isRemoving = validatedAmount < 0;
@@ -145,35 +340,9 @@ export const useEnvelopeBudgeting = ({
     if (isRemoving) {
       const category = categories.find(c => c.id === categoryId);
       if (!category || Math.abs(validatedAmount) > validateAmount(category.available || 0)) {
-        return false; // Can't remove more than available
+        return null; // Can't remove more than available
       }
     }
-
-    // Get items in this category that need allocation
-    const categoryItems = planningItems.filter(item =>
-      item.categoryId === categoryId &&
-      (item.isActive || (!item.allocationPaused && item.priorityState === 'active'))
-    );
-
-    // For manual allocations, we'll update the items' allocated amounts
-    const isManualAllocation = !paycheckId;
-
-    // Update category
-    setCategories(currentCategories =>
-      currentCategories.map(category => {
-        if (category.id === categoryId) {
-          const currentAllocated = validateAmount(category.allocated || 0);
-          const currentAvailable = validateAmount(category.available || 0);
-          return {
-            ...category,
-            allocated: validateAmount(currentAllocated + validatedAmount),
-            available: validateAmount(currentAvailable + validatedAmount),
-            lastFunded: date.toISOString()
-          };
-        }
-        return category;
-      })
-    );
 
     // Add to funding history
     setCategoryFundingHistory(prevHistory => [
@@ -188,89 +357,47 @@ export const useEnvelopeBudgeting = ({
       }
     ]);
 
-    // Update item allocation for both paycheck workflow and manual allocation
-    if (validatedAmount > 0) {
-      // For paycheck workflow, only update items that need allocation
-      const itemsToUpdate = paycheckId
-        ? planningItems.filter(item =>
-          item.categoryId === categoryId &&
-          item.needsAllocation
-        )
-        : categoryItems.filter(item =>
-          !item.isFullyFunded &&
-          item.amount > (item.allocated || 0)
-        );
-
-      if (itemsToUpdate.length > 0) {
-        // Distribute the amount among items
-        const amountPerItem = validatedAmount / itemsToUpdate.length;
-        itemsToUpdate.forEach(item => {
-          // Mark as not needing allocation
-          item.needsAllocation = false;
-
-          // Update allocated amount
-          const currentAllocated = item.allocated || 0;
-          const targetAmount = item.type === 'savings-goal'
-            ? item.targetAmount
-            : item.amount;
-
-          // Don't allocate more than needed
-          const remainingNeeded = Math.max(0, targetAmount - currentAllocated);
-          const allocateAmount = Math.min(amountPerItem, remainingNeeded);
-
-          item.allocated = currentAllocated + allocateAmount;
-          item.alreadySaved = item.allocated; // Update alreadySaved to match allocated
-        });
-      }
-    }
-
-    return true;
-  }, [setCategories, setCategoryFundingHistory, planningItems]);
-
-  /**
-   * Move money from one category to another
-   */
-  const moveMoney = useCallback((fromCategoryId, toCategoryId, amount, note = '') => {
-    // Validate inputs
-    if (!fromCategoryId || !toCategoryId) return false;
-
-    const validatedAmount = validateAmount(amount);
-    if (validatedAmount <= 0) return false;
-
-    if (fromCategoryId === toCategoryId) return false;
-
-    // Find categories
-    const fromCategory = categories.find(c => c.id === fromCategoryId);
-    const toCategory = categories.find(c => c.id === toCategoryId);
-
-    if (!fromCategory || !toCategory) return false;
-
-    // Check if from category has enough available
-    const fromAvailable = validateAmount(fromCategory.available || 0);
-    if (fromAvailable < validatedAmount) return false;
-
-    // Update categories
-    setCategories(currentCategories =>
-      currentCategories.map(category => {
-        if (category.id === fromCategoryId) {
-          const currentAvailable = validateAmount(category.available || 0);
-          return {
-            ...category,
-            available: validateAmount(currentAvailable - validatedAmount)
-          };
-        }
-        if (category.id === toCategoryId) {
+    // Return the category update object
+    return {
+      categoryId,
+      update: (category) => {
+        if (category.id === categoryId) {
           const currentAllocated = validateAmount(category.allocated || 0);
           const currentAvailable = validateAmount(category.available || 0);
           return {
             ...category,
             allocated: validateAmount(currentAllocated + validatedAmount),
-            available: validateAmount(currentAvailable + validatedAmount)
+            available: validateAmount(currentAvailable + validatedAmount),
+            lastFunded: date.toISOString()
           };
         }
         return category;
-      })
-    );
+      }
+    };
+  }, [categories, setCategoryFundingHistory]);
+
+  /**
+   * Create category updates for moving money between categories
+   * Returns update objects instead of directly modifying categories
+   */
+  const createMoveMoneyUpdates = useCallback((fromCategoryId, toCategoryId, amount, note = '') => {
+    // Validate inputs
+    if (!fromCategoryId || !toCategoryId) return null;
+
+    const validatedAmount = validateAmount(amount);
+    if (validatedAmount <= 0) return null;
+
+    if (fromCategoryId === toCategoryId) return null;
+
+    // Find categories
+    const fromCategory = categories.find(c => c.id === fromCategoryId);
+    const toCategory = categories.find(c => c.id === toCategoryId);
+
+    if (!fromCategory || !toCategory) return null;
+
+    // Check if from category has enough available
+    const fromAvailable = validateAmount(fromCategory.available || 0);
+    if (fromAvailable < validatedAmount) return null;
 
     // Record the transfer
     setCategoryTransfers(prevTransfers => [
@@ -279,14 +406,48 @@ export const useEnvelopeBudgeting = ({
         id: Math.max(0, ...prevTransfers.map(t => t.id)) + 1,
         fromCategoryId,
         toCategoryId,
-        amount,
+        amount: validatedAmount,
         date: new Date().toISOString(),
         note
       }
     ]);
 
-    return true;
-  }, [categories, setCategories, setCategoryTransfers]);
+    // Return update functions for both categories
+    return {
+      updates: [
+        {
+          categoryId: fromCategoryId,
+          update: (category) => {
+            if (category.id === fromCategoryId) {
+              const currentAvailable = validateAmount(category.available || 0);
+              const currentAllocated = validateAmount(category.allocated || 0);
+              return {
+                ...category,
+                available: validateAmount(currentAvailable - validatedAmount),
+                allocated: validateAmount(currentAllocated - validatedAmount)
+              };
+            }
+            return category;
+          }
+        },
+        {
+          categoryId: toCategoryId,
+          update: (category) => {
+            if (category.id === toCategoryId) {
+              const currentAvailable = validateAmount(category.available || 0);
+              const currentAllocated = validateAmount(category.allocated || 0);
+              return {
+                ...category,
+                available: validateAmount(currentAvailable + validatedAmount),
+                allocated: validateAmount(currentAllocated + validatedAmount)
+              };
+            }
+            return category;
+          }
+        }
+      ]
+    };
+  }, [categories, setCategoryTransfers]);
 
   /**
    * Set a category's monthly budget amount
@@ -299,85 +460,6 @@ export const useEnvelopeBudgeting = ({
     }));
   }, [setMonthlyBudget]);
 
-  /**
-   * Fund all categories according to their monthly budget
-   * Used for auto-funding during payday
-   */
-  const autoFundCategories = useCallback((totalAmount, paycheckId = null) => {
-    // Validate total amount
-    const validatedTotal = validateAmount(totalAmount);
-    if (validatedTotal <= 0) return { totalFunded: 0, fundingResults: [], remainingToAllocate: 0 };
-
-    // Get items that need allocation
-    const itemsNeedingAllocation = planningItems.filter(item =>
-      item.isActive && item.needsAllocation && item.categoryId
-    );
-
-    // Group by category and sum amounts
-    const categoryAmounts = {};
-    itemsNeedingAllocation.forEach(item => {
-      const categoryId = parseInt(item.categoryId, 10);
-      if (!categoryAmounts[categoryId]) {
-        categoryAmounts[categoryId] = 0;
-      }
-      const amount = item.type === 'savings-goal' ?
-        (item.monthlyContribution || 0) :
-        (item.amount || 0);
-      categoryAmounts[categoryId] += validateAmount(amount);
-    });
-
-    // Convert to array and validate amounts
-    const categoriesToFund = Object.entries(categoryAmounts)
-      .map(([categoryId, amount]) => ({
-        categoryId: parseInt(categoryId, 10),
-        amount: validateAmount(amount),
-        items: itemsNeedingAllocation.filter(item => item.categoryId === parseInt(categoryId, 10))
-      }))
-      .filter(({ amount }) => amount > 0);
-
-    // Calculate total needed
-    const totalNeeded = validateAmount(
-      categoriesToFund.reduce((sum, item) => sum + item.amount, 0)
-    );
-
-    // If not enough to fund everything, scale proportionally
-    const scaleFactor = validatedTotal < totalNeeded ? validatedTotal / totalNeeded : 1;
-
-    // Fund each category
-    let totalFunded = 0;
-    const fundingResults = [];
-
-    categoriesToFund.forEach(({ categoryId, amount, items }) => {
-      const scaledAmount = validateAmount(Math.min(amount * scaleFactor, amount));
-      if (scaledAmount > 0) {
-        const success = fundCategory(categoryId, scaledAmount, paycheckId);
-        if (success) {
-          totalFunded = validateAmount(totalFunded + scaledAmount);
-          fundingResults.push({
-            categoryId,
-            amount: scaledAmount,
-            success
-          });
-
-          // Clear needsAllocation flag for funded items
-          items.forEach(item => {
-            item.needsAllocation = false;
-            item.allocated = (item.allocated || 0) + (
-              item.type === 'savings-goal' ?
-                item.monthlyContribution :
-                item.amount
-            );
-          });
-        }
-      }
-    });
-
-    return {
-      totalFunded,
-      fundingResults,
-      remainingToAllocate: validateAmount(validatedTotal - totalFunded)
-    };
-  }, [monthlyBudget, fundCategory, planningItems]);
 
   /**
    * Get funding suggestions based on active planning items
@@ -405,23 +487,26 @@ export const useEnvelopeBudgeting = ({
   }, [categories, calculateNeededFunding]);
 
   /**
-   * Handle a transaction's impact on category available balance
-   * This is called when a transaction is added or updated
+   * Create transaction impact updates for categories
+   * Returns update objects instead of directly modifying categories
    */
-  const handleTransactionForCategory = useCallback((transaction, oldTransaction = null) => {
+  const createTransactionUpdates = useCallback((transaction, oldTransaction = null) => {
     // Only handle transactions with categories
-    if (!transaction.categoryId) return;
+    if (!transaction.categoryId) return null;
 
     // Validate transaction amount
     const validatedAmount = validateAmount(transaction.amount);
-    if (validatedAmount === 0) return;
+    if (validatedAmount === 0) return null;
+
+    const updates = [];
 
     // Reverse the old transaction's effect if updating
     if (oldTransaction && oldTransaction.categoryId) {
       const validatedOldAmount = validateAmount(oldTransaction.amount);
       if (validatedOldAmount < 0) {
-        setCategories(currentCategories =>
-          currentCategories.map(category => {
+        updates.push({
+          categoryId: oldTransaction.categoryId,
+          update: (category) => {
             if (category.id === oldTransaction.categoryId) {
               const currentAvailable = validateAmount(category.available || 0);
               return {
@@ -430,16 +515,17 @@ export const useEnvelopeBudgeting = ({
               };
             }
             return category;
-          })
-        );
+          }
+        });
       }
     }
 
     // Apply the new transaction's effect
     if (validatedAmount < 0) {
       // Expense - reduce the available amount
-      setCategories(currentCategories =>
-        currentCategories.map(category => {
+      updates.push({
+        categoryId: transaction.categoryId,
+        update: (category) => {
           if (category.id === transaction.categoryId) {
             const currentAvailable = validateAmount(category.available || 0);
             const newAvailable = validateAmount(currentAvailable - Math.abs(validatedAmount));
@@ -451,12 +537,13 @@ export const useEnvelopeBudgeting = ({
             };
           }
           return category;
-        })
-      );
+        }
+      });
     } else if (validatedAmount > 0 && transaction.isInflow) {
       // Income directly to category - increase available amount
-      setCategories(currentCategories =>
-        currentCategories.map(category => {
+      updates.push({
+        categoryId: transaction.categoryId,
+        update: (category) => {
           if (category.id === transaction.categoryId) {
             const currentAllocated = validateAmount(category.allocated || 0);
             const currentAvailable = validateAmount(category.available || 0);
@@ -467,10 +554,12 @@ export const useEnvelopeBudgeting = ({
             };
           }
           return category;
-        })
-      );
+        }
+      });
     }
-  }, [setCategories]);
+
+    return updates.length > 0 ? { updates } : null;
+  }, []);
 
   /**
    * Create a report of category spending and funding
@@ -513,60 +602,33 @@ export const useEnvelopeBudgeting = ({
     };
   }, [transactions, categoryFundingHistory]);
 
-  // Calculate category balances when transactions change
-  useEffect(() => {
-    calculateCategoryBalances();
-  }, [transactions, calculateCategoryBalances]);
-
-  /**
-   * Unified function to transfer funds between categories or between a category and the "to be allocated" pool
-   * This combines the functionality of fundCategory and moveMoney into a single operation
-   * 
-   * @param {string|number} source - Source of funds: either a category ID or 'toBeAllocated'
-   * @param {string|number} destination - Destination for funds: either a category ID or 'toBeAllocated'
-   * @param {number} amount - Amount to transfer (always positive)
-   * @param {string} note - Optional note about the transfer
-   * @param {number} paycheckId - Optional ID of associated paycheck
-   * @returns {boolean} - Whether the transfer was successful
-   */
-  const transferFunds = useCallback((source, destination, amount, note = '', paycheckId = null) => {
-    // Validate inputs
-    if (!source || !destination || amount <= 0) return false;
-    if (source === destination) return false;
-
-    const date = new Date();
-
-    // Case 1: Moving from toBeAllocated to a category (Assign funds to category)
-    if (source === 'toBeAllocated' && typeof destination === 'number') {
-      return fundCategory(destination, amount, paycheckId, date);
-    }
-
-    // Case 2: Moving from a category to toBeAllocated (Remove funds from category)
-    if (typeof source === 'number' && destination === 'toBeAllocated') {
-      return fundCategory(source, -amount, paycheckId, date);
-    }
-
-    // Case 3: Moving between categories (Move money)
-    if (typeof source === 'number' && typeof destination === 'number') {
-      return moveMoney(source, destination, amount, note);
-    }
-
-    return false;
-  }, [fundCategory, moveMoney]);
+  // Note: calculateCategoryBalances is available but not automatically called
+  // to avoid infinite loops. Call it manually when needed.
 
   return {
     // Core envelope budgeting functions
     calculateToBeAllocated,
     calculateNeededFunding,
-    fundCategory,
-    moveMoney,
-    transferFunds,
-    handleTransactionForCategory,
+    createFundingUpdate,
+    createMoveMoneyUpdates,
+    createTransactionUpdates,
+
+    // Account-based allocation (NEW)
+    calculateAccountBasedToBeAllocated,
+    getAccountAvailableToAllocate,
+
+    // Cross-account allocation (NEW - Smart Cross-Account Allocation)
+    validateCrossAccountAllocation,
+    createPendingTransfer,
+    getPendingTransfers,
+    getTotalPendingTransferAmount,
+    completePendingTransfer,
+    cancelPendingTransfer,
+    pendingTransfers,
 
     // Monthly budgeting
     monthlyBudget,
     setMonthlyBudgetForCategory,
-    autoFundCategories,
 
     // History and reporting
     categoryFundingHistory,

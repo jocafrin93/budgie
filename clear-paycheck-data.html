@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Paycheck Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+
+        button:hover {
+            background-color: #c82333;
+        }
+
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .info {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Clear Paycheck Mock Data</h1>
+
+        <div class="info">
+            <strong>Purpose:</strong> This utility will clear the mock paycheck data from your cloud storage so the
+            calendar shows a clean state.
+        </div>
+
+        <div id="status"></div>
+
+        <button onclick="clearPaycheckData()">Clear Paycheck Data</button>
+        <button onclick="showCurrentData()">Show Current Data</button>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Simple mock for Google Drive API (since we can't access the real one from this context)
+        function clearPaycheckData() {
+            const statusDiv = document.getElementById('status');
+            const outputDiv = document.getElementById('output');
+
+            statusDiv.innerHTML = '<p class="info">Clearing paycheck data...</p>';
+
+            // Clear localStorage first
+            try {
+                localStorage.removeItem('budgetCalc_paychecks');
+                localStorage.removeItem('budgetCalc_paySchedule');
+                localStorage.removeItem('budgetCalc_currentPay');
+
+                statusDiv.innerHTML = '<p class="success">✅ Local storage cleared successfully!</p>';
+                outputDiv.innerHTML = `
+                    <h3>Next Steps:</h3>
+                    <ol>
+                        <li>Go back to your budget app</li>
+                        <li>The app should now show an empty calendar</li>
+                        <li>If you still see mock data, try refreshing the page</li>
+                        <li>The cloud storage will be updated automatically when you next use the app</li>
+                    </ol>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        function showCurrentData() {
+            const outputDiv = document.getElementById('output');
+
+            const paychecks = localStorage.getItem('budgetCalc_paychecks');
+            const paySchedule = localStorage.getItem('budgetCalc_paySchedule');
+            const currentPay = localStorage.getItem('budgetCalc_currentPay');
+
+            outputDiv.innerHTML = `
+                <h3>Current Local Storage Data:</h3>
+                <h4>Paychecks:</h4>
+                <pre>${paychecks || 'null'}</pre>
+                <h4>Pay Schedule (legacy):</h4>
+                <pre>${paySchedule || 'null'}</pre>
+                <h4>Current Pay (legacy):</h4>
+                <pre>${currentPay || 'null'}</pre>
+            `;
+        }
+
+        // Show current data on load
+        showCurrentData();
+    </script>
+</body>
+
+</html>

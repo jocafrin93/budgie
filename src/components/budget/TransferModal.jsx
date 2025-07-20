@@ -1,0 +1,473 @@
+import { AlertTriangle, ArrowRight, CheckCircle, Info, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAccountManagement } from '../../hooks/useAccountManagement';
+import { useEnvelopeBudgeting } from '../../hooks/useEnvelopeBudgeting';
+
+const TransferModal = ({
+    isOpen,
+    onClose,
+    targetCategory,
+    categories = [],
+    activeBudgetAllocations = [],
+    onTransferComplete
+}) => {
+    const [fromSource, setFromSource] = useState('');
+    const [toCategory, setToCategory] = useState('');
+    const [amount, setAmount] = useState('');
+    const [alerts, setAlerts] = useState([]);
+
+    const { accounts } = useAccountManagement();
+    const { createMoveMoneyUpdates, calculateToBeAllocated } = useEnvelopeBudgeting({
+        categories,
+        accounts
+    });
+
+    // Calculate "To be allocated" amount
+    const toBeAllocated = useMemo(() => {
+        return calculateToBeAllocated();
+    }, [calculateToBeAllocated]);
+
+    // Get funding account for a category
+    const getCategoryFundingAccount = useCallback((categoryId) => {
+        const allocation = activeBudgetAllocations.find(a => a.categoryId === categoryId);
+        const accountId = allocation?.sourceAccountId;
+        return accounts.find(acc => acc.id === accountId);
+    }, [activeBudgetAllocations, accounts]);
+
+    // Reset form when modal opens/closes
+    useEffect(() => {
+        if (isOpen && targetCategory) {
+            if (targetCategory.id === 'to-be-allocated') {
+                // Special case: allocating FROM "Available to Allocate" TO categories
+                setFromSource('to-be-allocated');
+                setAmount(''); // Let user enter amount
+                setToCategory(''); // User will select destination category
+            } else {
+                // Normal case: moving money OUT of the target category
+                setFromSource(targetCategory.id.toString());
+                // Pre-fill the amount with the full available amount
+                setAmount(targetCategory.available?.toString() || '0');
+                // Clear destination - user will select where to move it
+                setToCategory('');
+            }
+            setAlerts([]);
+        } else if (!isOpen) {
+            // Reset form when closing
+            setFromSource('');
+            setToCategory('');
+            setAmount('');
+            setAlerts([]);
+        }
+    }, [isOpen, targetCategory]);
+
+    // Calculate alerts when form changes
+    useEffect(() => {
+        if (!fromSource || !toCategory || !amount || parseFloat(amount) <= 0) {
+            setAlerts([]);
+            return;
+        }
+
+        const transferAmount = parseFloat(amount);
+        const newAlerts = [];
+
+        if (fromSource === 'to-be-allocated') {
+            // Transferring from unallocated funds
+            if (transferAmount > toBeAllocated) {
+                newAlerts.push({
+                    type: 'error',
+                    message: `Not enough unallocated funds. Available: $${toBeAllocated.toFixed(2)}`
+                });
+            } else {
+                newAlerts.push({
+                    type: 'success',
+                    message: `Allocating $${transferAmount.toFixed(2)} from unassigned funds`
+                });
+            }
+        } else {
+            // Transferring between categories
+            const fromCategoryId = parseInt(fromSource, 10);
+            const toCategoryId = parseInt(toCategory, 10);
+
+            const fromCategoryData = categories.find(c => c.id === fromCategoryId);
+            const toCategoryData = categories.find(c => c.id === toCategoryId);
+
+            if (fromCategoryData && toCategoryData) {
+                // Check if source category has enough funds
+                const fromAvailable = fromCategoryData.available || 0;
+                if (transferAmount > fromAvailable) {
+                    newAlerts.push({
+                        type: 'error',
+                        message: `${fromCategoryData.name} only has $${fromAvailable.toFixed(2)} available`
+                    });
+                } else {
+                    // Check account implications
+                    const fromAccount = getCategoryFundingAccount(fromCategoryId);
+                    const toAccount = getCategoryFundingAccount(toCategoryId);
+
+                    if (fromAccount && toAccount) {
+                        if (fromAccount.id === toAccount.id) {
+                            // Same account transfer
+                            newAlerts.push({
+                                type: 'success',
+                                message: `Moving money within ${fromAccount.name} - no account transfer needed`
+                            });
+                        } else {
+                            // Cross-account transfer
+                            newAlerts.push({
+                                type: 'warning',
+                                message: `Remember to transfer $${transferAmount.toFixed(2)} from ${fromAccount.name} to ${toAccount.name} to keep accounts balanced`
+                            });
+
+                            // Check if source account has sufficient balance
+                            if (fromAccount.balance < transferAmount) {
+                                newAlerts.push({
+                                    type: 'info',
+                                    message: `Note: ${fromAccount.name} balance ($${fromAccount.balance.toFixed(2)}) is less than transfer amount`
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        setAlerts(newAlerts);
+    }, [fromSource, toCategory, amount, categories, toBeAllocated, accounts, activeBudgetAllocations, getCategoryFundingAccount]);
+
+    // Get available source options
+    const sourceOptions = useMemo(() => {
+        const options = [];
+
+        // Add "To be allocated" if there are unallocated funds
+        if (toBeAllocated > 0) {
+            options.push({
+                value: 'to-be-allocated',
+                label: `To be allocated ($${toBeAllocated.toFixed(2)} available)`,
+                available: toBeAllocated,
+                account: null
+            });
+        }
+
+        // Add categories with available funds
+        categories.forEach(category => {
+            if (category.available > 0 && category.id !== parseInt(toCategory, 10)) {
+                const account = getCategoryFundingAccount(category.id);
+                options.push({
+                    value: category.id.toString(),
+                    label: `${category.name} ($${category.available.toFixed(2)} available)${account ? ` - ${account.name}` : ''}`,
+                    available: category.available,
+                    account
+                });
+            }
+        });
+
+        return options;
+    }, [categories, toBeAllocated, toCategory, getCategoryFundingAccount]);
+
+    // Get destination category options
+    const destinationOptions = useMemo(() => {
+        const options = [];
+
+        // Add "To be allocated" as first option
+        options.push({
+            value: 'to-be-allocated',
+            label: 'To be allocated (unassigned funds)',
+            account: null
+        });
+
+        // Add all categories except the source category
+        const sourceId = parseInt(fromSource, 10);
+        categories.forEach(category => {
+            if (category.id !== sourceId) {
+                const account = getCategoryFundingAccount(category.id);
+                options.push({
+                    value: category.id.toString(),
+                    label: `${category.name}${account ? ` - ${account.name}` : ''}`,
+                    account
+                });
+            }
+        });
+
+        return options;
+    }, [categories, getCategoryFundingAccount, fromSource]);
+
+    const handleTransfer = () => {
+        console.log('🔄 Transfer initiated');
+        console.log('📊 Transfer details:', { fromSource, toCategory, amount });
+
+        if (!fromSource || !toCategory || !amount) {
+            console.log('❌ Missing required fields:', { fromSource, toCategory, amount });
+            return;
+        }
+
+        const transferAmount = parseFloat(amount);
+        if (transferAmount <= 0) {
+            console.log('❌ Invalid transfer amount:', transferAmount);
+            return;
+        }
+
+        // Check for errors in alerts
+        const hasErrors = alerts.some(alert => alert.type === 'error');
+        if (hasErrors) {
+            console.log('❌ Transfer blocked by errors:', alerts.filter(alert => alert.type === 'error'));
+            return;
+        }
+
+        console.log('✅ Transfer validation passed');
+
+        try {
+            if (toCategory === 'to-be-allocated') {
+                console.log('💰 Handling transfer back to unallocated funds');
+                const transferData = {
+                    type: 'deallocate',
+                    fromCategory: parseInt(fromSource, 10),
+                    toSource: 'unallocated',
+                    amount: transferAmount,
+                    alerts: alerts.filter(alert => alert.type !== 'error')
+                };
+                console.log('📤 Calling onTransferComplete with:', transferData);
+                onTransferComplete?.(transferData);
+            } else if (fromSource === 'to-be-allocated') {
+                console.log('💰 Handling allocation from unassigned funds');
+                const transferData = {
+                    type: 'allocation',
+                    fromSource: 'unallocated',
+                    toCategory: parseInt(toCategory, 10),
+                    amount: transferAmount,
+                    alerts: alerts.filter(alert => alert.type !== 'error')
+                };
+                console.log('📤 Calling onTransferComplete with:', transferData);
+                onTransferComplete?.(transferData);
+            } else {
+                console.log('🔄 Handling category-to-category transfer');
+                const fromCategoryId = parseInt(fromSource, 10);
+                const toCategoryId = parseInt(toCategory, 10);
+
+                console.log('🏗️ Creating move money updates...');
+                const transferUpdates = createMoveMoneyUpdates(fromCategoryId, toCategoryId, transferAmount);
+                console.log('📊 Transfer updates result:', transferUpdates);
+
+                if (transferUpdates && transferUpdates.updates) {
+                    // Create custom update functions that explicitly modify both available AND allocated
+                    const enhancedUpdates = transferUpdates.updates.map(updateObj => {
+                        const originalUpdate = updateObj.update;
+
+                        // Create a wrapper that logs and ensures both properties are updated
+                        return {
+                            ...updateObj,
+                            update: (category) => {
+                                // Apply the original update function to get the changes
+                                const updatedCategory = originalUpdate(category);
+
+                                // Calculate how much available changed
+                                const availableDelta = updatedCategory.available - (category.available || 0);
+
+                                // Explicitly set both available AND allocated by the same amount
+                                // This is critical for persistence - allocated must change when available changes
+                                const finalCategory = {
+                                    ...updatedCategory,
+                                    allocated: (category.allocated || 0) + availableDelta
+                                };
+
+                                console.log(`💰 Enhanced update for ${category.name}:`);
+                                console.log(`   Available: ${category.available} → ${finalCategory.available}`);
+                                console.log(`   Allocated: ${category.allocated} → ${finalCategory.allocated}`);
+
+                                return finalCategory;
+                            }
+                        };
+                    });
+
+                    const transferData = {
+                        type: 'transfer',
+                        fromCategory: fromCategoryId,
+                        toCategory: toCategoryId,
+                        amount: transferAmount,
+                        updateFunctions: enhancedUpdates, // Use enhanced updates that modify both properties
+                        alerts: alerts.filter(alert => alert.type !== 'error')
+                    };
+                    console.log('📤 Calling onTransferComplete with:', transferData);
+                    console.log('🧩 Transfer update functions included:', !!enhancedUpdates);
+                    onTransferComplete?.(transferData);
+                } else {
+                    console.log('❌ createMoveMoneyUpdates returned null/undefined');
+                }
+            }
+
+            console.log('🚪 Closing modal');
+            onClose();
+        } catch (error) {
+            console.error('💥 Transfer failed with error:', error);
+            setAlerts(prev => [...prev, {
+                type: 'error',
+                message: 'Transfer failed. Please try again.'
+            }]);
+        }
+    };
+
+    const getAlertIcon = (type) => {
+        switch (type) {
+            case 'success':
+                return <CheckCircle className="w-4 h-4 text-success" />;
+            case 'warning':
+                return <AlertTriangle className="w-4 h-4 text-warning" />;
+            case 'error':
+                return <AlertTriangle className="w-4 h-4 text-error" />;
+            case 'info':
+                return <Info className="w-4 h-4 text-info" />;
+            default:
+                return null;
+        }
+    };
+
+    const getAlertStyles = (type) => {
+        switch (type) {
+            case 'success':
+                return 'bg-success/10 border-success text-success';
+            case 'warning':
+                return 'bg-warning/10 border-warning text-warning';
+            case 'error':
+                return 'bg-error/10 border-error text-error';
+            case 'info':
+                return 'bg-info/10 border-info text-info';
+            default:
+                return 'bg-base-200 border-base-300 text-base-content';
+        }
+    };
+
+    if (!isOpen) return null;
+
+    const maxAmount = fromSource === 'to-be-allocated'
+        ? toBeAllocated
+        : sourceOptions.find(opt => opt.value === fromSource)?.available || 0;
+
+    const canTransfer = fromSource && toCategory && amount && parseFloat(amount) > 0 &&
+        !alerts.some(alert => alert.type === 'error');
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-base-content/50 backdrop-blur-sm transition-opacity">
+            <div className="bg-base-100 rounded-lg shadow-xl w-full max-w-md mx-4">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-base-300">
+                    <h3 className="text-lg font-semibold text-base-content">
+                        Transfer Money
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="text-base-content/60 hover transition-colors"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Form */}
+                <div className="p-6 space-y-4">
+                    {/* From Source - Display only */}
+                    <div>
+                        <label className="block text-sm font-medium text-base-content mb-2">
+                            FROM
+                        </label>
+                        <div className="w-full px-3 py-2 border border-base-300 bg-base-200 text-base-content rounded-lg">
+                            {targetCategory?.name || 'Unknown Category'} (${(targetCategory?.available || 0).toFixed(2)} available)
+                        </div>
+                    </div>
+
+                    {/* Transfer Arrow */}
+                    <div className="flex justify-center">
+                        <ArrowRight className="w-5 h-5 text-base-content/60" />
+                    </div>
+
+                    {/* To Category */}
+                    <div>
+                        <label className="block text-sm font-medium text-base-content mb-2">
+                            MOVE TO
+                        </label>
+                        <select
+                            value={toCategory}
+                            onChange={(e) => setToCategory(e.target.value)}
+                            className="w-full px-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-lg focus:border-primary"
+                        >
+                            <option value="">Select destination...</option>
+                            {destinationOptions.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Amount */}
+                    <div>
+                        <label className="block text-sm font-medium text-base-content mb-2">
+                            AMOUNT
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">
+                                $
+                            </span>
+                            <input
+                                type="number"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                placeholder="0.00"
+                                min="0"
+                                max={maxAmount}
+                                step="0.01"
+                                className="w-full pl-8 pr-3 py-2 border border-base-300 bg-base-100 text-base-content rounded-lg focus:border-primary"
+                            />
+                        </div>
+                        {maxAmount > 0 && (
+                            <div className="mt-1 text-xs text-base-content/60">
+                                Maximum: ${maxAmount.toFixed(2)}
+                                <button
+                                    type="button"
+                                    onClick={() => setAmount(maxAmount.toString())}
+                                    className="ml-2 text-info hover:underline"
+                                >
+                                    Use max
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Alerts */}
+                    {alerts.length > 0 && (
+                        <div className="space-y-2">
+                            {alerts.map((alert, index) => (
+                                <div
+                                    key={index}
+                                    className={`flex items-start gap-2 p-3 rounded-lg border ${getAlertStyles(alert.type)}`}
+                                >
+                                    {getAlertIcon(alert.type)}
+                                    <span className="text-sm">{alert.message}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-base-300">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 hover:text-base-content hover:border-base-400 transition-all duration-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleTransfer}
+                        disabled={!canTransfer}
+                        className={`px-4 py-2 rounded-lg transition-colors ${canTransfer
+                            ? 'bg-primary hover text-white'
+                            : 'bg-base-300 text-base-content/60 cursor-not-allowed'
+                            }`}
+                    >
+                        Transfer Money
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default TransferModal;

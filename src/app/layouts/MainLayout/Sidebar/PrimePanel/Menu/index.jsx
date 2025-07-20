@@ -24,6 +24,7 @@ import {
 
 export function Menu({ nav, pathname }) {
   const initialActivePath = useMemo(() => {
+    if (!nav || !Array.isArray(nav)) return "";
     return nav.find((item) => isRouteActive(item.path, pathname))?.path;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -34,11 +35,12 @@ export function Menu({ nav, pathname }) {
   useDidUpdate(recalculate, [nav]);
 
   useDidUpdate(() => {
+    if (!nav || !Array.isArray(nav)) return;
     const activePath = nav.find((item) =>
       isRouteActive(item.path, pathname),
     )?.path;
 
-    if (activePath && expanded !== activePath) {     
+    if (activePath && expanded !== activePath) {
       setExpanded(activePath);
     }
   }, [nav, pathname]);
@@ -47,6 +49,15 @@ export function Menu({ nav, pathname }) {
     const activeItem = ref?.current.querySelector("[data-menu-active=true]");
     activeItem?.scrollIntoView({ block: "center" });
   }, []);
+
+  // Handle case where nav might be undefined - after all hooks
+  if (!nav || !Array.isArray(nav)) {
+    return (
+      <div className="p-4 text-center text-base-content/60">
+        Navigation not available
+      </div>
+    );
+  }
 
   return (
     <Accordion

@@ -35,6 +35,15 @@ export function Menu({ nav, setActiveSegment, activeSegment }) {
     };
   };
 
+  // Handle case where nav might be undefined - after all hooks
+  if (!nav || !Array.isArray(nav)) {
+    return (
+      <div className="p-4 text-center text-base-content/60">
+        Navigation not available
+      </div>
+    );
+  }
+
   return (
     <ScrollShadow
       data-root-menu

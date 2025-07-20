@@ -1,7 +1,7 @@
 // Import Dependencies
-import { forwardRef } from "react";
-import PropTypes from "prop-types";
 import clsx from "clsx";
+import PropTypes from "prop-types";
+import { forwardRef } from "react";
 
 // Local Imports
 import { colorFromText } from "utils/colorFromText";
@@ -11,12 +11,12 @@ import { setThisClass } from "utils/setThisClass";
 
 const variants = {
   filled: "bg-this text-white",
-  soft: "text-this-darker bg-this-darker/10 dark:text-this-lighter dark:bg-this-lighter/10",
+  soft: "text-this-darker bg-this-darker/10",
 };
 
 const neutralVariants = {
-  filled: "bg-gray-200 text-gray-700 dark:bg-surface-2 dark:text-dark-100",
-  soft: "bg-gray-200/30 text-gray-700 dark:bg-surface-2/30 dark:text-dark-100",
+  filled: "bg-base-300 text-base-content/80 text-base-content",
+  soft: "bg-base-300/30 text-base-content/80 text-base-content",
 };
 
 const Avatar = forwardRef((props, ref) => {
@@ -70,7 +70,7 @@ const Avatar = forwardRef((props, ref) => {
       {src || srcSet ? (
         <ImgComponent
           className={clsx(
-            "avatar-image avatar-display relative h-full w-full before:absolute before:inset-0 before:rounded-[inherit] before:bg-gray-150 dark:before:bg-dark-600",
+            "avatar-image avatar-display relative h-full w-full before:absolute before:inset-0 before:rounded-[inherit] before",
             classNames?.display,
             classNames?.image,
           )}
@@ -124,3 +124,4 @@ Avatar.propTypes = {
 };
 
 export { Avatar };
+

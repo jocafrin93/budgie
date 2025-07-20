@@ -1,7 +1,7 @@
 // Import Dependencies
+import clsx from "clsx";
 import PropTypes from "prop-types";
 import { forwardRef } from "react";
-import clsx from "clsx";
 
 // Local Imports
 import { COLORS } from "constants/app.constant";
@@ -12,15 +12,15 @@ import { setThisClass } from "utils/setThisClass";
 const variants = {
   filled: "text-white bg-this",
   outlined:
-    "border border-this/30 text-this dark:border-this-lighter/30 dark:text-this-lighter",
-  soft: "text-this-darker bg-this-darker/[0.07] dark:text-this-lighter dark:bg-this-lighter/10",
+    "border border-this/30 text-this",
+  soft: "text-this-darker bg-this-darker/[0.07]",
 };
 
 const neutralVariants = {
-  filled: "bg-gray-200 text-gray-900 dark:bg-surface-2 dark:text-dark-50",
+  filled: "bg-base-300 text-base-content",
   outlined:
-    "border border-gray-300 text-gray-900 dark:border-surface-1 dark:text-dark-50",
-  soft: "bg-gray-200/30 text-gray-900 dark:bg-dark-500/30 dark:text-dark-50",
+    "border border-base-300 text-base-content",
+  soft: "bg-base-300/30 text-base-content bg-base-100/30",
 };
 
 const Badge = forwardRef((props, ref) => {
@@ -44,20 +44,20 @@ const Badge = forwardRef((props, ref) => {
         "badge-base",
         !unstyled
           ? [
-              "badge",
-              mergedColor === "neutral"
-                ? [
-                    neutralVariants[variant],
-                    isGlow &&
-                      "shadow-lg shadow-gray-200/50 dark:shadow-dark-450/50",
-                  ]
-                : [
-                    setThisClass(mergedColor),
-                    variants[variant],
-                    isGlow &&
-                      "shadow-lg shadow-this/50 dark:shadow-this-light/50",
-                  ],
-            ]
+            "badge",
+            mergedColor === "neutral"
+              ? [
+                neutralVariants[variant],
+                isGlow &&
+                "shadow-lg shadow-gray-200/50",
+              ]
+              : [
+                setThisClass(mergedColor),
+                variants[variant],
+                isGlow &&
+                "shadow-lg shadow-this/50",
+              ],
+          ]
           : color && color !== "neutral" && setThisClass(color),
         className,
       )}
@@ -82,3 +82,4 @@ Badge.propTypes = {
 };
 
 export { Badge };
+

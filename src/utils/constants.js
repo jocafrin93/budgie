@@ -21,7 +21,7 @@ export const priorityColors = {
 
 export const categoryColors = [
     "bg-gradient-to-r from-purple-500 to-pink-500",
-    "bg-gradient-to-r from-pink-500 to-blue-500",
+    "bg-gradient-to-r from-pink-500 to-info-500",
     "bg-gradient-to-r from-orange-500 to-red-600",
     "bg-gradient-to-r from-green-500 to-yellow-400",
     "bg-gradient-to-r from-pink-500 to-red-500",
@@ -29,4 +29,3 @@ export const categoryColors = [
     "bg-gradient-to-r from-purple-600 to-teal-500",
     "bg-gradient-to-r from-violet-600 to-purple-800",
 ];
-

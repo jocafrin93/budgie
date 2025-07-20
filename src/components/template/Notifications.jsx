@@ -10,7 +10,6 @@ import {
   TabPanels,
   Transition,
 } from "@headlessui/react";
-import PropTypes from "prop-types";
 import {
   ArchiveBoxXMarkIcon,
   Cog6ToothIcon,
@@ -18,16 +17,17 @@ import {
   EnvelopeIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
-import { IoCheckmarkDoneOutline } from "react-icons/io5";
 import clsx from "clsx";
+import PropTypes from "prop-types";
 import { Fragment, useState } from "react";
+import { IoCheckmarkDoneOutline } from "react-icons/io5";
 import { Link } from "react-router";
 
 // Local Imports
-import { Avatar, AvatarDot, Badge, Button } from "components/ui";
 import { useThemeContext } from "app/contexts/theme/context";
 import AlarmIcon from "assets/dualicons/alarm.svg?react";
 import GirlEmptyBox from "assets/illustrations/girl-empty-box.svg?react";
+import { Avatar, AvatarDot, Badge, Button } from "components/ui";
 
 // ----------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ export function Notifications() {
         isIcon
         className="relative size-9 rounded-full"
       >
-        <AlarmIcon className="size-6 text-gray-900 dark:text-dark-100" />
+        <AlarmIcon className="size-6 text-base-content" />
         {notifications.length > 0 && (
           <AvatarDot
             color="error"
@@ -115,14 +115,14 @@ export function Notifications() {
       >
         <PopoverPanel
           anchor={{ to: "bottom end", gap: 8 }}
-          className="z-70 mx-4 flex h-[min(32rem,calc(100vh-6rem))] w-[calc(100vw-2rem)] flex-col rounded-lg border border-gray-150 bg-white shadow-soft dark:border-dark-800 dark:bg-dark-700 dark:shadow-soft-dark sm:m-0 sm:w-80"
+          className="z-70 mx-4 flex h-[min(32rem,calc(100vh-6rem))] w-[calc(100vw-2rem)] flex-col rounded-lg border border-base-200 bg-base-100 shadow-soft bg-base-100 sm:m-0 sm:w-80"
         >
           {({ close }) => (
             <div className="flex grow flex-col overflow-hidden">
-              <div className="rounded-t-lg bg-gray-100 dark:bg-dark-800">
+              <div className="rounded-t-lg bg-base-200">
                 <div className="flex items-center justify-between px-4 pt-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-gray-800 dark:text-dark-100">
+                    <h3 className="font-medium text-base-content text-base-content">
                       Notifications
                     </h3>
                     {notifications.length > 0 && (
@@ -152,7 +152,7 @@ export function Notifications() {
                 selectedIndex={activeTab}
                 onChange={setActiveTab}
               >
-                <TabList className="hide-scrollbar flex shrink-0 overflow-x-auto scroll-smooth bg-gray-100 px-3 dark:bg-dark-800">
+                <TabList className="hide-scrollbar flex shrink-0 overflow-x-auto scroll-smooth bg-base-200 px-3 bg-base-100">
                   <Tab
                     onFocus={(e) => {
                       e.target.parentNode.scrollLeft =
@@ -163,8 +163,8 @@ export function Notifications() {
                       clsx(
                         "shrink-0 scroll-mx-16 whitespace-nowrap border-b-2 px-3 py-2 font-medium",
                         selected
-                          ? "border-primary-600 text-primary-600 dark:border-primary-500 dark:text-primary-400"
-                          : "border-transparent hover:text-gray-800 focus:text-gray-800 dark:hover:text-dark-100 dark:focus:text-dark-100",
+                          ? "border-primary text-primary text-primary"
+                          : "border-transparent hover:bg-base-200 focus:bg-base-200",
                       )
                     }
                     as={Button}
@@ -184,8 +184,8 @@ export function Notifications() {
                         clsx(
                           "shrink-0 scroll-mx-16 whitespace-nowrap border-b-2 px-3 py-2 font-medium",
                           selected
-                            ? "border-primary-600 text-primary-600 dark:border-primary-500 dark:text-primary-400"
-                            : "border-transparent hover:text-gray-800 focus:text-gray-800 dark:hover:text-dark-100 dark:focus:text-dark-100",
+                            ? "border-primary text-primary text-primary"
+                            : "border-transparent hover:bg-base-200 focus:bg-base-200",
                         )
                       }
                       as={Button}
@@ -196,7 +196,7 @@ export function Notifications() {
                   ))}
                 </TabList>
                 {(notifications.length > 0 && activeTab === 0) ||
-                filteredNotifications.length > 0 ? (
+                  filteredNotifications.length > 0 ? (
                   <TabPanels as={Fragment}>
                     <TabPanel className="custom-scrollbar grow space-y-4 overflow-y-auto overflow-x-hidden p-4 outline-hidden">
                       {notifications.map((item) => (
@@ -228,16 +228,16 @@ export function Notifications() {
               </TabGroup>
               {((notifications.length > 0 && activeTab === 0) ||
                 filteredNotifications.length > 0) && (
-                <div className="shrink-0 overflow-hidden rounded-b-lg bg-gray-100 dark:bg-dark-800">
-                  <Button
-                    // variant="flat"
-                    className="w-full rounded-t-none"
-                    onClick={clearNotifications}
-                  >
-                    <span>Archive all notifications</span>
-                  </Button>
-                </div>
-              )}
+                  <div className="shrink-0 overflow-hidden rounded-b-lg bg-base-200">
+                    <Button
+                      // variant="flat"
+                      className="w-full rounded-t-none"
+                      onClick={clearNotifications}
+                    >
+                      <span>Archive all notifications</span>
+                    </Button>
+                  </div>
+                )}
             </div>
           )}
         </PopoverPanel>
@@ -277,11 +277,11 @@ function NotificationItem({ data, remove }) {
           <Icon className="size-4.5" />
         </Avatar>
         <div className="min-w-0">
-          <p className="-mt-0.5 truncate font-medium text-gray-800 dark:text-dark-100">
+          <p className="-mt-0.5 truncate font-medium text-base-content text-base-content">
             {data.title}
           </p>
           <div className="mt-0.5 truncate text-xs">{data.description}</div>
-          <div className="mt-1 truncate text-xs text-gray-400 dark:text-dark-300">
+          <div className="mt-1 truncate text-xs text-base-content/60">
             {data.time}
           </div>
         </div>

@@ -7,6 +7,7 @@ import { HiPencil } from "react-icons/hi";
 // Local Imports
 import { PreviewImg } from "components/shared/PreviewImg";
 import { Avatar, Button, Input, Upload } from "components/ui";
+import { GoogleDriveSync } from "components/shared/GoogleDriveSync";
 
 // ----------------------------------------------------------------------
 
@@ -168,6 +169,20 @@ export default function General() {
               Connect
             </Button>
           </div>
+        </div>
+      </div>
+      <div className="my-7 h-px bg-gray-200 dark:bg-dark-500" />
+      <div>
+        <div>
+          <p className="text-base font-medium text-gray-800 dark:text-dark-100">
+            Data Backup & Sync
+          </p>
+          <p className="mt-0.5">
+            Backup your budget data to Google Drive for access across devices.
+          </p>
+        </div>
+        <div className="mt-4">
+          <GoogleDriveSync />
         </div>
       </div>
       <div className="mt-8 flex justify-end space-x-3 ">

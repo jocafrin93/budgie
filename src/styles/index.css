@@ -9,6 +9,9 @@
 @import "tailwindcss";
 
 @import "./colors.css" layer(theme);
+@import "./daisy-themes.css" layer(utilities);
+@import "./daisy-utilities.css" layer(utilities);
+@import "./daisy-tailux-bridge.css" layer(utilities);
 
 @custom-variant dark (&:is(.dark *));
 
@@ -111,22 +114,24 @@
   --color-dark-800: #15161a;
   --color-dark-900: #0e0f11;
 
-  --color-primary-50: var(--color-indigo-50);
-  --color-primary-100: var(--color-indigo-100);
-  --color-primary-200: var(--color-indigo-200);
-  --color-primary-300: var(--color-indigo-300);
-  --color-primary-400: var(--color-indigo-400);
-  --color-primary-500: var(--color-indigo-500);
-  --color-primary-600: var(--color-indigo-600);
-  --color-primary-700: var(--color-indigo-700);
-  --color-primary-800: var(--color-indigo-800);
-  --color-primary-900: var(--color-indigo-900);
-  --color-primary-950: var(--color-indigo-950);
+  /* Primary colors mapped to DaisyUI variables */
+  --color-primary-50: rgb(var(--color-primary) / 0.05);
+  --color-primary-100: rgb(var(--color-primary) / 0.1);
+  --color-primary-200: rgb(var(--color-primary) / 0.2);
+  --color-primary-300: rgb(var(--color-primary) / 0.3);
+  --color-primary-400: rgb(var(--color-primary) / 0.4);
+  --color-primary-500: rgb(var(--color-primary) / 0.6);
+  --color-primary-600: rgb(var(--color-primary) / 1);
+  --color-primary-700: rgb(var(--color-primary-focus) / 1);
+  --color-primary-800: rgb(var(--color-primary) / 0.9);
+  --color-primary-900: rgb(var(--color-primary) / 0.95);
+  --color-primary-950: rgb(var(--color-primary) / 0.98);
 
   @keyframes shimmer {
     from {
       background-position: 0 0;
     }
+
     to {
       background-position: -200% 0;
     }
@@ -134,11 +139,247 @@
 }
 
 @layer base {
+
   *,
   ::after,
   ::before,
   ::backdrop,
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* Override for input elements to use primary color */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="time"],
+  input[type="url"],
+  input[type="week"],
+  textarea,
+  select {
+    border-color: rgb(var(--color-primary) / 0.2);
+  }
+
+  /* OKLCH theme overrides for inputs */
+  [data-theme*="abyss"] input[type="text"],
+  [data-theme*="abyss"] input[type="email"],
+  [data-theme*="abyss"] input[type="password"],
+  [data-theme*="abyss"] input[type="number"],
+  [data-theme*="abyss"] input[type="date"],
+  [data-theme*="abyss"] input[type="datetime-local"],
+  [data-theme*="abyss"] input[type="month"],
+  [data-theme*="abyss"] input[type="search"],
+  [data-theme*="abyss"] input[type="tel"],
+  [data-theme*="abyss"] input[type="time"],
+  [data-theme*="abyss"] input[type="url"],
+  [data-theme*="abyss"] input[type="week"],
+  [data-theme*="abyss"] textarea,
+  [data-theme*="abyss"] select,
+  [data-theme*="vscode-dark"] input[type="text"],
+  [data-theme*="vscode-dark"] input[type="email"],
+  [data-theme*="vscode-dark"] input[type="password"],
+  [data-theme*="vscode-dark"] input[type="number"],
+  [data-theme*="vscode-dark"] input[type="date"],
+  [data-theme*="vscode-dark"] input[type="datetime-local"],
+  [data-theme*="vscode-dark"] input[type="month"],
+  [data-theme*="vscode-dark"] input[type="search"],
+  [data-theme*="vscode-dark"] input[type="tel"],
+  [data-theme*="vscode-dark"] input[type="time"],
+  [data-theme*="vscode-dark"] input[type="url"],
+  [data-theme*="vscode-dark"] input[type="week"],
+  [data-theme*="vscode-dark"] textarea,
+  [data-theme*="vscode-dark"] select,
+  [data-theme*="silk"] input[type="text"],
+  [data-theme*="silk"] input[type="email"],
+  [data-theme*="silk"] input[type="password"],
+  [data-theme*="silk"] input[type="number"],
+  [data-theme*="silk"] input[type="date"],
+  [data-theme*="silk"] input[type="datetime-local"],
+  [data-theme*="silk"] input[type="month"],
+  [data-theme*="silk"] input[type="search"],
+  [data-theme*="silk"] input[type="tel"],
+  [data-theme*="silk"] input[type="time"],
+  [data-theme*="silk"] input[type="url"],
+  [data-theme*="silk"] input[type="week"],
+  [data-theme*="silk"] textarea,
+  [data-theme*="silk"] select,
+  [data-theme*="aurora"] input[type="text"],
+  [data-theme*="aurora"] input[type="email"],
+  [data-theme*="aurora"] input[type="password"],
+  [data-theme*="aurora"] input[type="number"],
+  [data-theme*="aurora"] input[type="date"],
+  [data-theme*="aurora"] input[type="datetime-local"],
+  [data-theme*="aurora"] input[type="month"],
+  [data-theme*="aurora"] input[type="search"],
+  [data-theme*="aurora"] input[type="tel"],
+  [data-theme*="aurora"] input[type="time"],
+  [data-theme*="aurora"] input[type="url"],
+  [data-theme*="aurora"] input[type="week"],
+  [data-theme*="aurora"] textarea,
+  [data-theme*="aurora"] select {
+    border-color: var(--color-primary);
+    opacity: 0.2;
+  }
+
+  /* Hover states */
+  input[type="text"]:hover,
+  input[type="email"]:hover,
+  input[type="password"]:hover,
+  input[type="number"]:hover,
+  input[type="date"]:hover,
+  input[type="datetime-local"]:hover,
+  input[type="month"]:hover,
+  input[type="search"]:hover,
+  input[type="tel"]:hover,
+  input[type="time"]:hover,
+  input[type="url"]:hover,
+  input[type="week"]:hover,
+  textarea:hover,
+  select:hover {
+    border-color: rgb(var(--color-primary) / 0.3);
+  }
+
+  [data-theme*="abyss"] input[type="text"]:hover,
+  [data-theme*="abyss"] input[type="email"]:hover,
+  [data-theme*="abyss"] input[type="password"]:hover,
+  [data-theme*="abyss"] input[type="number"]:hover,
+  [data-theme*="abyss"] input[type="date"]:hover,
+  [data-theme*="abyss"] input[type="datetime-local"]:hover,
+  [data-theme*="abyss"] input[type="month"]:hover,
+  [data-theme*="abyss"] input[type="search"]:hover,
+  [data-theme*="abyss"] input[type="tel"]:hover,
+  [data-theme*="abyss"] input[type="time"]:hover,
+  [data-theme*="abyss"] input[type="url"]:hover,
+  [data-theme*="abyss"] input[type="week"]:hover,
+  [data-theme*="abyss"] textarea:hover,
+  [data-theme*="abyss"] select:hover,
+  [data-theme*="vscode-dark"] input[type="text"]:hover,
+  [data-theme*="vscode-dark"] input[type="email"]:hover,
+  [data-theme*="vscode-dark"] input[type="password"]:hover,
+  [data-theme*="vscode-dark"] input[type="number"]:hover,
+  [data-theme*="vscode-dark"] input[type="date"]:hover,
+  [data-theme*="vscode-dark"] input[type="datetime-local"]:hover,
+  [data-theme*="vscode-dark"] input[type="month"]:hover,
+  [data-theme*="vscode-dark"] input[type="search"]:hover,
+  [data-theme*="vscode-dark"] input[type="tel"]:hover,
+  [data-theme*="vscode-dark"] input[type="time"]:hover,
+  [data-theme*="vscode-dark"] input[type="url"]:hover,
+  [data-theme*="vscode-dark"] input[type="week"]:hover,
+  [data-theme*="vscode-dark"] textarea:hover,
+  [data-theme*="vscode-dark"] select:hover,
+  [data-theme*="silk"] input[type="text"]:hover,
+  [data-theme*="silk"] input[type="email"]:hover,
+  [data-theme*="silk"] input[type="password"]:hover,
+  [data-theme*="silk"] input[type="number"]:hover,
+  [data-theme*="silk"] input[type="date"]:hover,
+  [data-theme*="silk"] input[type="datetime-local"]:hover,
+  [data-theme*="silk"] input[type="month"]:hover,
+  [data-theme*="silk"] input[type="search"]:hover,
+  [data-theme*="silk"] input[type="tel"]:hover,
+  [data-theme*="silk"] input[type="time"]:hover,
+  [data-theme*="silk"] input[type="url"]:hover,
+  [data-theme*="silk"] input[type="week"]:hover,
+  [data-theme*="silk"] textarea:hover,
+  [data-theme*="silk"] select:hover,
+  [data-theme*="aurora"] input[type="text"]:hover,
+  [data-theme*="aurora"] input[type="email"]:hover,
+  [data-theme*="aurora"] input[type="password"]:hover,
+  [data-theme*="aurora"] input[type="number"]:hover,
+  [data-theme*="aurora"] input[type="date"]:hover,
+  [data-theme*="aurora"] input[type="datetime-local"]:hover,
+  [data-theme*="aurora"] input[type="month"]:hover,
+  [data-theme*="aurora"] input[type="search"]:hover,
+  [data-theme*="aurora"] input[type="tel"]:hover,
+  [data-theme*="aurora"] input[type="time"]:hover,
+  [data-theme*="aurora"] input[type="url"]:hover,
+  [data-theme*="aurora"] input[type="week"]:hover,
+  [data-theme*="aurora"] textarea:hover,
+  [data-theme*="aurora"] select:hover {
+    border-color: var(--color-primary);
+    opacity: 0.3;
+  }
+
+  /* Focus states */
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus,
+  input[type="date"]:focus,
+  input[type="datetime-local"]:focus,
+  input[type="month"]:focus,
+  input[type="search"]:focus,
+  input[type="tel"]:focus,
+  input[type="time"]:focus,
+  input[type="url"]:focus,
+  input[type="week"]:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgb(var(--color-primary));
+  }
+
+  [data-theme*="abyss"] input[type="text"]:focus,
+  [data-theme*="abyss"] input[type="email"]:focus,
+  [data-theme*="abyss"] input[type="password"]:focus,
+  [data-theme*="abyss"] input[type="number"]:focus,
+  [data-theme*="abyss"] input[type="date"]:focus,
+  [data-theme*="abyss"] input[type="datetime-local"]:focus,
+  [data-theme*="abyss"] input[type="month"]:focus,
+  [data-theme*="abyss"] input[type="search"]:focus,
+  [data-theme*="abyss"] input[type="tel"]:focus,
+  [data-theme*="abyss"] input[type="time"]:focus,
+  [data-theme*="abyss"] input[type="url"]:focus,
+  [data-theme*="abyss"] input[type="week"]:focus,
+  [data-theme*="abyss"] textarea:focus,
+  [data-theme*="abyss"] select:focus,
+  [data-theme*="vscode-dark"] input[type="text"]:focus,
+  [data-theme*="vscode-dark"] input[type="email"]:focus,
+  [data-theme*="vscode-dark"] input[type="password"]:focus,
+  [data-theme*="vscode-dark"] input[type="number"]:focus,
+  [data-theme*="vscode-dark"] input[type="date"]:focus,
+  [data-theme*="vscode-dark"] input[type="datetime-local"]:focus,
+  [data-theme*="vscode-dark"] input[type="month"]:focus,
+  [data-theme*="vscode-dark"] input[type="search"]:focus,
+  [data-theme*="vscode-dark"] input[type="tel"]:focus,
+  [data-theme*="vscode-dark"] input[type="time"]:focus,
+  [data-theme*="vscode-dark"] input[type="url"]:focus,
+  [data-theme*="vscode-dark"] input[type="week"]:focus,
+  [data-theme*="vscode-dark"] textarea:focus,
+  [data-theme*="vscode-dark"] select:focus,
+  [data-theme*="silk"] input[type="text"]:focus,
+  [data-theme*="silk"] input[type="email"]:focus,
+  [data-theme*="silk"] input[type="password"]:focus,
+  [data-theme*="silk"] input[type="number"]:focus,
+  [data-theme*="silk"] input[type="date"]:focus,
+  [data-theme*="silk"] input[type="datetime-local"]:focus,
+  [data-theme*="silk"] input[type="month"]:focus,
+  [data-theme*="silk"] input[type="search"]:focus,
+  [data-theme*="silk"] input[type="tel"]:focus,
+  [data-theme*="silk"] input[type="time"]:focus,
+  [data-theme*="silk"] input[type="url"]:focus,
+  [data-theme*="silk"] input[type="week"]:focus,
+  [data-theme*="silk"] textarea:focus,
+  [data-theme*="silk"] select:focus,
+  [data-theme*="aurora"] input[type="text"]:focus,
+  [data-theme*="aurora"] input[type="email"]:focus,
+  [data-theme*="aurora"] input[type="password"]:focus,
+  [data-theme*="aurora"] input[type="number"]:focus,
+  [data-theme*="aurora"] input[type="date"]:focus,
+  [data-theme*="aurora"] input[type="datetime-local"]:focus,
+  [data-theme*="aurora"] input[type="month"]:focus,
+  [data-theme*="aurora"] input[type="search"]:focus,
+  [data-theme*="aurora"] input[type="tel"]:focus,
+  [data-theme*="aurora"] input[type="time"]:focus,
+  [data-theme*="aurora"] input[type="url"]:focus,
+  [data-theme*="aurora"] input[type="week"]:focus,
+  [data-theme*="aurora"] textarea:focus,
+  [data-theme*="aurora"] select:focus {
+    border-color: var(--color-primary);
+    opacity: 1;
   }
 }

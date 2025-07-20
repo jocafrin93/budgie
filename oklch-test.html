@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OKLCH Test</title>
+    <style>
+        /* Test OKLCH values from Abyss theme */
+        .test-primary {
+            background-color: oklch(92% 0.2653 125);
+            color: oklch(50% 0.2653 125);
+            padding: 20px;
+            margin: 10px;
+        }
+
+        .test-base {
+            background-color: oklch(20% 0.08 209);
+            color: oklch(90% 0.076 70.697);
+            padding: 20px;
+            margin: 10px;
+        }
+
+        .test-neutral {
+            background-color: oklch(30% 0.08 209);
+            color: oklch(90% 0.076 70.697);
+            padding: 20px;
+            margin: 10px;
+        }
+
+        .test-secondary {
+            background-color: oklch(83.27% 0.0764 298.3);
+            color: oklch(43.27% 0.0764 298.3);
+            padding: 20px;
+            margin: 10px;
+        }
+
+        /* Test with CSS variables */
+        :root {
+            --color-primary: oklch(92% 0.2653 125);
+            --color-base-100: oklch(20% 0.08 209);
+            --color-base-content: oklch(90% 0.076 70.697);
+        }
+
+        .test-variables {
+            background-color: var(--color-base-100);
+            color: var(--color-base-content);
+            padding: 20px;
+            margin: 10px;
+        }
+
+        .test-primary-var {
+            background-color: var(--color-primary);
+            color: var(--color-base-content);
+            padding: 20px;
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>OKLCH Color Test</h1>
+
+    <div class="test-primary">
+        Primary Color (Direct OKLCH)
+    </div>
+
+    <div class="test-base">
+        Base Color (Direct OKLCH)
+    </div>
+
+    <div class="test-neutral">
+        Neutral Color (Direct OKLCH)
+    </div>
+
+    <div class="test-secondary">
+        Secondary Color (Direct OKLCH)
+    </div>
+
+    <div class="test-variables">
+        Base with CSS Variables
+    </div>
+
+    <div class="test-primary-var">
+        Primary with CSS Variables
+    </div>
+</body>
+
+</html>

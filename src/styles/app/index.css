@@ -11,6 +11,8 @@
 @import "./forms/select.css";
 @import "./forms/range.css";
 @import "./forms/checkbox.css";
+@import "./forms/checkbox-colors.css";
+@import "./forms/checkbox-rounded.css";
 @import "./forms/radio.css";
 @import "./forms/switch.css";
 @import "./forms/swap.css";

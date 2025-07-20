@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Budgeting Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f8fafc;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-result {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .test-pass {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .test-fail {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .month-card {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .category-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .category-row:last-child {
+            border-bottom: none;
+        }
+
+        .amount {
+            font-weight: 600;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        .positive {
+            color: #059669;
+        }
+
+        .negative {
+            color: #dc2626;
+        }
+
+        .neutral {
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback, useMemo, useEffect } = React;
+
+        // Mock localStorage for testing
+        const mockLocalStorage = {
+            data: {},
+            getItem(key) {
+                return this.data[key] || null;
+            },
+            setItem(key, value) {
+                this.data[key] = value;
+            },
+            removeItem(key) {
+                delete this.data[key];
+            }
+        };
+
+        // Mock useLocalStorage hook
+        const useLocalStorage = (key, initialValue) => {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = mockLocalStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    return initialValue;
+                }
+            });
+
+            const setValue = useCallback((value) => {
+                try {
+                    setStoredValue(value);
+                    mockLocalStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                }
+            }, [key]);
+
+            return [storedValue, setValue];
+        };
+
+        // Monthly budgeting hook (simplified version)
+        const useMonthlyBudgeting = (categories = [], transactions = []) => {
+            const [monthlyBudgets, setMonthlyBudgets] = useLocalStorage('budgetCalc_monthlyBudgets', {});
+
+            const getCurrentMonth = useCallback(() => {
+                const now = new Date();
+                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            }, []);
+
+            const getPreviousMonth = useCallback((monthString) => {
+                const [year, month] = monthString.split('-').map(Number);
+                const prevDate = new Date(year, month - 2, 1);
+                return `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+            }, []);
+
+            const initializeMonth = useCallback((monthString) => {
+                setMonthlyBudgets(prev => {
+                    if (prev[monthString]) {
+                        return prev;
+                    }
+
+                    const newMonth = {
+                        categories: {},
+                        toBeBudgeted: 0
+                    };
+
+                    categories.forEach(category => {
+                        newMonth.categories[category.id] = {
+                            allocated: 0,
+                            carryForward: 0
+                        };
+                    });
+
+                    return {
+                        ...prev,
+                        [monthString]: newMonth
+                    };
+                });
+            }, [categories, setMonthlyBudgets]);
+
+            const getMonthlySpending = useCallback((monthString, categoryId) => {
+                const [year, month] = monthString.split('-').map(Number);
+                const monthStart = new Date(year, month - 1, 1);
+                const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+
+                return transactions
+                    .filter(transaction => {
+                        const transactionDate = new Date(transaction.date);
+                        const isInMonth = transactionDate >= monthStart && transactionDate <= monthEnd;
+                        return isInMonth && transaction.categoryId === categoryId && transaction.amount < 0;
+                    })
+                    .reduce((total, transaction) => total + Math.abs(transaction.amount), 0);
+            }, [transactions]);
+
+            const getMonthlyIncome = useCallback((monthString) => {
+                const [year, month] = monthString.split('-').map(Number);
+                const monthStart = new Date(year, month - 1, 1);
+                const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+
+                return transactions
+                    .filter(transaction => {
+                        const transactionDate = new Date(transaction.date);
+                        const isInMonth = transactionDate >= monthStart && transactionDate <= monthEnd;
+                        return isInMonth && transaction.amount > 0 && !transaction.transferAccountId;
+                    })
+                    .reduce((total, transaction) => total + transaction.amount, 0);
+            }, [transactions]);
+
+            const getMonthData = useCallback((monthString) => {
+                const monthBudget = monthlyBudgets[monthString] || { categories: {}, toBeBudgeted: 0 };
+                const monthlyIncome = getMonthlyIncome(monthString);
+
+                let totalAllocated = 0;
+                let totalSpent = 0;
+                let totalCarryForward = 0;
+
+                const categoriesWithData = categories.map(category => {
+                    const categoryBudget = monthBudget.categories[category.id] || { allocated: 0, carryForward: 0 };
+                    const spent = getMonthlySpending(monthString, category.id);
+                    const allocated = categoryBudget.allocated;
+                    const carryForward = categoryBudget.carryForward;
+                    const available = allocated + carryForward - spent;
+
+                    totalAllocated += allocated;
+                    totalSpent += spent;
+                    totalCarryForward += carryForward;
+
+                    return {
+                        ...category,
+                        allocated,
+                        spent,
+                        available,
+                        carryForward
+                    };
+                });
+
+                const toBeBudgeted = monthlyIncome + totalCarryForward - totalAllocated;
+
+                return {
+                    monthString,
+                    categories: categoriesWithData,
+                    summary: {
+                        income: monthlyIncome,
+                        allocated: totalAllocated,
+                        spent: totalSpent,
+                        carryForward: totalCarryForward,
+                        toBeBudgeted,
+                        remaining: toBeBudgeted
+                    }
+                };
+            }, [categories, monthlyBudgets, getMonthlyIncome, getMonthlySpending]);
+
+            const allocateToCategory = useCallback((monthString, categoryId, amount) => {
+                initializeMonth(monthString);
+
+                setMonthlyBudgets(prev => {
+                    const monthBudget = prev[monthString] || { categories: {}, toBeBudgeted: 0 };
+                    const categoryBudget = monthBudget.categories[categoryId] || { allocated: 0, carryForward: 0 };
+
+                    return {
+                        ...prev,
+                        [monthString]: {
+                            ...monthBudget,
+                            categories: {
+                                ...monthBudget.categories,
+                                [categoryId]: {
+                                    ...categoryBudget,
+                                    allocated: amount
+                                }
+                            }
+                        }
+                    };
+                });
+            }, [initializeMonth, setMonthlyBudgets]);
+
+            const carryForwardFromPreviousMonth = useCallback((monthString) => {
+                const previousMonth = getPreviousMonth(monthString);
+                const previousMonthData = getMonthData(previousMonth);
+
+                initializeMonth(monthString);
+
+                setMonthlyBudgets(prev => {
+                    const monthBudget = prev[monthString] || { categories: {}, toBeBudgeted: 0 };
+                    const updatedCategories = { ...monthBudget.categories };
+
+                    previousMonthData.categories.forEach(category => {
+                        const unspentAmount = Math.max(0, category.available);
+
+                        updatedCategories[category.id] = {
+                            ...(updatedCategories[category.id] || { allocated: 0, carryForward: 0 }),
+                            carryForward: unspentAmount
+                        };
+                    });
+
+                    return {
+                        ...prev,
+                        [monthString]: {
+                            ...monthBudget,
+                            categories: updatedCategories
+                        }
+                    };
+                });
+            }, [getPreviousMonth, getMonthData, initializeMonth, setMonthlyBudgets]);
+
+            return {
+                getCurrentMonth,
+                getMonthData,
+                allocateToCategory,
+                carryForwardFromPreviousMonth,
+                initializeMonth
+            };
+        };
+
+        // Test component
+        const MonthlyBudgetingTest = () => {
+            // Test data
+            const testCategories = [
+                { id: 1, name: 'Groceries' },
+                { id: 2, name: 'Gas' },
+                { id: 3, name: 'Entertainment' }
+            ];
+
+            const testTransactions = [
+                // January income
+                { id: 1, date: '2025-01-15', amount: 3000, categoryId: null },
+                // January spending
+                { id: 2, date: '2025-01-10', amount: -200, categoryId: 1 }, // Groceries
+                { id: 3, date: '2025-01-20', amount: -80, categoryId: 2 },  // Gas
+                { id: 4, date: '2025-01-25', amount: -50, categoryId: 3 },  // Entertainment
+                // February income
+                { id: 5, date: '2025-02-15', amount: 3000, categoryId: null },
+                // February spending
+                { id: 6, date: '2025-02-10', amount: -150, categoryId: 1 }, // Groceries
+                { id: 7, date: '2025-02-20', amount: -90, categoryId: 2 },  // Gas
+            ];
+
+            const {
+                getCurrentMonth,
+                getMonthData,
+                allocateToCategory,
+                carryForwardFromPreviousMonth,
+                initializeMonth
+            } = useMonthlyBudgeting(testCategories, testTransactions);
+
+            const [testResults, setTestResults] = useState([]);
+            const [currentMonth] = useState('2025-01');
+            const [nextMonth] = useState('2025-02');
+
+            // Run tests
+            useEffect(() => {
+                const runTests = () => {
+                    const results = [];
+
+                    // Test 1: Initialize months
+                    try {
+                        initializeMonth(currentMonth);
+                        initializeMonth(nextMonth);
+                        results.push({ name: 'Initialize months', status: 'pass', message: 'Months initialized successfully' });
+                    } catch (error) {
+                        results.push({ name: 'Initialize months', status: 'fail', message: error.message });
+                    }
+
+                    // Test 2: Allocate money to categories in January
+                    try {
+                        allocateToCategory(currentMonth, 1, 500); // Groceries
+                        allocateToCategory(currentMonth, 2, 200); // Gas
+                        allocateToCategory(currentMonth, 3, 100); // Entertainment
+                        results.push({ name: 'Allocate money to categories', status: 'pass', message: 'Money allocated successfully' });
+                    } catch (error) {
+                        results.push({ name: 'Allocate money to categories', status: 'fail', message: error.message });
+                    }
+
+                    // Test 3: Check January data
+                    try {
+                        const janData = getMonthData(currentMonth);
+                        const expectedAllocated = 800;
+                        const expectedSpent = 330; // 200 + 80 + 50
+                        const expectedIncome = 3000;
+
+                        if (janData.summary.allocated === expectedAllocated &&
+                            janData.summary.spent === expectedSpent &&
+                            janData.summary.income === expectedIncome) {
+                            results.push({ name: 'January calculations', status: 'pass', message: `Allocated: $${janData.summary.allocated}, Spent: $${janData.summary.spent}, Income: $${janData.summary.income}` });
+                        } else {
+                            results.push({ name: 'January calculations', status: 'fail', message: `Expected allocated: $${expectedAllocated}, got: $${janData.summary.allocated}` });
+                        }
+                    } catch (error) {
+                        results.push({ name: 'January calculations', status: 'fail', message: error.message });
+                    }
+
+                    // Test 4: Carry forward to February
+                    try {
+                        carryForwardFromPreviousMonth(nextMonth);
+                        const febData = getMonthData(nextMonth);
+
+                        // Check if carry forward amounts are correct
+                        const groceriesCarryForward = febData.categories.find(c => c.id === 1)?.carryForward || 0;
+                        const expectedGroceriesCarryForward = 300; // 500 allocated - 200 spent
+
+                        if (groceriesCarryForward === expectedGroceriesCarryForward) {
+                            results.push({ name: 'Carry forward', status: 'pass', message: `Groceries carry forward: $${groceriesCarryForward}` });
+                        } else {
+                            results.push({ name: 'Carry forward', status: 'fail', message: `Expected groceries carry forward: $${expectedGroceriesCarryForward}, got: $${groceriesCarryForward}` });
+                        }
+                    } catch (error) {
+                        results.push({ name: 'Carry forward', status: 'fail', message: error.message });
+                    }
+
+                    setTestResults(results);
+                };
+
+                runTests();
+            }, [currentMonth, nextMonth, allocateToCategory, carryForwardFromPreviousMonth, getMonthData, initializeMonth]);
+
+            // Get month data for display
+            const janData = getMonthData(currentMonth);
+            const febData = getMonthData(nextMonth);
+
+            const formatCurrency = (amount) => `$${amount.toFixed(2)}`;
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-8">Monthly Budgeting System Test</h1>
+
+                    {/* Test Results */}
+                    <div className="test-section">
+                        <h2 className="text-xl font-semibold mb-4">Test Results</h2>
+                        {testResults.map((result, index) => (
+                            <div key={index} className={`test-result ${result.status === 'pass' ? 'test-pass' : 'test-fail'}`}>
+                                <strong>{result.name}:</strong> {result.message}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* January Data */}
+                    <div className="test-section">
+                        <h2 className="text-xl font-semibold mb-4">January 2025 Budget</h2>
+                        <div className="month-card">
+                            <h3 className="text-lg font-medium mb-3">Summary</h3>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <div className="text-sm text-gray-600">Income</div>
+                                    <div className="amount positive">{formatCurrency(janData.summary.income)}</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-600">Allocated</div>
+                                    <div className="amount neutral">{formatCurrency(janData.summary.allocated)}</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-600">Spent</div>
+                                    <div className="amount negative">{formatCurrency(janData.summary.spent)}</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-600">To Be Budgeted</div>
+                                    <div className="amount positive">{formatCurrency(janData.summary.toBeBudgeted)}</div>
+                                </div>
+                            </div>
+
+                            <h4 className="font-medium mb-2">Categories</h4>
+                            {janData.categories.map(category => (
+                                <div key={category.id} className="category-row">
+                                    <span>{category.name}</span>
+                                    <div className="flex gap-4 text-sm">
+                                        <span>Allocated: <span className="amount neutral">{formatCurrency(category.allocated)}</span></span>
+                                        <span>Spent: <span className="amount negative">{formatCurrency(category.spent)}</span></span>
+                                        <span>Available: <span className={`amount ${category.available >= 0 ? 'positive' : 'negative'}`}>{formatCurrency(category.available)}</span></span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* February Data */}
+                    <div className="test-section">
+                        <h2 className="text-xl font-semibold mb-4">February 2025 Budget (After Carry Forward)</h2>
+                        <div className="month-card">
+                            <h3 className="text-lg font-medium mb-3">Summary</h3>
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <div className="text-sm text-gray-600">Income</div>
+                                    <div className="amount positive">{formatCurrency(febData.summary.income)}</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-600">Carry Forward</div>
+                                    <div className="amount positive">{formatCurrency(febData.summary.carryForward)}</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-600">Spent</div>
+                                    <div className="amount negative">{formatCurrency(febData.summary.spent)}</div>
+                                </div>
+                                <div>
+                                    <div className="text-sm text-gray-600">To Be Budgeted</div>
+                                    <div className="amount positive">{formatCurrency(febData.summary.toBeBudgeted)}</div>
+                                </div>
+                            </div>
+
+                            <h4 className="font-medium mb-2">Categories</h4>
+                            {febData.categories.map(category => (
+                                <div key={category.id} className="category-row">
+                                    <span>{category.name}</span>
+                                    <div className="flex gap-4 text-sm">
+                                        <span>Carry Forward: <span className="amount positive">{formatCurrency(category.carryForward)}</span></span>
+                                        <span>Spent: <span className="amount negative">{formatCurrency(category.spent)}</span></span>
+                                        <span>Available: <span className={`amount ${category.available >= 0 ? 'positive' : 'negative'}`}>{formatCurrency(category.available)}</span></span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Test Explanation */}
+                    <div className="test-section">
+                        <h2 className="text-xl font-semibold mb-4">Test Explanation</h2>
+                        <div className="space-y-3 text-sm text-gray-700">
+                            <p><strong>Test Scenario:</strong> This test simulates a YNAB-style monthly budgeting system.</p>
+                            <p><strong>January:</strong> $3,000 income, allocated $800 to categories, spent $330 total.</p>
+                            <p><strong>Expected Results:</strong></p>
+                            <ul className="list-disc list-inside ml-4 space-y-1">
+                                <li>Groceries: $500 allocated - $200 spent = $300 available</li>
+                                <li>Gas: $200 allocated - $80 spent = $120 available</li>
+                                <li>Entertainment: $100 allocated - $50 spent = $50 available</li>
+                                <li>To Be Budgeted: $3,000 income - $800 allocated = $2,200</li>
+                            </ul>
+                            <p><strong>February Carry Forward:</strong> Unspent amounts from January should carry forward to February.</p>
+                            <p><strong>February Income:</strong> $3,000 new income + carry forward amounts.</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Render the test
+        ReactDOM.render(<MonthlyBudgetingTest />, document.getElementById('root'));
+    </script>
+</body>
+
+</html>

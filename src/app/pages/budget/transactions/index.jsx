@@ -1,11 +1,16 @@
+import { useBreakpointsContext } from "app/contexts/breakpoint/context";
 import { Page } from "components/shared/Page";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import AccountBalanceSidebar from "../../../../components/budget/AccountBalanceSidebar";
 import TransactionsTab from "../../../../components/budget/TransactionsTab";
 import { useAccountManagement } from "../../../../hooks/useAccountManagement";
 import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
-import { useLocalStorage } from "../../../../hooks/useLocalStorage";
+import { useScheduledTransactions } from "../../../../hooks/useScheduledTransactions";
+import { useStorage } from "../../../../hooks/useStorage";
 import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
+
+// Dynamic import for mobile view
+const MobileTransactionsView = React.lazy(() => import("../../../../components/budget/MobileTransactionsView"));
 
 // Quick Reconcile Modal Component
 const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) => {
@@ -113,7 +118,7 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Bank Balance Input */}
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="p-4 bg-info-50 dark:bg-info/20/20 border border-info-200 dark:border-info-800 rounded-lg">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Bank Statement Balance
                         </label>
@@ -127,10 +132,10 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
                                 onChange={handleCurrencyChange}
                                 required
                                 placeholder="0.00"
-                                className="w-full pl-7 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-7 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-info-500"
                             />
                         </div>
-                        <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
+                        <p className="text-sm text-info-800 dark:text-info-200 mt-2">
                             Enter the balance shown on your bank statement or online banking.
                         </p>
                     </div>
@@ -145,36 +150,36 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
                             <div className="text-xs text-gray-500 dark:text-gray-400">All transactions</div>
                         </div>
 
-                        <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                            <div className="text-sm text-green-600 dark:text-green-400">Cleared Balance</div>
-                            <div className="text-lg font-bold text-green-700 dark:text-green-300">
+                        <div className="text-center p-4 bg-success-50 dark:bg-success-900/20 rounded-lg">
+                            <div className="text-sm text-success-600 dark:text-success-400">Cleared Balance</div>
+                            <div className="text-lg font-bold text-success-700 dark:text-success-300">
                                 {formatCurrency(balances.clearedBalance)}
                             </div>
-                            <div className="text-xs text-green-600 dark:text-green-400">Cleared transactions</div>
+                            <div className="text-xs text-success-600 dark:text-success-400">Cleared transactions</div>
                         </div>
 
-                        <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                            <div className="text-sm text-yellow-600 dark:text-yellow-400">Pending</div>
-                            <div className="text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                        <div className="text-center p-4 bg-warning-50 dark:bg-warning-900/20 rounded-lg">
+                            <div className="text-sm text-warning-600 dark:text-warning-400">Pending</div>
+                            <div className="text-lg font-bold text-warning-700 dark:text-warning-300">
                                 {formatCurrency(balances.pendingBalance)}
                             </div>
-                            <div className="text-xs text-yellow-600 dark:text-yellow-400">Uncleared transactions</div>
+                            <div className="text-xs text-warning-600 dark:text-warning-400">Uncleared transactions</div>
                         </div>
                     </div>
 
                     {/* Difference Display */}
                     <div className={`p-4 rounded-lg border ${isBalanced
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                        ? 'bg-success-50 dark:bg-success-900/20 border-success-200 dark:border-success-800'
+                        : 'bg-error-50 dark:bg-error-900/20 border-error-200 dark:border-error-800'
                         }`}>
                         <div className="text-center">
-                            <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            <div className={`text-sm ${isBalanced ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
                                 Difference
                             </div>
-                            <div className={`text-2xl font-bold ${isBalanced ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                            <div className={`text-2xl font-bold ${isBalanced ? 'text-success-700 dark:text-success-300' : 'text-error-700 dark:text-error-300'}`}>
                                 {formatCurrency(Math.abs(difference))}
                             </div>
-                            <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            <div className={`text-sm ${isBalanced ? 'text-success-600 dark:text-success-400' : 'text-error-600 dark:text-error-400'}`}>
                                 {isBalanced ? '✅ Perfect match!' : `${difference > 0 ? 'Bank higher' : 'Bank lower'} - Review transactions`}
                             </div>
                         </div>
@@ -193,7 +198,7 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
                             type="submit"
                             disabled={!isBalanced}
                             className={`px-4 py-2 rounded-lg font-medium ${isBalanced
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                ? 'bg-primary-600 text-white hover:bg-primary-700'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 }`}
                         >
@@ -206,7 +211,14 @@ const QuickReconcileModal = ({ account, transactions, onClose, onReconcile }) =>
     );
 };
 
+// Import the proper PendingTransfersAlert component
+import PendingTransfersAlert from "../../../../components/budget/PendingTransfersAlert";
+import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
+
 export default function BudgetTransactions() {
+    // Breakpoint context for responsive design
+    const { mdAndDown } = useBreakpointsContext();
+
     // State for sidebar account selection
     const [selectedAccountId, setSelectedAccountId] = useState('all');
     const [showReconcileModal, setShowReconcileModal] = useState(false);
@@ -222,8 +234,46 @@ export default function BudgetTransactions() {
         deleteTransaction
     } = useTransactionManagement(accounts, setAccounts, categories, setCategories);
 
-    // Payee management
-    const [payees, setPayees] = useLocalStorage('budgetCalc_payees', [
+    // Initialize envelope budgeting hook for pending transfers
+    const envelopeBudgeting = useEnvelopeBudgeting({
+        categories,
+        accounts,
+        transactions
+    });
+
+    // Use proper cloud storage-based scheduled transactions hook
+    const scheduledTransactionsHook = useScheduledTransactions(addTransaction);
+
+    // Get upcoming scheduled transactions for display with debugging
+    const upcomingScheduledTransactions = React.useMemo(() => {
+        if (!scheduledTransactionsHook) {
+            console.log('🔍 SCHEDULED TRANSACTIONS DEBUG: No hook available');
+            return [];
+        }
+
+        const upcoming = scheduledTransactionsHook.getUpcomingScheduledTransactions();
+
+        console.log('🔍 SCHEDULED TRANSACTIONS DEBUG:', {
+            allScheduledTransactions: scheduledTransactionsHook.scheduledTransactions,
+            allScheduledTransactionsLength: scheduledTransactionsHook.scheduledTransactions.length,
+            upcomingScheduledTransactions: upcoming,
+            upcomingLength: upcoming.length,
+            today: new Date(),
+            futureDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        });
+
+        return upcoming;
+    }, [scheduledTransactionsHook]);
+
+    // Debug log to see if scheduled transactions are being passed to components
+    console.log('🔍 PASSING TO COMPONENTS:', {
+        upcomingScheduledTransactions,
+        upcomingLength: upcomingScheduledTransactions.length,
+        scheduledTransactionsHookExists: !!scheduledTransactionsHook
+    });
+
+    // Payee management - use cloud storage
+    const [payees, setPayees] = useStorage('budgetCalc_payees', [
         'Amazon',
         'Target',
         'Walmart',
@@ -240,28 +290,92 @@ export default function BudgetTransactions() {
         }
     };
 
+    // Listen for account filter changes from mobile view
+    useEffect(() => {
+        const handleAccountFilterChange = (event) => {
+            const { accountId } = event.detail;
+            setSelectedAccountId(accountId);
+        };
+
+        window.addEventListener('accountFilterChange', handleAccountFilterChange);
+        return () => {
+            window.removeEventListener('accountFilterChange', handleAccountFilterChange);
+        };
+    }, []);
+
     // Handlers for transaction operations
     const handleAddTransaction = (transactionData) => {
         console.log("Raw transaction data received:", transactionData);
 
-        const processedData = {
-            ...transactionData,
-            accountId: parseInt(transactionData.accountId),
-            categoryId: transactionData.categoryId ? parseInt(transactionData.categoryId) : null,
-            amount: parseFloat(transactionData.amount) || 0,
-            transferAccountId: transactionData.transferAccountId ? parseInt(transactionData.transferAccountId) : undefined
-        };
+        // Check if this is a transfer and create inverse transaction
+        if (transactionData.isTransfer && transactionData.transferToAccountId) {
+            // Enhanced account lookup with type coercion
+            const sourceAccount = accounts.find(acc => String(acc.id) === String(transactionData.accountId));
+            const destinationAccount = accounts.find(acc => String(acc.id) === String(transactionData.transferToAccountId));
 
-        console.log("Processed transaction:", processedData);
-        addTransaction(processedData);
-        console.log("Transaction added successfully");
+            // Debug account lookup
+            console.log('🔍 Transfer Debug:', {
+                sourceAccountId: transactionData.accountId,
+                destinationAccountId: transactionData.transferToAccountId,
+                sourceAccount,
+                destinationAccount,
+                allAccounts: accounts,
+                accountsStructure: accounts.map(acc => ({ id: acc.id, name: acc.name, type: typeof acc.id }))
+            });
+
+            // Update main transaction to have destination account as payee
+            const mainTransaction = {
+                ...transactionData,
+                accountId: parseInt(transactionData.accountId),
+                categoryId: 'transfer', // Use 'transfer' as category identifier
+                amount: parseFloat(transactionData.amount) || 0,
+                payee: destinationAccount?.name || destinationAccount?.accountName || `Account ${transactionData.transferToAccountId}`,
+                transferToAccountId: parseInt(transactionData.transferToAccountId)
+            };
+
+            console.log("Processed main transfer transaction:", mainTransaction);
+            addTransaction(mainTransaction);
+
+            // Create the inverse transaction for the destination account
+            const inverseTransaction = {
+                ...transactionData,
+                id: `transfer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique ID
+                accountId: parseInt(transactionData.transferToAccountId),
+                transferToAccountId: parseInt(transactionData.accountId),
+                amount: -(parseFloat(transactionData.amount) || 0), // Opposite sign
+                payee: sourceAccount?.name || sourceAccount?.accountName || `Account ${transactionData.accountId}`, // Source account as payee
+                categoryId: 'transfer', // Use 'transfer' as category identifier
+                isTransfer: true
+            };
+
+            console.log("Processed inverse transfer transaction:", inverseTransaction);
+            // Add the inverse transaction
+            addTransaction(inverseTransaction);
+        } else {
+            // Regular transaction
+            const processedData = {
+                ...transactionData,
+                accountId: parseInt(transactionData.accountId),
+                categoryId: transactionData.categoryId === 'to-be-allocated'
+                    ? 'to-be-allocated'
+                    : (transactionData.categoryId ? parseInt(transactionData.categoryId) : null),
+                amount: parseFloat(transactionData.amount) || 0,
+                transferAccountId: transactionData.transferAccountId ? parseInt(transactionData.transferAccountId) : undefined
+            };
+
+            console.log("Processed regular transaction:", processedData);
+            addTransaction(processedData);
+        }
+        console.log("Transaction(s) added successfully");
     };
 
     const handleEditTransaction = (updatedTransaction) => {
         const processedData = {
             ...updatedTransaction,
             accountId: parseInt(updatedTransaction.accountId),
-            categoryId: updatedTransaction.categoryId ? parseInt(updatedTransaction.categoryId) : null,
+            categoryId: updatedTransaction.categoryId === 'to-be-allocated'
+                ? 'to-be-allocated'
+                : (updatedTransaction.categoryId ? parseInt(updatedTransaction.categoryId) : null),
             amount: parseFloat(updatedTransaction.amount) || 0,
             transferAccountId: updatedTransaction.transferAccountId ? parseInt(updatedTransaction.transferAccountId) : undefined
         };
@@ -303,17 +417,141 @@ export default function BudgetTransactions() {
                 {/* Main Content */}
                 <div className="flex-1 overflow-hidden">
                     <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6 h-full">
-                        <TransactionsTab
-                            transactions={transactions}
-                            accounts={accounts}
-                            categories={categories}
-                            payees={payees}
-                            onAddPayee={handleAddPayee}
-                            onAddTransaction={handleAddTransaction}
-                            onEditTransaction={handleEditTransaction}
-                            onDeleteTransaction={handleDeleteTransaction}
-                            viewAccount={selectedAccountId}
+                        {/* Pending Transfers Alert */}
+                        <PendingTransfersAlert
+                            onCreateTransfers={(transfers) => {
+                                console.log('Creating transfers:', transfers);
+
+                                // Create both outgoing and incoming transactions for each transfer
+                                transfers.forEach(transfer => {
+                                    const sourceAccount = accounts.find(acc => acc.id === transfer.fromAccountId);
+                                    const destinationAccount = accounts.find(acc => acc.id === transfer.toAccountId);
+
+                                    if (sourceAccount && destinationAccount) {
+                                        // Create outgoing transaction (negative amount)
+                                        const outgoingTransaction = {
+                                            date: new Date().toISOString().split('T')[0],
+                                            accountId: transfer.fromAccountId,
+                                            transferToAccountId: transfer.toAccountId,
+                                            amount: -Math.abs(transfer.amount), // Negative for outgoing
+                                            payee: destinationAccount.name,
+                                            memo: transfer.reason || 'Account transfer',
+                                            categoryId: 'transfer',
+                                            isTransfer: true,
+                                            isCleared: false
+                                        };
+
+                                        // Create incoming transaction (positive amount)
+                                        const incomingTransaction = {
+                                            date: new Date().toISOString().split('T')[0],
+                                            accountId: transfer.toAccountId,
+                                            transferToAccountId: transfer.fromAccountId,
+                                            amount: Math.abs(transfer.amount), // Positive for incoming
+                                            payee: sourceAccount.name,
+                                            memo: transfer.reason || 'Account transfer',
+                                            categoryId: 'transfer',
+                                            isTransfer: true,
+                                            isCleared: false
+                                        };
+
+                                        // Add both transactions
+                                        addTransaction(outgoingTransaction);
+                                        addTransaction(incomingTransaction);
+
+                                        // Mark the pending transfer as completed
+                                        envelopeBudgeting.completePendingTransfer(transfer.id);
+                                    }
+                                });
+
+                                console.log(`✅ Created ${transfers.length * 2} transfer transactions (${transfers.length} pairs)`);
+                            }}
+                            onReviewDetails={(transfers) => {
+                                console.log('Reviewing transfer details:', transfers);
+                            }}
                         />
+
+                        {/* Header Actions */}
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                            <div>
+                                <h2 className="text-xl font-semibold text-base-content">
+                                    Transactions
+                                </h2>
+                                <p className="text-sm text-base-content/60">
+                                    Manage your financial transactions
+                                </p>
+                            </div>
+
+                            <div className="flex items-center space-x-2" id="transaction-header-actions">
+                                {/* Filter Button */}
+                                <button
+                                    className="btn btn-outline btn-sm flex items-center space-x-2"
+                                    onClick={() => {
+                                        // This will be handled by the TransactionsTab component
+                                        const event = new CustomEvent('toggleFilters');
+                                        window.dispatchEvent(event);
+                                    }}
+                                >
+                                    <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                    </svg>
+                                    <span>Filter</span>
+                                </button>
+
+                                {/* Add Transaction Button */}
+                                <button
+                                    className="btn btn-primary btn-sm flex items-center gap-2"
+                                    onClick={() => {
+                                        // This will be handled by the TransactionsTab component
+                                        const event = new CustomEvent('addTransaction');
+                                        window.dispatchEvent(event);
+                                    }}
+                                >
+                                    <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    <span>Add</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Responsive Transaction Views */}
+                        {mdAndDown ? (
+                            <React.Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
+                                <MobileTransactionsView
+                                    transactions={transactions}
+                                    accounts={accounts}
+                                    categories={categories}
+                                    payees={payees}
+                                    onAddPayee={handleAddPayee}
+                                    onAddTransaction={handleAddTransaction}
+                                    onEditTransaction={handleEditTransaction}
+                                    onDeleteTransaction={handleDeleteTransaction}
+                                    viewAccount={selectedAccountId}
+                                    scheduledTransactions={upcomingScheduledTransactions}
+                                    onEditScheduledTransaction={scheduledTransactionsHook.editScheduledTransaction}
+                                    onSkipScheduledTransaction={scheduledTransactionsHook.skipScheduledTransaction}
+                                    onActivateScheduledTransactionEarly={scheduledTransactionsHook.activateScheduledTransactionEarly}
+                                    onDeleteScheduledTransaction={scheduledTransactionsHook.deleteScheduledTransaction}
+                                />
+                            </React.Suspense>
+                        ) : (
+                            <TransactionsTab
+                                transactions={transactions}
+                                accounts={accounts}
+                                categories={categories}
+                                payees={payees}
+                                onAddPayee={handleAddPayee}
+                                onAddTransaction={handleAddTransaction}
+                                onEditTransaction={handleEditTransaction}
+                                onDeleteTransaction={handleDeleteTransaction}
+                                viewAccount={selectedAccountId}
+                                scheduledTransactions={upcomingScheduledTransactions}
+                                onEditScheduledTransaction={scheduledTransactionsHook.editScheduledTransaction}
+                                onSkipScheduledTransaction={scheduledTransactionsHook.skipScheduledTransaction}
+                                onActivateScheduledTransactionEarly={scheduledTransactionsHook.activateScheduledTransactionEarly}
+                                onDeleteScheduledTransaction={scheduledTransactionsHook.deleteScheduledTransaction}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

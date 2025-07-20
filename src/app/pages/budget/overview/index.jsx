@@ -1,6 +1,25 @@
+import { useBreakpointsContext } from "app/contexts/breakpoint/context";
 import { Page } from "components/shared/Page";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import BudgetCategoriesTable from "../../../../components/budget/BudgetCategoriesTable";
 import SimplifiedSummaryCards from "../../../../components/budget/SimplifiedSummaryCards";
-import UnifiedEnvelopeBudgetView from "../../../../components/budget/UnifiedEnvelopeBudgetView";
+import { useAccountManagement } from "../../../../hooks/useAccountManagement";
+import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
+import { useCategoryGroups } from "../../../../hooks/useCategoryGroups";
+import { useDataModel } from "../../../../hooks/useDataModel";
+import { useEnvelopeBudgeting } from "../../../../hooks/useEnvelopeBudgeting";
+import { useMonthlyBudgeting } from "../../../../hooks/useMonthlyBudgeting";
+import { usePaycheckManagement } from "../../../../hooks/usePaycheckManagement";
+import { useScheduledTransactions } from "../../../../hooks/useScheduledTransactions";
+import { useTransactionManagement } from "../../../../hooks/useTransactionManagement";
+
+// Dynamic imports for forms
+const UnifiedCategoryForm = React.lazy(() => import("../../../../components/budget/UnifiedCategoryForm"));
+const UnifiedItemForm = React.lazy(() => import("../../../../components/budget/UnifiedItemForm"));
+const MobileBudgetView = React.lazy(() => import("../../../../components/budget/MobileBudgetView"));
+
+// Direct import for MonthlyBudgetNavigator to prevent flickering
+import MonthlyBudgetNavigator from "../../../../components/budget/MonthlyBudgetNavigator";
 
 export default function BudgetOverview() {
     // Get breakpoint context for responsive rendering
@@ -525,91 +544,538 @@ export default function BudgetOverview() {
         }
     }, [categories]);
 
-    const handleDeleteCategory = (categoryId) => {
-        console.log("Delete category:", categoryId);
-    };
+    const handleDeleteCategory = useCallback((categoryId) => {
+        try {
+            const associatedItems = planningItems.filter(item => {
+                const itemCategoryId = parseInt(item.categoryId, 10);
+                const targetCategoryId = parseInt(categoryId, 10);
+                return !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
+            });
 
-    const handleAddItem = (item) => {
-        console.log("Add item:", item);
-    };
+            const result = deleteCategory(categoryId, planningItems);
 
-    const handleEditItem = (item) => {
-        console.log("Edit item:", item);
-    };
+            if (result.success) {
+                // Clean up any orphaned planning items after successful category deletion
+                associatedItems.forEach(item => {
+                    removeItem(item.id);
+                });
+            } else {
+                // Show user-friendly alert with option to force delete
+                const forceDelete = confirm(
+                    `${result.error}\n\nWould you like to force delete this category and remove all associated items? This action cannot be undone.`
+                );
 
-    const handleDeleteItem = (itemId) => {
-        console.log("Delete item:", itemId);
-    };
+                if (forceDelete) {
+                    // Force delete: remove all associated items first, then delete category
+                    associatedItems.forEach(item => {
+                        removeItem(item.id);
+                    });
 
-    const handleToggleItemActive = (itemId) => {
-        console.log("Toggle item active:", itemId);
-    };
+                    // Try deleting the category again
+                    setTimeout(() => {
+                        const secondResult = deleteCategory(categoryId, []);
+                        if (!secondResult.success) {
+                            alert("Failed to delete category even after removing items. Please refresh the page and try again.");
+                        }
+                    }, 100);
+                }
+            }
+        } catch (error) {
+            console.error("Error deleting category:", error);
+            alert("An unexpected error occurred while deleting the category.");
+        }
+    }, [deleteCategory, planningItems, removeItem]);
 
-    const handleToggleCategoryActive = (categoryId) => {
-        console.log("Toggle category active:", categoryId);
-    };
+    const handleAddItem = useCallback((itemData) => {
+        try {
+            if (itemData && itemData.categoryId) {
+                const category = categories.find(cat => cat.id === itemData.categoryId);
+                setPreselectedCategory(category);
+                setEditingItem(null);
+                setShowItemModal(true);
+            } else {
+                addItem(itemData);
+            }
+        } catch (error) {
+            console.error("Error adding item:", error);
+        }
+    }, [addItem, categories]);
 
-    const handleMoveItem = (itemId, newCategoryId) => {
-        console.log("Move item:", itemId, "to category:", newCategoryId);
-    };
+    const handleEditItem = useCallback((itemData) => {
+        try {
+            if (itemData && itemData.id && itemData.name) {
+                setEditingItem(itemData);
+                setPreselectedCategory(null);
+                setShowItemModal(true);
+            } else {
+                updateItem(itemData.id, itemData);
+            }
+        } catch (error) {
+            console.error("Error editing item:", error);
+        }
+    }, [updateItem]);
 
-    const handleReorderItems = (categoryId, items) => {
-        console.log("Reorder items in category:", categoryId, items);
-    };
+    const handleSaveItem = useCallback((itemData, addAnother = false) => {
+        try {
+            if (editingItem) {
+                updateItem(editingItem.id, itemData);
+            } else {
+                // Generate ID for new item
+                const itemId = Date.now().toString();
+                const itemWithId = { ...itemData, id: itemId };
+                addItem(itemWithId);
+            }
 
-    const handleReorderCategories = (categories) => {
-        console.log("Reorder categories:", categories);
-    };
+            if (!addAnother) {
+                handleCloseItemModal();
+            }
+        } catch (error) {
+            console.error("Error saving item:", error);
+        }
+    }, [editingItem, addItem, updateItem, handleCloseItemModal]);
 
-    const fundCategory = (categoryId, amount) => {
-        console.log("Fund category:", categoryId, "with amount:", amount);
-    };
+    const handleDeleteItem = useCallback((itemId) => {
+        try {
+            removeItem(itemId);
+        } catch (error) {
+            console.error("Error deleting item:", error);
+        }
+    }, [removeItem]);
 
-    const transferFunds = (fromId, toId, amount) => {
-        console.log("Transfer funds from:", fromId, "to:", toId, "amount:", amount);
-    };
+    const handleToggleItemActive = useCallback((itemId, isActive) => {
+        try {
+            toggleItemActive(itemId, isActive);
+        } catch (error) {
+            console.error("Error toggling item active:", error);
+        }
+    }, [toggleItemActive]);
+
+    // Monthly budget navigator functions
+    const getMonthDisplayName = useCallback((monthString) => {
+        const [year, month] = monthString.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    }, []);
+
+    const navigateToNextMonth = useCallback(() => {
+        const [year, month] = currentBudgetMonth.split('-').map(Number);
+        const nextMonth = new Date(year, month, 1); // month is already 0-indexed after parsing
+        const nextMonthString = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`;
+        setCurrentBudgetMonth(nextMonthString);
+    }, [currentBudgetMonth]);
+
+    const navigateToPrevMonth = useCallback(() => {
+        const [year, month] = currentBudgetMonth.split('-').map(Number);
+        const prevMonth = new Date(year, month - 2, 1); // month - 2 because month is 1-indexed but Date expects 0-indexed
+        const prevMonthString = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
+        setCurrentBudgetMonth(prevMonthString);
+    }, [currentBudgetMonth]);
+
+    const navigateToMonth = useCallback((monthString) => {
+        setCurrentBudgetMonth(monthString);
+    }, []);
+
+    const getAvailableMonths = useCallback(() => {
+        // Use the monthly budgeting hook's available months function
+        return getMonthlyAvailableMonths();
+    }, [getMonthlyAvailableMonths]);
+
+    const getMonthSummary = useCallback(() => {
+        // Get month-specific data from the monthly budgeting hook
+        const monthData = getMonthData(currentBudgetMonth);
+
+        return {
+            allocated: monthData.summary.allocated,
+            spent: monthData.summary.spent,
+            remaining: monthData.summary.toBeBudgeted
+        };
+    }, [getMonthData, currentBudgetMonth]);
+
+    const handleCarryForward = useCallback(() => {
+        try {
+            console.log('Carrying forward unspent amounts to month:', currentBudgetMonth);
+            carryForwardFromPreviousMonth(currentBudgetMonth);
+
+            // Show success message
+            alert(`Successfully carried forward unspent amounts from previous month to ${getMonthDisplayName(currentBudgetMonth)}!`);
+        } catch (error) {
+            console.error('Error carrying forward:', error);
+            alert('Failed to carry forward amounts. Please try again.');
+        }
+    }, [currentBudgetMonth, carryForwardFromPreviousMonth, getMonthDisplayName]);
+
+    // Group management functions
+    const handleAddGroup = useCallback(() => {
+        const groupName = prompt('Enter group name:');
+        if (groupName) {
+            addGroup({
+                name: groupName,
+                description: '',
+                color: '#10B981' // Default emerald color
+            });
+        }
+    }, [addGroup]);
+
+    const handleEditGroup = useCallback((groupId) => {
+        const group = groups.find(g => g.id === groupId);
+        if (group) {
+            const newName = prompt('Enter new group name:', group.name);
+            if (newName && newName !== group.name) {
+                updateGroup(groupId, { name: newName });
+            }
+        }
+    }, [groups, updateGroup]);
+
+    const handleDeleteGroup = useCallback((groupId) => {
+        const group = groups.find(g => g.id === groupId);
+        if (group && confirm(`Are you sure you want to delete the group "${group.name}"?`)) {
+            deleteGroup(groupId);
+        }
+    }, [groups, deleteGroup]);
+
+    const handleMoveCategoryToGroup = useCallback((categoryId, groupId) => {
+        updateCategory(categoryId, { groupId });
+    }, [updateCategory]);
+
+    const handleReorderCategoriesInGroup = useCallback((groupId, reorderedCategories) => {
+        // Update the sortOrder for each category in the reordered list
+        reorderedCategories.forEach((category, index) => {
+            updateCategory(category.id, { sortOrder: index });
+        });
+    }, [updateCategory]);
+
+    // Function to organize categories by groups
+    const getCategoriesByGroup = useCallback(() => {
+        console.log('🏷️ getCategoriesByGroup called - organizing categories by groups');
+        console.log('📊 Current tableData:', tableData.map(cat => ({ id: cat.id, name: cat.name, groupId: cat.groupId })));
+
+        const result = {};
+        const sortedGroups = getSortedGroups();
+
+        console.log('📋 Available groups:', sortedGroups.map(g => ({ id: g.id, name: g.name })));
+
+        sortedGroups.forEach(group => {
+            // Get categories for this group
+            const groupCategories = tableData.filter(category =>
+                category.groupId === group.id ||
+                (!category.groupId && group.id === 'miscellaneous')
+            );
+
+            console.log(`📂 Group "${group.name}" (${group.id}): ${groupCategories.length} categories`);
+            console.log(`   Categories: ${groupCategories.map(cat => cat.name).join(', ')}`);
+
+            // Calculate group totals - ensure all values are converted to numbers
+            const totals = groupCategories.reduce((acc, category) => {
+                // Convert string values to numbers to prevent string concatenation
+                const categoryMonthlyNeed = parseFloat(category.monthlyNeed) || 0;
+                const categoryPerPaycheck = parseFloat(category.perPaycheck) || 0;
+                const categoryAllocated = parseFloat(category.allocated) || 0;
+                const categorySpent = parseFloat(category.spent) || 0;
+                const categoryAvailable = parseFloat(category.available) || 0;
+
+                return {
+                    monthlyNeed: acc.monthlyNeed + categoryMonthlyNeed,
+                    perPaycheck: acc.perPaycheck + categoryPerPaycheck,
+                    allocated: acc.allocated + categoryAllocated,
+                    spent: acc.spent + categorySpent,
+                    available: acc.available + categoryAvailable
+                };
+            }, {
+                monthlyNeed: 0,
+                perPaycheck: 0,
+                allocated: 0,
+                spent: 0,
+                available: 0
+            });
+
+            result[group.id] = {
+                group,
+                categories: groupCategories,
+                totals
+            };
+        });
+
+        console.log('✅ getCategoriesByGroup result:', Object.keys(result).map(groupId => ({
+            groupId,
+            groupName: result[groupId].group.name,
+            categoryCount: result[groupId].categories.length,
+            categoryNames: result[groupId].categories.map(cat => cat.name)
+        })));
+
+        return result;
+    }, [tableData, getSortedGroups]);
 
     return (
         <Page title="Budget Overview">
-            <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
+            <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6 bg-base-200 text-base-content min-h-screen">
                 {/* Summary Cards */}
                 <div className="mb-6">
                     <SimplifiedSummaryCards
-                        summaryData={mockSummaryData}
-                        categories={mockCategories}
+                        accounts={accounts || []}
+                        categories={categories}
+                        planningItems={planningItems}
+                        transactions={transactions || []}
                     />
                 </div>
 
-                {/* Main Budget View */}
-                <UnifiedEnvelopeBudgetView
-                    categories={mockCategories}
-                    planningItems={mockPlanningItems}
-                    toBeAllocated={mockSummaryData.toBeAllocated}
-                    fundCategory={fundCategory}
-                    transferFunds={transferFunds}
-                    onAddCategory={handleAddCategory}
-                    onEditCategory={handleEditCategory}
-                    onDeleteCategory={handleDeleteCategory}
-                    onAddItem={handleAddItem}
-                    onEditItem={handleEditItem}
-                    onDeleteItem={handleDeleteItem}
-                    onToggleItemActive={handleToggleItemActive}
-                    onToggleCategoryActive={handleToggleCategoryActive}
-                    onMoveItem={handleMoveItem}
-                    onReorderItems={handleReorderItems}
-                    onReorderCategories={handleReorderCategories}
-                    payFrequency="biweekly"
-                    payFrequencyOptions={[
-                        { value: "weekly", label: "Weekly" },
-                        { value: "biweekly", label: "Bi-weekly" },
-                        { value: "monthly", label: "Monthly" }
-                    ]}
-                    getAllUpcomingPaycheckDates={() => [
-                        { date: new Date('2025-01-10') },
-                        { date: new Date('2025-01-24') },
-                        { date: new Date('2025-02-07') }
-                    ]}
-                />
+                {/* Monthly Budget Navigator */}
+                <div className="mb-6">
+                    <MonthlyBudgetNavigator
+                        currentBudgetMonth={currentBudgetMonth}
+                        getMonthDisplayName={getMonthDisplayName}
+                        navigateToNextMonth={navigateToNextMonth}
+                        navigateToPrevMonth={navigateToPrevMonth}
+                        navigateToMonth={navigateToMonth}
+                        getAvailableMonths={getAvailableMonths}
+                        getMonthSummary={getMonthSummary}
+                        onCarryForward={handleCarryForward}
+                    />
+                </div>
+
+                {/* Main Budget View - Responsive */}
+                {mdAndDown ? (
+                    <React.Suspense fallback={<div>Loading mobile view...</div>}>
+                        <MobileBudgetView
+                            data={tableData}
+                            accounts={accounts || []}
+                            onAddCategory={handleAddCategory}
+                            onEditCategory={handleEditCategory}
+                            onDeleteCategory={handleDeleteCategory}
+                            onAddItem={handleAddItem}
+                            onEditItem={handleEditItem}
+                            onDeleteItem={handleDeleteItem}
+                            onQuickAllocate={() => setQuickAllocateModal({ isOpen: true })}
+                            onDataUpdate={(updatedTableData) => {
+                                console.log('🔄 BudgetOverview: Received data update from MobileBudgetView');
+                                console.log('📊 Updated table data:', updatedTableData);
+
+                                // Update the categories based on the updated table data
+                                updatedTableData.forEach(updatedCategory => {
+                                    if (updatedCategory.isParent) {
+                                        // Update the category in the categories state
+                                        updateCategory(updatedCategory.id, {
+                                            allocated: updatedCategory.allocated,
+                                            available: updatedCategory.available,
+                                            spent: updatedCategory.spent
+                                        });
+                                        console.log(`✅ Updated category ${updatedCategory.name}: allocated=${updatedCategory.allocated}, available=${updatedCategory.available}`);
+                                    }
+                                });
+
+                                console.log('🔄 BudgetOverview: Category updates complete');
+                            }}
+                        />
+                    </React.Suspense>
+                ) : (
+                    <BudgetCategoriesTable
+                        data={tableData}
+                        accounts={accounts || []} // Pass accounts for "Available to Allocate" calculation
+                        transactions={transactions || []} // Pass transactions for "to-be-allocated" calculation
+                        getAllUpcomingPaycheckDates={getAllUpcomingPaycheckDates} // Pass paycheck function for account-specific countdown
+                        // Group management props
+                        groups={groups}
+                        onAddGroup={handleAddGroup}
+                        onEditGroup={handleEditGroup}
+                        onDeleteGroup={handleDeleteGroup}
+                        onToggleGroupCollapsed={toggleGroupCollapsed}
+                        onReorderCategoriesInGroup={handleReorderCategoriesInGroup}
+                        onReorderGroups={reorderGroups}
+                        onMoveCategoryToGroup={handleMoveCategoryToGroup}
+                        getCategoriesByGroup={getCategoriesByGroup}
+                        onDataUpdate={(updatedTableData, options) => {
+                            console.log('🎯 PARENT COMPONENT: onDataUpdate callback triggered!');
+                            console.log('🔄 BudgetOverview: Received data update from GroupedBudgetCategoriesTable');
+                            console.log('📊 Updated table data:', updatedTableData);
+                            console.log('🎯 Update options:', options);
+                            console.log('🔍 Options type check:', options?.type);
+                            console.log('🔍 Options preserveAllFields check:', options?.preserveAllFields);
+
+                            // Check if this is a reorder operation
+                            if (options && options.type === 'reorder' && options.preserveAllFields) {
+                                console.log('🔄 REORDER OPERATION DETECTED - Preserving all fields including sortOrder');
+                                console.log('📋 Categories to update:', updatedTableData.filter(cat => cat.isParent).map(cat => ({ id: cat.id, name: cat.name, sortOrder: cat.sortOrder })));
+
+                                // For reorder operations, do a bulk update that preserves all fields
+                                updatedTableData.forEach((updatedCategory, index) => {
+                                    if (updatedCategory.isParent) {
+                                        console.log(`🔄 [${index}] Updating category ${updatedCategory.name} (ID: ${updatedCategory.id}) with sortOrder ${updatedCategory.sortOrder}`);
+                                        console.log(`🔍 [${index}] Full category data:`, updatedCategory);
+
+                                        // Update with ALL fields, including sortOrder
+                                        const updateData = {
+                                            ...updatedCategory,
+                                            // Ensure we preserve the sortOrder field
+                                            sortOrder: updatedCategory.sortOrder
+                                        };
+                                        console.log(`🔍 [${index}] Update data being sent:`, updateData);
+
+                                        updateCategory(updatedCategory.id, updateData);
+                                        console.log(`✅ [${index}] updateCategory called for ${updatedCategory.name}`);
+                                    }
+                                });
+
+                                console.log('✅ REORDER UPDATE COMPLETE - sortOrder fields preserved');
+                            }
+                            // Handle transfers with preserveAllFields flag - critical fix for category-to-category transfers
+                            else if (options && options.type === 'transfer' && options.preserveAllFields) {
+                                console.log('💰 TRANSFER WITH PRESERVE_ALL_FIELDS DETECTED - Updating both available and allocated balances');
+
+                                // For transfers, we need to update both 'available' and 'allocated' properties
+                                updatedTableData.forEach(updatedCategory => {
+                                    if (updatedCategory.isParent) {
+                                        // Find the original category to compare values
+                                        const originalCategory = categories.find(c => c.id === updatedCategory.id);
+
+                                        if (originalCategory && originalCategory.available !== updatedCategory.available) {
+                                            console.log(`💸 Transfer detected for category ${updatedCategory.name}: available ${originalCategory.available} → ${updatedCategory.available}`);
+
+                                            // Calculate transfer amount and update allocated to match
+                                            const transferAmount = updatedCategory.available - originalCategory.available;
+                                            const newAllocated = originalCategory.allocated + transferAmount;
+
+                                            console.log(`💰 Updating category ${updatedCategory.name}: allocated ${originalCategory.allocated} → ${newAllocated}`);
+
+                                            // Critical fix: Update BOTH available AND allocated properties
+                                            updateCategory(updatedCategory.id, {
+                                                available: updatedCategory.available,
+                                                allocated: newAllocated
+                                            });
+                                        }
+                                    }
+                                });
+
+                                console.log('✅ TRANSFER UPDATE COMPLETE - both available and allocated balances updated');
+                            }
+                            // Handle regular transfers without preserveAllFields flag
+                            else if (options && options.type === 'transfer') {
+                                console.log('💰 TRANSFER OPERATION DETECTED - Updating both available and allocated balances');
+
+                                // For transfers, we need to update both 'available' and 'allocated' properties
+                                // to ensure persistence to localStorage
+                                updatedTableData.forEach(updatedCategory => {
+                                    if (updatedCategory.isParent) {
+                                        // Find the original category to compare values
+                                        const originalCategory = categories.find(c => c.id === updatedCategory.id);
+
+                                        if (originalCategory && originalCategory.available !== updatedCategory.available) {
+                                            console.log(`💸 Transfer detected for category ${updatedCategory.name}: available ${originalCategory.available} → ${updatedCategory.available}`);
+
+                                            // Critical fix: Update both available AND allocated properties
+                                            // The difference between old and new available is the transfer amount
+                                            const transferAmount = updatedCategory.available - originalCategory.available;
+                                            const newAllocated = originalCategory.allocated + transferAmount;
+
+                                            console.log(`💰 Updating category ${updatedCategory.name}: allocated ${originalCategory.allocated} → ${newAllocated}`);
+
+                                            updateCategory(updatedCategory.id, {
+                                                available: updatedCategory.available,
+                                                allocated: newAllocated
+                                            });
+                                            console.log(`✅ Updated BOTH available and allocated for ${updatedCategory.name}`);
+                                        }
+                                    }
+                                });
+
+                                console.log('✅ TRANSFER UPDATE COMPLETE - both available and allocated balances updated');
+                            }
+                            else {
+                                console.log('🔄 REGULAR UPDATE - Updating allocated/available/spent');
+                                console.log('🔍 Reason for regular update:');
+                                if (!options) console.log('  - No options provided');
+                                if (options && options.type !== 'reorder') console.log('  - Type is not reorder:', options.type);
+                                if (options && !options.preserveAllFields) console.log('  - preserveAllFields is false');
+
+                                // Regular update - update all financial fields
+                                updatedTableData.forEach(updatedCategory => {
+                                    if (updatedCategory.isParent) {
+                                        // Update the category in the categories state
+                                        updateCategory(updatedCategory.id, {
+                                            allocated: updatedCategory.allocated,
+                                            available: updatedCategory.available,
+                                            spent: updatedCategory.spent
+                                        });
+                                        console.log(`✅ Updated category ${updatedCategory.name}: allocated=${updatedCategory.allocated}, available=${updatedCategory.available}`);
+                                    }
+                                });
+                            }
+
+                            console.log('🔄 BudgetOverview: Category updates complete');
+                        }}
+                        onAddCategory={handleAddCategory}
+                        onEditCategory={handleEditCategory}
+                        onDeleteCategory={handleDeleteCategory}
+                        onAddItem={handleAddItem}
+                        onEditItem={handleEditItem}
+                        onDeleteItem={handleDeleteItem}
+                        onToggleItemActive={handleToggleItemActive}
+                    />
+                )}
+
+                {/* Category Form Modal */}
+                {showCategoryModal && (
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                        <UnifiedCategoryForm
+                            isOpen={showCategoryModal}
+                            onCancel={handleCloseCategoryModal}
+                            onSave={handleSaveCategory}
+                            category={editingCategory}
+                            accounts={accounts}
+                            groups={groups}
+                        />
+                    </React.Suspense>
+                )}
+
+                {/* Item Form Modal */}
+                {showItemModal && (
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                        <UnifiedItemForm
+                            onCancel={handleCloseItemModal}
+                            onSave={handleSaveItem}
+                            item={editingItem}
+                            preselectedCategory={preselectedCategory}
+                            categories={categories}
+                            accounts={accounts}
+                        />
+                    </React.Suspense>
+                )}
+
+                {/* Quick Allocate Modal - Responsive */}
+                {quickAllocateModal.isOpen && (
+                    <React.Suspense fallback={<div>Loading...</div>}>
+                        {React.createElement(
+                            React.lazy(() => mdAndDown
+                                ? import("../../../../components/budget/MobileQuickAllocateModal")
+                                : import("../../../../components/budget/QuickAllocateModal")
+                            ),
+                            {
+                                isOpen: quickAllocateModal.isOpen,
+                                onClose: () => setQuickAllocateModal({ isOpen: false }),
+                                availableToAllocate: (() => {
+                                    const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
+                                        const startingBalance = account.startingBalance || account.balance || 0;
+                                        return sum + startingBalance;
+                                    }, 0);
+                                    const totalAllocated = tableData.reduce((sum, category) => sum + (category.allocated || 0), 0);
+                                    return totalWorkingBalance - totalAllocated;
+                                })(),
+                                categories: tableData,
+                                accounts: accounts || [],
+                                onBulkAllocate: (allocations) => {
+                                    console.log('🔄 BudgetOverview: Bulk allocate requested:', allocations);
+
+                                    // Apply allocations to categories
+                                    allocations.forEach(allocation => {
+                                        updateCategory(allocation.categoryId, {
+                                            allocated: (tableData.find(cat => cat.id === allocation.categoryId)?.allocated || 0) + allocation.amount
+                                        });
+                                    });
+
+                                    setQuickAllocateModal({ isOpen: false });
+                                }
+                            }
+                        )}
+                    </React.Suspense>
+                )}
             </div>
         </Page>
     );

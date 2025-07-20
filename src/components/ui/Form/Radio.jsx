@@ -1,7 +1,7 @@
 // Import Dependencies
+import clsx from "clsx";
 import PropTypes from "prop-types";
 import { forwardRef } from "react";
-import clsx from "clsx";
 
 // Local Imports
 import { ApplyWrapper } from "components/shared/ApplyWrapper";
@@ -10,13 +10,13 @@ import { setThisClass } from "utils/setThisClass";
 // ----------------------------------------------------------------------
 
 const disabledClass =
-  "before:[mask-image:var(--tw-thumb)] before:bg-gray-400 border-gray-150 bg-gray-150 pointer-events-none select-none opacity-70 dark:bg-dark-450 dark:border-dark-450 dark:before:bg-dark-800 dark:opacity-60";
+  "before:[mask-image:var(--tw-thumb)] before border-base-200 bg-base-200 pointer-events-none select-none opacity-70 bg-base-200";
 
 const variants = {
   basic:
-    "border-gray-400/70 bg-origin-border before:bg-center before:bg-no-repeat before:[background-size:100%_100%] before:[background-image:var(--tw-thumb)] checked:border-this checked:bg-this hover:border-this focus:border-this dark:border-dark-400 dark:checked:border-this-light dark:checked:bg-this-light dark:hover:border-this-light dark:focus:border-this-light",
+    "border-base-300/70 bg-origin-border before before before:[background-size:100%_100%] before:[background-image:var(--tw-thumb)] checked checked hover:bg-base-200 focus:bg-base-200",
   outlined:
-    "border-gray-400/70 before:bg-this before:[mask-image:var(--tw-thumb)] checked:border-this hover:border-this focus:border-this dark:border-dark-400 dark:hover:border-this-light dark:focus:border-this-light dark:before:bg-this-light dark:checked:border-this-light",
+    "border-base-300/70 before before:[mask-image:var(--tw-thumb)] checked hover:bg-base-200 focus:bg-base-200",
 };
 
 const Radio = forwardRef((props, ref) => {
@@ -91,3 +91,4 @@ Radio.propTypes = {
 };
 
 export { Radio };
+

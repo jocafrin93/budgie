@@ -1,16 +1,16 @@
 // Import Dependencies
-import PropTypes from "prop-types";
 import {
   Dialog,
   DialogPanel,
   Transition,
   TransitionChild,
 } from "@headlessui/react";
+import PropTypes from "prop-types";
 
 // Local Imports
+import VerticalSliderIcon from "assets/dualicons/vertical-slider.svg?react";
 import { Button, ScrollShadow } from "components/ui";
 import { useDisclosure } from "hooks";
-import VerticalSliderIcon from "assets/dualicons/vertical-slider.svg?react";
 import { Header } from "./Header";
 
 // ----------------------------------------------------------------------
@@ -45,7 +45,7 @@ function RightSidebarContent({ isOpen, close }) {
           leave="ease-in duration-200"
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
-          className="fixed inset-0 z-60 bg-gray-900/50 backdrop-blur-sm transition-opacity dark:bg-black/40"
+          className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm transition-opacity"
         ></TransitionChild>
 
         <TransitionChild
@@ -56,7 +56,7 @@ function RightSidebarContent({ isOpen, close }) {
           leave="ease-in transform-gpu transition-transform duration-200"
           leaveFrom="translate-x-0"
           leaveTo="translate-x-full"
-          className="fixed inset-y-0 right-0 z-61 flex w-screen transform-gpu flex-col bg-white transition-transform duration-200 dark:bg-dark-750 sm:inset-y-2 sm:mx-2 sm:w-80 sm:rounded-xl"
+          className="fixed inset-y-0 right-0 z-61 flex w-screen transform-gpu flex-col bg-base-100 transition-transform duration-200 bg-base-200 sm:inset-y-2 sm:mx-2 sm:w-80 sm:rounded-xl"
         >
           <Header close={close} />
           <ScrollShadow

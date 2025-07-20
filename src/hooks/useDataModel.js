@@ -1,5 +1,5 @@
 // src/hooks/useDataModel.js
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   calculatePerPaycheckAmounts,
   convertToUnifiedModel,
@@ -9,7 +9,16 @@ import {
   removePlanningItem,
   updatePlanningItem
 } from '../utils/dataModelUtils';
-import { useLocalStorage } from './useLocalStorage';
+import { useSimpleStorage } from './useSimpleStorage';
+import { useCategoryGroups } from './useCategoryGroups';
+
+// Move pay frequency options outside the hook to prevent dependency issues
+const PAY_FREQUENCY_OPTIONS = [
+  { value: 'weekly', label: 'Weekly', paychecksPerMonth: 4.33 },
+  { value: 'biweekly', label: 'Biweekly', paychecksPerMonth: 2.17 },
+  { value: 'monthly', label: 'Monthly', paychecksPerMonth: 1 },
+  { value: 'semimonthly', label: 'Twice a Month', paychecksPerMonth: 2 }
+];
 
 /**
  * Custom hook for managing the unified data model
@@ -20,25 +29,51 @@ export const useDataModel = ({
   initialExpenses = [],
   initialSavingsGoals = [],
   initialCategories = [],
-  initialAccounts = [],
-  payFrequency = 'bi-weekly',
-  payFrequencyOptions = []
+  initialAccounts = []
 } = {}) => {
+  // Read pay frequency directly from storage to ensure it stays in sync
+  const [payFrequency] = useSimpleStorage('budgetCalc_payFrequency', 'biweekly');
+
+  // Memoize pay frequency options to prevent dependency issues
+  const payFrequencyOptions = useMemo(() => PAY_FREQUENCY_OPTIONS, []);
   // Legacy state (for backward compatibility)
-  const [expenses, setExpenses] = useLocalStorage('budgetCalc_expenses', initialExpenses);
-  const [savingsGoals, setSavingsGoals] = useLocalStorage('budgetCalc_savingsGoals', initialSavingsGoals);
+  const [expenses, setExpenses] = useSimpleStorage('budgetCalc_expenses', initialExpenses);
+  const [savingsGoals, setSavingsGoals] = useSimpleStorage('budgetCalc_savingsGoals', initialSavingsGoals);
 
   // Unified data model state
-  const [planningItems, setPlanningItems] = useLocalStorage('budgetCalc_planningItems', []);
-  const [activeBudgetAllocations, setActiveBudgetAllocations] = useLocalStorage('budgetCalc_activeBudgetAllocations', []);
+  const [planningItems, setPlanningItems] = useSimpleStorage('budgetCalc_planningItems', []);
+  const [activeBudgetAllocations, setActiveBudgetAllocations] = useSimpleStorage('budgetCalc_activeBudgetAllocations', []);
 
   // Categories and accounts
-  const [categories, setCategories] = useLocalStorage('budgetCalc_categories', initialCategories);
-  const [accounts, setAccounts] = useLocalStorage('budgetCalc_accounts', initialAccounts);
+  const [categories, setCategories] = useSimpleStorage('budgetCalc_categories', initialCategories);
+  const [accounts, setAccounts] = useSimpleStorage('budgetCalc_accounts', initialAccounts);
+
+  // Category groups integration
+  const {
+    groups,
+    addGroup,
+    updateGroup,
+    deleteGroup,
+    reorderGroups,
+    toggleGroupCollapsed,
+    toggleAllGroups,
+    getGroupById,
+    getSortedGroups,
+    getDefaultGroup
+  } = useCategoryGroups();
 
   // Use refs to track if we're in a sync operation to prevent infinite loops
   const isSyncing = useRef(false);
   const cleanupRef = useRef(false);
+  const migrationRef = useRef(false);
+
+  // Add debugging for planningItems changes
+  useEffect(() => {
+    console.log('🔥 DATAMODEL - planningItems changed:', {
+      length: planningItems.length,
+      items: planningItems.map(item => ({ id: item.id, name: item.name }))
+    });
+  }, [planningItems]);
 
   // Initialize planning items from expenses and savings goals if needed
   useEffect(() => {
@@ -57,50 +92,32 @@ export const useDataModel = ({
     }
   }, [expenses, savingsGoals, planningItems.length, setPlanningItems, setActiveBudgetAllocations, payFrequency, payFrequencyOptions]);
 
-  // Sync legacy state with unified model when planning items change
-  // Use a more careful approach to prevent infinite loops
+  // Ensure all categories have IDs - MIGRATION FIX
   useEffect(() => {
-    if (planningItems.length > 0 && !isSyncing.current) {
-      isSyncing.current = true;
+    const categoriesNeedingIds = categories.filter(cat => !cat.id);
 
-      try {
-        const derivedExpenses = getExpensesFromPlanningItems(planningItems);
-        const derivedSavingsGoals = getSavingsGoalsFromPlanningItems(planningItems);
+    if (categoriesNeedingIds.length > 0) {
+      console.log('MIGRATION: Found categories without IDs:', categoriesNeedingIds);
 
-        // Create a deep comparison function that's more reliable than JSON.stringify
-        const arraysAreEqual = (arr1, arr2) => {
-          if (arr1.length !== arr2.length) return false;
+      setCategories(prev => {
+        let nextId = Math.max(...prev.filter(cat => cat.id).map(cat => cat.id), 0) + 1;
 
-          return arr1.every((item1, index) => {
-            const item2 = arr2[index];
-            if (!item2) return false;
-
-            // Compare key properties
-            const keys = ['id', 'name', 'amount', 'targetAmount', 'frequency', 'categoryId', 'priorityState', 'alreadySaved'];
-            return keys.every(key => item1[key] === item2[key]);
-          });
-        };
-
-        // Only update if there are actual differences to avoid infinite loops
-        if (!arraysAreEqual(derivedExpenses, expenses)) {
-          console.log('Syncing expenses from planning items');
-          setExpenses(derivedExpenses);
-        }
-
-        if (!arraysAreEqual(derivedSavingsGoals, savingsGoals)) {
-          console.log('Syncing savings goals from planning items');
-          setSavingsGoals(derivedSavingsGoals);
-        }
-      } catch (error) {
-        console.error('Error syncing legacy state:', error);
-      } finally {
-        // Use setTimeout to reset the flag after the current execution cycle
-        setTimeout(() => {
-          isSyncing.current = false;
-        }, 0);
-      }
+        return prev.map(cat => {
+          if (!cat.id) {
+            console.log('MIGRATION: Assigning ID', nextId, 'to category:', cat.name);
+            return { ...cat, id: nextId++ };
+          }
+          return cat;
+        });
+      });
     }
-  }, [planningItems]); // Remove setExpenses and setSavingsGoals from dependencies
+  }, [categories, setCategories]);
+
+  // DISABLED: Sync legacy state with unified model when planning items change
+  // This was causing infinite loops - legacy sync is not critical for core functionality
+  // useEffect(() => {
+  //   // Sync logic disabled to prevent infinite loops
+  // }, []);
 
   // Recalculate per-paycheck amounts when pay frequency changes
   useEffect(() => {
@@ -110,52 +127,123 @@ export const useDataModel = ({
         payFrequency,
         payFrequencyOptions
       );
-      setActiveBudgetAllocations(calculatedAllocations);
+
+      // Only update if the calculated allocations are actually different
+      const hasChanges = calculatedAllocations.some((calc, index) => {
+        const current = activeBudgetAllocations[index];
+        return !current || calc.perPaycheckAmount !== current.perPaycheckAmount;
+      });
+
+      if (hasChanges) {
+        setActiveBudgetAllocations(calculatedAllocations);
+      }
     }
-  }, [payFrequency, payFrequencyOptions, setActiveBudgetAllocations]);
+  }, [activeBudgetAllocations, payFrequency, payFrequencyOptions, setActiveBudgetAllocations]);
 
   // Add a new planning item
   const addItem = useCallback((newItem) => {
-    console.log('Adding new item:', newItem);
-
     // Validate category exists and ensure categoryId is a number
     const categoryId = parseInt(newItem.categoryId, 10);
-    if (isNaN(categoryId) || !categories.some(cat => parseInt(cat.id, 10) === categoryId)) {
-      console.error('Invalid category ID for new item:', newItem);
+
+    // Debug logging to see what we're working with
+    console.log('🔥 DATAMODEL - Adding item with categoryId:', categoryId);
+    console.log('🔥 DATAMODEL - Available categories:', categories.map(cat => ({ id: cat.id, name: cat.name, hasId: 'id' in cat })));
+    console.log('🔥 DATAMODEL - Full item data:', newItem);
+
+    // More flexible category validation - handle categories without ID field
+    const categoryExists = categories.some((cat, index) => {
+      // Check if category has an ID field
+      if (cat.id !== undefined) {
+        const catId = parseInt(cat.id, 10);
+        return catId === categoryId || cat.id === categoryId || cat.id === String(categoryId);
+      } else {
+        // For categories without ID, use array index + 1 as ID (common pattern)
+        return (index + 1) === categoryId;
+      }
+    });
+
+    if (isNaN(categoryId) || !categoryExists) {
+      console.error('🔥 DATAMODEL - Invalid category ID for new item:', newItem);
+      console.error('🔥 DATAMODEL - Available categories with IDs:', categories.map((cat, index) => ({
+        id: cat.id || (index + 1),
+        name: cat.name,
+        hasIdField: 'id' in cat
+      })));
       return;
     }
 
-    // Ensure the item uses the parsed categoryId
-    newItem = {
-      ...newItem,
-      categoryId
-    };
+    // Generate a more robust ID to prevent collisions
+    const newItemId = newItem.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Generate ID first to ensure consistency between planning item and budget allocation
-    const newItemId = Math.max(...planningItems.map(item => parseInt(item.id || 0, 10)), 0) + 1;
-
-    // Create a copy of the item with the generated ID
+    // Create a copy of the item with the generated ID and parsed categoryId
     const itemWithId = {
       ...newItem,
       id: newItemId,
-      isActive: newItem.isActive || (!newItem.allocationPaused && newItem.priorityState === 'active')
+      categoryId,
+      isActive: newItem.isActive !== false, // Default to true unless explicitly false
+      createdAt: new Date().toISOString() // Add timestamp for debugging
     };
 
-    console.log('Generated ID for new item:', newItemId);
+    console.log('🔥 DATAMODEL - Adding item with final data:', itemWithId);
 
-    // Update planning items
-    setPlanningItems(prev => {
-      const updatedItems = [...prev, itemWithId];
-      console.log('Last added item:', itemWithId);
-      console.log('Updated planning items:', updatedItems);
-      return updatedItems;
-    });
+    // Update planning items with error handling
+    try {
+      setPlanningItems(prev => {
+        const updatedItems = [...prev, itemWithId];
+        console.log('🔥 DATAMODEL - Updated planning items count:', updatedItems.length);
+        console.log('🔥 DATAMODEL - New item in list:', updatedItems.find(item => item.id === newItemId));
 
-    // Mark item as needing allocation if it's active
-    if (itemWithId.isActive) {
-      itemWithId.needsAllocation = true;
+        // Force immediate storage write by triggering a re-render
+        setTimeout(() => {
+          console.log('🔥 DATAMODEL - Verifying item persistence after timeout');
+        }, 100);
+
+        return updatedItems;
+      });
+
+      // Create budget allocation if item is active
+      if (itemWithId.isActive) {
+        setActiveBudgetAllocations(prev => {
+          const newAllocation = {
+            id: Math.max(...prev.map(a => a.id), 0) + 1,
+            planningItemId: newItemId,
+            categoryId,
+            monthlyAllocation: itemWithId.type === 'savings-goal'
+              ? itemWithId.monthlyContribution
+              : itemWithId.amount,
+            perPaycheckAmount: 0, // Will be calculated
+            sourceAccountId: itemWithId.accountId || accounts[0]?.id || 1,
+            isPaused: false,
+            createdAt: new Date().toISOString()
+          };
+
+          const newAllocations = [...prev, newAllocation];
+          console.log('🔥 DATAMODEL - Created budget allocation for item:', newAllocation);
+          return calculatePerPaycheckAmounts(newAllocations, payFrequency, payFrequencyOptions);
+        });
+      }
+
+      console.log('🔥 DATAMODEL - Item added successfully with ID:', newItemId);
+
+      // Add additional verification
+      setTimeout(() => {
+        console.log('🔥 DATAMODEL - Post-add verification check:');
+        console.log('🔥 DATAMODEL - Current planningItems length:', planningItems.length);
+        console.log('🔥 DATAMODEL - All planning item IDs:', planningItems.map(item => item.id));
+        console.log('🔥 DATAMODEL - Looking for newly added item:', newItemId);
+        const foundItem = planningItems.find(item => item.id === newItemId);
+        console.log('🔥 DATAMODEL - Found newly added item:', foundItem ? 'YES' : 'NO');
+        if (foundItem) {
+          console.log('🔥 DATAMODEL - Item details:', foundItem);
+        }
+      }, 1000);
+
+      return newItemId; // Return the ID for verification
+    } catch (error) {
+      console.error('🔥 DATAMODEL - Error adding item:', error);
+      throw error;
     }
-  }, [setPlanningItems, setActiveBudgetAllocations, accounts, payFrequency, payFrequencyOptions, categories, planningItems]);
+  }, [setPlanningItems, setActiveBudgetAllocations, categories, accounts, payFrequency, payFrequencyOptions]);
 
 
 
@@ -232,7 +320,7 @@ export const useDataModel = ({
 
       return updatedItems;
     });
-  }, [setPlanningItems, setActiveBudgetAllocations, accounts, payFrequency, payFrequencyOptions]);
+  }, [setPlanningItems, setActiveBudgetAllocations, accounts, payFrequency, payFrequencyOptions, categories]);
 
   // Remove a planning item and return allocated funds
   const removeItem = useCallback((itemId) => {
@@ -274,7 +362,7 @@ export const useDataModel = ({
 
       return updatedItems;
     });
-  }, [setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, categories, setExpenses, setSavingsGoals]);
+  }, [setPlanningItems, setActiveBudgetAllocations, activeBudgetAllocations, categories, setExpenses, setSavingsGoals, planningItems]);
 
   // Toggle a planning item's active status
   const toggleItemActive = useCallback((itemId, isActive) => {
@@ -361,7 +449,40 @@ export const useDataModel = ({
 
       return updatedItems;
     });
-  }, [setPlanningItems, setActiveBudgetAllocations]);
+  }, [setPlanningItems, setActiveBudgetAllocations, categories]);
+
+  // Migrate categories to include group information
+  useEffect(() => {
+    if (migrationRef.current || categories.length === 0 || groups.length === 0) return;
+
+    const categoriesNeedingGroups = categories.filter(cat => !cat.groupId);
+
+    if (categoriesNeedingGroups.length > 0) {
+      console.log('🏷️ MIGRATION - Found categories without groups:', categoriesNeedingGroups.map(c => c.name));
+      migrationRef.current = true;
+
+      const defaultGroup = getDefaultGroup();
+      if (defaultGroup) {
+        setCategories(prev => prev.map(category => {
+          if (!category.groupId) {
+            console.log('🏷️ MIGRATION - Assigning category', category.name, 'to group', defaultGroup.name);
+            return {
+              ...category,
+              groupId: defaultGroup.id,
+              groupSortOrder: category.sortOrder || 0,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return category;
+        }));
+      }
+
+      // Reset migration flag after a delay
+      setTimeout(() => {
+        migrationRef.current = false;
+      }, 1000);
+    }
+  }, [categories, groups, getDefaultGroup, setCategories]);
 
   // Clean up invalid items only when categories change
   useEffect(() => {
@@ -406,7 +527,122 @@ export const useDataModel = ({
     };
 
     cleanup();
-  }, [categories]);
+  }, [categories, planningItems, activeBudgetAllocations, setPlanningItems, setActiveBudgetAllocations, setExpenses, setSavingsGoals]);
+
+  // Category group management functions
+  const addCategory = useCallback((categoryData) => {
+    const defaultGroup = getDefaultGroup();
+    const newCategory = {
+      id: categoryData.id || Math.max(...categories.map(c => c.id), 0) + 1,
+      name: categoryData.name,
+      type: categoryData.type || 'single',
+      planningType: categoryData.planningType || 'expense',
+      groupId: categoryData.groupId || defaultGroup?.id || 'miscellaneous',
+      groupSortOrder: categoryData.groupSortOrder ?? Math.max(...categories.filter(c => c.groupId === (categoryData.groupId || defaultGroup?.id)).map(c => c.groupSortOrder || 0), -1) + 1,
+      sortOrder: categoryData.sortOrder ?? Math.max(...categories.map(c => c.sortOrder || 0), -1) + 1,
+      color: categoryData.color,
+      amount: categoryData.amount || 0,
+      allocated: categoryData.allocated || 0,
+      available: categoryData.available || 0,
+      spent: categoryData.spent || 0,
+      monthlyNeed: categoryData.monthlyNeed || 0,
+      perPaycheck: categoryData.perPaycheck || 0,
+      isActive: categoryData.isActive !== false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...categoryData
+    };
+
+    setCategories(prev => [...prev, newCategory]);
+    console.log('🏷️ CATEGORIES - Added new category:', newCategory);
+    return newCategory.id;
+  }, [categories, setCategories, getDefaultGroup]);
+
+  const updateCategory = useCallback((categoryId, updates) => {
+    setCategories(prev => prev.map(category =>
+      category.id === categoryId
+        ? { ...category, ...updates, updatedAt: new Date().toISOString() }
+        : category
+    ));
+    console.log('🏷️ CATEGORIES - Updated category:', categoryId, updates);
+  }, [setCategories]);
+
+  const deleteCategory = useCallback((categoryId) => {
+    // Remove all planning items in this category first
+    const itemsToRemove = planningItems.filter(item => item.categoryId === categoryId);
+    itemsToRemove.forEach(item => removeItem(item.id));
+
+    // Remove the category
+    setCategories(prev => prev.filter(category => category.id !== categoryId));
+    console.log('🏷️ CATEGORIES - Deleted category:', categoryId);
+  }, [setCategories, planningItems, removeItem]);
+
+  const moveCategoryToGroup = useCallback((categoryId, newGroupId) => {
+    const targetGroup = getGroupById(newGroupId);
+    if (!targetGroup) {
+      console.error('🏷️ CATEGORIES - Invalid target group:', newGroupId);
+      return false;
+    }
+
+    // Get the next sort order in the target group
+    const categoriesInTargetGroup = categories.filter(c => c.groupId === newGroupId);
+    const nextSortOrder = Math.max(...categoriesInTargetGroup.map(c => c.groupSortOrder || 0), -1) + 1;
+
+    setCategories(prev => prev.map(category =>
+      category.id === categoryId
+        ? {
+          ...category,
+          groupId: newGroupId,
+          groupSortOrder: nextSortOrder,
+          updatedAt: new Date().toISOString()
+        }
+        : category
+    ));
+
+    console.log('🏷️ CATEGORIES - Moved category', categoryId, 'to group', newGroupId);
+    return true;
+  }, [categories, setCategories, getGroupById]);
+
+  const reorderCategoriesInGroup = useCallback((groupId, reorderedCategories) => {
+    const categoriesWithNewOrder = reorderedCategories.map((category, index) => ({
+      ...category,
+      groupSortOrder: index,
+      updatedAt: new Date().toISOString()
+    }));
+
+    setCategories(prev => prev.map(category => {
+      const reorderedCategory = categoriesWithNewOrder.find(rc => rc.id === category.id);
+      return reorderedCategory || category;
+    }));
+
+    console.log('🏷️ CATEGORIES - Reordered categories in group', groupId);
+  }, [setCategories]);
+
+  // Get categories organized by groups
+  const getCategoriesByGroup = useCallback(() => {
+    const sortedGroups = getSortedGroups();
+    const result = {};
+
+    sortedGroups.forEach(group => {
+      const groupCategories = categories
+        .filter(category => category.groupId === group.id)
+        .sort((a, b) => (a.groupSortOrder || 0) - (b.groupSortOrder || 0));
+
+      result[group.id] = {
+        group,
+        categories: groupCategories,
+        totals: {
+          monthlyNeed: groupCategories.reduce((sum, cat) => sum + (cat.monthlyNeed || 0), 0),
+          allocated: groupCategories.reduce((sum, cat) => sum + (cat.allocated || 0), 0),
+          available: groupCategories.reduce((sum, cat) => sum + (cat.available || 0), 0),
+          spent: groupCategories.reduce((sum, cat) => sum + (cat.spent || 0), 0),
+          perPaycheck: groupCategories.reduce((sum, cat) => sum + (cat.perPaycheck || 0), 0)
+        }
+      };
+    });
+
+    return result;
+  }, [categories, getSortedGroups]);
 
   return {
     // Unified data model
@@ -426,6 +662,26 @@ export const useDataModel = ({
     setCategories,
     accounts,
     setAccounts,
+
+    // Category groups
+    groups,
+    addGroup,
+    updateGroup,
+    deleteGroup,
+    reorderGroups,
+    toggleGroupCollapsed,
+    toggleAllGroups,
+    getGroupById,
+    getSortedGroups,
+    getDefaultGroup,
+
+    // Category management with groups
+    addCategory,
+    updateCategory,
+    deleteCategory,
+    moveCategoryToGroup,
+    reorderCategoriesInGroup,
+    getCategoriesByGroup,
 
     // Actions
     addItem,

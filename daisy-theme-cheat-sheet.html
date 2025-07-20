@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaisyUI Theme Cheat Sheet - Comprehensive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* DaisyUI-Style Theme System for Tailux */
+        :root {
+            --color-primary: 59 130 246;
+            --color-primary-focus: 37 99 235;
+            --color-primary-content: 255 255 255;
+            --color-secondary: 139 92 246;
+            --color-secondary-focus: 124 58 237;
+            --color-secondary-content: 255 255 255;
+            --color-accent: 34 197 94;
+            --color-accent-focus: 22 163 74;
+            --color-accent-content: 255 255 255;
+            --color-neutral: 55 65 81;
+            --color-neutral-focus: 31 41 55;
+            --color-neutral-content: 255 255 255;
+            --color-base-100: 255 255 255;
+            --color-base-200: 249 250 251;
+            --color-base-300: 229 231 235;
+            --color-base-content: 31 41 55;
+            --color-info: 14 165 233;
+            --color-info-content: 255 255 255;
+            --color-success: 34 197 94;
+            --color-success-content: 255 255 255;
+            --color-warning: 245 158 11;
+            --color-warning-content: 255 255 255;
+            --color-error: 239 68 68;
+            --color-error-content: 255 255 255;
+        }
+
+        [data-theme="dark"] {
+            --color-primary: 96 165 250;
+            --color-primary-focus: 59 130 246;
+            --color-primary-content: 30 41 59;
+            --color-secondary: 167 139 250;
+            --color-secondary-focus: 139 92 246;
+            --color-secondary-content: 30 41 59;
+            --color-accent: 74 222 128;
+            --color-accent-focus: 34 197 94;
+            --color-accent-content: 20 83 45;
+            --color-neutral: 229 231 235;
+            --color-neutral-focus: 209 213 219;
+            --color-neutral-content: 31 41 55;
+            --color-base-100: 30 41 59;
+            --color-base-200: 51 65 85;
+            --color-base-300: 71 85 105;
+            --color-base-content: 248 250 252;
+            --color-info: 56 189 248;
+            --color-info-content: 12 74 110;
+            --color-success: 74 222 128;
+            --color-success-content: 20 83 45;
+            --color-warning: 251 191 36;
+            --color-warning-content: 120 53 15;
+            --color-error: 248 113 113;
+            --color-error-content: 127 29 29;
+        }
+
+        [data-theme="ocean"] {
+            --color-primary: 6 182 212;
+            --color-primary-focus: 8 145 178;
+            --color-primary-content: 255 255 255;
+            --color-secondary: 14 165 233;
+            --color-secondary-focus: 2 132 199;
+            --color-secondary-content: 255 255 255;
+            --color-accent: 59 130 246;
+            --color-accent-focus: 37 99 235;
+            --color-accent-content: 255 255 255;
+            --color-neutral: 8 145 178;
+            --color-neutral-focus: 14 116 144;
+            --color-neutral-content: 255 255 255;
+            --color-base-100: 236 254 255;
+            --color-base-200: 207 250 254;
+            --color-base-300: 165 243 252;
+            --color-base-content: 22 78 99;
+            --color-info: 14 165 233;
+            --color-info-content: 255 255 255;
+            --color-success: 34 197 94;
+            --color-success-content: 255 255 255;
+            --color-warning: 245 158 11;
+            --color-warning-content: 255 255 255;
+            --color-error: 239 68 68;
+            --color-error-content: 255 255 255;
+        }
+
+        /* Utility Classes */
+        .bg-primary {
+            background-color: rgb(var(--color-primary));
+        }
+
+        .bg-secondary {
+            background-color: rgb(var(--color-secondary));
+        }
+
+        .bg-accent {
+            background-color: rgb(var(--color-accent));
+        }
+
+        .bg-neutral {
+            background-color: rgb(var(--color-neutral));
+        }
+
+        .bg-base-100 {
+            background-color: rgb(var(--color-base-100));
+        }
+
+        .bg-base-200 {
+            background-color: rgb(var(--color-base-200));
+        }
+
+        .bg-base-300 {
+            background-color: rgb(var(--color-base-300));
+        }
+
+        .bg-info {
+            background-color: rgb(var(--color-info));
+        }
+
+        .bg-success {
+            background-color: rgb(var(--color-success));
+        }
+
+        .bg-warning {
+            background-color: rgb(var(--color-warning));
+        }
+
+        .bg-error {
+            background-color: rgb(var(--color-error));
+        }
+
+        .text-primary {
+            color: rgb(var(--color-primary));
+        }
+
+        .text-secondary {
+            color: rgb(var(--color-secondary));
+        }
+
+        .text-accent {
+            color: rgb(var(--color-accent));
+        }
+
+        .text-neutral {
+            color: rgb(var(--color-neutral));
+        }
+
+        .text-base-content {
+            color: rgb(var(--color-base-content));
+        }
+
+        .text-info {
+            color: rgb(var(--color-info));
+        }
+
+        .text-success {
+            color: rgb(var(--color-success));
+        }
+
+        .text-warning {
+            color: rgb(var(--color-warning));
+        }
+
+        .text-error {
+            color: rgb(var(--color-error));
+        }
+
+        .text-base-content\/80 {
+            color: rgb(var(--color-base-content) / 0.8);
+        }
+
+        .text-base-content\/60 {
+            color: rgb(var(--color-base-content) / 0.6);
+        }
+
+        .text-base-content\/40 {
+            color: rgb(var(--color-base-content) / 0.4);
+        }
+
+        .bg-primary\/10 {
+            background-color: rgb(var(--color-primary) / 0.1);
+        }
+
+        .bg-primary\/20 {
+            background-color: rgb(var(--color-primary) / 0.2);
+        }
+
+        .bg-primary\/30 {
+            background-color: rgb(var(--color-primary) / 0.3);
+        }
+
+        .border-primary {
+            border-color: rgb(var(--color-primary));
+        }
+
+        .border-base-300 {
+            border-color: rgb(var(--color-base-300));
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: rgb(var(--color-primary));
+            color: rgb(var(--color-primary-content));
+            border-color: rgb(var(--color-primary));
+        }
+
+        .btn-primary:hover {
+            background-color: rgb(var(--color-primary-focus));
+        }
+
+        .card {
+            background-color: rgb(var(--color-base-100));
+            color: rgb(var(--color-base-content));
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+            margin: 0.5rem 0;
+        }
+
+        .alert-info {
+            background-color: rgb(var(--color-info) / 0.1);
+            color: rgb(var(--color-info));
+            border-color: rgb(var(--color-info) / 0.2);
+        }
+
+        .alert-success {
+            background-color: rgb(var(--color-success) / 0.1);
+            color: rgb(var(--color-success));
+            border-color: rgb(var(--color-success) / 0.2);
+        }
+
+        .alert-warning {
+            background-color: rgb(var(--color-warning) / 0.1);
+            color: rgb(var(--color-warning));
+            border-color: rgb(var(--color-warning) / 0.2);
+        }
+
+        .alert-error {
+            background-color: rgb(var(--color-error) / 0.1);
+            color: rgb(var(--color-error));
+            border-color: rgb(var(--color-error) / 0.2);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-primary {
+            background-color: rgb(var(--color-primary));
+            color: rgb(var(--color-primary-content));
+        }
+
+        .badge-secondary {
+            background-color: rgb(var(--color-secondary));
+            color: rgb(var(--color-secondary-content));
+        }
+
+        .badge-success {
+            background-color: rgb(var(--color-success));
+            color: rgb(var(--color-success-content));
+        }
+
+        .badge-info {
+            background-color: rgb(var(--color-info));
+            color: rgb(var(--color-info-content));
+        }
+
+        .badge-warning {
+            background-color: rgb(var(--color-warning));
+            color: rgb(var(--color-warning-content));
+        }
+
+        .badge-error {
+            background-color: rgb(var(--color-error));
+            color: rgb(var(--color-error-content));
+        }
+
+        .input {
+            background-color: rgb(var(--color-base-100));
+            color: rgb(var(--color-base-content));
+            border: 1px solid rgb(var(--color-base-300));
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: rgb(var(--color-primary));
+            box-shadow: 0 0 0 3px rgb(var(--color-primary) / 0.1);
+        }
+
+        .progress {
+            width: 100%;
+            height: 0.5rem;
+            background-color: rgb(var(--color-base-300));
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+
+        .progress-primary::-webkit-progress-value {
+            background-color: rgb(var(--color-primary));
+        }
+
+        .divider {
+            border-color: rgb(var(--color-base-300));
+        }
+
+        .link {
+            color: rgb(var(--color-primary));
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .link:hover {
+            color: rgb(var(--color-primary-focus));
+        }
+
+        /* Code styling */
+        .code-block {
+            background-color: rgb(var(--color-base-200));
+            color: rgb(var(--color-base-content));
+            padding: 1rem;
+            border-radius: 0.375rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            border: 1px solid rgb(var(--color-base-300));
+        }
+
+        .inline-code {
+            background-color: rgb(var(--color-base-200));
+            color: rgb(var(--color-primary));
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        /* Table styling */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid rgb(var(--color-base-300));
+        }
+
+        .table th {
+            background-color: rgb(var(--color-base-200));
+            font-weight: 600;
+            color: rgb(var(--color-base-content));
+        }
+
+        .table td {
+            color: rgb(var(--color-base-content));
+        }
+
+        .table tr:hover {
+            background-color: rgb(var(--color-base-200) / 0.5);
+        }
+
+        /* Color swatch */
+        .color-swatch {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 0.25rem;
+            border: 1px solid rgb(var(--color-base-300));
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        /* Theme preview */
+        .theme-preview {
+            display: flex;
+            gap: 0.25rem;
+            align-items: center;
+        }
+
+        .theme-preview-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+
+<body class="bg-base-100 text-base-content">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-primary mb-4">DaisyUI Theme Cheat Sheet</h1>
+            <p class="text-lg text-base-content/80 mb-6">Comprehensive guide to DaisyUI theming system, syntax,
+                semantics, and custom theme creation</p>
+
+            <!-- Theme Switcher -->
+            <div class="flex justify-center mb-8">
+                <select id="themeSelector" class="input max-w-xs">
+                    <option value="light">Light Theme</option>
+                    <option value="dark">Dark Theme</option>
+                    <option value="ocean">Ocean Theme (Custom)</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- Table of Contents -->
+        <nav class="card mb-8">
+            <h2 class="text-2xl font-bold text-primary mb-4">📚 Table of Contents</h2>
+            <ul class="space-y-2 text-base-content/80">
+                <li><a href="#color-system" class="link">🎨 Color System & Variables</a></li>
+                <li><a href="#syntax-semantics" class="link">📝 Syntax & Semantics</a></li>
+                <li><a href="#utility-classes" class="link">🔧 Utility Classes</a></li>
+                <li><a href="#opacity-modifiers" class="link">🌫️ Opacity Modifiers</a></li>
+                <li><a href="#component-examples" class="link">🧩 Component Examples</a></li>
+                <li><a href="#custom-theme" class="link">🎭 Creating Custom Themes</a></li>
+                <li><a href="#theme-switcher" class="link">🔄 Adding to Theme Switcher</a></li>
+            </ul>
+        </nav>
+
+        <!-- Color System -->
+        <section id="color-system" class="mb-12">
+            <h2 class="text-3xl font-bold text-primary mb-6">🎨 Color System & Variables</h2>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Core Color Variables</h3>
+                <p class="text-base-content/80 mb-4">DaisyUI uses CSS custom properties (variables) in RGB format
+                    without the rgb() wrapper:</p>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Purpose</th>
+                            <th>Example Value</th>
+                            <th>Preview</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">--color-primary</code></td>
+                            <td>Main brand color</td>
+                            <td><code class="inline-code">59 130 246</code></td>
+                            <td>
+                                <div class="color-swatch bg-primary"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">--color-secondary</code></td>
+                            <td>Secondary brand color</td>
+                            <td><code class="inline-code">139 92 246</code></td>
+                            <td>
+                                <div class="color-swatch bg-secondary"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">--color-accent</code></td>
+                            <td>Accent/highlight color</td>
+                            <td><code class="inline-code">34 197 94</code></td>
+                            <td>
+                                <div class="color-swatch bg-accent"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">--color-neutral</code></td>
+                            <td>Neutral elements</td>
+                            <td><code class="inline-code">55 65 81</code></td>
+                            <td>
+                                <div class="color-swatch bg-neutral"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">--color-base-100</code></td>
+                            <td>Lightest background</td>
+                            <td><code class="inline-code">255 255 255</code></td>
+                            <td>
+                                <div class="color-swatch bg-base-100"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">--color-base-200</code></td>
+                            <td>Medium background</td>
+                            <td><code class="inline-code">249 250 251</code></td>
+                            <td>
+                                <div class="color-swatch bg-base-200"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">--color-base-300</code></td>
+                            <td>Darker background/borders</td>
+                            <td><code class="inline-code">229 231 235</code></td>
+                            <td>
+                                <div class="color-swatch bg-base-300"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">--color-base-content</code></td>
+                            <td>Text on base backgrounds</td>
+                            <td><code class="inline-code">31 41 55</code></td>
+                            <td>
+                                <div class="color-swatch text-base-content bg-base-200">Aa</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Semantic Colors</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="color-swatch bg-info mx-auto mb-2"></div>
+                        <h4 class="font-semibold text-info">Info</h4>
+                        <p class="text-sm text-base-content/60">Information, links</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="color-swatch bg-success mx-auto mb-2"></div>
+                        <h4 class="font-semibold text-success">Success</h4>
+                        <p class="text-sm text-base-content/60">Positive actions</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="color-swatch bg-warning mx-auto mb-2"></div>
+                        <h4 class="font-semibold text-warning">Warning</h4>
+                        <p class="text-sm text-base-content/60">Caution, alerts</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="color-swatch bg-error mx-auto mb-2"></div>
+                        <h4 class="font-semibold text-error">Error</h4>
+                        <p class="text-sm text-base-content/60">Errors, danger</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Syntax & Semantics -->
+        <section id="syntax-semantics" class="mb-12">
+            <h2 class="text-3xl font-bold text-primary mb-6">📝 Syntax & Semantics</h2>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">CSS Variable Usage</h3>
+                <p class="text-base-content/80 mb-4">Colors are defined as space-separated RGB values and used with the
+                    <code class="inline-code">rgb()</code> function:
+                </p>
+
+                <div class="code-block mb-4">/* Define the variable */
+                    :root {
+                    --color-primary: 59 130 246; /* Blue RGB values */
+                    }
+
+                    /* Use the variable */
+                    .bg-primary {
+                    background-color: rgb(var(--color-primary));
+                    }
+
+                    /* With opacity */
+                    .bg-primary\/20 {
+                    background-color: rgb(var(--color-primary) / 0.2);
+                    }</div>
+            </div>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Theme Switching</h3>
+                <p class="text-base-content/80 mb-4">Themes are switched using the <code
+                        class="inline-code">data-theme</code> attribute:</p>
+
+                <div class="code-block mb-4"><!-- Light theme (default) -->
+                    <html data-theme="light">
+
+                    <!-- Dark theme -->
+                    <html data-theme="dark">
+
+                    <!-- Custom theme -->
+                    <html data-theme="ocean">
+                </div>
+            </div>
+        </section>
+
+        <!-- Utility Classes -->
+        <section id="utility-classes" class="mb-12">
+            <h2 class="text-3xl font-bold text-primary mb-6">🔧 Utility Classes</h2>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Background Colors -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-secondary mb-4">Background Colors</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-primary rounded"></div>
+                            <code class="inline-code">bg-primary</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-secondary rounded"></div>
+                            <code class="inline-code">bg-secondary</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-accent rounded"></div>
+                            <code class="inline-code">bg-accent</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-neutral rounded"></div>
+                            <code class="inline-code">bg-neutral</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-base-100 border border-base-300 rounded"></div>
+                            <code class="inline-code">bg-base-100</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-base-200 rounded"></div>
+                            <code class="inline-code">bg-base-200</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-base-300 rounded"></div>
+                            <code class="inline-code">bg-base-300</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Colors -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-secondary mb-4">Text Colors</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3">
+                            <span class="text-primary font-semibold">Sample Text</span>
+                            <code class="inline-code">text-primary</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-secondary font-semibold">Sample Text</span>
+                            <code class="inline-code">text-secondary</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-accent font-semibold">Sample Text</span>
+                            <code class="inline-code">text-accent</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-neutral font-semibold">Sample Text</span>
+                            <code class="inline-code">text-neutral</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-base-content font-semibold">Sample Text</span>
+                            <code class="inline-code">text-base-content</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-info font-semibold">Sample Text</span>
+                            <code class="inline-code">text-info</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-success font-semibold">Sample Text</span>
+                            <code class="inline-code">text-success</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-warning font-semibold">Sample Text</span>
+                            <code class="inline-code">text-warning</code>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-error font-semibold">Sample Text</span>
+                            <code class="inline-code">text-error</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Opacity Modifiers -->
+        <section id="opacity-modifiers" class="mb-12">
+            <h2 class="text-3xl font-bold text-primary mb-6">🌫️ Opacity Modifiers</h2>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Text Opacity</h3>
+                <p class="text-base-content/80 mb-4">Use <code class="inline-code">/</code> followed by opacity
+                    percentage:</p>
+
+                <div class="space-y-2 mb-4">
+                    <div class="flex items-center gap-4">
+                        <span class="text-base-content font-semibold">100% Opacity</span>
+                        <code class="inline-code">text-base-content</code>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-base-content/80 font-semibold">80% Opacity</span>
+                        <code class="inline-code">text-base-content/80</code>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-base-content/60 font-semibold">60% Opacity</span>
+                        <code class="inline-code">text-base-content/60</code>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-base-content/40 font-semibold">40% Opacity</span>
+                        <code class="inline-code">text-base-content/40</code>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Background Opacity</h3>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-8 bg-primary/10 border border-base-300 rounded"></div>
+                        <code class="inline-code">bg-primary/10</code>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-8 bg-primary/20 border border-base-300 rounded"></div>
+                        <code class="inline-code">bg-primary/20</code>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-8 bg-primary/30 border border-base-300 rounded"></div>
+                        <code class="inline-code">bg-primary/30</code>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Component Examples -->
+        <section id="component-examples" class="mb-12">
+            <h2 class="text-3xl font-bold text-primary mb-6">🧩 Component Examples</h2>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Buttons -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-secondary mb-4">Buttons</h3>
+                    <div class="space-y-3">
+                        <button class="btn btn-primary">Primary Button</button>
+                        <button class="btn bg-secondary text-secondary-content border-secondary">Secondary
+                            Button</button>
+                        <button class="btn bg-accent text-accent-content border-accent">Accent Button</button>
+                        <button class="btn bg-info text-info-content border-info">Info Button</button>
+                        <button class="btn bg-success text-success-content border-success">Success Button</button>
+                        <button class="btn bg-warning text-warning-content border-warning">Warning Button</button>
+                        <button class="btn bg-error text-error-content border-error">Error Button</button>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-secondary mb-4">Alerts</h3>
+                    <div class="space-y-2">
+                        <div class="alert alert-info">
+                            <span>ℹ️ This is an info alert</span>
+                        </div>
+                        <div class="alert alert-success">
+                            <span>✅ This is a success alert</span>
+                        </div>
+                        <div class="alert alert-warning">
+                            <span>⚠️ This is a warning alert</span>
+                        </div>
+                        <div class="alert alert-error">
+                            <span>❌ This is an error alert</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Badges -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-secondary mb-4">Badges</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="badge badge-primary">Primary</span>
+                        <span class="badge badge-secondary">Secondary</span>
+                        <span class="badge badge-success">Success</span>
+                        <span class="badge badge-info">Info</span>
+                        <span class="badge badge-warning">Warning</span>
+                        <span class="badge badge-error">Error</span>
+                    </div>
+                </div>
+
+                <!-- Form Elements -->
+                <div class="card">
+                    <h3 class="text-xl font-semibold text-secondary mb-4">Form Elements</h3>
+                    <div class="space-y-3">
+                        <input type="text" placeholder="Default input" class="input">
+                        <input type="text" placeholder="Primary input" class="input border-primary">
+                        <input type="text" placeholder="Success input" class="input border-success">
+                        <input type="text" placeholder="Error input" class="input border-error">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Custom Theme Creation -->
+        <section id="custom-theme" class="mb-12">
+            <h2 class="text-3xl font-bold text-primary mb-6">🎭 Creating Custom Themes</h2>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Step 1: Define Your Theme</h3>
+                <p class="text-base-content/80 mb-4">Create a new theme by defining CSS variables under a <code
+                        class="inline-code">[data-theme="your-theme-name"]</code> selector:</p>
+
+                <div class="code-block">/* Custom Ocean Theme Example */
+                    [data-theme="ocean"] {
+                    --color-primary: 6 182 212; /* cyan-500 */
+                    --color-primary-focus: 8 145 178; /* cyan-600 */
+                    --color-primary-content: 255 255 255; /* white */
+
+                    --color-secondary: 14 165 233; /* sky-500 */
+                    --color-secondary-focus: 2 132 199; /* sky-600 */
+                    --color-secondary-content: 255 255 255; /* white */
+
+                    --color-accent: 59 130 246; /* blue-500 */
+                    --color-accent-focus: 37 99 235; /* blue-600 */
+                    --color-accent-content: 255 255 255; /* white */
+
+                    --color-neutral: 8 145 178; /* cyan-600 */
+                    --color-neutral-focus: 14 116 144; /* cyan-700 */
+                    --color-neutral-content: 255 255 255; /* white */
+
+                    --color-base-100: 236 254 255; /* cyan-50 */
+                    --color-base-200: 207 250 254; /* cyan-100 */
+                    --color-base-300: 165 243 252; /* cyan-200 */
+                    --color-base-content: 22 78 99; /* cyan-900 */
+
+                    /* Semantic colors */
+                    --color-info: 14 165 233; /* sky-500 */
+                    --color-info-content: 255 255 255; /* white */
+                    --color-success: 34 197 94; /* green-500 */
+                    --color-success-content: 255 255 255; /* white */
+                    --color-warning: 245 158 11; /* amber-500 */
+                    --color-warning-content: 255 255 255; /* white */
+                    --color-error: 239 68 68; /* red-500 */
+                    --color-error-content: 255 255 255; /* white */
+                    }</div>
+            </div>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Step 2: Color Guidelines</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-semibold text-accent mb-2">Required Variables</h4>
+                        <ul class="text-sm text-base-content/80 space-y-1">
+                            <li>• <code class="inline-code">--color-primary</code> & <code
+                                    class="inline-code">--color-primary-focus</code></li>
+                            <li>• <code class="inline-code">--color-secondary</code> & <code
+                                    class="inline-code">--color-secondary-focus</code></li>
+                            <li>• <code class="inline-code">--color-accent</code> & <code
+                                    class="inline-code">--color-accent-focus</code></li>
+                            <li>• <code class="inline-code">--color-neutral</code> & <code
+                                    class="inline-code">--color-neutral-focus</code></li>
+                            <li>• <code class="inline-code">--color-base-100</code>, <code
+                                    class="inline-code">--color-base-200</code>, <code
+                                    class="inline-code">--color-base-300</code></li>
+                            <li>• <code class="inline-code">--color-base-content</code></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-accent mb-2">Best Practices</h4>
+                        <ul class="text-sm text-base-content/80 space-y-1">
+                            <li>• Use RGB values without <code class="inline-code">rgb()</code></li>
+                            <li>• Ensure good contrast ratios</li>
+                            <li>• Test in both light and dark environments</li>
+                            <li>• Focus colors should be darker than base colors</li>
+                            <li>• Content colors should contrast well with backgrounds</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Adding to Theme Switcher -->
+        <section id="theme-switcher" class="mb-12">
+            <h2 class="text-3xl font-bold text-primary mb-6">🔄 Adding to Theme Switcher</h2>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Step 1: Add to CSS File</h3>
+                <p class="text-base-content/80 mb-4">Add your theme definition to <code
+                        class="inline-code">src/styles/daisy-themes.css</code>:</p>
+
+                <div class="code-block mb-4">/* Add this to daisy-themes.css */
+                    [data-theme="your-theme-name"] {
+                    --color-primary: 59 130 246;
+                    --color-primary-focus: 37 99 235;
+                    /* ... rest of your theme variables */
+                    }</div>
+            </div>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Step 2: Update Theme Switcher</h3>
+                <p class="text-base-content/80 mb-4">Add your theme to the <code class="inline-code">DAISY_THEMES</code>
+                    array in <code class="inline-code">src/components/shared/DaisyThemeSwitcher.jsx</code>:</p>
+
+                <div class="code-block mb-4">
+                    const DAISY_THEMES = [
+                    { name: 'light', label: 'Light', description: 'Clean and bright' },
+                    { name: 'dark', label: 'Dark', description: 'Easy on the eyes' },
+                    // ... existing themes
+                    { name: 'your-theme-name', label: 'Your Theme', description: 'Your custom theme' },
+                    ];</div>
+            </div>
+
+            <div class="card mb-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4">Step 3: JavaScript Theme Switching</h3>
+                <p class="text-base-content/80 mb-4">Programmatically switch themes using JavaScript:</p>
+
+                <div class="code-block mb-4">
+                    // Switch to your custom theme
+                    document.documentElement.setAttribute('data-theme', 'your-theme-name');
+
+                    // Get current theme
+                    const currentTheme = document.documentElement.getAttribute('data-theme');
+
+                    // Save theme preference
+                    localStorage.setItem('theme', 'your-theme-name');</div>
+            </div>
+        </section>
+
+        <!-- Quick Reference -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-bold text-primary mb-6">📋 Quick Reference</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="card">
+                    <h3 class="text-lg font-semibold text-secondary mb-3">Background Classes</h3>
+                    <div class="text-sm space-y-1">
+                        <div><code class="inline-code">bg-primary</code></div>
+                        <div><code class="inline-code">bg-secondary</code></div>
+                        <div><code class="inline-code">bg-accent</code></div>
+                        <div><code class="inline-code">bg-neutral</code></div>
+                        <div><code class="inline-code">bg-base-100</code></div>
+                        <div><code class="inline-code">bg-base-200</code></div>
+                        <div><code class="inline-code">bg-base-300</code></div>
+                        <div><code class="inline-code">bg-info</code></div>
+                        <div><code class="inline-code">bg-success</code></div>
+                        <div><code class="inline-code">bg-warning</code></div>
+                        <div><code class="inline-code">bg-error</code></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-lg font-semibold text-secondary mb-3">Text Classes</h3>
+                    <div class="text-sm space-y-1">
+                        <div><code class="inline-code">text-primary</code></div>
+                        <div><code class="inline-code">text-secondary</code></div>
+                        <div><code class="inline-code">text-accent</code></div>
+                        <div><code class="inline-code">text-neutral</code></div>
+                        <div><code class="inline-code">text-base-content</code></div>
+                        <div><code class="inline-code">text-base-content/80</code></div>
+                        <div><code class="inline-code">text-base-content/60</code></div>
+                        <div><code class="inline-code">text-info</code></div>
+                        <div><code class="inline-code">text-success</code></div>
+                        <div><code class="inline-code">text-warning</code></div>
+                        <div><code class="inline-code">text-error</code></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="text-lg font-semibold text-secondary mb-3">Border Classes</h3>
+                    <div class="text-sm space-y-1">
+                        <div><code class="inline-code">border-primary</code></div>
+                        <div><code class="inline-code">border-secondary</code></div>
+                        <div><code class="inline-code">border-accent</code></div>
+                        <div><code class="inline-code">border-neutral</code></div>
+                        <div><code class="inline-code">border-base-100</code></div>
+                        <div><code class="inline-code">border-base-200</code></div>
+                        <div><code class="inline-code">border-base-300</code></div>
+                        <div><code class="inline-code">border-info</code></div>
+                        <div><code class="inline-code">border-success</code></div>
+                        <div><code class="inline-code">border-warning</code></div>
+                        <div><code class="inline-code">border-error</code></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center py-8 border-t border-base-300">
+            <p class="text-base-content/60 mb-4">
+                This cheat sheet demonstrates DaisyUI theming concepts for the Budgie Tailux project.
+            </p>
+            <p class="text-sm text-base-content/40">
+                Switch themes using the dropdown above to see how all components adapt automatically.
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Theme switcher functionality
+        const themeSelector = document.getElementById('themeSelector');
+        const html = document.documentElement;
+
+        // Load saved theme or default to light
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        themeSelector.value = savedTheme;
+
+        // Handle theme changes
+        themeSelector.addEventListener('change', (e) => {
+            const newTheme = e.target.value;
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

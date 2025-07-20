@@ -10,14 +10,23 @@ const SimplifiedSummaryCards = ({
     accounts = [],
     categories = [],
     planningItems = [],
+    transactions = [], // Add transactions prop
     className = '',
 }) => {
     // Calculate summary data
     const summaryData = useMemo(() => {
-        // Calculate available to allocate
-        const totalBalance = accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+        // Calculate available to allocate using totalWorkingBalance (source of truth)
+        // Use EXACT same calculation as AccountsManagement
+        const totalWorkingBalance = accounts.reduce((sum, account) => {
+            // IMPORTANT: Use the exact same logic as AccountsManagement.calculateAccountBalances
+            const accountTransactions = transactions.filter(t => t.accountId === account.id);
+            const startingBalance = account.startingBalance || account.balance || 0;
+            const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+            return sum + workingBalance;
+        }, 0);
+
         const totalAllocated = categories.reduce((sum, category) => sum + (category.allocated || 0), 0);
-        const availableToAllocate = totalBalance - totalAllocated;
+        const availableToAllocate = totalWorkingBalance - totalAllocated;
 
         // Calculate budget progress
         const totalPlanned = planningItems.reduce((sum, item) => {
@@ -61,7 +70,7 @@ const SimplifiedSummaryCards = ({
             urgentItemsList: urgentItems,
             fundingPercentage,
         };
-    }, [accounts, categories, planningItems]);
+    }, [accounts, categories, planningItems, transactions]);
 
     // Format currency helper
     const formatCurrency = (amount) => {
@@ -72,7 +81,7 @@ const SimplifiedSummaryCards = ({
     };
 
     return (
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${className}`}>
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${className}`}>
             {/* Available to Allocate Card */}
             <SummaryCard
                 title="Available to Allocate"
@@ -83,7 +92,7 @@ const SimplifiedSummaryCards = ({
             />
 
             {/* Budget Progress Card */}
-            <SummaryCard
+            {/* <SummaryCard
                 title="Budget Progress"
                 value={`${Math.round(summaryData.budgetProgress)}%`}
                 description="of income planned"
@@ -94,7 +103,7 @@ const SimplifiedSummaryCards = ({
                         summaryData.budgetProgress > 90 ? 'yellow' :
                             'gradient'
                 }
-            />
+            /> */}
 
             {/* Needs Attention Card */}
             <SummaryCard
@@ -109,14 +118,14 @@ const SimplifiedSummaryCards = ({
                 }
             >
                 {summaryData.urgentItems > 0 && (
-                    <div className="text-xs text-gray-500 dark:text-dark-400 mt-2">
+                    <div className="text-xs text-base-content/60 mt-2">
                         {summaryData.urgentItemsList.slice(0, 2).map((item, index) => (
                             <div key={index} className="truncate">
                                 • {item.name}
                             </div>
                         ))}
                         {summaryData.urgentItemsList.length > 2 && (
-                            <div className="text-gray-600 dark:text-dark-300">
+                            <div className="text-base-content/70">
                                 +{summaryData.urgentItemsList.length - 2} more
                             </div>
                         )}

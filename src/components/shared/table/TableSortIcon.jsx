@@ -2,7 +2,7 @@ import PropTypes from "prop-types";
 
 const neutral = (
   <svg
-    className="w-2.5 text-gray-400 dark:text-dark-400"
+    className="w-2.5 text-base-content/60"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 401.998 401.998"
     fill="currentColor"
@@ -13,7 +13,7 @@ const neutral = (
 
 const asc = (
   <svg
-    className="w-2.5 text-gray-500 dark:text-dark-300"
+    className="w-2.5 text-base-content/60"
     fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 292.362 292.361"
@@ -24,7 +24,7 @@ const asc = (
 
 const desc = (
   <svg
-    className="w-2.5 text-gray-500 dark:text-dark-300"
+    className="w-2.5 text-base-content/60"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 292.362 292.362"
     fill="currentColor"

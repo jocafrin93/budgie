@@ -1,18 +1,17 @@
 // src/hooks/useConfigSettings.js
 import { useCallback } from 'react';
 import { frequencyOptions } from '../utils/constants';
-import { useLocalStorage } from './useLocalStorage';
-
+import { useStorage } from './useStorage';
 
 /**
  * Custom hook for managing configuration and settings
  * Extracts configuration-related state and operations from App.js
  */
 export const useConfigSettings = () => {
-  // Pay settings
-  const [currentPay, setCurrentPay] = useLocalStorage('budgetCalc_currentPay', 2000);
-  const [payFrequency, setPayFrequency] = useLocalStorage('budgetCalc_payFrequency', 'biweekly');
-  const [paySchedule, setPaySchedule] = useLocalStorage('budgetCalc_paySchedule', {
+  // Pay settings - now uses cloud storage
+  const [currentPay, setCurrentPay] = useStorage('budgetCalc_currentPay', 2000);
+  const [payFrequency, setPayFrequency] = useStorage('budgetCalc_payFrequency', 'biweekly');
+  const [paySchedule, setPaySchedule] = useStorage('budgetCalc_paySchedule', {
     frequency: 'biweekly',
     startDate: new Date().toISOString(),
     dayOfWeek: 5, // Friday
@@ -20,12 +19,12 @@ export const useConfigSettings = () => {
     excludeWeekends: true
   });
 
-  // Budget settings
-  const [roundingOption, setRoundingOption] = useLocalStorage('budgetCalc_roundingOption', 'round');
-  const [bufferPercentage, setBufferPercentage] = useLocalStorage('budgetCalc_bufferPercentage', 10);
+  // Budget settings - now uses cloud storage
+  const [roundingOption, setRoundingOption] = useStorage('budgetCalc_roundingOption', 'round');
+  const [bufferPercentage, setBufferPercentage] = useStorage('budgetCalc_bufferPercentage', 10);
 
-  // Theme settings
-  const [theme, setTheme] = useLocalStorage('budgetCalc_theme', 'light');
+  // Theme settings - now uses cloud storage
+  const [theme, setTheme] = useStorage('budgetCalc_theme', 'light');
 
   // Frequency options for expenses
   const payFrequencyOptions = [
@@ -38,13 +37,13 @@ export const useConfigSettings = () => {
   // Category colors
   const categoryColors = [
     'bg-gradient-to-r from-purple-500 to-pink-500',
-    'bg-gradient-to-r from-green-500 to-blue-500',
+    'bg-gradient-to-r from-green-500 to-info-500',
     'bg-gradient-to-r from-yellow-500 to-red-500',
-    'bg-gradient-to-r from-blue-500 to-indigo-500',
+    'bg-gradient-to-r from-info-500 to-indigo-500',
     'bg-gradient-to-r from-red-500 to-yellow-500',
     'bg-gradient-to-r from-indigo-500 to-purple-500',
     'bg-gradient-to-r from-pink-500 to-red-500',
-    'bg-gradient-to-r from-blue-500 to-green-500',
+    'bg-gradient-to-r from-info-500 to-green-500',
     'bg-gradient-to-r from-purple-600 to-indigo-600',
     'bg-gradient-to-r from-green-600 to-teal-600'
   ];

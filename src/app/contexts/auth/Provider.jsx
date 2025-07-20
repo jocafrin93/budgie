@@ -1,11 +1,8 @@
 // Import Dependencies
-import { useEffect, useReducer } from "react";
-import isObject from "lodash/isObject";
 import PropTypes from "prop-types";
-import isString from "lodash/isString";
+import { useEffect, useReducer } from "react";
 
 // Local Imports
-import axios from "utils/axios";
 import { isTokenValid, setSession } from "utils/jwt";
 import { AuthContext } from "./context";
 
@@ -83,8 +80,13 @@ export function AuthProvider({ children }) {
         if (authToken && isTokenValid(authToken)) {
           setSession(authToken);
 
-          const response = await axios.get("/user/profile");
-          const { user } = response.data;
+          // Create mock user from stored token (bypass external API)
+          const user = {
+            id: 1,
+            username: "user",
+            email: "user@example.com",
+            name: "User",
+          };
 
           dispatch({
             type: "INITIALIZE",
@@ -117,22 +119,21 @@ export function AuthProvider({ children }) {
     init();
   }, []);
 
-  const login = async ({ username, password }) => {
+  const login = async ({ username = "user" } = {}) => {
     dispatch({
       type: "LOGIN_REQUEST",
     });
 
     try {
-      const response = await axios.post("/login", {
-        username,
-        password,
-      });
-
-      const { authToken, user } = response.data;
-
-      if (!isString(authToken) && !isObject(user)) {
-        throw new Error("Response is not vallid");
-      }
+      // Simple local authentication - bypass external API
+      // Allow login without credentials for development
+      const authToken = `mock-token-${Date.now()}`;
+      const user = {
+        id: 1,
+        username: username || "user",
+        email: `${username || "user"}@example.com`,
+        name: (username || "user").charAt(0).toUpperCase() + (username || "user").slice(1),
+      };
 
       setSession(authToken);
 

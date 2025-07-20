@@ -1,14 +1,14 @@
 // Import Dependencies
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
+import clsx from "clsx";
 import PropTypes from "prop-types";
 import { forwardRef, useEffect, useMemo, useRef } from "react";
-import clsx from "clsx";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import invariant from "tiny-invariant";
 
 // Local Imports
+import { useThemeContext } from "app/contexts/theme/context";
 import { mergeRefs, useId } from "hooks";
 import { InputErrorMsg } from "./InputErrorMsg";
-import { useThemeContext } from "app/contexts/theme/context";
 
 // ----------------------------------------------------------------------
 
@@ -88,8 +88,8 @@ const Select = forwardRef((props, ref) => {
   const affixClass = clsx(
     "pointer-events-none absolute top-0 flex h-full w-9 items-center justify-center transition-colors",
     error
-      ? "text-error dark:text-error-light"
-      : "text-gray-400 peer-focus:text-primary-600 dark:text-dark-300 dark:peer-focus:text-primary-500",
+      ? "text-error"
+      : "text-base-content/60 peer-focus:border-primary",
   );
 
   useEffect(() => {
@@ -128,12 +128,12 @@ const Select = forwardRef((props, ref) => {
               suffix && "ltr:pr-9 rtl:pl-9",
               prefix && "ltr:pl-9 rtl:pr-9",
               error
-                ? "border-error dark:border-error-lighter"
+                ? "border-error"
                 : [
-                    disabled
-                      ? "cursor-not-allowed border-gray-300 bg-gray-150 opacity-60 dark:border-dark-500 dark:bg-dark-600"
-                      : "peer border-gray-300 hover:border-gray-400 focus:border-primary-600 dark:border-dark-450 dark:hover:border-dark-400 dark:focus:border-primary-500",
-                  ],
+                  disabled
+                    ? "cursor-not-allowed border-base-300 bg-base-200 opacity-60 bg-base-100"
+                    : "peer border-primary/20 bg-transparent hover:border-primary/30 focus:border-primary focus:bg-base-100/50",
+                ],
             ],
             className,
             classNames?.select,
@@ -180,7 +180,7 @@ const Select = forwardRef((props, ref) => {
       {description && (
         <span
           className={clsx(
-            "input-description mt-1 text-xs text-gray-400 dark:text-dark-300",
+            "input-description mt-1 text-xs text-base-content/60",
             classNames?.description,
           )}
         >
@@ -214,3 +214,4 @@ Select.propTypes = {
 };
 
 export { Select };
+

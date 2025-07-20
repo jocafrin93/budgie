@@ -1,0 +1,26 @@
+{
+    "label": "Midnight",
+    "description": "Deep dark theme with blue accents",
+    "colors": {
+        "base-100": "15 23 42",
+        "base-200": "30 41 59",
+        "base-300": "51 65 85",
+        "base-content": "248 250 252",
+        "primary": "59 130 246",
+        "primary-content": "255 255 255",
+        "secondary": "139 92 246",
+        "secondary-content": "255 255 255",
+        "accent": "34 197 94",
+        "accent-content": "255 255 255",
+        "neutral": "71 85 105",
+        "neutral-content": "248 250 252",
+        "info": "14 165 233",
+        "info-content": "255 255 255",
+        "success": "34 197 94",
+        "success-content": "255 255 255",
+        "warning": "245 158 11",
+        "warning-content": "255 255 255",
+        "error": "239 68 68",
+        "error-content": "255 255 255"
+    }
+}

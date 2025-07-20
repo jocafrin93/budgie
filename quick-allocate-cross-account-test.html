@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Allocate Modal - Cross-Account Validation Test</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .bg-dark-800 {
+            background-color: #1f2937;
+        }
+
+        .bg-dark-750 {
+            background-color: #374151;
+        }
+
+        .bg-dark-700 {
+            background-color: #374151;
+        }
+
+        .bg-dark-600 {
+            background-color: #4b5563;
+        }
+
+        .text-dark-100 {
+            color: #f9fafb;
+        }
+
+        .text-dark-200 {
+            color: #f3f4f6;
+        }
+
+        .text-dark-300 {
+            color: #d1d5db;
+        }
+
+        .text-dark-400 {
+            color: #9ca3af;
+        }
+
+        .border-dark-600 {
+            border-color: #4b5563;
+        }
+
+        .border-dark-500 {
+            border-color: #6b7280;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback, useEffect, useMemo } = React;
+        const { CheckCircle, DollarSign, X, Zap } = lucide;
+
+        // Mock QuickAllocateModal Component with Cross-Account Validation
+        const QuickAllocateModal = ({
+            isOpen,
+            onClose,
+            availableToAllocate,
+            categories = [],
+            accounts = [],
+            onBulkAllocate
+        }) => {
+            const [allocations, setAllocations] = useState({});
+            const [showSuggestions, setShowSuggestions] = useState(true);
+            const [showSourceAccountModal, setShowSourceAccountModal] = useState(false);
+            const [pendingAllocations, setPendingAllocations] = useState([]);
+
+            // Calculate suggested allocations based on category needs
+            const suggestedAllocations = useMemo(() => {
+                const suggestions = {};
+                let totalSuggested = 0;
+
+                categories.forEach(category => {
+                    // Calculate suggested amount based on per-paycheck need
+                    const suggested = Math.min(
+                        category.perPaycheck || 0,
+                        availableToAllocate - totalSuggested
+                    );
+
+                    if (suggested > 0) {
+                        suggestions[category.id] = suggested;
+                        totalSuggested += suggested;
+                    }
+                });
+
+                return suggestions;
+            }, [categories, availableToAllocate]);
+
+            // Reset allocations when modal opens
+            useEffect(() => {
+                if (isOpen) {
+                    if (showSuggestions) {
+                        setAllocations(suggestedAllocations);
+                    } else {
+                        setAllocations({});
+                    }
+                }
+            }, [isOpen, suggestedAllocations, showSuggestions]);
+
+            // Calculate totals
+            const totalAllocated = useMemo(() => {
+                return Object.values(allocations).reduce((sum, amount) => sum + (parseFloat(amount) || 0), 0);
+            }, [allocations]);
+
+            const remaining = availableToAllocate - totalAllocated;
+
+            // Handle individual allocation change
+            const handleAllocationChange = useCallback((categoryId, value) => {
+                const numValue = parseFloat(value) || 0;
+                setAllocations(prev => ({
+                    ...prev,
+                    [categoryId]: numValue
+                }));
+            }, []);
+
+            // Apply suggested amounts
+            const applySuggestions = useCallback(() => {
+                setAllocations(suggestedAllocations);
+                setShowSuggestions(true);
+            }, [suggestedAllocations]);
+
+            // Clear all allocations
+            const clearAll = useCallback(() => {
+                setAllocations({});
+                setShowSuggestions(false);
+            }, []);
+
+            // Cross-account validation logic
+            const validateCrossAccountAllocation = useCallback((allocationsToApply) => {
+                // Check if we have insufficient funds and need cross-account transfers
+                const shortfall = Math.abs(Math.min(0, remaining));
+
+                if (shortfall > 0) {
+                    // We need cross-account transfers
+                    setPendingAllocations(allocationsToApply);
+                    setShowSourceAccountModal(true);
+                    return false; // Don't proceed with allocation yet
+                }
+
+                return true; // Sufficient funds, can proceed
+            }, [remaining]);
+
+            // Handle bulk allocation with cross-account validation
+            const handleBulkAllocate = useCallback(() => {
+                const allocationsToApply = Object.entries(allocations)
+                    .filter(([, amount]) => parseFloat(amount) > 0)
+                    .map(([categoryId, amount]) => ({
+                        categoryId: parseInt(categoryId, 10),
+                        amount: parseFloat(amount)
+                    }));
+
+                if (allocationsToApply.length > 0) {
+                    // Validate cross-account requirements
+                    if (validateCrossAccountAllocation(allocationsToApply)) {
+                        // Sufficient funds - proceed directly
+                        onBulkAllocate?.(allocationsToApply);
+                        onClose();
+                    }
+                    // If insufficient funds, the source account modal will be shown
+                }
+            }, [allocations, validateCrossAccountAllocation, onBulkAllocate, onClose]);
+
+            // Handle source account selection and create pending transfers
+            const handleSourceAccountSelection = useCallback((sourceAccountId) => {
+                const shortfall = Math.abs(Math.min(0, remaining));
+
+                // Create pending transfer record
+                const pendingTransfer = {
+                    id: `transfer-${Date.now()}`,
+                    fromAccountId: sourceAccountId,
+                    toAccountId: 1, // Assuming primary account ID is 1
+                    amount: shortfall,
+                    reason: `Cross-account allocation for ${pendingAllocations.length} categories`,
+                    createdAt: new Date().toISOString(),
+                    status: 'pending'
+                };
+
+                // Store pending transfer in localStorage
+                const existingTransfers = JSON.parse(localStorage.getItem('budgetCalc_pendingTransfers') || '[]');
+                existingTransfers.push(pendingTransfer);
+                localStorage.setItem('budgetCalc_pendingTransfers', JSON.stringify(existingTransfers));
+
+                // Now proceed with the original allocations
+                onBulkAllocate?.(pendingAllocations);
+
+                // Close modals
+                setShowSourceAccountModal(false);
+                onClose();
+            }, [remaining, pendingAllocations, onBulkAllocate, onClose]);
+
+            // Format currency
+            const formatCurrency = (amount) => {
+                const numAmount = typeof amount === 'number' ? amount : parseFloat(amount) || 0;
+                return `$${numAmount.toFixed(2)}`;
+            };
+
+            if (!isOpen) return null;
+
+            const canAllocate = totalAllocated > 0;
+
+            // Source Account Selection Modal Component
+            const SourceAccountSelectionModal = () => {
+                const shortfall = Math.abs(Math.min(0, remaining));
+                const availableAccounts = accounts.filter(account =>
+                    account.id !== 1 && // Don't show primary account as source
+                    (account.balance || 0) >= shortfall // Only show accounts with sufficient funds
+                );
+
+                return (
+                    <div className="fixed inset-0 z-60 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+                            {/* Header */}
+                            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white">
+                                        🔄
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-900">
+                                            Cross-Account Transfer Required
+                                        </h3>
+                                        <p className="text-sm text-gray-600">
+                                            You need {formatCurrency(shortfall)} more to complete this allocation
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowSourceAccountModal(false)}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-6">
+                                <div className="mb-6">
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <span className="text-yellow-600">⚠️</span>
+                                            <span className="font-medium text-yellow-800">Insufficient Funds</span>
+                                        </div>
+                                        <p className="text-sm text-yellow-700">
+                                            You're trying to allocate {formatCurrency(totalAllocated)} but only have {formatCurrency(availableToAllocate)} available.
+                                            Choose an account to transfer {formatCurrency(shortfall)} from:
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Account Selection */}
+                                <div className="space-y-3">
+                                    <h4 className="font-medium text-gray-900">Select Source Account:</h4>
+                                    {availableAccounts.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {availableAccounts.map(account => (
+                                                <button
+                                                    key={account.id}
+                                                    onClick={() => handleSourceAccountSelection(account.id)}
+                                                    className="w-full flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm">
+                                                            {account.name.charAt(0)}
+                                                        </div>
+                                                        <div className="text-left">
+                                                            <div className="font-medium text-gray-900">
+                                                                {account.name}
+                                                            </div>
+                                                            <div className="text-sm text-gray-600">
+                                                                Available: {formatCurrency(account.balance || 0)}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-sm text-gray-500">Transfer</div>
+                                                        <div className="font-medium text-blue-600">
+                                                            {formatCurrency(shortfall)}
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8">
+                                            <div className="text-gray-400 mb-2">😔</div>
+                                            <p className="text-gray-600">
+                                                No accounts have sufficient funds for this transfer.
+                                            </p>
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                You need {formatCurrency(shortfall)} more to complete this allocation.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+                                <div className="text-sm text-gray-600">
+                                    💡 This will create a pending transfer reminder
+                                </div>
+                                <button
+                                    onClick={() => setShowSourceAccountModal(false)}
+                                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <>
+                    {/* Main Quick Allocate Modal */}
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm transition-opacity">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden">
+                            {/* Header */}
+                            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white">
+                                        <Zap className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-gray-900">
+                                            Quick Allocate
+                                        </h3>
+                                        <p className="text-sm text-gray-600">
+                                            Allocate {formatCurrency(availableToAllocate)} to multiple categories at once
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            {/* Summary Bar */}
+                            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-6">
+                                        <div>
+                                            <span className="text-sm text-gray-600">Available:</span>
+                                            <span className="ml-2 font-semibold text-green-600">
+                                                {formatCurrency(availableToAllocate)}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="text-sm text-gray-600">Allocating:</span>
+                                            <span className="ml-2 font-semibold text-blue-600">
+                                                {formatCurrency(totalAllocated)}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span className="text-sm text-gray-600">Remaining:</span>
+                                            <span className={`ml-2 font-semibold ${remaining >= 0
+                                                ? 'text-gray-900'
+                                                : 'text-red-600'
+                                                }`}>
+                                                {formatCurrency(remaining)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={applySuggestions}
+                                            className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                                        >
+                                            Use Suggestions
+                                        </button>
+                                        <button
+                                            onClick={clearAll}
+                                            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                                        >
+                                            Clear All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Categories List */}
+                            <div className="overflow-y-auto max-h-96">
+                                <div className="p-6 space-y-3">
+                                    {categories.map(category => {
+                                        const allocation = allocations[category.id] || 0;
+                                        const suggested = suggestedAllocations[category.id] || 0;
+                                        const isSuggested = allocation === suggested && suggested > 0;
+
+                                        return (
+                                            <div
+                                                key={category.id}
+                                                className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                            >
+                                                {/* Category Info */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-4 h-4 rounded-full ${category.color} border border-gray-200`}></div>
+                                                        <div>
+                                                            <h4 className="font-medium text-gray-900 truncate">
+                                                                {category.name}
+                                                            </h4>
+                                                            <div className="flex items-center gap-4 text-sm text-gray-600">
+                                                                <span>Per paycheck: {formatCurrency(category.perPaycheck || 0)}</span>
+                                                                <span>Available: {formatCurrency(category.available || 0)}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Suggested Amount */}
+                                                {suggested > 0 && (
+                                                    <div className="text-center">
+                                                        <div className="text-xs text-gray-500">Suggested</div>
+                                                        <div className="font-medium text-blue-600">
+                                                            {formatCurrency(suggested)}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Allocation Input */}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                                                            $
+                                                        </span>
+                                                        <input
+                                                            type="number"
+                                                            value={allocation || ''}
+                                                            onChange={(e) => handleAllocationChange(category.id, e.target.value)}
+                                                            placeholder="0.00"
+                                                            min="0"
+                                                            step="0.01"
+                                                            className="w-24 pl-6 pr-2 py-2 text-sm border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                        />
+                                                    </div>
+                                                    {isSuggested && (
+                                                        <CheckCircle className="w-4 h-4 text-green-500" title="Using suggested amount" />
+                                                    )}
+                                                </div>
+
+                                                {/* Quick Amount Buttons */}
+                                                <div className="flex items-center gap-1">
+                                                    {suggested > 0 && (
+                                                        <button
+                                                            onClick={() => handleAllocationChange(category.id, suggested)}
+                                                            className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                                                            title="Use suggested amount"
+                                                        >
+                                                            Suggested
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleAllocationChange(category.id, category.perPaycheck || 0)}
+                                                        className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                                                        title="Use full per-paycheck amount"
+                                                    >
+                                                        Full
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+                                <div className="text-sm text-gray-600">
+                                    {Object.keys(allocations).filter(id => parseFloat(allocations[id]) > 0).length} categories selected
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={onClose}
+                                        className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleBulkAllocate}
+                                        disabled={!canAllocate}
+                                        className={`flex items-center gap-2 px-6 py-2 rounded-lg transition-colors ${canAllocate
+                                            ? 'bg-green-600 hover:bg-green-700 text-white'
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                            }`}
+                                    >
+                                        <DollarSign className="w-4 h-4" />
+                                        Allocate {formatCurrency(totalAllocated)}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Source Account Selection Modal */}
+                    {showSourceAccountModal && <SourceAccountSelectionModal />}
+                </>
+            );
+        };
+
+        // Test App Component
+        const TestApp = () => {
+            const [showModal, setShowModal] = useState(false);
+            const [scenario, setScenario] = useState('sufficient');
+
+            // Mock data for different scenarios
+            const mockAccounts = [
+                { id: 1, name: 'Primary Checking', balance: 500 },
+                { id: 2, name: 'Savings Account', balance: 2000 },
+                { id: 3, name: 'Emergency Fund', balance: 5000 },
+                { id: 4, name: 'Investment Account', balance: 100 }
+            ];
+
+            const mockCategories = [
+                { id: 1, name: 'Groceries', color: 'bg-green-500', perPaycheck: 200, available: 50 },
+                { id: 2, name: 'Gas', color: 'bg-blue-500', perPaycheck: 100, available: 25 },
+                { id: 3, name: 'Entertainment', color: 'bg-purple-500', perPaycheck: 150, available: 0 },
+                { id: 4, name: 'Utilities', color: 'bg-orange-500', perPaycheck: 300, available: 100 },
+                { id: 5, name: 'Insurance', color: 'bg-red-500', perPaycheck: 250, available: 75 }
+            ];
+
+            const scenarios = {
+                sufficient: { available: 1000, description: 'Sufficient funds - normal allocation' },
+                insufficient: { available: 300, description: 'Insufficient funds - triggers cross-account modal' },
+                noAccounts: { available: 300, description: 'Insufficient funds with no suitable source accounts' }
+            };
+
+            const currentScenario = scenarios[scenario];
+            const availableAccounts = scenario === 'noAccounts'
+                ? [{ id: 1, name: 'Primary Checking', balance: 500 }] // Only primary account
+                : mockAccounts;
+
+            const handleBulkAllocate = (allocations) => {
+                console.log('Bulk allocation completed:', allocations);
+                alert(`Allocated to ${allocations.length} categories!\nTotal: $${allocations.reduce((sum, a) => sum + a.amount, 0).toFixed(2)}`);
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                            Quick Allocate Modal - Cross-Account Validation Test
+                        </h1>
+                        <p className="text-gray-600 mb-6">
+                            Test the enhanced Quick Allocate Modal with cross-account validation functionality.
+                        </p>
+
+                        {/* Scenario Selection */}
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-3">Test Scenarios:</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {Object.entries(scenarios).map(([key, scenarioData]) => (
+                                    <button
+                                        key={key}
+                                        onClick={() => setScenario(key)}
+                                        className={`p-4 rounded-lg border-2 transition-colors text-left ${scenario === key
+                                                ? 'border-blue-500 bg-blue-50'
+                                                : 'border-gray-200 hover:border-gray-300'
+                                            }`}
+                                    >
+                                        <div className="font-medium text-gray-900 mb-1">
+                                            {key.charAt(0).toUpperCase() + key.slice(1)} Funds
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                            Available: ${scenarioData.available}
+                                        </div>
+                                        <div className="text-xs text-gray-500 mt-2">
+                                            {scenarioData.description}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Current Scenario Info */}
+                        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                            <h4 className="font-medium text-gray-900 mb-2">Current Scenario:</h4>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span className="text-gray-600">Available to Allocate:</span>
+                                    <span className="ml-2 font-semibold text-green-600">
+                                        ${currentScenario.available}
+                                    </span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-600">Total Category Needs:</span>
+                                    <span className="ml-2 font-semibold text-blue-600">
+                                        ${mockCategories.reduce((sum, cat) => sum + cat.perPaycheck, 0)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="mt-2 text-sm text-gray-600">
+                                {currentScenario.description}
+                            </div>
+                        </div>
+
+                        {/* Test Button */}
+                        <button
+                            onClick={() => setShowModal(true)}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Zap className="w-5 h-5" />
+                            Open Quick Allocate Modal
+                        </button>
+
+                        {/* Instructions */}
+                        <div className="mt-6 bg-blue-50 rounded-lg p-4">
+                            <h4 className="font-medium text-blue-900 mb-2">Test Instructions:</h4>
+                            <ul className="text-sm text-blue-800 space-y-1">
+                                <li>• <strong>Sufficient Funds:</strong> Normal allocation flow</li>
+                                <li>• <strong>Insufficient Funds:</strong> Try allocating more than $300 to trigger cross-account modal</li>
+                                <li>• <strong>No Accounts:</strong> Shows message when no accounts have sufficient funds</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Modal */}
+                    {showModal && (
+                        <QuickAllocateModal
+                            isOpen={showModal}
+                            onClose={() => setShowModal(false)}
+                            availableToAllocate={currentScenario.available}
+                            categories={mockCategories}
+                            accounts={availableAccounts}
+                            onBulkAllocate={handleBulkAllocate}
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        // Render the app
+        ReactDOM.render(<TestApp />, document.getElementById('root'));
+    </script>

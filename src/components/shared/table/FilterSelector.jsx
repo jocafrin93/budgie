@@ -1,18 +1,18 @@
 // Import Dependencies
-import { FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import PropTypes from "prop-types";
-import clsx from "clsx";
-import { useEffect, useRef } from "react";
 import {
   Combobox,
   ComboboxInput,
   ComboboxOption,
   ComboboxOptions,
 } from "@headlessui/react";
+import { FunnelIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import clsx from "clsx";
+import PropTypes from "prop-types";
+import { useEffect, useRef } from "react";
 
 // Local Imports
-import { Badge, Button, Checkbox, Input } from "components/ui";
 import { useBreakpointsContext } from "app/contexts/breakpoint/context";
+import { Badge, Button, Checkbox, Input } from "components/ui";
 import { useFuse } from "hooks";
 import { ResponsiveFilter } from "./ResponsiveFilter";
 
@@ -30,7 +30,7 @@ export function FilterSelector({ table, options }) {
 
           {selectedFiltersLength > 0 && (
             <>
-              <div className="h-full w-px bg-gray-300 dark:bg-dark-450" />
+              <div className="h-full w-px bg-base-300 bg-base-200" />
               <Badge>{selectedFiltersLength}</Badge>
             </>
           )}
@@ -79,7 +79,7 @@ function Content({ table, options }) {
       className="sm:w-56"
     >
       <div className="relative">
-        <div className="relative bg-gray-100 py-1 dark:bg-dark-900">
+        <div className="relative bg-base-200 py-1 bg-base-100">
           <ComboboxInput
             as={Input}
             className="border-none"
@@ -97,17 +97,17 @@ function Content({ table, options }) {
           className="max-h-72 w-full overflow-y-auto py-1 outline-hidden"
         >
           {filteredItems.length === 0 && query !== "" ? (
-            <div className="relative cursor-default select-none px-2.5 py-2 text-gray-800 dark:text-dark-100">
+            <div className="relative cursor-default select-none px-2.5 py-2 text-base-content text-base-content">
               Nothing found for {query}
             </div>
           ) : (
             filteredItems.map(({ item, refIndex }) => (
               <ComboboxOption
                 key={refIndex}
-                className={({ focus }) =>
+                className={({ focused }) =>
                   clsx(
-                    "relative cursor-pointer select-none px-2.5 py-2 text-gray-800 outline-hidden transition-colors dark:text-dark-100",
-                    focus && "bg-gray-100 dark:bg-dark-600",
+                    "relative cursor-pointer select-none px-2.5 py-2 text-base-content outline-hidden transition-colors",
+                    focused && "bg-base-200"
                   )
                 }
                 value={item}

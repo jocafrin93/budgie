@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paycheck Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .result {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Paycheck Debug Test</h1>
+    <p>Testing account-specific paycheck countdown calculations</p>
+
+    <div class="test-section">
+        <h3>Test Setup</h3>
+        <div id="setup-info"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Mock Data</h3>
+        <div id="mock-data"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Paycheck Calculations</h3>
+        <div id="calculations"></div>
+    </div>
+
+    <script>
+        // Mock the calculatePaychecksUntilDue function
+        function calculatePaychecksUntilDue(dueDate, upcomingPaychecks = [], accountId = null) {
+            if (!dueDate || !upcomingPaychecks.length) return 0;
+
+            console.log('=== calculatePaychecksUntilDue DEBUG ===');
+            console.log('dueDate:', dueDate);
+            console.log('accountId:', accountId);
+            console.log('upcomingPaychecks:', upcomingPaychecks);
+
+            // Parse due date safely
+            let dueDateObj;
+            if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                const [year, month, day] = dueDate.split('-').map(Number);
+                dueDateObj = new Date(year, month - 1, day); // month is 0-indexed
+            } else {
+                dueDateObj = new Date(dueDate);
+            }
+
+            console.log('dueDateObj:', dueDateObj);
+
+            // Filter paychecks by account if specified
+            let relevantPaychecks = upcomingPaychecks;
+            if (accountId !== null) {
+                console.log('Filtering by accountId:', accountId);
+                relevantPaychecks = upcomingPaychecks.filter(paycheckEntry => {
+                    // Check if this paycheck distributes money to the specified account
+                    if (paycheckEntry.paycheck && paycheckEntry.paycheck.accountDistribution) {
+                        const hasAccount = paycheckEntry.paycheck.accountDistribution.some(dist =>
+                            String(dist.accountId) === String(accountId)
+                        );
+                        console.log(`Paycheck ${paycheckEntry.formattedDate}: accountDistribution:`,
+                            paycheckEntry.paycheck.accountDistribution, 'hasAccount:', hasAccount);
+                        return hasAccount;
+                    }
+                    console.log(`Paycheck ${paycheckEntry.formattedDate}: no accountDistribution`);
+                    return false;
+                });
+                console.log('relevantPaychecks after filtering:', relevantPaychecks);
+            }
+
+            // Count paychecks that occur before or on the due date
+            const result = relevantPaychecks.filter(paycheck => {
+                const paycheckDate = new Date(paycheck.date);
+                const isBeforeDue = paycheckDate <= dueDateObj;
+                console.log(`Paycheck ${paycheck.formattedDate} (${paycheckDate}) <= ${dueDateObj}:`, isBeforeDue);
+                return isBeforeDue;
+            }).length;
+
+            console.log('Final result:', result);
+            console.log('=== END DEBUG ===');
+            return result;
+        }
+
+        // Mock upcoming paychecks data
+        const mockUpcomingPaychecks = [
+            {
+                date: new Date('2025-07-09'),
+                formattedDate: '2025-07-09',
+                paycheck: {
+                    id: 1,
+                    name: 'Main Paycheck',
+                    accountDistribution: [
+                        { accountId: 1, amount: 1500 },
+                        { accountId: 2, amount: 500 }
+                    ]
+                }
+            },
+            {
+                date: new Date('2025-07-10'),
+                formattedDate: '2025-07-10',
+                paycheck: {
+                    id: 2,
+                    name: 'Secondary Paycheck',
+                    accountDistribution: [
+                        { accountId: 2, amount: 1000 }
+                    ]
+                }
+            },
+            {
+                date: new Date('2025-07-23'),
+                formattedDate: '2025-07-23',
+                paycheck: {
+                    id: 1,
+                    name: 'Main Paycheck',
+                    accountDistribution: [
+                        { accountId: 1, amount: 1500 },
+                        { accountId: 2, amount: 500 }
+                    ]
+                }
+            }
+        ];
+
+        // Test scenarios
+        const testScenarios = [
+            {
+                name: 'Car payment due 2025-07-15 - Account 1',
+                dueDate: '2025-07-15',
+                accountId: 1,
+                expected: 'Should find paycheck on 7/9 for Account 1'
+            },
+            {
+                name: 'Car payment due 2025-07-15 - Account 2',
+                dueDate: '2025-07-15',
+                accountId: 2,
+                expected: 'Should find paychecks on 7/9 and 7/10 for Account 2'
+            },
+            {
+                name: 'Car payment due 2025-07-15 - No account filter',
+                dueDate: '2025-07-15',
+                accountId: null,
+                expected: 'Should find all paychecks before 7/15'
+            }
+        ];
+
+        // Display setup info
+        document.getElementById('setup-info').innerHTML = `
+            <p><strong>Today:</strong> ${new Date().toLocaleDateString()}</p>
+            <p><strong>Test Date:</strong> July 7, 2025</p>
+            <p><strong>Paycheck 1:</strong> July 9, 2025 (Account 1: $1500, Account 2: $500)</p>
+            <p><strong>Paycheck 2:</strong> July 10, 2025 (Account 2: $1000)</p>
+            <p><strong>Due Date:</strong> July 15, 2025</p>
+        `;
+
+        // Display mock data
+        document.getElementById('mock-data').innerHTML = `
+            <pre>${JSON.stringify(mockUpcomingPaychecks, null, 2)}</pre>
+        `;
+
+        // Run tests
+        let calculationsHtml = '';
+        testScenarios.forEach(scenario => {
+            calculationsHtml += `<h4>${scenario.name}</h4>`;
+            calculationsHtml += `<p><em>Expected: ${scenario.expected}</em></p>`;
+
+            try {
+                const result = calculatePaychecksUntilDue(scenario.dueDate, mockUpcomingPaychecks, scenario.accountId);
+                calculationsHtml += `<div class="result success">Result: ${result} paychecks</div>`;
+            } catch (error) {
+                calculationsHtml += `<div class="result error">Error: ${error.message}</div>`;
+            }
+        });
+
+        document.getElementById('calculations').innerHTML = calculationsHtml;
+
+        // Also log to console for detailed debugging
+        console.log('=== RUNNING PAYCHECK DEBUG TESTS ===');
+        testScenarios.forEach(scenario => {
+            console.log(`\n--- ${scenario.name} ---`);
+            const result = calculatePaychecksUntilDue(scenario.dueDate, mockUpcomingPaychecks, scenario.accountId);
+            console.log(`Result: ${result} paychecks`);
+        });
+    </script>
+</body>
+
+</html>

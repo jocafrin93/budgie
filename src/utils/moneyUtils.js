@@ -92,13 +92,34 @@ export const calculateRemaining = (total, allocated) => {
 
 /**
  * Calculate biweekly allocation based on frequency
- * @param {number} amount - The amount
- * @param {string} frequency - The frequency (weekly, bi-weekly, monthly, etc.)
+ * @param {Object|number} expenseOrAmount - The expense object or amount
  * @param {Object} frequencyOptions - The frequency options with weeksPerYear values
  * @param {number} roundingOption - The rounding option (0 for no rounding)
  * @returns {number} Biweekly allocation amount
  */
-export const calculateBiweeklyAllocation = (amount, frequency, frequencyOptions, roundingOption = 0) => {
+export const calculateBiweeklyAllocation = (expenseOrAmount, frequencyOptions, roundingOption = 0, legacyRoundingOption = 0) => {
+    // Handle both old signature (amount, frequency, frequencyOptions, roundingOption) 
+    // and new signature (expenseObject, frequencyOptions, roundingOption)
+    let amount, frequency, dueDate;
+
+    if (typeof expenseOrAmount === 'object' && expenseOrAmount !== null) {
+        // New signature: expense object
+        amount = expenseOrAmount.amount;
+        frequency = expenseOrAmount.frequency;
+        dueDate = expenseOrAmount.dueDate;
+    } else {
+        // Old signature: individual parameters (for backward compatibility)
+        amount = expenseOrAmount;
+        frequency = frequencyOptions; // This would be the frequency in old signature
+        const oldFrequencyOptions = roundingOption; // This would be frequencyOptions in old signature
+        const oldRoundingOption = legacyRoundingOption; // This would be roundingOption in old signature
+
+        // Reassign for old signature
+        frequencyOptions = oldFrequencyOptions;
+        roundingOption = oldRoundingOption;
+        dueDate = null; // No due date in old signature
+    }
+
     if (!amount || amount <= 0) return 0;
 
     // Handle per-paycheck frequency
@@ -107,7 +128,35 @@ export const calculateBiweeklyAllocation = (amount, frequency, frequencyOptions,
         return roundToIncrement(amount, roundingOption);
     }
 
-    // Find frequency data
+    // Handle one-time expenses with due dates
+    if (frequency === 'once' && dueDate) {
+        // Calculate based on paychecks until due date
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Parse due date safely
+        let dueDateObj;
+        if (typeof dueDate === 'string' && dueDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const [year, month, day] = dueDate.split('-').map(Number);
+            dueDateObj = new Date(year, month - 1, day); // month is 0-indexed
+        } else {
+            dueDateObj = new Date(dueDate);
+        }
+        dueDateObj.setHours(0, 0, 0, 0);
+
+        // Calculate weeks until due date
+        const weeksUntilDue = Math.max(1, Math.ceil((dueDateObj - today) / (1000 * 60 * 60 * 24 * 7)));
+
+        // Calculate paychecks until due (assuming bi-weekly paychecks)
+        const paychecksUntilDue = Math.max(1, Math.ceil(weeksUntilDue / 2));
+
+        const biweeklyAmount = amount / paychecksUntilDue;
+
+        if (roundingOption === 0) return biweeklyAmount;
+        return roundToIncrement(biweeklyAmount, roundingOption);
+    }
+
+    // Find frequency data for recurring expenses
     const freqData = frequencyOptions.find(f => f && f.value === frequency);
     if (!freqData || !freqData.weeksPerYear || freqData.weeksPerYear <= 0) {
         console.warn(`Invalid frequency data for ${frequency}:`, freqData);

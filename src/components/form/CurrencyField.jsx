@@ -79,19 +79,20 @@ const CurrencyField = forwardRef(({
     };
 
     const baseClasses = `
-        px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary
+        px-3 py-2 border border-primary/20 rounded-lg  focus:outline-none focus:border-primary bg-base-100 text-base-content
+
         ${className}
     `.trim();
 
     return (
         <div>
             {!hideLabel && label && (
-                <label className="block text-sm font-medium text-gray-900 dark:text-dark-50 mb-1">
+                <label className="block text-sm font-medium text-base-content mb-1">
                     {label}
                 </label>
             )}
             <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-dark-400">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60">
                     $
                 </span>
                 <input

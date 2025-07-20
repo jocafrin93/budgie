@@ -1,11 +1,11 @@
 // Import Dependencies
-import { forwardRef } from "react";
-import PropTypes from "prop-types";
 import clsx from "clsx";
+import PropTypes from "prop-types";
+import { forwardRef } from "react";
 
 // Local Imports
-import { setThisClass } from "utils/setThisClass";
 import { COLORS } from "constants/app.constant";
+import { setThisClass } from "utils/setThisClass";
 
 // ----------------------------------------------------------------------
 
@@ -33,19 +33,19 @@ const Spinner = forwardRef((props, ref) => {
           !unstyled && [
             variant === "default"
               ? [
-                  color === "neutral"
-                    ? "border-gray-500 dark:border-dark-400"
-                    : [setThisClass(color), "border-this dark:border-this-light"],
-                  "border-r-transparent dark:border-r-transparent",
-                ]
+                color === "neutral"
+                  ? "border-base-300"
+                  : [setThisClass(color), "border-this"],
+                "border-r-transparent",
+              ]
               : [
-                  color === "neutral"
-                    ? "border-gray-150 border-r-gray-500 dark:border-dark-500 dark:border-r-dark-400"
-                    : [
-                        setThisClass(color),
-                        "border-this/30 border-r-this dark:border-this-light/30 dark:border-r-this-light",
-                      ],
-                ],
+                color === "neutral"
+                  ? "border-base-200 border-r-gray-500"
+                  : [
+                    setThisClass(color),
+                    "border-this/30 border-r-this",
+                  ],
+              ],
           ],
           className,
         )}
@@ -65,8 +65,8 @@ const Spinner = forwardRef((props, ref) => {
         disabled && "opacity-50",
         !unstyled && [
           color === "neutral"
-            ? "text-gray-500 dark:text-dark-400"
-            : [setThisClass(color), "text-this dark:text-this-light"],
+            ? "text-base-content/60"
+            : [setThisClass(color), "text-this"],
         ],
         className,
       )}
@@ -102,5 +102,6 @@ Spinner.propTypes = {
   variant: PropTypes.oneOf(["default", "soft", "innerDot"]),
 };
 
-export { Spinner };
 export { GhostSpinner } from "./GhostSpinner";
+export { Spinner };
+

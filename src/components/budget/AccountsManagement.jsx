@@ -137,12 +137,12 @@ const AccountFormModal = ({
                         </Select>
 
                         {/* Starting Balance Section */}
-                        <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div className="space-y-3 p-4 bg-info/10 border border-info/30 rounded-lg">
                             <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                <h3 className="font-medium text-blue-900 dark:text-blue-100">Starting Balance</h3>
+                                <div className="w-2 h-2 bg-info rounded-full"></div>
+                                <h3 className="font-medium text-info-dark">Starting Balance</h3>
                             </div>
-                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                            <p className="text-sm text-info-dark">
                                 {isEdit ?
                                     "This is the balance when you first added this account to the system." :
                                     "Enter your current account balance. This will be your starting point for transaction tracking."
@@ -169,7 +169,7 @@ const AccountFormModal = ({
                             </div>
 
                             {isEdit && (
-                                <div className="text-xs text-blue-700 dark:text-blue-300">
+                                <div className="text-xs text-info">
                                     💡 Starting balance and date cannot be changed after account creation. Use transactions to track balance changes.
                                 </div>
                             )}
@@ -275,7 +275,7 @@ const ReconciliationModal = ({
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Bank Balance Input */}
-                        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div className="p-4 bg-info/10 border border-info/30 rounded-lg">
                             <CurrencyField
                                 label="Bank Statement Balance"
                                 value={bankBalance}
@@ -283,51 +283,51 @@ const ReconciliationModal = ({
                                 required
                                 placeholder="Enter your bank balance"
                             />
-                            <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
+                            <p className="text-sm text-info-dark mt-2">
                                 Enter the balance shown on your bank statement or online banking.
                             </p>
                         </div>
 
                         {/* Balance Comparison */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                <div className="text-sm text-gray-600 dark:text-gray-400">Working Balance</div>
-                                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                            <div className="text-center p-4 bg-base-200 rounded-lg">
+                                <div className="text-sm text-base-content/60">Working Balance</div>
+                                <div className="text-lg font-bold text-base-content">
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balances.workingBalance)}
                                 </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">All transactions</div>
+                                <div className="text-xs text-base-content/60">All transactions</div>
                             </div>
 
-                            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <div className="text-sm text-green-600 dark:text-green-400">Cleared Balance</div>
-                                <div className="text-lg font-bold text-green-700 dark:text-green-300">
+                            <div className="text-center p-4 bg-success-lighter/20 rounded-lg">
+                                <div className="text-sm text-success">Cleared Balance</div>
+                                <div className="text-lg font-bold text-success-dark">
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balances.clearedBalance)}
                                 </div>
-                                <div className="text-xs text-green-600 dark:text-green-400">Cleared transactions</div>
+                                <div className="text-xs text-success">Cleared transactions</div>
                             </div>
 
-                            <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                                <div className="text-sm text-yellow-600 dark:text-yellow-400">Pending</div>
-                                <div className="text-lg font-bold text-yellow-700 dark:text-yellow-300">
+                            <div className="text-center p-4 bg-warning/20er/20 rounded-lg">
+                                <div className="text-sm text-warning">Pending</div>
+                                <div className="text-lg font-bold text-warning-dark">
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(balances.pendingBalance)}
                                 </div>
-                                <div className="text-xs text-yellow-600 dark:text-yellow-400">Uncleared transactions</div>
+                                <div className="text-xs text-warning">Uncleared transactions</div>
                             </div>
                         </div>
 
                         {/* Difference Display */}
                         <div className={`p-4 rounded-lg border ${isBalanced
-                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                            ? 'bg-success-lighter/20 border-success-light'
+                            : 'bg-error/20er/20 border-error-light'
                             }`}>
                             <div className="text-center">
-                                <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                <div className={`text-sm ${isBalanced ? 'text-success' : 'text-error'}`}>
                                     Difference
                                 </div>
-                                <div className={`text-2xl font-bold ${isBalanced ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                                <div className={`text-2xl font-bold ${isBalanced ? 'text-success-dark' : 'text-error-dark'}`}>
                                     {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Math.abs(difference))}
                                 </div>
-                                <div className={`text-sm ${isBalanced ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                <div className={`text-sm ${isBalanced ? 'text-success' : 'text-error'}`}>
                                     {isBalanced ? '✅ Perfect match!' : `${difference > 0 ? 'Bank higher' : 'Bank lower'} - Review transactions`}
                                 </div>
                             </div>
@@ -454,9 +454,9 @@ export default function AccountsManagement({
             return {
                 status: 'never',
                 message: 'Never reconciled',
-                color: 'text-red-600',
-                bgColor: 'bg-red-50 dark:bg-red-900/20',
-                borderColor: 'border-red-200 dark:border-red-800'
+                color: 'text-error',
+                bgColor: 'bg-error/20er/20',
+                borderColor: 'border-error-light'
             };
         }
 
@@ -468,33 +468,33 @@ export default function AccountsManagement({
             return {
                 status: 'recent',
                 message: `${daysDiff === 0 ? 'Today' : `${daysDiff} day${daysDiff === 1 ? '' : 's'} ago`}`,
-                color: 'text-green-600',
-                bgColor: 'bg-green-50 dark:bg-green-900/20',
-                borderColor: 'border-green-200 dark:border-green-800'
+                color: 'text-success',
+                bgColor: 'bg-success-lighter/20',
+                borderColor: 'border-success-light'
             };
         } else if (daysDiff <= 7) {
             return {
                 status: 'warning',
                 message: `${daysDiff} days ago`,
-                color: 'text-yellow-600',
-                bgColor: 'bg-yellow-50 dark:bg-yellow-900/20',
-                borderColor: 'border-yellow-200 dark:border-yellow-800'
+                color: 'text-warning',
+                bgColor: 'bg-warning/20er/20',
+                borderColor: 'border-warning-light'
             };
         } else if (daysDiff <= 14) {
             return {
                 status: 'overdue',
                 message: `${daysDiff} days ago - Reconcile recommended`,
-                color: 'text-orange-600',
-                bgColor: 'bg-orange-50 dark:bg-orange-900/20',
-                borderColor: 'border-orange-200 dark:border-orange-800'
+                color: 'text-warning-dark',
+                bgColor: 'bg-warning/20er/20',
+                borderColor: 'border-warning-light'
             };
         } else {
             return {
                 status: 'critical',
                 message: `${daysDiff} days ago - Reconcile overdue`,
-                color: 'text-red-600',
-                bgColor: 'bg-red-50 dark:bg-red-900/20',
-                borderColor: 'border-red-200 dark:border-red-800'
+                color: 'text-error',
+                bgColor: 'bg-error/20er/20',
+                borderColor: 'border-error-light'
             };
         }
     };
@@ -511,11 +511,11 @@ export default function AccountsManagement({
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <h2 className="text-2xl font-bold text-base-content flex items-center gap-2">
                         <TbWallet className="size-7" />
                         Accounts
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-base-content/60">
                         Manage your financial accounts and balances
                     </p>
                 </div>
@@ -533,34 +533,32 @@ export default function AccountsManagement({
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="p-4">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {accounts.length}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Total Accounts
-                        </div>
+                <Card className="p-4 bg-base-300">                    <div className="text-center">
+                    <div className="text-2xl font-bold text-base-content">
+                        {accounts.length}
                     </div>
+                    <div className="text-sm text-base-content/60">
+                        Total Accounts
+                    </div>
+                </div>
                 </Card>
 
-                <Card className="p-4">
-                    <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">
-                            {activeAccounts.length}
-                        </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Active Accounts
-                        </div>
+                <Card className="p-4 bg-base-300">                    <div className="text-center">
+                    <div className="text-2xl font-bold text-success">
+                        {activeAccounts.length}
                     </div>
+                    <div className="text-sm text-base-content/60">
+                        Active Accounts
+                    </div>
+                </div>
                 </Card>
 
-                <Card className="p-4">
+                <Card className="p-4 bg-base-300">
                     <div className="text-center">
-                        <div className={`text-2xl font-bold ${totalWorkingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        <div className={`text-2xl font-bold ${totalWorkingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                             {formatCurrency(totalWorkingBalance)}
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-base-content/60">
                             Total Working Balance
                         </div>
                     </div>
@@ -570,11 +568,11 @@ export default function AccountsManagement({
             {/* Accounts List - Responsive Design */}
 
             {/* Desktop Table View */}
-            <div className="hidden lg:block">
+            <div className="hidden bg-base-300 lg:block">
                 <Card className="overflow-hidden">
                     <div className="overflow-x-auto">
                         <Table hoverable className="min-w-full">
-                            <THead>
+                            <THead className="bg-base-300">
                                 <Tr>
                                     <Th>Account</Th>
                                     <Th>Type</Th>
@@ -587,18 +585,18 @@ export default function AccountsManagement({
 
                             <TBody>
                                 {accounts.map((account) => (
-                                    <Tr key={account.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <Tr key={account.id} className="hover">
                                         <Td>
                                             <div className="flex items-center space-x-3">
                                                 <div className="flex-shrink-0">
                                                     {getAccountTypeIcon(account.type)}
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium text-gray-900 dark:text-white">
+                                                    <div className="font-medium text-base-content">
                                                         {account.name}
                                                     </div>
                                                     {account.accountNumber && (
-                                                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                                                        <div className="text-sm text-base-content/60">
                                                             {account.accountNumber}
                                                         </div>
                                                     )}
@@ -613,7 +611,7 @@ export default function AccountsManagement({
                                         </Td>
 
                                         <Td>
-                                            <div className="text-sm text-gray-900 dark:text-white">
+                                            <div className="text-sm text-base-content">
                                                 {account.institution || '—'}
                                             </div>
                                         </Td>
@@ -626,16 +624,16 @@ export default function AccountsManagement({
                                                     return (
                                                         <>
                                                             <div className="flex items-center space-x-2">
-                                                                <span className={`font-medium ${balances.workingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                <span className={`font-medium ${balances.workingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                                                                     {formatCurrency(balances.workingBalance)}
                                                                 </span>
-                                                                <span className="text-xs text-gray-500">Working</span>
+                                                                <span className="text-xs text-base-content/60">Working</span>
                                                             </div>
                                                             <div className="flex items-center space-x-2">
-                                                                <span className="text-sm text-green-600">
+                                                                <span className="text-sm text-success">
                                                                     {formatCurrency(balances.clearedBalance)}
                                                                 </span>
-                                                                <span className="text-xs text-gray-500">Cleared</span>
+                                                                <span className="text-xs text-base-content/60">Cleared</span>
                                                             </div>
                                                             <div className={`text-xs px-2 py-1 rounded ${reconcileStatus.bgColor} ${reconcileStatus.borderColor} border`}>
                                                                 <span className={reconcileStatus.color}>
@@ -657,9 +655,9 @@ export default function AccountsManagement({
                                                     title={account.isActive ? 'Deactivate Account' : 'Activate Account'}
                                                 >
                                                     {account.isActive ? (
-                                                        <TbEye className="size-3 text-green-600" />
+                                                        <TbEye className="size-3 text-success" />
                                                     ) : (
-                                                        <TbEyeOff className="size-3 text-gray-400" />
+                                                        <TbEyeOff className="size-3 text-base-content/60" />
                                                     )}
                                                 </Button>
                                                 <Badge variant={account.isActive ? 'success' : 'secondary'} className="text-xs">
@@ -678,7 +676,7 @@ export default function AccountsManagement({
                                                     variant="flat"
                                                     size="xs"
                                                     title="Reconcile Account"
-                                                    className="text-blue-600 hover:text-blue-700"
+                                                    className="text-info hover"
                                                 >
                                                     ⚖️
                                                 </Button>
@@ -698,7 +696,7 @@ export default function AccountsManagement({
                                                     variant="flat"
                                                     size="xs"
                                                     title="Delete Account"
-                                                    className="text-red-600 hover:text-red-700"
+                                                    className="text-error hover"
                                                 >
                                                     <TbTrash className="size-3" />
                                                 </Button>
@@ -719,11 +717,11 @@ export default function AccountsManagement({
                         {/* Account Header */}
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center space-x-3 flex-1">
-                                <div className="flex-shrink-0 p-2 rounded-lg bg-gray-100 dark:bg-gray-700">
+                                <div className="flex-shrink-0 p-2 rounded-lg bg-base-200">
                                     {getAccountTypeIcon(account.type)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-gray-900 dark:text-white truncate">
+                                    <h3 className="font-semibold text-base-content truncate">
                                         {account.name}
                                     </h3>
                                     <div className="flex items-center space-x-2 mt-1">
@@ -746,9 +744,9 @@ export default function AccountsManagement({
                                     title={account.isActive ? 'Deactivate Account' : 'Activate Account'}
                                 >
                                     {account.isActive ? (
-                                        <TbEye className="size-4 text-green-600" />
+                                        <TbEye className="size-4 text-success" />
                                     ) : (
-                                        <TbEyeOff className="size-4 text-gray-400" />
+                                        <TbEyeOff className="size-4 text-base-content/60" />
                                     )}
                                 </Button>
                                 <Button
@@ -767,7 +765,7 @@ export default function AccountsManagement({
                                     variant="flat"
                                     size="sm"
                                     title="Delete Account"
-                                    className="text-red-600 hover:text-red-700"
+                                    className="text-error hover"
                                 >
                                     <TbTrash className="size-4" />
                                 </Button>
@@ -777,29 +775,29 @@ export default function AccountsManagement({
                         {/* Account Details */}
                         <div className="space-y-3">
                             {/* Balance - Reconciliation Display */}
-                            <div className="py-3 px-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            <div className="py-3 px-4 bg-base-200 rounded-lg">
                                 {(() => {
                                     const balances = calculateAccountBalances(account);
                                     const reconcileStatus = getReconciliationStatus(account);
                                     return (
                                         <>
                                             <div className="text-center mb-3">
-                                                <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Working Balance</div>
-                                                <div className={`text-2xl font-bold ${balances.workingBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                <div className="text-sm text-base-content/60 mb-1">Working Balance</div>
+                                                <div className={`text-2xl font-bold ${balances.workingBalance >= 0 ? 'text-success' : 'text-error'}`}>
                                                     {formatCurrency(balances.workingBalance)}
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-3 text-sm mb-3">
                                                 <div className="text-center">
-                                                    <div className="text-gray-600 dark:text-gray-400">Cleared</div>
-                                                    <div className="font-medium text-green-600">
+                                                    <div className="text-base-content/60">Cleared</div>
+                                                    <div className="font-medium text-success">
                                                         {formatCurrency(balances.clearedBalance)}
                                                     </div>
                                                 </div>
                                                 <div className="text-center">
-                                                    <div className="text-gray-600 dark:text-gray-400">Pending</div>
-                                                    <div className="font-medium text-yellow-600">
+                                                    <div className="text-base-content/60">Pending</div>
+                                                    <div className="font-medium text-warning">
                                                         {formatCurrency(balances.pendingBalance)}
                                                     </div>
                                                 </div>
@@ -819,7 +817,7 @@ export default function AccountsManagement({
                                                     }}
                                                     variant="filled"
                                                     size="sm"
-                                                    className="bg-blue-600 hover:bg-blue-700"
+                                                    className="bg-info/60 hover"
                                                 >
                                                     ⚖️ Reconcile Account
                                                 </Button>
@@ -833,16 +831,16 @@ export default function AccountsManagement({
                             <div className="grid grid-cols-2 gap-3 text-sm">
                                 {account.institution && (
                                     <div>
-                                        <div className="text-gray-600 dark:text-gray-400">Institution</div>
-                                        <div className="font-medium text-gray-900 dark:text-white">
+                                        <div className="text-base-content/60">Institution</div>
+                                        <div className="font-medium text-base-content">
                                             {account.institution}
                                         </div>
                                     </div>
                                 )}
                                 {account.accountNumber && (
                                     <div>
-                                        <div className="text-gray-600 dark:text-gray-400">Account</div>
-                                        <div className="font-medium text-gray-900 dark:text-white">
+                                        <div className="text-base-content/60">Account</div>
+                                        <div className="font-medium text-base-content">
                                             {account.accountNumber}
                                         </div>
                                     </div>
@@ -851,9 +849,9 @@ export default function AccountsManagement({
 
                             {/* Notes */}
                             {account.notes && (
-                                <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Notes</div>
-                                    <div className="text-sm text-gray-900 dark:text-white">
+                                <div className="pt-2 border-t border-base-300">
+                                    <div className="text-xs text-base-content/60 mb-1">Notes</div>
+                                    <div className="text-sm text-base-content">
                                         {account.notes}
                                     </div>
                                 </div>
@@ -866,11 +864,11 @@ export default function AccountsManagement({
             {/* Empty State */}
             {accounts.length === 0 && (
                 <Card className="p-8 text-center">
-                    <TbWallet className="size-12 mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    <TbWallet className="size-12 mx-auto text-base-content/60 mb-4" />
+                    <h3 className="text-lg font-medium text-base-content mb-2">
                         No accounts yet
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    <p className="text-base-content/60 mb-4">
                         Get started by adding your first financial account.
                     </p>
                     <Button

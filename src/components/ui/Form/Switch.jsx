@@ -1,7 +1,7 @@
 // Import Dependencies
+import clsx from "clsx";
 import PropTypes from "prop-types";
 import { forwardRef } from "react";
-import clsx from "clsx";
 
 // Local Imports
 import { ApplyWrapper } from "components/shared/ApplyWrapper";
@@ -10,13 +10,13 @@ import { setThisClass } from "utils/setThisClass";
 // ----------------------------------------------------------------------
 
 const disabledClass =
-  "before:bg-gray-400 bg-gray-150 border border-gray-200 pointer-events-none select-none opacity-70 dark:bg-dark-450 dark:border-dark-450 dark:before:bg-dark-800 dark:opacity-60";
+  "before bg-base-200 border border-base-300 pointer-events-none select-none opacity-70 bg-base-200";
 
 const variants = {
   basic:
-    "bg-gray-300 before:bg-gray-50 checked:bg-this checked:before:bg-white dark:bg-surface-1 dark:before:bg-dark-50 dark:checked:bg-this-light dark:checked:before:bg-white focus-visible:ring-3 focus-visible:ring-this/50 dark:focus-visible:ring-this-light/50",
+    "bg-base-300 before checked checked:before:before focus:ring-2 focus:ring-primary focus:ring-2 focus:ring-primary",
   outlined:
-    "is-outline border-gray-400/70 border before:bg-gray-300 checked:border-this checked:before:bg-this dark:border-dark-400 dark:before:bg-dark-300 dark:checked:border-this-light dark:checked:before:bg-this-light focus-visible:ring-3 focus-visible:ring-this/50 dark:focus-visible:ring-this-light/50",
+    "is-outline border-base-300/70 border before checked checked:before:before focus:ring-2 focus:ring-primary focus:ring-2 focus:ring-primary",
 };
 
 const Switch = forwardRef((props, ref) => {
@@ -91,3 +91,4 @@ Switch.propTypes = {
 };
 
 export { Switch };
+

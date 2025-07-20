@@ -1,63 +1,59 @@
 import SimplifiedSummaryCards from "components/budget/SimplifiedSummaryCards";
+import UpcomingPaychecks from "components/budget/UpcomingPaychecks";
 import { Page } from "components/shared/Page";
+import { useAccountManagement } from "../../../../hooks/useAccountManagement";
+import { useCategoryManagement } from "../../../../hooks/useCategoryManagement";
+import { useDataModel } from "../../../../hooks/useDataModel";
 
 export default function Home() {
-  // Mock data for now - this will be replaced with real data from context
-  const mockData = {
-    accounts: [
-      { id: 1, name: "Checking", balance: 2500, monthlyIncome: 4000 },
-      { id: 2, name: "Savings", balance: 5000, monthlyIncome: 0 }
-    ],
-    categories: [
-      { id: 1, name: "Housing", allocated: 1200 },
-      { id: 2, name: "Food", allocated: 400 },
-      { id: 3, name: "Transportation", allocated: 300 }
-    ],
-    planningItems: [
-      {
-        id: 1,
-        name: "Emergency Fund",
-        type: "savings-goal",
-        isActive: true,
-        targetAmount: 10000,
-        alreadySaved: 5000,
-        targetDate: "2024-12-31"
-      },
-      {
-        id: 2,
-        name: "Car Insurance",
-        type: "expense",
-        isActive: true,
-        amount: 150,
-        alreadySaved: 150,
-        dueDate: "2025-01-15"
-      }
-    ]
-  };
+  // Use real data from hooks instead of mock data
+  const { accounts } = useAccountManagement();
+  const { categories } = useCategoryManagement();
+  const { planningItems } = useDataModel({
+    initialCategories: [],
+    initialAccounts: [],
+    payFrequency: 'bi-weekly'
+  });
+
+  // For now, transactions is empty - this will be populated when transaction management is implemented
+  const transactions = [];
 
   return (
     <Page title="Dashboard">
       <div className="transition-content w-full px-(--margin-x) pt-5 lg:pt-6">
         <div className="min-w-0 space-y-6">
           <div>
-            <h2 className="truncate text-xl font-medium tracking-wide text-gray-800 dark:text-dark-50">
+            <h2 className="truncate text-xl font-medium tracking-wide text-primary">
               Budget Overview
             </h2>
-            <p className="text-sm text-gray-600 dark:text-dark-300 mt-1">
+            <p className="text-sm text-base-contentmt-1">
               Your financial snapshot at a glance
             </p>
           </div>
 
           {/* Budget Summary Cards */}
           <SimplifiedSummaryCards
-            accounts={mockData.accounts}
-            categories={mockData.categories}
-            planningItems={mockData.planningItems}
+            accounts={accounts || []}
+            categories={categories || []}
+            planningItems={planningItems || []}
+            transactions={transactions}
             className="mb-6"
           />
 
-          {/* Additional dashboard content can go here */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Upcoming Paychecks - Payday Functionality */}
+          <UpcomingPaychecks
+            accounts={accounts || []}
+            categories={categories || []}
+            planningItems={planningItems || []}
+            onStartPaydayWorkflow={(paycheck) => {
+              console.log('Starting payday workflow for:', paycheck);
+              // This will be implemented with the full payday workflow
+            }}
+            maxPaychecks={3}
+          />
+
+          {/* Additional dashboard content */}
+          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white dark:bg-dark-700 rounded-lg p-6 shadow-sm">
               <h3 className="text-lg font-medium text-gray-800 dark:text-dark-50 mb-4">
                 Recent Activity
@@ -75,7 +71,7 @@ export default function Home() {
                 Quick budget actions and shortcuts will appear here.
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </Page>

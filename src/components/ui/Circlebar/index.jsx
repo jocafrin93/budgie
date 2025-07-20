@@ -1,14 +1,14 @@
 // Import Dependencies
+import clsx from "clsx";
 import PropTypes from "prop-types";
 import { Children, forwardRef, useMemo } from "react";
-import clsx from "clsx";
 
 // Local Imports
-import { setThisClass } from "utils/setThisClass";
-import { COLORS } from "constants/app.constant";
-import { getPathStyles } from "./getPathStyles";
 import { useThemeContext } from "app/contexts/theme/context";
+import { COLORS } from "constants/app.constant";
 import { randomId } from "utils/randomId";
+import { setThisClass } from "utils/setThisClass";
+import { getPathStyles } from "./getPathStyles";
 
 // ----------------------------------------------------------------------
 
@@ -55,8 +55,8 @@ const Circlebar = forwardRef((props, ref) => {
     variant === "gradient"
       ? ""
       : color === "neutral"
-        ? "stroke-gray-500 dark:stroke-dark-450"
-        : [setThisClass(color), "stroke-this dark:stroke-this-light"],
+        ? "stroke-gray-500"
+        : [setThisClass(color), "stroke-this"],
   ];
 
   return (
@@ -95,15 +95,15 @@ const Circlebar = forwardRef((props, ref) => {
               className={clsx("circlebar-rail-path", [
                 color === "neutral" || variant !== "soft"
                   ? [
-                      "stroke-gray-150",
-                      cardSkin === "shadow"
-                        ? "dark:stroke-dark-900"
-                        : "dark:stroke-dark-700",
-                    ]
+                    "stroke-gray-150",
+                    cardSkin === "shadow"
+                      ? "stroke-base-300"
+                      : "stroke-base-200",
+                  ]
                   : [
-                      setThisClass(color),
-                      "stroke-this/[.15] dark:stroke-this-light/20",
-                    ],
+                    setThisClass(color),
+                    "stroke-this/[.15]",
+                  ],
               ])}
             />
           )}
@@ -134,9 +134,8 @@ const Circlebar = forwardRef((props, ref) => {
                   fill="none"
                   style={{
                     ...fillPathStyle,
-                    "--dashoffset": `${
-                      (value / 100) * (Math.PI * 100 - gapDegree)
-                    }px`,
+                    "--dashoffset": `${(value / 100) * (Math.PI * 100 - gapDegree)
+                      }px`,
                     transformOrigin: "center",
                     transform: `rotate(${(gapDegree / 2) * 1.15}deg)`,
                   }}
@@ -216,3 +215,4 @@ Circlebar.propTypes = {
 };
 
 export { Circlebar };
+
