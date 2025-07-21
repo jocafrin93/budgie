@@ -6,7 +6,7 @@ import {
     getSortedRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     TbEdit,
     TbPlus,
@@ -419,10 +419,8 @@ const TransactionFormModal = ({
         };
     }, [formData.amount, formData.splits, showSplits]);
 
-    // Use refs to track submission status and form/modal elements
+    // Use ref to track submission status
     const isSubmittingRef = useRef(false);
-    const formRef = useRef(null);
-    const modalRef = useRef(null);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -460,12 +458,6 @@ const TransactionFormModal = ({
 
             // 3. Force immediate close via props
             onClose();
-
-            // 4. Force immediate state update
-            window.setTimeout(() => {
-                setShowModal(false);
-                setEditingTransaction(null);
-            }, 0);
         }
 
         try {
@@ -514,12 +506,11 @@ const TransactionFormModal = ({
             // Final check to ensure modal is closed for transfers
             if (formData.isTransfer) {
                 window.setTimeout(() => {
-                    setShowModal(false);
-                    setEditingTransaction(null);
+                    onClose();
                 }, 50);
             }
         }
-    };
+    }
 
     const addSplit = () => {
         setFormData(prev => ({
@@ -1028,7 +1019,7 @@ export default function TransactionsTab({
     };
 
     // Check if a transaction is reconciled (cleared and account has been reconciled after transaction date)
-    const isTransactionReconciled = (transaction) => {
+    const isTransactionReconciled = useCallback((transaction) => {
         if (!transaction.isCleared) return false;
 
         const account = accounts.find(acc => acc.id === transaction.accountId);
@@ -1038,10 +1029,10 @@ export default function TransactionsTab({
         const reconciledDate = new Date(account.lastReconciledDate);
 
         return transactionDate <= reconciledDate;
-    };
+    }, [accounts]);
 
     // Handle cleared status toggle with reconciliation warning
-    const handleToggleCleared = (transactionId, currentStatus) => {
+    const handleToggleCleared = useCallback((transactionId, currentStatus) => {
         const transaction = transactions.find(t => t.id === transactionId);
         if (!transaction) return;
 
@@ -1056,10 +1047,10 @@ export default function TransactionsTab({
         }
 
         onEditTransaction({ ...transaction, isCleared: !currentStatus });
-    };
+    }, [transactions, isTransactionReconciled, onEditTransaction]);
 
     // Handle linked deletion for transfer transactions
-    const handleDeleteTransaction = (transaction) => {
+    const handleDeleteTransaction = useCallback((transaction) => {
         console.log('🗑️ DELETE TRANSACTION CALLED:', {
             transaction,
             isTransfer: transaction.isTransfer,
@@ -1145,7 +1136,7 @@ export default function TransactionsTab({
             console.log('🗑️ DELETING REGULAR TRANSACTION:', transaction.id);
             onDeleteTransaction(transaction.id);
         }
-    };
+    }, [transactions, onDeleteTransaction]);
 
     // Table columns definition
     const columns = useMemo(() => {
@@ -1338,7 +1329,7 @@ export default function TransactionsTab({
                 ),
             },
         ];
-    }, [accounts, categories, handleDeleteTransaction, isTransactionReconciled]);
+    }, [accounts, categories, handleDeleteTransaction, isTransactionReconciled, handleToggleCleared]);
 
     // Filter transactions by account if specified - ensure numeric comparison
     const filteredTransactions = useMemo(() => {
@@ -1379,7 +1370,7 @@ export default function TransactionsTab({
     const selectedCount = selectedRows.length;
 
     // Handle bulk delete
-    const handleBulkDelete = () => {
+    const handleBulkDelete = useCallback(() => {
         if (selectedCount === 0) return;
 
         const confirmMessage = `Are you sure you want to delete ${selectedCount} selected transaction${selectedCount > 1 ? 's' : ''}? This action cannot be undone.`;
@@ -1393,7 +1384,7 @@ export default function TransactionsTab({
             // Clear selection after deletion
             table.resetRowSelection();
         }
-    };
+    }, [handleDeleteTransaction, selectedCount, selectedRows, table]);
 
     // Listen for bulk delete events from main page
     useEffect(() => {
@@ -1406,7 +1397,7 @@ export default function TransactionsTab({
         return () => {
             window.removeEventListener('bulkDelete', handleBulkDeleteRequest);
         };
-    }, [selectedRows, handleBulkDelete, handleDeleteTransaction]);
+    }, [handleBulkDelete]);
 
     // Update header actions in main page when selection changes
     useEffect(() => {
