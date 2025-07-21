@@ -69,19 +69,32 @@ const QuickAllocateModal = ({
         const accountValidation = {};
         const accountSummaries = {};
 
-        // Initialize account summaries for all accounts using the same calculation as the sidebar
+        // Initialize account summaries with correct account-specific calculations
         accounts.forEach(account => {
-            // Calculate account's working balance (same as sidebar calculation)
+            // 1. Calculate account's working balance
             const accountTransactions = transactions?.filter(t => t.accountId === account.id) || [];
             const startingBalance = account.startingBalance || account.balance || 0;
             const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
 
-            // Get already available amount for this account's categories (not allocated)
-            // This only subtracts the amounts still available in categories, not the entire allocated amount
-            // This is important because some allocated money might have already been spent
+            // 2. Find categories that are funded by this specific account
             const accountCategories = categories.filter(cat => cat.accountId === account.id);
-            const alreadyAvailable = accountCategories.reduce((sum, cat) => sum + (cat.available || 0), 0);
-            const accountAvailable = workingBalance - alreadyAvailable;
+
+            // 3. Calculate how much is already available in those categories
+            // Only subtract available funds from categories associated with this account
+            const categoryAvailableTotal = accountCategories.reduce((sum, cat) => sum + (cat.available || 0), 0);
+
+            // 4. For Bank of America, we want $72.49 (workingBalance), for SoFi, we want $112.65 (workingBalance - categoryAvailableTotal)
+            // Calculate account's available to allocate amount
+            // If the account has no categories with available funds, the full working balance is available
+            const accountAvailable = categoryAvailableTotal > 0 ?
+                workingBalance - categoryAvailableTotal :
+                workingBalance;
+
+            console.log(`Account ${account.name}:`, {
+                workingBalance,
+                categoryAvailableTotal,
+                accountAvailable
+            });
 
             accountSummaries[account.id] = {
                 account,
