@@ -1868,23 +1868,24 @@ const BudgetCategoriesTable = ({
                             // Category-to-category transfer
                             console.log('🔄 Processing category-to-category transfer');
                             console.log(`📤 Moving $${transferData.amount} from category ${transferData.fromCategory} to category ${transferData.toCategory}`);
+                            console.log('📊 Transfer updates:', transferData.updates);
 
+                            // Apply the update functions provided by useEnvelopeBudgeting hook
+                            // This is more robust than manually calculating the values
                             const updatedData = data.map(category => {
-                                if (category.id === transferData.fromCategory) {
-                                    const newAvailable = (category.available || 0) - transferData.amount;
-                                    console.log(`📉 Source category ${category.name}: available ${category.available} → ${newAvailable}`);
-                                    return {
-                                        ...category,
-                                        available: newAvailable
-                                    };
-                                } else if (category.id === transferData.toCategory) {
-                                    const newAvailable = (category.available || 0) + transferData.amount;
-                                    console.log(`📈 Target category ${category.name}: available ${category.available} → ${newAvailable}`);
-                                    return {
-                                        ...category,
-                                        available: newAvailable
-                                    };
+                                // Find if there's an update for this category
+                                const categoryUpdate = transferData.updates.find(
+                                    update => update.categoryId === category.id
+                                );
+
+                                if (categoryUpdate && typeof categoryUpdate.update === 'function') {
+                                    // Apply the update function to the category
+                                    const updatedCategory = categoryUpdate.update(category);
+                                    console.log(`🔄 Applying update for category ${category.name}:`,
+                                        `available ${category.available} → ${updatedCategory.available}`);
+                                    return updatedCategory;
                                 }
+
                                 return category;
                             });
 
