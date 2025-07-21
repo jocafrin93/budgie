@@ -1635,10 +1635,10 @@ export default function TransactionsTab({
                                 <TBody>
                                     {scheduledTransactions
                                         .sort((a, b) => {
-                                            // Sort by due date ascending (soonest first, which will appear at bottom)
+                                            // Sort by due date descending (soonest last, at the bottom)
                                             const dateA = new Date((a.nextDueDate || a.dueDate) + 'T00:00:00');
                                             const dateB = new Date((b.nextDueDate || b.dueDate) + 'T00:00:00');
-                                            return dateA - dateB;
+                                            return dateB - dateA;
                                         })
                                         .map(scheduledTxn => {
                                             // Use local timezone parsing like the rest of the app
