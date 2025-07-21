@@ -85,16 +85,9 @@ const QuickAllocateModal = ({
                 return sum + Math.max(0, cat.available || 0);
             }, 0);
 
-            // 4. Calculate account's available to allocate amount based on specific rules
-            let accountAvailable;
-
-            if (account.name === "Bank of America") {
-                // For Bank of America, use the full working balance ($72.49)
-                accountAvailable = workingBalance;
-            } else {
-                // For other accounts like SoFi, subtract category available amounts ($112.65)
-                accountAvailable = workingBalance - categoryAvailableTotal;
-            }
+            // 4. Calculate account's available to allocate amount consistently for all accounts
+            // Subtract category available amounts from working balance to get true available amount
+            const accountAvailable = workingBalance - categoryAvailableTotal;
 
             console.log(`Account ${account.name}:`, {
                 workingBalance,
