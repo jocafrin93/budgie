@@ -1459,28 +1459,47 @@ const BudgetCategoriesTable = ({
 
             {/* Available to Allocate Section */}
             {(() => {
-                // Calculate available to allocate the same way SimplifiedSummaryCards does
-                const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
+                // Calculate available to allocate using the same account-specific approach as the modal
+                let totalAvailable = 0;
+
+                // Process each account
+                (accounts || []).forEach(account => {
+                    // 1. Calculate account's working balance
                     const accountTransactions = (transactions || []).filter(t => t.accountId === account.id);
                     const startingBalance = account.startingBalance || account.balance || 0;
                     const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-                    return sum + workingBalance;
-                }, 0);
 
-                const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
+                    // 2. Find categories associated with this account
+                    const accountCategories = data.filter(cat =>
+                        cat.accountId !== undefined &&
+                        cat.accountId !== null &&
+                        String(cat.accountId) === String(account.id)
+                    );
+
+                    // 3. Calculate how much is already available in those categories
+                    const categoryAvailableTotal = accountCategories.reduce((sum, cat) => {
+                        return sum + Math.max(0, cat.available || 0);
+                    }, 0);
+
+                    // 4. Calculate account's available to allocate amount
+                    const accountAvailable = workingBalance - categoryAvailableTotal;
+
+                    // Add to total
+                    totalAvailable += accountAvailable;
+                });
 
                 // Add transactions with "to-be-allocated" category to available funds
                 const toBeAllocatedAmount = (transactions || []).filter(t => t.categoryId === 'to-be-allocated')
                     .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-                const availableToAllocate = totalWorkingBalance - totalAllocated + toBeAllocatedAmount;
+                const availableToAllocate = totalAvailable + toBeAllocatedAmount;
 
                 // Debug logging
                 console.log('🔍 Quick Allocate Debug:');
                 console.log('📊 Accounts:', accounts);
-                console.log('💰 Total Working Balance:', totalWorkingBalance);
+                console.log('💰 Total Available from Accounts:', totalAvailable);
                 console.log('📋 Categories data:', data);
-                console.log('💸 Total Allocated:', totalAllocated);
+                console.log('🎯 To-be-allocated amount:', toBeAllocatedAmount);
                 console.log('✨ Available to Allocate:', availableToAllocate);
                 console.log('👀 Should show Quick Allocate?', availableToAllocate > 0);
 
@@ -1920,20 +1939,41 @@ const BudgetCategoriesTable = ({
                     isOpen={quickAllocateModal.isOpen}
                     onClose={() => setQuickAllocateModal({ isOpen: false })}
                     availableToAllocate={(() => {
-                        // Calculate available to allocate using the same logic as the sidebar
-                        const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
+                        // Calculate available to allocate by summing the available amounts from each account
+                        // This ensures the total matches what's shown in the per-account view
+                        let totalAvailable = 0;
+
+                        // Process each account
+                        (accounts || []).forEach(account => {
+                            // 1. Calculate account's working balance
                             const accountTransactions = (transactions || []).filter(t => t.accountId === account.id);
                             const startingBalance = account.startingBalance || account.balance || 0;
                             const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-                            return sum + workingBalance;
-                        }, 0);
-                        const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
+
+                            // 2. Find categories associated with this account
+                            const accountCategories = data.filter(cat =>
+                                cat.accountId !== undefined &&
+                                cat.accountId !== null &&
+                                String(cat.accountId) === String(account.id)
+                            );
+
+                            // 3. Calculate how much is already available in those categories
+                            const categoryAvailableTotal = accountCategories.reduce((sum, cat) => {
+                                return sum + Math.max(0, cat.available || 0);
+                            }, 0);
+
+                            // 4. Calculate account's available to allocate amount
+                            const accountAvailable = workingBalance - categoryAvailableTotal;
+
+                            // Add to total
+                            totalAvailable += accountAvailable;
+                        });
 
                         // Add transactions with "to-be-allocated" category to available funds
                         const toBeAllocatedAmount = (transactions || []).filter(t => t.categoryId === 'to-be-allocated')
                             .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-                        return totalWorkingBalance - totalAllocated + toBeAllocatedAmount;
+                        return totalAvailable + toBeAllocatedAmount;
                     })()}
                     categories={data}
                     accounts={accounts}

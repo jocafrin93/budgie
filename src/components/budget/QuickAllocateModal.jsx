@@ -370,7 +370,9 @@ const QuickAllocateModal = ({
                                     Quick Allocate
                                 </h3>
                                 <p className="text-sm text-base-content/70">
-                                    Allocate {formatCurrency(availableToAllocate)} to multiple categories at once
+                                    Allocate {formatCurrency(Object.values(accountSummaries).reduce(
+                                        (sum, summary) => sum + summary.totalAvailable, 0
+                                    ))} to multiple categories at once
                                 </p>
                             </div>
                         </div>
