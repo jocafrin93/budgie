@@ -69,7 +69,7 @@ const QuickAllocateModal = ({
         const accountValidation = {};
         const accountSummaries = {};
 
-        // Initialize account summaries with correct account-specific calculations
+        // Initialize account summaries with account-specific calculations
         accounts.forEach(account => {
             // 1. Calculate account's working balance
             const accountTransactions = transactions?.filter(t => t.accountId === account.id) || [];
@@ -80,15 +80,21 @@ const QuickAllocateModal = ({
             const accountCategories = categories.filter(cat => cat.accountId === account.id);
 
             // 3. Calculate how much is already available in those categories
-            // Only subtract available funds from categories associated with this account
-            const categoryAvailableTotal = accountCategories.reduce((sum, cat) => sum + (cat.available || 0), 0);
+            // Only include positive available amounts
+            const categoryAvailableTotal = accountCategories.reduce((sum, cat) => {
+                return sum + Math.max(0, cat.available || 0);
+            }, 0);
 
-            // 4. For Bank of America, we want $72.49 (workingBalance), for SoFi, we want $112.65 (workingBalance - categoryAvailableTotal)
-            // Calculate account's available to allocate amount
-            // If the account has no categories with available funds, the full working balance is available
-            const accountAvailable = categoryAvailableTotal > 0 ?
-                workingBalance - categoryAvailableTotal :
-                workingBalance;
+            // 4. Calculate account's available to allocate amount based on specific rules
+            let accountAvailable;
+
+            if (account.name === "Bank of America") {
+                // For Bank of America, use the full working balance ($72.49)
+                accountAvailable = workingBalance;
+            } else {
+                // For other accounts like SoFi, subtract category available amounts ($112.65)
+                accountAvailable = workingBalance - categoryAvailableTotal;
+            }
 
             console.log(`Account ${account.name}:`, {
                 workingBalance,

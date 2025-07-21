@@ -1870,33 +1870,44 @@ const BudgetCategoriesTable = ({
                             console.log(`📤 Moving $${transferData.amount} from category ${transferData.fromCategory} to category ${transferData.toCategory}`);
                             console.log('📊 Transfer updates:', transferData.updates);
 
-                            // Apply the update functions provided by useEnvelopeBudgeting hook
-                            // This is more robust than manually calculating the values
-                            const updatedData = data.map(category => {
-                                // Find if there's an update for this category
-                                const categoryUpdate = transferData.updates.find(
-                                    update => update.categoryId === category.id
-                                );
+                            // Get source and destination categories
+                            const fromCategory = data.find(c => c.id === transferData.fromCategory);
+                            const toCategory = data.find(c => c.id === transferData.toCategory);
 
-                                if (categoryUpdate && typeof categoryUpdate.update === 'function') {
-                                    // Apply the update function to the category
-                                    const updatedCategory = categoryUpdate.update(category);
-                                    console.log(`🔄 Applying update for category ${category.name}:`,
-                                        `available ${category.available} → ${updatedCategory.available}`);
-                                    return updatedCategory;
+                            if (fromCategory && toCategory && transferData.updates) {
+                                // Apply the update functions from useEnvelopeBudgeting
+                                const updatedData = data.map(category => {
+                                    // Find the appropriate update function for this category
+                                    const categoryUpdate = transferData.updates.find(
+                                        update => update.categoryId === category.id
+                                    );
+
+                                    if (categoryUpdate && typeof categoryUpdate.update === 'function') {
+                                        // Apply the update function from useEnvelopeBudgeting
+                                        const updatedCategory = categoryUpdate.update(category);
+                                        console.log(`✅ Applying update to ${category.name}:`,
+                                            `available ${category.available} → ${updatedCategory.available}`);
+                                        return updatedCategory;
+                                    }
+
+                                    return category;
+                                });
+
+                                console.log('📋 Updated categories data:', updatedData);
+
+                                // Notify parent component to update its data and re-render
+                                if (onDataUpdate) {
+                                    console.log('🔄 Calling onDataUpdate to trigger parent re-render');
+                                    onDataUpdate(updatedData);
+                                } else {
+                                    console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
                                 }
-
-                                return category;
-                            });
-
-                            console.log('📋 Updated categories data:', updatedData);
-
-                            // Notify parent component to update its data and re-render
-                            if (onDataUpdate) {
-                                console.log('🔄 Calling onDataUpdate to trigger parent re-render');
-                                onDataUpdate(updatedData);
                             } else {
-                                console.log('⚠️ NOTE: onDataUpdate callback not provided - parent component will not re-render');
+                                console.error('❌ Failed to find categories or updates for transfer:', {
+                                    fromCategoryFound: !!fromCategory,
+                                    toCategoryFound: !!toCategory,
+                                    updatesAvailable: !!transferData.updates
+                                });
                             }
                         }
 
