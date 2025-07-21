@@ -1501,13 +1501,15 @@ export default function TransactionsTab({
                 console.log("🔄 Creating inverse transfer transaction:", inverseTransaction);
                 onAddTransaction(inverseTransaction);
 
-                // Close the modal explicitly
+                // Explicitly close the modal and reset state
                 setShowModal(false);
+                setEditingTransaction(null);
             } else {
                 // Regular transaction
                 onAddTransaction(transactionData);
             }
         }
+        // Ensure modal closes regardless of transaction type
         setEditingTransaction(null);
     };
 
