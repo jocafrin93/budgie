@@ -77,11 +77,18 @@ const QuickAllocateModal = ({
             const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
 
             // 2. Find categories that are funded by this specific account
-            const accountCategories = categories.filter(cat => cat.accountId === account.id);
+            // Ensure robust comparison by converting both IDs to strings
+            const accountCategories = categories.filter(cat =>
+                cat.accountId !== undefined &&
+                cat.accountId !== null &&
+                String(cat.accountId) === String(account.id)
+            );
 
             // 3. Calculate how much is already available in those categories
             // Only include positive available amounts
             const categoryAvailableTotal = accountCategories.reduce((sum, cat) => {
+                // Log each category to help debug the issue
+                console.log(`Category ${cat.name} (ID: ${cat.id}) with accountId: ${cat.accountId} has available: ${cat.available || 0}`);
                 return sum + Math.max(0, cat.available || 0);
             }, 0);
 
