@@ -76,10 +76,12 @@ const QuickAllocateModal = ({
             const startingBalance = account.startingBalance || account.balance || 0;
             const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
 
-            // Get already allocated amount for this account's categories
+            // Get already available amount for this account's categories (not allocated)
+            // This only subtracts the amounts still available in categories, not the entire allocated amount
+            // This is important because some allocated money might have already been spent
             const accountCategories = categories.filter(cat => cat.accountId === account.id);
-            const alreadyAllocated = accountCategories.reduce((sum, cat) => sum + (cat.allocated || 0), 0);
-            const accountAvailable = workingBalance - alreadyAllocated;
+            const alreadyAvailable = accountCategories.reduce((sum, cat) => sum + (cat.available || 0), 0);
+            const accountAvailable = workingBalance - alreadyAvailable;
 
             accountSummaries[account.id] = {
                 account,
