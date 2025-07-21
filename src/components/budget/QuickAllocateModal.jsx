@@ -8,6 +8,7 @@ const QuickAllocateModal = ({
     availableToAllocate,
     categories = [],
     accounts = [],
+    transactions = [],
     onBulkAllocate
 }) => {
     // Use cloud storage for pending transfers
@@ -68,10 +69,10 @@ const QuickAllocateModal = ({
         const accountValidation = {};
         const accountSummaries = {};
 
-        // Initialize account summaries for all accounts
+        // Initialize account summaries for all accounts using the same calculation as the sidebar
         accounts.forEach(account => {
-            // Calculate account's available balance (working balance - already allocated)
-            const accountTransactions = []; // Empty for now - will be populated when transaction management is implemented
+            // Calculate account's working balance (same as sidebar calculation)
+            const accountTransactions = transactions?.filter(t => t.accountId === account.id) || [];
             const startingBalance = account.startingBalance || account.balance || 0;
             const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
 

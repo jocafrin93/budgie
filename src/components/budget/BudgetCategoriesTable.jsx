@@ -1909,17 +1909,24 @@ const BudgetCategoriesTable = ({
                     isOpen={quickAllocateModal.isOpen}
                     onClose={() => setQuickAllocateModal({ isOpen: false })}
                     availableToAllocate={(() => {
+                        // Calculate available to allocate using the same logic as the sidebar
                         const totalWorkingBalance = (accounts || []).reduce((sum, account) => {
-                            const accountTransactions = [];
+                            const accountTransactions = (transactions || []).filter(t => t.accountId === account.id);
                             const startingBalance = account.startingBalance || account.balance || 0;
                             const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
                             return sum + workingBalance;
                         }, 0);
                         const totalAllocated = data.reduce((sum, category) => sum + (category.allocated || 0), 0);
-                        return totalWorkingBalance - totalAllocated;
+
+                        // Add transactions with "to-be-allocated" category to available funds
+                        const toBeAllocatedAmount = (transactions || []).filter(t => t.categoryId === 'to-be-allocated')
+                            .reduce((sum, t) => sum + (t.amount || 0), 0);
+
+                        return totalWorkingBalance - totalAllocated + toBeAllocatedAmount;
                     })()}
                     categories={data}
                     accounts={accounts}
+                    transactions={transactions}
                     onBulkAllocate={(allocations) => {
                         console.log('🚀 BudgetCategoriesTable: Bulk allocation received');
                         console.log('📊 Allocations:', allocations);
