@@ -419,37 +419,106 @@ const TransactionFormModal = ({
         };
     }, [formData.amount, formData.splits, showSplits]);
 
+    // Use refs to track submission status and form/modal elements
+    const isSubmittingRef = useRef(false);
+    const formRef = useRef(null);
+    const modalRef = useRef(null);
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Validate split balance before saving
-        if (showSplits && formData.splits.length > 0 && !splitValidation.isBalanced) {
-            alert('Split amounts must equal the transaction amount. Please balance the splits or use auto-distribute.');
-            return;
+        console.log('🚦 FORM SUBMIT STARTED');
+
+        // Prevent multiple submissions
+        if (isSubmittingRef.current) {
+            console.log('🛑 BLOCKED: Preventing duplicate submission');
+            return false;
         }
 
-        // Prepare transaction data with proper amount sign based on transaction type
-        const parsedAmount = parseFloat(formData.amount) || 0;
-        const finalAmount = transactionType === 'outflow' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount);
+        // Set submitting flag
+        isSubmittingRef.current = true;
 
-        const transactionData = {
-            ...formData,
-            amount: finalAmount,
-            isSplit: showSplits && formData.splits.length > 0,
-            transferAccountId: isTransfer ? formData.transferToAccountId : undefined
-        };
+        // For transfers, force immediate UI feedback and close modal
+        if (formData.isTransfer && formData.transferToAccountId) {
+            console.log('🚫 TRANSFER DETECTED: FORCING IMMEDIATE MODAL CLOSE');
 
-        // Debug logging for "to-be-allocated" transactions
-        console.log('🔥 TRANSACTION FORM SUBMIT DEBUG:', {
-            formData,
-            transactionType,
-            categoryId: formData.categoryId,
-            isToBeAllocated: formData.categoryId === 'to-be-allocated',
-            finalTransactionData: transactionData
-        });
+            // Multiple approaches to ensure the modal closes immediately
 
-        onSave(transactionData);
-        onClose();
+            // 1. Direct DOM manipulation - hide the modal directly
+            const modalElement = document.querySelector('.fixed.inset-0.z-50');
+            if (modalElement) {
+                console.log('🚫 FOUND MODAL ELEMENT, HIDING DIRECTLY');
+                modalElement.style.display = 'none';
+            }
+
+            // 2. Disable the form submit button
+            const submitBtn = document.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Processing...';
+            }
+
+            // 3. Force immediate close via props
+            onClose();
+
+            // 4. Force immediate state update
+            window.setTimeout(() => {
+                setShowModal(false);
+                setEditingTransaction(null);
+            }, 0);
+        }
+
+        try {
+            // Validate split balance before saving
+            if (showSplits && formData.splits.length > 0 && !splitValidation.isBalanced) {
+                alert('Split amounts must equal the transaction amount. Please balance the splits or use auto-distribute.');
+                isSubmittingRef.current = false;
+                return;
+            }
+
+            // Prepare transaction data with proper amount sign based on transaction type
+            const parsedAmount = parseFloat(formData.amount) || 0;
+            const finalAmount = transactionType === 'outflow' ? -Math.abs(parsedAmount) : Math.abs(parsedAmount);
+
+            const transactionData = {
+                ...formData,
+                amount: finalAmount,
+                isSplit: showSplits && formData.splits.length > 0,
+                transferAccountId: isTransfer ? formData.transferToAccountId : undefined
+            };
+
+            // Debug logging for "to-be-allocated" transactions
+            console.log('🔥 TRANSACTION FORM SUBMIT DEBUG:', {
+                formData,
+                transactionType,
+                categoryId: formData.categoryId,
+                isToBeAllocated: formData.categoryId === 'to-be-allocated',
+                finalTransactionData: transactionData
+            });
+
+            // Save the transaction data
+            onSave(transactionData);
+
+            // Close the modal for non-transfer transactions
+            if (!formData.isTransfer) {
+                onClose();
+            }
+        } catch (error) {
+            console.error('Error saving transaction:', error);
+        } finally {
+            // Reset submission flag (though the component will be unmounted)
+            setTimeout(() => {
+                isSubmittingRef.current = false;
+            }, 100);
+
+            // Final check to ensure modal is closed for transfers
+            if (formData.isTransfer) {
+                window.setTimeout(() => {
+                    setShowModal(false);
+                    setEditingTransaction(null);
+                }, 50);
+            }
+        }
     };
 
     const addSplit = () => {
@@ -1374,6 +1443,12 @@ export default function TransactionsTab({
 
     // Handle form submission
     const handleSaveTransaction = (transactionData) => {
+        // IMMEDIATELY close the modal for transfers to prevent multiple submissions
+        if (transactionData.isTransfer && transactionData.transferToAccountId) {
+            console.log("🚫 IMMEDIATELY CLOSING MODAL FOR TRANSFER");
+            setShowModal(false);
+            setEditingTransaction(null);
+        }
         if (editingTransaction) {
             // Check if this is editing a transfer transaction
             if (editingTransaction.isTransfer && editingTransaction.transferToAccountId) {
