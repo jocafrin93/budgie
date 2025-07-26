@@ -69,8 +69,10 @@ export const useCategoryManagement = () => {
    * Generate the next category ID
    */
   const generateNextCategoryId = useCallback(() => {
-    if (categories.length === 0) return 1;
-    return Math.max(...categories.map(c => c.id)) + 1;
+    // Defensive programming: ensure categories is always an array
+    const categoriesArray = Array.isArray(categories) ? categories : [];
+    if (categoriesArray.length === 0) return 1;
+    return Math.max(...categoriesArray.map(c => c.id)) + 1;
   }, [categories]);
 
   /**
@@ -230,11 +232,16 @@ export const useCategoryManagement = () => {
     console.log('Input categoryId:', categoryId, 'type:', typeof categoryId);
     console.log('Input planningItems:', planningItems);
     console.log('All categories:', categories);
-    console.log('Category types breakdown:', categories.map(cat => ({ id: cat.id, name: cat.name, type: cat.type })));
+
+    // Defensive programming: ensure categories and planningItems are arrays
+    const categoriesArray = Array.isArray(categories) ? categories : [];
+    const planningItemsArray = Array.isArray(planningItems) ? planningItems : [];
+
+    console.log('Category types breakdown:', categoriesArray.map(cat => ({ id: cat.id, name: cat.name, type: cat.type })));
 
     // Show item count for each category
-    const categoryItemCounts = categories.map(cat => {
-      const itemCount = planningItems.filter(item => {
+    const categoryItemCounts = categoriesArray.map(cat => {
+      const itemCount = planningItemsArray.filter(item => {
         const itemCategoryId = parseInt(item.categoryId, 10);
         const catId = parseInt(cat.id, 10);
         return !isNaN(itemCategoryId) && !isNaN(catId) && itemCategoryId === catId;
@@ -243,7 +250,7 @@ export const useCategoryManagement = () => {
     });
     console.log('Category item counts:', categoryItemCounts);
 
-    const categoryToDelete = categories.find(cat => cat.id === categoryId);
+    const categoryToDelete = categoriesArray.find(cat => cat.id === categoryId);
     console.log('Category to delete:', categoryToDelete);
 
     if (!categoryToDelete) {
@@ -256,16 +263,19 @@ export const useCategoryManagement = () => {
     // For single categories, the category IS the item, so we can delete it directly
     if (categoryToDelete.type === 'single') {
       console.log('Single category - deleting directly');
-      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      setCategories(prev => {
+        const prevArray = Array.isArray(prev) ? prev : [];
+        return prevArray.filter(cat => cat.id !== categoryId);
+      });
       return { success: true };
     }
 
     // For multiple categories, check for associated items
     console.log('Multiple category - checking for associated items');
-    console.log('Planning items to check:', planningItems.length);
+    console.log('Planning items to check:', planningItemsArray.length);
 
     // Convert both to numbers for proper comparison to handle string/number mismatch
-    const associatedItems = planningItems.filter(item => {
+    const associatedItems = planningItemsArray.filter(item => {
       const itemCategoryId = parseInt(item.categoryId, 10);
       const targetCategoryId = parseInt(categoryId, 10);
       const matches = !isNaN(itemCategoryId) && !isNaN(targetCategoryId) && itemCategoryId === targetCategoryId;
@@ -439,13 +449,17 @@ export const useCategoryManagement = () => {
    * Calculate the total amount available to allocate
    */
   const calculateToBeAllocated = useCallback((accounts) => {
+    // Defensive programming: ensure accounts and categories are arrays
+    const accountsArray = Array.isArray(accounts) ? accounts : [];
+    const categoriesArray = Array.isArray(categories) ? categories : [];
+
     // Total money in all accounts
-    const totalAccountBalance = accounts.reduce((total, account) => {
+    const totalAccountBalance = accountsArray.reduce((total, account) => {
       return total + (account.balance || 0);
     }, 0);
 
     // Total money already allocated to categories
-    const totalAllocated = categories.reduce((total, category) => {
+    const totalAllocated = categoriesArray.reduce((total, category) => {
       return total + (category.allocated || 0);
     }, 0);
 
