@@ -131,6 +131,7 @@ const BudgetCategoriesTable = ({
     getAllUpcomingPaycheckDates, // Add paycheck management function as prop
     // Group management props
     groups = [],
+    onAddGroup,
     onEditGroup,
     onDeleteGroup,
     onToggleGroupCollapsed,
@@ -1418,13 +1419,22 @@ const BudgetCategoriesTable = ({
                         </h2>
                         <p className="text-base-content/60">Manage your envelope budgeting categories and items</p>
                     </div>
-                    <button
-                        onClick={() => onAddCategory && onAddCategory()}
-                        className="flex items-center gap-2 px-4 py-2 btn-primary text-white rounded-lg hover transition-colors"
-                    >
-                        <Plus className="w-4 h-4" />
-                        Add Category
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => onAddGroup && onAddGroup()}
+                            className="flex items-center gap-2 px-4 py-2 btn-secondary text-base-content rounded-lg hover transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Group
+                        </button>
+                        <button
+                            onClick={() => onAddCategory && onAddCategory()}
+                            className="flex items-center gap-2 px-4 py-2 btn-primary text-white rounded-lg hover transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Category
+                        </button>
+                    </div>
                 </div>
 
                 {/* Search and bulk actions */}

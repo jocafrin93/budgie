@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Size Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #1f2937;
+            color: white;
+        }
+
+        .info {
+            background: #374151;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Screen Size Detection Test</h1>
+
+    <div class="info">
+        <h2>Current Screen Info:</h2>
+        <p><strong>Window Width:</strong> <span id="windowWidth"></span>px</p>
+        <p><strong>Window Height:</strong> <span id="windowHeight"></span>px</p>
+        <p><strong>Screen Width:</strong> <span id="screenWidth"></span>px</p>
+        <p><strong>Screen Height:</strong> <span id="screenHeight"></span>px</p>
+        <p><strong>Device Pixel Ratio:</strong> <span id="devicePixelRatio"></span></p>
+    </div>
+
+    <div class="info">
+        <h2>Breakpoint Detection:</h2>
+        <p><strong>Is Mobile (< 768px):</strong> <span id="isMobile"></span></p>
+        <p><strong>Is Tablet (768px - 1024px):</strong> <span id="isTablet"></span></p>
+        <p><strong>Is Desktop (> 1024px):</strong> <span id="isDesktop"></span></p>
+    </div>
+
+    <script>
+        function updateScreenInfo() {
+            document.getElementById('windowWidth').textContent = window.innerWidth;
+            document.getElementById('windowHeight').textContent = window.innerHeight;
+            document.getElementById('screenWidth').textContent = screen.width;
+            document.getElementById('screenHeight').textContent = screen.height;
+            document.getElementById('devicePixelRatio').textContent = window.devicePixelRatio;
+
+            const width = window.innerWidth;
+            document.getElementById('isMobile').textContent = width < 768 ? 'YES' : 'NO';
+            document.getElementById('isTablet').textContent = (width >= 768 && width <= 1024) ? 'YES' : 'NO';
+            document.getElementById('isDesktop').textContent = width > 1024 ? 'YES' : 'NO';
+        }
+
+        // Update on load
+        updateScreenInfo();
+
+        // Update on resize
+        window.addEventListener('resize', updateScreenInfo);
+    </script>
+</body>
+
+</html>
