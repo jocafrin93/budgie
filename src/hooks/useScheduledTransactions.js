@@ -213,7 +213,11 @@ export const useScheduledTransactions = (addTransaction) => {
      * Add scheduled transactions to the store
      */
     const addScheduledTransactions = useCallback((transactions) => {
-        setScheduledTransactions(prev => [...prev, ...transactions]);
+        setScheduledTransactions(prev => {
+            // Defensive programming: ensure prev is always an array
+            const prevArray = Array.isArray(prev) ? prev : [];
+            return [...prevArray, ...transactions];
+        });
     }, [setScheduledTransactions]);
 
     /**
@@ -225,7 +229,9 @@ export const useScheduledTransactions = (addTransaction) => {
         const todayString = today.toISOString().split('T')[0];
 
         setScheduledTransactions(prev => {
-            const updated = [...prev];
+            // Defensive programming: ensure prev is always an array
+            const prevArray = Array.isArray(prev) ? prev : [];
+            const updated = [...prevArray];
             let hasChanges = false;
 
             updated.forEach(scheduledTxn => {
@@ -289,8 +295,11 @@ export const useScheduledTransactions = (addTransaction) => {
      * Get upcoming scheduled transactions (not yet activated) - only next occurrence per unique transaction
      */
     const getUpcomingScheduledTransactions = useCallback(() => {
+        // Defensive programming: ensure scheduledTransactions is always an array
+        const transactionsArray = Array.isArray(scheduledTransactions) ? scheduledTransactions : [];
+
         // Filter out activated and skipped transactions
-        const activeScheduledTransactions = scheduledTransactions
+        const activeScheduledTransactions = transactionsArray
             .filter(txn => !txn.isActivated && !txn.isSkipped);
 
         // Group by parent budget item ID or payee to identify unique transactions
@@ -326,7 +335,9 @@ export const useScheduledTransactions = (addTransaction) => {
      * Get newly activated transactions (for highlighting)
      */
     const getNewlyActivatedTransactions = useCallback(() => {
-        return scheduledTransactions.filter(txn => txn.isNewlyActivated);
+        // Defensive programming: ensure scheduledTransactions is always an array
+        const transactionsArray = Array.isArray(scheduledTransactions) ? scheduledTransactions : [];
+        return transactionsArray.filter(txn => txn.isNewlyActivated);
     }, [scheduledTransactions]);
 
     /**
@@ -388,7 +399,9 @@ export const useScheduledTransactions = (addTransaction) => {
      */
     const activateScheduledTransactionEarly = useCallback((scheduledTransactionId) => {
         setScheduledTransactions(prev => {
-            const updated = [...prev];
+            // Defensive programming: ensure prev is always an array
+            const prevArray = Array.isArray(prev) ? prev : [];
+            const updated = [...prevArray];
             const scheduledTxn = updated.find(txn => txn.id === scheduledTransactionId);
 
             if (scheduledTxn && !scheduledTxn.isActivated) {
