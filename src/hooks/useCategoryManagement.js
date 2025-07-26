@@ -152,7 +152,9 @@ export const useCategoryManagement = () => {
     setCategories(prev => {
       console.log('Current categories before update:', prev);
 
-      const updated = prev.map(cat => {
+      // Defensive programming: ensure prev is always an array
+      const prevArray = Array.isArray(prev) ? prev : [];
+      const updated = prevArray.map(cat => {
         if (cat.id === categoryId) {
           console.log('Found category to update:', cat);
 
@@ -299,7 +301,10 @@ export const useCategoryManagement = () => {
     }
 
     console.log('No associated items - deleting category');
-    setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+    setCategories(prev => {
+      const prevArray = Array.isArray(prev) ? prev : [];
+      return prevArray.filter(cat => cat.id !== categoryId);
+    });
     console.log('=== DELETE CATEGORY COMPLETE ===');
     return { success: true };
   }, [setCategories, categories]);
@@ -404,16 +409,19 @@ export const useCategoryManagement = () => {
     if (!category) return { success: false, error: 'Category not found' };
 
     // Update category balance
-    setCategories(prev => prev.map(cat =>
-      cat.id === categoryId
-        ? {
-          ...cat,
-          allocated: (cat.allocated || 0) + amount,
-          available: (cat.available || 0) + amount,
-          lastFunded: new Date().toISOString()
-        }
-        : cat
-    ));
+    setCategories(prev => {
+      const prevArray = Array.isArray(prev) ? prev : [];
+      return prevArray.map(cat =>
+        cat.id === categoryId
+          ? {
+            ...cat,
+            allocated: (cat.allocated || 0) + amount,
+            available: (cat.available || 0) + amount,
+            lastFunded: new Date().toISOString()
+          }
+          : cat
+      );
+    });
 
     // For single categories, mark the single item as funded
     if (category.type === 'single') {
@@ -440,9 +448,12 @@ export const useCategoryManagement = () => {
    * Toggle a category's collapsed state
    */
   const toggleCategoryCollapse = useCallback((categoryId) => {
-    setCategories(prev => prev.map(category =>
-      category.id === categoryId ? { ...category, collapsed: !category.collapsed } : category
-    ));
+    setCategories(prev => {
+      const prevArray = Array.isArray(prev) ? prev : [];
+      return prevArray.map(category =>
+        category.id === categoryId ? { ...category, collapsed: !category.collapsed } : category
+      );
+    });
   }, [setCategories]);
 
   /**
@@ -484,31 +495,34 @@ export const useCategoryManagement = () => {
 
     let migratedCount = 0;
 
-    setCategories(prev => prev.map(category => {
-      if (!category.type) {
-        const associatedItems = planningItems.filter(item => item.categoryId === category.id);
-        const suggestedType = associatedItems.length <= 1 ? 'single' : 'multiple';
+    setCategories(prev => {
+      const prevArray = Array.isArray(prev) ? prev : [];
+      return prevArray.map(category => {
+        if (!category.type) {
+          const associatedItems = planningItems.filter(item => item.categoryId === category.id);
+          const suggestedType = associatedItems.length <= 1 ? 'single' : 'multiple';
 
-        migratedCount++;
+          migratedCount++;
 
-        return {
-          ...category,
-          type: suggestedType,
-          available: category.allocated || 0, // Initialize available balance
-          settings: suggestedType === 'single'
-            ? {
-              amount: associatedItems[0]?.amount || 0,
-              frequency: associatedItems[0]?.frequency || 'monthly',
-              dueDate: associatedItems[0]?.dueDate || null
-            }
-            : {
-              allowInactiveItems: true,
-              autoDistribution: false
-            }
-        };
-      }
-      return category;
-    }));
+          return {
+            ...category,
+            type: suggestedType,
+            available: category.allocated || 0, // Initialize available balance
+            settings: suggestedType === 'single'
+              ? {
+                amount: associatedItems[0]?.amount || 0,
+                frequency: associatedItems[0]?.frequency || 'monthly',
+                dueDate: associatedItems[0]?.dueDate || null
+              }
+              : {
+                allowInactiveItems: true,
+                autoDistribution: false
+              }
+          };
+        }
+        return category;
+      });
+    });
 
     return { migrated: migratedCount };
   }, [categories, setCategories]);
