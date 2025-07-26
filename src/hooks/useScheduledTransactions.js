@@ -234,7 +234,9 @@ export const useScheduledTransactions = (addTransaction) => {
             const updated = [...prevArray];
             let hasChanges = false;
 
-            updated.forEach(scheduledTxn => {
+            // Defensive programming: ensure updated is an array before calling forEach
+            const updatedArray = Array.isArray(updated) ? updated : [];
+            updatedArray.forEach(scheduledTxn => {
                 if (!scheduledTxn.isActivated && scheduledTxn.scheduledDate === todayString) {
                     // Activate the scheduled transaction
                     scheduledTxn.isActivated = true;
