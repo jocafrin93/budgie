@@ -379,9 +379,32 @@ export const useGoogleDriveSync = () => {
             const backupContent = await downloadResponse.text();
             const backup = JSON.parse(backupContent);
 
-            // Restore data to localStorage
-            Object.entries(backup.data).forEach(([key, value]) => {
-                localStorage.setItem(key, value);
+            console.log('🔍 RESTORE DEBUG - Backup data keys:', Object.keys(backup.data || {}));
+
+            // Validate and restore data to localStorage with defensive programming
+            Object.entries(backup.data || {}).forEach(([key, value]) => {
+                try {
+                    // For array data, validate it's actually an array
+                    if (key.includes('scheduledTransactions') || key.includes('categories') || key.includes('planningItems')) {
+                        const parsedValue = JSON.parse(value);
+                        if (!Array.isArray(parsedValue)) {
+                            console.warn(`🚨 RESTORE WARNING - ${key} is not an array, converting to empty array:`, parsedValue);
+                            localStorage.setItem(key, JSON.stringify([]));
+                        } else {
+                            console.log(`✅ RESTORE - ${key} is valid array with ${parsedValue.length} items`);
+                            localStorage.setItem(key, value);
+                        }
+                    } else {
+                        // For non-array data, store as-is
+                        localStorage.setItem(key, value);
+                    }
+                } catch (parseError) {
+                    console.error(`🚨 RESTORE ERROR - Failed to parse ${key}:`, parseError);
+                    // For array keys, default to empty array; for others, skip
+                    if (key.includes('scheduledTransactions') || key.includes('categories') || key.includes('planningItems')) {
+                        localStorage.setItem(key, JSON.stringify([]));
+                    }
+                }
             });
 
             // Trigger storage events to update any listening components

@@ -5,13 +5,29 @@ import { useState, useEffect } from 'react';
  * Much simpler than the previous over-engineered solution
  */
 export const useSimpleStorage = (key, defaultValue) => {
-    // Initialize from localStorage
+    // Initialize from localStorage with defensive programming
     const [value, setValue] = useState(() => {
         try {
             const item = localStorage.getItem(key);
-            return item ? JSON.parse(item) : defaultValue;
+            if (!item) return defaultValue;
+
+            const parsedValue = JSON.parse(item);
+
+            // For array-based keys, ensure the value is actually an array
+            if (key.includes('scheduledTransactions') || key.includes('categories') || key.includes('planningItems')) {
+                if (!Array.isArray(parsedValue)) {
+                    console.warn(`🚨 STORAGE WARNING - ${key} is not an array, using default:`, parsedValue);
+                    return Array.isArray(defaultValue) ? defaultValue : [];
+                }
+            }
+
+            return parsedValue;
         } catch (error) {
             console.warn(`Error reading localStorage key "${key}":`, error);
+            // For array keys, return empty array; for others, return defaultValue
+            if (key.includes('scheduledTransactions') || key.includes('categories') || key.includes('planningItems')) {
+                return Array.isArray(defaultValue) ? defaultValue : [];
+            }
             return defaultValue;
         }
     });
