@@ -6,7 +6,7 @@ import { useSimpleStorage } from './useSimpleStorage';
  * Custom hook for managing scheduled transactions
  * Handles creation, activation, and recurring pattern management
  */
-export const useScheduledTransactions = (addTransaction) => {
+export const useScheduledTransactions = (addTransaction = null) => {
     // Scheduled transactions state
     const [scheduledTransactions, setScheduledTransactions] = useSimpleStorage('budgetCalc_scheduledTransactions', []);
 
@@ -260,7 +260,12 @@ export const useScheduledTransactions = (addTransaction) => {
                         wasAlreadyActivated: scheduledTxn.isActivated
                     });
 
-                    addTransaction(actualTransaction);
+                    // Only call addTransaction if it's provided and is a function
+                    if (addTransaction && typeof addTransaction === 'function') {
+                        addTransaction(actualTransaction);
+                    } else {
+                        console.warn('🚨 addTransaction is not available - scheduled transaction activated but not added to transactions');
+                    }
 
                     // Generate next occurrence for indefinite recurring
                     if (scheduledTxn.recurringPattern?.endCondition === 'indefinite') {
@@ -420,7 +425,12 @@ export const useScheduledTransactions = (addTransaction) => {
                     date: new Date().toISOString().split('T')[0] // Use today's date
                 };
 
-                addTransaction(actualTransaction);
+                // Only call addTransaction if it's provided and is a function
+                if (addTransaction && typeof addTransaction === 'function') {
+                    addTransaction(actualTransaction);
+                } else {
+                    console.warn('🚨 addTransaction is not available - scheduled transaction activated early but not added to transactions');
+                }
             }
 
             return updated;
