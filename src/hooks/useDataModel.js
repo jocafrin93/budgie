@@ -249,7 +249,7 @@ export const useDataModel = ({
 
   // Update an existing planning item
   const updateItem = useCallback((itemId, updatedItem) => {
-    console.log('Updating item:', itemId, updatedItem);
+    console.log('🔥 DATAMODEL - Updating item:', itemId, updatedItem);
 
     // Validate category if it's being updated
     if (updatedItem.categoryId) {
@@ -265,26 +265,65 @@ export const useDataModel = ({
     }
 
     setPlanningItems(prev => {
-      const updatedItems = prev.map(item =>
-        item.id === itemId ? { ...item, ...updatedItem } : item
-      );
+      console.log('🔥 DATAMODEL - Current planning items before update:', prev.length);
+      console.log('🔥 DATAMODEL - Looking for item with ID:', itemId);
+
+      const itemToUpdate = prev.find(item => item.id === itemId);
+      if (!itemToUpdate) {
+        console.error('🔥 DATAMODEL - Item not found for update:', itemId);
+        console.log('🔥 DATAMODEL - Available item IDs:', prev.map(item => item.id));
+        return prev; // Return unchanged if item not found
+      }
+
+      console.log('🔥 DATAMODEL - Found item to update:', itemToUpdate);
+      console.log('🔥 DATAMODEL - Update data:', updatedItem);
+
+      const updatedItems = prev.map(item => {
+        if (item.id === itemId) {
+          const mergedItem = {
+            ...item,
+            ...updatedItem,
+            // Ensure critical fields are preserved
+            id: itemId, // Never change the ID
+            categoryId: updatedItem.categoryId || item.categoryId,
+            // Preserve isActive state properly
+            isActive: updatedItem.isActive !== undefined ? updatedItem.isActive : item.isActive,
+            // Add update timestamp for debugging
+            updatedAt: new Date().toISOString()
+          };
+          console.log('🔥 DATAMODEL - Merged item result:', mergedItem);
+          return mergedItem;
+        }
+        return item;
+      });
+
+      console.log('🔥 DATAMODEL - Updated planning items count:', updatedItems.length);
+      console.log('🔥 DATAMODEL - Updated item in list:', updatedItems.find(item => item.id === itemId));
 
       // Update or create budget allocation if active
-      if (updatedItem.isActive || (!updatedItem.allocationPaused && updatedItem.priorityState === 'active')) {
+      const finalUpdatedItem = updatedItems.find(item => item.id === itemId);
+      const shouldHaveAllocation = finalUpdatedItem && (
+        finalUpdatedItem.isActive ||
+        (!finalUpdatedItem.allocationPaused && finalUpdatedItem.priorityState === 'active')
+      );
+
+      if (shouldHaveAllocation) {
+        console.log('🔥 DATAMODEL - Item should have allocation, updating budget allocations');
         setActiveBudgetAllocations(prevAllocations => {
           const existingAllocation = prevAllocations.find(a => a.planningItemId === itemId);
 
           if (existingAllocation) {
+            console.log('🔥 DATAMODEL - Updating existing allocation');
             // Update existing allocation
             const updatedAllocations = prevAllocations.map(a => {
               if (a.planningItemId === itemId) {
                 return {
                   ...a,
-                  categoryId: updatedItem.categoryId,
-                  monthlyAllocation: updatedItem.type === 'savings-goal'
-                    ? updatedItem.monthlyContribution
-                    : updatedItem.amount,
-                  sourceAccountId: updatedItem.accountId || accounts[0]?.id || 1,
+                  categoryId: finalUpdatedItem.categoryId,
+                  monthlyAllocation: finalUpdatedItem.type === 'savings-goal'
+                    ? finalUpdatedItem.monthlyContribution
+                    : finalUpdatedItem.amount,
+                  sourceAccountId: finalUpdatedItem.accountId || accounts[0]?.id || 1,
                   isPaused: false
                 };
               }
@@ -293,16 +332,17 @@ export const useDataModel = ({
 
             return calculatePerPaycheckAmounts(updatedAllocations, payFrequency, payFrequencyOptions);
           } else {
+            console.log('🔥 DATAMODEL - Creating new allocation');
             // Create new allocation
             const newAllocation = {
               id: Math.max(...prevAllocations.map(a => a.id), 0) + 1,
               planningItemId: itemId,
-              categoryId: updatedItem.categoryId,
-              monthlyAllocation: updatedItem.type === 'savings-goal'
-                ? updatedItem.monthlyContribution
-                : updatedItem.amount,
+              categoryId: finalUpdatedItem.categoryId,
+              monthlyAllocation: finalUpdatedItem.type === 'savings-goal'
+                ? finalUpdatedItem.monthlyContribution
+                : finalUpdatedItem.amount,
               perPaycheckAmount: 0, // Will be calculated later
-              sourceAccountId: updatedItem.accountId || accounts[0]?.id || 1,
+              sourceAccountId: finalUpdatedItem.accountId || accounts[0]?.id || 1,
               isPaused: false,
               createdAt: new Date().toISOString()
             };
@@ -312,6 +352,7 @@ export const useDataModel = ({
           }
         });
       } else {
+        console.log('🔥 DATAMODEL - Item should not have allocation, removing if exists');
         // Remove allocation if item is not active
         setActiveBudgetAllocations(prev =>
           prev.filter(a => a.planningItemId !== itemId)

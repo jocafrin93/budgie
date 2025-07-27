@@ -336,19 +336,64 @@ export default function BudgetOverview() {
                     if (item.type === 'savings-goal') {
                         return sum + (item.monthlyContribution || 0);
                     } else {
-                        // For expenses, use simple frequency-based calculation (static reference)
-                        return sum + calculateMonthlyAmount(
-                            item.amount || 0,
-                            item.frequency || 'monthly'
-                        );
+                        // For expense items, check if amount is specified without frequency or due date
+                        const hasAmount = item.amount && item.amount > 0;
+                        const hasFrequency = item.frequency && item.frequency !== 'monthly';
+                        const hasDueDate = item.dueDate;
+
+                        if (hasAmount && !hasFrequency && !hasDueDate) {
+                            // Amount without frequency or due date = per-paycheck amount
+                            // Convert to monthly by multiplying by conservative paycheck count
+                            const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+                            return sum + (item.amount * paycheckInfo.conservative);
+                        } else {
+                            // Use frequency-based calculation for monthly amount
+                            return sum + calculateMonthlyAmount(
+                                item.amount || 0,
+                                item.frequency || 'monthly'
+                            );
+                        }
                     }
                 }, 0);
 
                 // Transform sub-items
                 subItems = categoryItems.map(item => {
-                    const monthlyNeed = item.type === 'savings-goal'
-                        ? (item.monthlyContribution || 0)
-                        : calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly');
+                    let monthlyNeed;
+                    let perPaycheck;
+                    const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
+
+                    if (item.type === 'savings-goal') {
+                        monthlyNeed = item.monthlyContribution || 0;
+                        perPaycheck = monthlyNeed / paycheckInfo.conservative;
+                    } else {
+                        // For expense items, check if amount is specified without frequency or due date
+                        const hasAmount = item.amount && item.amount > 0;
+                        const hasFrequency = item.frequency && item.frequency !== 'monthly';
+                        const hasDueDate = item.dueDate;
+
+                        if (hasAmount && !hasFrequency && !hasDueDate) {
+                            // Amount without frequency or due date = per-paycheck amount
+                            perPaycheck = item.amount;
+                            monthlyNeed = item.amount * paycheckInfo.conservative;
+                            console.log(`💰 Per-paycheck item ${item.name}: amount=${item.amount} treated as per-paycheck, monthly=${monthlyNeed}`);
+                        } else {
+                            // Use frequency-based calculation for monthly amount
+                            monthlyNeed = calculateMonthlyAmount(item.amount || 0, item.frequency || 'monthly');
+
+                            // Calculate per paycheck based on due date if available
+                            const paychecksUntilDue = item.dueDate ? calculatePaychecksUntilDue(item.dueDate, item.accountId) : null;
+
+                            if (item.dueDate && paychecksUntilDue > 0) {
+                                // For items with due dates, calculate based on total amount needed divided by paychecks remaining
+                                perPaycheck = (item.amount || 0) / paychecksUntilDue;
+                                console.log(`💰 Due date item ${item.name}: amount=${item.amount}, paychecks=${paychecksUntilDue}, per-paycheck=${perPaycheck}`);
+                            } else {
+                                // For items with frequency but no due date, use conservative approach
+                                perPaycheck = monthlyNeed / paycheckInfo.conservative;
+                                console.log(`💰 Frequency item ${item.name}: monthly=${monthlyNeed}, per-paycheck=${perPaycheck}`);
+                            }
+                        }
+                    }
 
                     // Debug the accountId being passed
                     console.log(`🔍 ITEM ACCOUNT DEBUG for ${item.name}:`, {
@@ -358,29 +403,6 @@ export default function BudgetOverview() {
                     });
 
                     const paychecksUntilDue = item.dueDate ? calculatePaychecksUntilDue(item.dueDate, item.accountId) : null;
-
-                    // Calculate per paycheck based on due date if available
-                    let perPaycheck;
-                    const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
-
-                    if (item.dueDate && paychecksUntilDue > 0) {
-                        // For items with due dates, calculate based on total amount needed divided by paychecks remaining
-                        const totalAmountNeeded = item.type === 'savings-goal'
-                            ? (item.monthlyContribution || 0)
-                            : (item.amount || 0);
-                        perPaycheck = totalAmountNeeded / paychecksUntilDue;
-
-                        console.log(`💰 Per-paycheck calculation for ${item.name}:`, {
-                            totalAmountNeeded,
-                            paychecksUntilDue,
-                            perPaycheck,
-                            itemType: item.type,
-                            dueDate: item.dueDate
-                        });
-                    } else {
-                        // For items without due dates, use conservative approach (2 paychecks per month for bi-weekly)
-                        perPaycheck = monthlyNeed / paycheckInfo.conservative;
-                    }
 
                     return {
                         id: item.id,
@@ -620,26 +642,46 @@ export default function BudgetOverview() {
 
     const handleEditItem = useCallback((itemData) => {
         try {
-            if (itemData && itemData.id && itemData.name) {
+            console.log('🔥 BUDGET OVERVIEW - handleEditItem called with:', itemData);
+
+            // Always show the modal for editing - don't try to update directly
+            if (itemData && itemData.id) {
+                console.log('🔥 BUDGET OVERVIEW - Setting editing item and showing modal');
                 setEditingItem(itemData);
                 setPreselectedCategory(null);
                 setShowItemModal(true);
             } else {
-                updateItem(itemData.id, itemData);
+                console.error('🔥 BUDGET OVERVIEW - Invalid item data for editing:', itemData);
             }
         } catch (error) {
             console.error("Error editing item:", error);
         }
-    }, [updateItem]);
+    }, []);
 
     const handleSaveItem = useCallback((itemData, addAnother = false) => {
         try {
+            console.log('🔥 BUDGET OVERVIEW - handleSaveItem called with:', { itemData, addAnother, editingItem });
+
             if (editingItem) {
-                updateItem(editingItem.id, itemData);
+                console.log('🔥 BUDGET OVERVIEW - Updating existing item with ID:', editingItem.id);
+                console.log('🔥 BUDGET OVERVIEW - Item data to update:', itemData);
+
+                // Ensure we preserve the original item ID and don't overwrite it
+                const updateData = {
+                    ...itemData,
+                    // Explicitly preserve the ID to prevent any issues
+                    id: editingItem.id
+                };
+
+                console.log('🔥 BUDGET OVERVIEW - Final update data:', updateData);
+                updateItem(editingItem.id, updateData);
+                console.log('🔥 BUDGET OVERVIEW - updateItem called successfully');
             } else {
+                console.log('🔥 BUDGET OVERVIEW - Adding new item');
                 // Generate ID for new item
                 const itemId = Date.now().toString();
                 const itemWithId = { ...itemData, id: itemId };
+                console.log('🔥 BUDGET OVERVIEW - New item with ID:', itemWithId);
                 addItem(itemWithId);
             }
 
