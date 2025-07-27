@@ -229,13 +229,13 @@ const BudgetCategoriesTable = ({
         // Handle category dropped onto group (assign category to group)
         if (!activeId.startsWith('group-') && overId.startsWith('group-')) {
             console.log('🏷️ Category dropped onto group - assigning category to group');
-            const categoryId = activeId;
+            const categoryId = parseInt(activeId, 10); // Convert to number for proper comparison
             const targetGroupId = overId.replace('group-', '');
 
             console.log(`📋 Assigning category ${categoryId} to group ${targetGroupId}`);
 
             // Find the category being moved
-            const categoryToMove = data.find(cat => cat.id.toString() === categoryId);
+            const categoryToMove = data.find(cat => cat.id === categoryId);
             if (!categoryToMove) {
                 console.log('❌ Category not found - exiting');
                 return;
@@ -243,7 +243,7 @@ const BudgetCategoriesTable = ({
 
             // Update the category's groupId
             const updatedData = data.map(category => {
-                if (category.id.toString() === categoryId) {
+                if (category.id === categoryId) {
                     console.log(`✅ Updating category ${category.name} groupId from ${category.groupId} to ${targetGroupId}`);
                     return {
                         ...category,
@@ -862,13 +862,13 @@ const BudgetCategoriesTable = ({
                                 </div>
 
                                 {/* Group actions */}
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onEditGroup && onEditGroup(item.group.id);
                                         }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        className="p-1 hover:bg-base-200 rounded transition-colors pointer-events-auto"
                                         title="Edit Group"
                                     >
                                         <Edit className="w-4 h-4 text-base-content/60" />
@@ -878,7 +878,7 @@ const BudgetCategoriesTable = ({
                                             e.stopPropagation();
                                             onDeleteGroup && onDeleteGroup(item.group.id);
                                         }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors"
+                                        className="p-1 hover:bg-base-200 rounded transition-colors pointer-events-auto"
                                         title="Delete Group"
                                     >
                                         <Trash2 className="w-4 h-4 text-base-content/60" />
@@ -905,14 +905,14 @@ const BudgetCategoriesTable = ({
                                 </div>
 
                                 {/* Hover actions */}
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
                                     {item.type === 'multiple' && (
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onAddItem && onAddItem({ categoryId: item.id });
                                             }}
-                                            className="p-1 hover rounded transition-colors"
+                                            className="p-1 hover rounded transition-colors pointer-events-auto"
                                             title="Add Item"
                                         >
                                             <Plus className="w-4 h-4 text-base-content/60" />
@@ -923,7 +923,7 @@ const BudgetCategoriesTable = ({
                                             e.stopPropagation();
                                             onEditCategory && onEditCategory(item);
                                         }}
-                                        className="p-1 hover rounded transition-colors"
+                                        className="p-1 hover rounded transition-colors pointer-events-auto"
                                         title="Edit Category"
                                     >
                                         <Edit className="w-4 h-4 text-base-content/60" />
@@ -933,7 +933,7 @@ const BudgetCategoriesTable = ({
                                             e.stopPropagation();
                                             onDeleteCategory && onDeleteCategory(item.id);
                                         }}
-                                        className="p-1 hover rounded transition-colors"
+                                        className="p-1 hover rounded transition-colors pointer-events-auto"
                                         title="Delete Category"
                                     >
                                         <Trash2 className="w-4 h-4 text-base-content/60" />
@@ -980,13 +980,13 @@ const BudgetCategoriesTable = ({
                                     </div>
 
                                     {/* Hover actions for sub-items */}
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onEditItem && onEditItem(item);
                                             }}
-                                            className="p-1 hover rounded transition-colors"
+                                            className="p-1 hover rounded transition-colors pointer-events-auto"
                                             title="Edit Item"
                                         >
                                             <Edit className="w-3 h-3 text-base-content/60" />
@@ -996,7 +996,7 @@ const BudgetCategoriesTable = ({
                                                 e.stopPropagation();
                                                 onDeleteItem && onDeleteItem(item.id);
                                             }}
-                                            className="p-1 hover rounded transition-colors"
+                                            className="p-1 hover rounded transition-colors pointer-events-auto"
                                             title="Delete Item"
                                         >
                                             <Trash2 className="w-3 h-3 text-base-content/60" />
