@@ -968,7 +968,12 @@ const BudgetCategoriesTable = ({
                                         {/* Active/Inactive Toggle */}
                                         <button
                                             onClick={(e) => {
+                                                e.preventDefault();
                                                 e.stopPropagation();
+                                                console.log(`🔄 TOGGLE CLICKED for item: ${item.name} (ID: ${item.id})`);
+                                                console.log(`🔍 Current isActive state: ${item.isActive}`);
+                                                console.log(`🔍 onToggleItemActive function available: ${!!onToggleItemActive}`);
+
                                                 // Ensure itemId is passed as the correct type (number)
                                                 const itemId = parseInt(item.id, 10);
                                                 // Toggle the current state: if currently active (true or undefined), make inactive (false)
@@ -976,15 +981,22 @@ const BudgetCategoriesTable = ({
                                                 const currentlyActive = item.isActive !== false;
                                                 const newActiveState = !currentlyActive;
                                                 console.log(`🔄 Toggling item ${item.name}: ${currentlyActive} → ${newActiveState}`);
-                                                onToggleItemActive && onToggleItemActive(itemId, newActiveState);
+
+                                                if (onToggleItemActive) {
+                                                    console.log(`✅ Calling onToggleItemActive(${itemId}, ${newActiveState})`);
+                                                    onToggleItemActive(itemId, newActiveState);
+                                                } else {
+                                                    console.error(`❌ onToggleItemActive function not available!`);
+                                                }
                                             }}
-                                            className="w-6 h-4 rounded transition-all duration-200 flex items-center justify-center bg-transparent hover:bg-base-200/50"
+                                            className="w-6 h-4 rounded transition-all duration-200 flex items-center justify-center bg-transparent hover:bg-base-200/50 cursor-pointer"
                                             title={item.isActive !== false ? 'Active - counting towards budget' : 'Inactive - planning only'}
+                                            style={{ pointerEvents: 'auto' }}
                                         >
                                             {item.isActive !== false ? (
-                                                <ToggleRight className={`w-4 h-4 text-success hover:text-success/80 transition-colors`} />
+                                                <ToggleRight className={`w-4 h-4 text-success hover:text-success/80 transition-colors pointer-events-none`} />
                                             ) : (
-                                                <ToggleLeft className={`w-4 h-4 text-base-content/60 hover:text-base-content/80 transition-colors`} />
+                                                <ToggleLeft className={`w-4 h-4 text-base-content/60 hover:text-base-content/80 transition-colors pointer-events-none`} />
                                             )}
                                         </button>
 

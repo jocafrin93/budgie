@@ -407,31 +407,57 @@ export const useDataModel = ({
 
   // Toggle a planning item's active status
   const toggleItemActive = useCallback((itemId, isActive) => {
+    console.log(`🔄 DATAMODEL - toggleItemActive called with itemId: ${itemId} (type: ${typeof itemId}), isActive: ${isActive}`);
+
+    // Ensure itemId is the correct type for comparison
+    const normalizedItemId = typeof itemId === 'string' ? itemId : String(itemId);
+
     setPlanningItems(prev => {
+      console.log(`🔍 DATAMODEL - Current planning items:`, prev.map(item => ({ id: item.id, name: item.name, isActive: item.isActive })));
+
+      const itemToToggle = prev.find(item => String(item.id) === normalizedItemId);
+      if (!itemToToggle) {
+        console.error(`❌ DATAMODEL - Item not found for toggle: ${itemId}`);
+        console.log(`🔍 DATAMODEL - Available item IDs:`, prev.map(item => ({ id: item.id, type: typeof item.id })));
+        return prev;
+      }
+
+      console.log(`✅ DATAMODEL - Found item to toggle: ${itemToToggle.name}, current isActive: ${itemToToggle.isActive}, new isActive: ${isActive}`);
+
       const updatedItems = prev.map(item => {
-        if (item.id === itemId) {
-          return {
+        if (String(item.id) === normalizedItemId) {
+          const updatedItem = {
             ...item,
             isActive,
-            allocationPaused: !isActive
+            allocationPaused: !isActive,
+            updatedAt: new Date().toISOString()
           };
+          console.log(`🔄 DATAMODEL - Updated item:`, updatedItem);
+          return updatedItem;
         }
         return item;
       });
+
+      console.log(`✅ DATAMODEL - Planning items updated, new count: ${updatedItems.length}`);
+      console.log(`🔍 DATAMODEL - Updated item in list:`, updatedItems.find(item => String(item.id) === normalizedItemId));
+
       return updatedItems;
     });
 
     // Update budget allocations based on active state
     setActiveBudgetAllocations(prev => {
+      const normalizedPlanningItemId = typeof itemId === 'number' ? itemId : parseInt(itemId, 10);
+
       if (isActive) {
         // If activating and no allocation exists, create one
-        const existingAllocation = prev.find(a => a.planningItemId === itemId);
+        const existingAllocation = prev.find(a => a.planningItemId === normalizedPlanningItemId);
         if (!existingAllocation) {
-          const item = planningItems.find(i => i.id === itemId);
+          const item = planningItems.find(i => String(i.id) === normalizedItemId);
           if (item) {
+            console.log(`💰 DATAMODEL - Creating new allocation for activated item: ${item.name}`);
             const newAllocation = {
               id: Math.max(...prev.map(a => a.id), 0) + 1,
-              planningItemId: itemId,
+              planningItemId: normalizedPlanningItemId,
               categoryId: item.categoryId,
               monthlyAllocation: item.type === 'savings-goal' ? item.monthlyContribution : item.amount,
               perPaycheckAmount: 0,
@@ -441,11 +467,14 @@ export const useDataModel = ({
             };
             return calculatePerPaycheckAmounts([...prev, newAllocation], payFrequency, payFrequencyOptions);
           }
+        } else {
+          console.log(`💰 DATAMODEL - Allocation already exists for item: ${itemId}`);
         }
         return prev;
       } else {
         // If deactivating, remove the allocation
-        return prev.filter(a => a.planningItemId !== itemId);
+        console.log(`💸 DATAMODEL - Removing allocation for deactivated item: ${itemId}`);
+        return prev.filter(a => a.planningItemId !== normalizedPlanningItemId);
       }
     });
   }, [setPlanningItems, setActiveBudgetAllocations, planningItems, accounts, payFrequency, payFrequencyOptions]);
