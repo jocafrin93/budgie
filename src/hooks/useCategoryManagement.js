@@ -76,7 +76,7 @@ export const useCategoryManagement = () => {
   }, [categories]);
 
   /**
-   * Add a new category - UPDATED to require type
+   * Add a new category - UPDATED to require type and handle groupId/accountId
    */
   const addCategory = useCallback((categoryData) => {
     // Validate required fields
@@ -102,6 +102,9 @@ export const useCategoryManagement = () => {
       available: 0, // NEW: Available balance for envelope budgeting
       lastFunded: null,
       targetBalance: categoryData.targetBalance || 0,
+      // NEW: Handle groupId and accountId properly
+      groupId: categoryData.groupId || null,
+      accountId: categoryData.accountId || null,
       autoFunding: {
         enabled: categoryData.autoFunding?.enabled || false,
         maxAmount: categoryData.autoFunding?.maxAmount || 500,
@@ -136,6 +139,7 @@ export const useCategoryManagement = () => {
     };
 
     console.log('DEBUG - Creating new category with ID:', newCategoryId, newCategory);
+    console.log('DEBUG - GroupId:', categoryData.groupId, 'AccountId:', categoryData.accountId);
 
     setCategories(prev => [...prev, newCategory]);
     return newCategory;

@@ -664,9 +664,10 @@ const UnifiedCategoryForm = ({
                 errors.name = 'Category name is required';
             }
 
-            if (!values.accountId) {
-                errors.accountId = 'Account is required';
-            }
+            // Account is now optional - removed validation
+            // if (!values.accountId) {
+            //     errors.accountId = 'Account is required';
+            // }
 
             // Type-specific validations
             if (values.type === 'single') {
@@ -1042,35 +1043,15 @@ const UnifiedCategoryForm = ({
                 <div className="p-6">
                     <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-4">
                         {/* Basic Info Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="md:col-span-2">
-                                <Input
-                                    {...form.getFieldProps('name')}
-                                    label="Category Name"
-                                    placeholder="Enter category name"
-                                    autoFocus
-                                    error={form.errors.name}
-                                    className="border-base-300 bg-base-100 text-base-content"
-                                />
-                            </div>
-                            <div>
-                                <Select
-                                    label="Funding Account"
-                                    name="accountId"
-                                    value={form.values.accountId}
-                                    onChange={form.handleChange}
-                                    error={form.errors.accountId}
-                                    required
-                                    className="border-base-300 bg-base-100 text-base-content"
-                                >
-                                    <option value="">Select Account</option>
-                                    {accounts.map(account => (
-                                        <option key={account.id} value={account.id}>
-                                            {account.name}
-                                        </option>
-                                    ))}
-                                </Select>
-                            </div>
+                        <div className="grid grid-cols-1 gap-4">
+                            <Input
+                                {...form.getFieldProps('name')}
+                                label="Category Name"
+                                placeholder="Enter category name"
+                                autoFocus
+                                error={form.errors.name}
+                                className="border-base-300 bg-base-100 text-base-content"
+                            />
                         </div>
 
                         {/* Group Selection Row */}
@@ -1361,7 +1342,21 @@ const UnifiedCategoryForm = ({
 
                         {/* Account and Status */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
+                            <Select
+                                label="Funding Account (Optional)"
+                                name="accountId"
+                                value={form.values.accountId}
+                                onChange={form.handleChange}
+                                error={form.errors.accountId}
+                                className="border-base-300 bg-base-100 text-base-content"
+                            >
+                                <option value="">No Account Selected</option>
+                                {accounts.map(account => (
+                                    <option key={account.id} value={account.id}>
+                                        {account.name}
+                                    </option>
+                                ))}
+                            </Select>
 
                             <Select
                                 label="Status"
