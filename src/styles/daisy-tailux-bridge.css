@@ -735,29 +735,26 @@ body {
     background-color: transparent !important;
 }
 
-/* OKLCH Border opacity overrides */
+/* OKLCH Border opacity overrides - Let Tailwind handle opacity naturally */
 [data-theme*="abyss"] .border-primary\/10,
 [data-theme*="vscode-dark"] .border-primary\/10,
 [data-theme*="silk"] .border-primary\/10,
 [data-theme*="aurora"] .border-primary\/10 {
-    border-color: var(--color-primary) !important;
-    opacity: 0.1;
+    border-color: color-mix(in oklch, var(--color-primary) 10%, transparent) !important;
 }
 
 [data-theme*="abyss"] .border-primary\/20,
 [data-theme*="vscode-dark"] .border-primary\/20,
 [data-theme*="silk"] .border-primary\/20,
 [data-theme*="aurora"] .border-primary\/20 {
-    border-color: var(--color-primary) !important;
-    opacity: 0.2;
+    border-color: color-mix(in oklch, var(--color-primary) 20%, transparent) !important;
 }
 
 [data-theme*="abyss"] .border-primary\/30,
 [data-theme*="vscode-dark"] .border-primary\/30,
 [data-theme*="silk"] .border-primary\/30,
 [data-theme*="aurora"] .border-primary\/30 {
-    border-color: var(--color-primary) !important;
-    opacity: 0.3;
+    border-color: color-mix(in oklch, var(--color-primary) 30%, transparent) !important;
 }
 
 [data-theme*="abyss"] .border-primary,
@@ -771,8 +768,7 @@ body {
 [data-theme*="vscode-dark"] .bg-base-100\/50,
 [data-theme*="silk"] .bg-base-100\/50,
 [data-theme*="aurora"] .bg-base-100\/50 {
-    background-color: var(--color-base-100) !important;
-    opacity: 0.5;
+    background-color: color-mix(in oklch, var(--color-base-100) 50%, transparent) !important;
 }
 
 [data-theme*="abyss"] .bg-transparent,
@@ -827,7 +823,7 @@ input.form-input.border-primary:focus,
     border-color: rgb(var(--color-primary)) !important;
 }
 
-/* OKLCH input-specific overrides */
+/* OKLCH input-specific overrides - Remove problematic opacity */
 [data-theme*="abyss"] input.border-primary\/20,
 [data-theme*="abyss"] .form-input.border-primary\/20,
 [data-theme*="vscode-dark"] input.border-primary\/20,
@@ -836,9 +832,7 @@ input.form-input.border-primary:focus,
 [data-theme*="silk"] .form-input.border-primary\/20,
 [data-theme*="aurora"] input.border-primary\/20,
 [data-theme*="aurora"] .form-input.border-primary\/20 {
-    border-color: var(--color-primary) !important;
     color: var(--color-base-content) !important;
-    opacity: 0.2;
 }
 
 [data-theme*="abyss"] input.border-primary\/30,
@@ -849,9 +843,7 @@ input.form-input.border-primary:focus,
 [data-theme*="silk"] .form-input.border-primary\/30,
 [data-theme*="aurora"] input.border-primary\/30,
 [data-theme*="aurora"] .form-input.border-primary\/30 {
-    border-color: var(--color-primary) !important;
     color: var(--color-base-content) !important;
-    opacity: 0.3;
 }
 
 [data-theme*="abyss"] input.border-primary,
@@ -862,7 +854,6 @@ input.form-input.border-primary:focus,
 [data-theme*="silk"] .form-input.border-primary,
 [data-theme*="aurora"] input.border-primary,
 [data-theme*="aurora"] .form-input.border-primary {
-    border-color: var(--color-primary) !important;
     color: var(--color-base-content) !important;
 }
 
@@ -901,6 +892,7 @@ input.form-input.border-primary:focus,
     color: var(--color-base-content) !important;
     background-color: var(--color-base-100) !important;
 }
+
 
 /* OKLCH DaisyUI button class overrides */
 [data-theme*="abyss"] .btn-primary,
