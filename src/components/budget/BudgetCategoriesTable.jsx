@@ -24,6 +24,12 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
+    Popover,
+    PopoverButton,
+    PopoverPanel,
+    Transition,
+} from '@headlessui/react';
+import {
     ArrowDown,
     ArrowUp,
     ArrowUpDown,
@@ -43,7 +49,7 @@ import {
     ToggleRight,
     Trash2
 } from 'lucide-react';
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, Fragment } from 'react';
 import {
     calculateMonthlyAmount,
     calculatePaychecksUntilDue,
@@ -54,6 +60,85 @@ import { getDaysBetweenOccurrences } from '../../utils/frequencyUtils';
 // import { Button } from '../ui/Button';
 import QuickAllocateModal from './QuickAllocateModal';
 import TransferModal from './TransferModal';
+
+// EditGroupForm component (clean version)
+const EditGroupForm = ({ group, solidColors, onSave, onCancel }) => {
+    const [formState, setFormState] = useState({
+        name: group.name || '',
+        color: group.color || ''
+    });
+
+    const handleSubmit = () => {
+        if (formState.name.trim()) {
+            onSave({
+                name: formState.name.trim(),
+                color: formState.color
+            });
+        }
+    };
+
+    return (
+        <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-base-content">
+                Edit Group
+            </h3>
+
+            {/* Group Name Input */}
+            <div>
+                <label className="block text-sm font-medium text-base-content mb-1">
+                    Group Name
+                </label>
+                <input
+                    type="text"
+                    value={formState.name}
+                    onChange={(e) => setFormState({ ...formState, name: e.target.value })}
+                    placeholder="Enter group name"
+                    className="w-full px-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    autoFocus
+                />
+            </div>
+
+            {/* Color Picker */}
+            <div>
+                <label className="block text-sm font-medium text-base-content mb-2">
+                    Group Color
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                    {solidColors.map((colorOption) => (
+                        <button
+                            key={colorOption.id}
+                            type="button"
+                            onClick={() => setFormState({ ...formState, color: colorOption.id })}
+                            style={{ backgroundColor: colorOption.color }}
+                            className={`w-8 h-8 rounded-lg border-2 ${formState.color === colorOption.id
+                                ? 'border-primary ring-2 ring-primary/20'
+                                : 'border-base-300'
+                                } hover:scale-110 transition-transform`}
+                            title={colorOption.name}
+                        />
+                    ))}
+                </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2 pt-2 border-t border-base-300">
+                <button
+                    onClick={onCancel}
+                    className="px-3 py-2 text-sm text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 transition-colors"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={handleSubmit}
+                    disabled={!formState.name.trim()}
+                    className="px-3 py-2 text-sm bg-primary text-primary-content rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    );
+};
 
 // Sortable Row Component
 const SortableRow = ({ row, children }) => {
@@ -156,6 +241,54 @@ const BudgetCategoriesTable = ({
     const [transferModal, setTransferModal] = useState({ isOpen: false, targetCategory: null });
     const [quickAllocateModal, setQuickAllocateModal] = useState({ isOpen: false });
     const [isDragging, setIsDragging] = useState(false);
+    const [groupPopover, setGroupPopover] = useState({
+        isOpen: false,
+        mode: 'add', // 'add' or 'edit'
+        groupId: null,
+        name: '',
+        color: ''
+    });
+
+
+    // Solid color options for groups - memoized to prevent dependency issues
+    const solidColors = useMemo(() => [
+        { id: 'red', name: 'Red', color: '#ef4444' },
+        { id: 'orange', name: 'Orange', color: '#f97316' },
+        { id: 'amber', name: 'Amber', color: '#f59e0b' },
+        { id: 'yellow', name: 'Yellow', color: '#eab308' },
+        { id: 'lime', name: 'Lime', color: '#84cc16' },
+        { id: 'green', name: 'Green', color: '#22c55e' },
+        { id: 'emerald', name: 'Emerald', color: '#10b981' },
+        { id: 'teal', name: 'Teal', color: '#14b8a6' },
+        { id: 'cyan', name: 'Cyan', color: '#06b6d4' },
+        { id: 'sky', name: 'Sky', color: '#0ea5e9' },
+        { id: 'blue', name: 'Blue', color: '#3b82f6' },
+        { id: 'indigo', name: 'Indigo', color: '#6366f1' },
+        { id: 'violet', name: 'Violet', color: '#8b5cf6' },
+        { id: 'purple', name: 'Purple', color: '#a855f7' },
+        { id: 'fuchsia', name: 'Fuchsia', color: '#d946ef' },
+        { id: 'pink', name: 'Pink', color: '#ec4899' },
+        { id: 'rose', name: 'Rose', color: '#f43f5e' },
+        { id: 'slate', name: 'Slate', color: '#64748b' }
+    ], []);
+
+    // Handle group form submission
+    const handleGroupSubmit = () => {
+        if (!groupPopover.name.trim()) return;
+
+        const groupData = {
+            name: groupPopover.name.trim(),
+            color: groupPopover.color || solidColors[0].id
+        };
+
+        if (groupPopover.mode === 'add') {
+            onAddGroup && onAddGroup(groupData);
+        } else if (groupPopover.mode === 'edit') {
+            onEditGroup && onEditGroup(groupPopover.groupId, groupData);
+        }
+
+        setGroupPopover({ isOpen: false, mode: 'add', groupId: null, name: '', color: '' });
+    };
 
     // Drag & Drop sensors
     const sensors = useSensors(
@@ -875,23 +1008,58 @@ const BudgetCategoriesTable = ({
                                     </div>
 
                                     {/* Group actions */}
-                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                onEditGroup && onEditGroup(item.group.id);
-                                            }}
-                                            className="p-1 hover:bg-base-200 rounded transition-colors pointer-events-auto"
-                                            title="Edit Group"
-                                        >
-                                            <Edit className="w-4 h-4 text-base-content/60" />
-                                        </button>
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                                        {/* Popover Edit Button */}
+                                        <Popover className="relative">
+                                            <PopoverButton
+                                                className="p-1 hover:bg-base-200 rounded transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                }}
+                                            >
+                                                <Edit className="w-4 h-4 text-base-content/60" />
+                                            </PopoverButton>
+
+                                            <PopoverPanel className="absolute z-50 right-0 mt-2 bg-base-100 rounded-lg shadow-lg p-4 border border-base-300 w-72">
+                                                {({ close }) => (
+                                                    <EditGroupForm
+                                                        group={item.group}
+                                                        solidColors={solidColors}
+                                                        onSave={(updatedGroup) => {
+                                                            console.log('🔄 EditGroupForm onSave called with:', updatedGroup);
+                                                            console.log('🔄 Calling onEditGroup with groupId:', item.group.id);
+                                                            console.log('🔄 Updated group data:', updatedGroup);
+
+                                                            // Call the parent's onEditGroup function
+                                                            if (onEditGroup) {
+                                                                try {
+                                                                    onEditGroup(item.group.id, updatedGroup);
+                                                                    console.log('✅ onEditGroup called successfully');
+                                                                } catch (error) {
+                                                                    console.error('❌ Error calling onEditGroup:', error);
+                                                                }
+                                                            } else {
+                                                                console.warn('⚠️ onEditGroup function not available');
+                                                            }
+
+                                                            close();
+                                                        }}
+                                                        onCancel={() => {
+                                                            console.log('❌ EditGroupForm cancelled');
+                                                            close();
+                                                        }}
+                                                    />
+                                                )}
+                                            </PopoverPanel>
+                                        </Popover>
+
+                                        {/* Delete Button */}
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onDeleteGroup && onDeleteGroup(item.group.id);
                                             }}
-                                            className="p-1 hover:bg-base-200 rounded transition-colors pointer-events-auto"
+                                            className="p-1 hover:bg-base-200 rounded transition-colors"
                                             title="Delete Group"
                                         >
                                             <Trash2 className="w-4 h-4 text-base-content/60" />
@@ -1389,10 +1557,11 @@ const BudgetCategoriesTable = ({
             onToggleItemActive,
             upcomingPaychecks,
             handleTransferClick,
-            isDragging,
-            onEditGroup,
             onDeleteGroup,
-            onToggleGroupCollapsed
+            onToggleGroupCollapsed,
+            getNextOccurrence,
+            onEditGroup,
+            solidColors
         ]
     );
 
@@ -1451,156 +1620,242 @@ const BudgetCategoriesTable = ({
                         <p className="text-base-content/60">Manage your envelope budgeting categories and items</p>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => onAddGroup && onAddGroup()}
-                            className="flex items-center gap-2 px-4 py-2 btn-secondary text-base-content rounded-lg hover transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Group
-                        </button>
-                        <button
-                            onClick={() => onAddCategory && onAddCategory()}
-                            className="flex items-center gap-2 px-4 py-2 btn-primary text-white rounded-lg hover transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Category
-                        </button>
-                    </div>
-                </div>
+                        {/* Add Group Button with Popover */}
+                        <Popover className="relative">
+                            <PopoverButton className="flex items-center gap-2 px-4 py-2 btn-secondary text-base-content rounded-lg hover transition-colors">
+                                <Plus className="w-4 h-4" />
+                                Add Group
+                            </PopoverButton>
 
-                {/* Search and bulk actions */}
-                <div className="flex items-center justify-between gap-4">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60 w-4 h-4" />
-                        <input
-                            type="text"
-                            placeholder="Search categories..."
-                            value={globalFilter}
-                            onChange={(e) => setGlobalFilter(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-base-300 bg-base-100 text-base-content rounded-lg focus:border-primary placeholder:text-base-content/60"
-                        />
-                    </div>
-
-                    {selectedRowCount > 0 && (
-                        <div className="flex items-center gap-3">
-                            <span className="text-sm text-base-content/60">
-                                {selectedRowCount} selected
-                            </span>
-                            <button
-                                onClick={handleBulkDelete}
-                                className="flex items-center gap-2 px-3 py-2 bg-error text-white rounded-lg hover transition-colors"
+                            <Transition
+                                as={Fragment}
+                                enter="transition ease-out duration-200"
+                                enterFrom="opacity-0 translate-y-1"
+                                enterTo="opacity-100 translate-y-0"
+                                leave="transition ease-in duration-150"
+                                leaveFrom="opacity-100 translate-y-0"
+                                leaveTo="opacity-0 translate-y-1"
                             >
-                                <Trash2 className="w-4 h-4" />
-                                Delete Selected
-                            </button>
-                        </div>
-                    )}
+                                <PopoverPanel
+                                    anchor={{ to: "bottom end", gap: 8 }}
+                                    className="w-80 rounded-lg border border-base-300 bg-base-100 p-4 shadow-lg z-50"
+                                >
+                                    {({ close }) => (
+                                        <div className="space-y-4">
+                                            <h3 className="text-lg font-semibold text-base-content">
+                                                Add New Group
+                                            </h3>
+
+                                            {/* Group Name Input */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-base-content mb-1">
+                                                    Group Name
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={groupPopover.name}
+                                                    onChange={(e) => setGroupPopover(prev => ({ ...prev, name: e.target.value }))}
+                                                    placeholder="Enter group name"
+                                                    className="w-full px-3 py-2 border border-base-300 rounded-lg bg-base-100 text-base-content focus:border-primary focus:outline-none"
+                                                    autoFocus
+                                                />
+                                            </div>
+
+                                            {/* Color Picker */}
+                                            <div>
+                                                <label className="block text-sm font-medium text-base-content mb-2">
+                                                    Group Color
+                                                </label>
+                                                <div className="grid grid-cols-6 gap-2">
+                                                    {solidColors.map((colorOption) => (
+                                                        <button
+                                                            key={colorOption.id}
+                                                            type="button"
+                                                            onClick={() => setGroupPopover(prev => ({ ...prev, color: colorOption.id }))}
+                                                            style={{ backgroundColor: colorOption.color }}
+                                                            className={`w-8 h-8 rounded-lg border-2 ${groupPopover.color === colorOption.id
+                                                                ? 'border-primary border-2 ring-2 ring-primary/20'
+                                                                : 'border-base-300'
+                                                                } hover:scale-110 transition-transform`}
+                                                            title={colorOption.name}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <div className="flex justify-end gap-2 pt-2 border-t border-base-300">
+                                                <button
+                                                    onClick={() => {
+                                                        setGroupPopover({ isOpen: false, mode: 'add', groupId: null, name: '', color: solidColors[0].id });
+                                                        close();
+                                                    }}
+                                                    className="px-3 py-2 text-sm text-base-content/60 bg-base-100 border border-base-300 rounded-lg hover:bg-base-200 transition-colors"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        handleGroupSubmit();
+                                                        close();
+                                                    }}
+                                                    disabled={!groupPopover.name.trim()}
+                                                    className="px-3 py-2 text-sm bg-primary text-primary-content rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    Add Group
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </PopoverPanel>
+                            </Transition>
+                        </Popover>
+                    </div>
                 </div>
+
+                <button
+                    onClick={() => onAddCategory && onAddCategory()}
+                    className="flex items-center gap-2 px-4 py-2 btn-primary text-white rounded-lg hover transition-colors"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add Category
+                </button>
+            </div>
+
+            {/* Search and bulk actions */}
+            <div className="flex items-center justify-between gap-4">
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/60 w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="Search categories..."
+                        value={globalFilter}
+                        onChange={(e) => setGlobalFilter(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-base-300 bg-base-100 text-base-content rounded-lg focus:border-primary placeholder:text-base-content/60"
+                    />
+                </div>
+
+                {selectedRowCount > 0 && (
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm text-base-content/60">
+                            {selectedRowCount} selected
+                        </span>
+                        <button
+                            onClick={handleBulkDelete}
+                            className="flex items-center gap-2 px-3 py-2 bg-error text-white rounded-lg hover transition-colors"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Selected
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Available to Allocate Section */}
-            {(() => {
-                // Calculate available to allocate using the same account-specific approach as the modal
-                let totalAvailable = 0;
+            {
+                (() => {
+                    // Calculate available to allocate using the same account-specific approach as the modal
+                    let totalAvailable = 0;
 
-                // Process each account
-                (accounts || []).forEach(account => {
-                    // 1. Calculate account's working balance
-                    const accountTransactions = (transactions || []).filter(t => t.accountId === account.id);
-                    const startingBalance = account.startingBalance || account.balance || 0;
-                    const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+                    // Process each account
+                    (accounts || []).forEach(account => {
+                        // 1. Calculate account's working balance
+                        const accountTransactions = (transactions || []).filter(t => t.accountId === account.id);
+                        const startingBalance = account.startingBalance || account.balance || 0;
+                        const workingBalance = startingBalance + accountTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
 
-                    // 2. Find categories associated with this account
-                    const accountCategories = data.filter(cat =>
-                        cat.accountId !== undefined &&
-                        cat.accountId !== null &&
-                        String(cat.accountId) === String(account.id)
-                    );
+                        // 2. Find categories associated with this account
+                        const accountCategories = data.filter(cat =>
+                            cat.accountId !== undefined &&
+                            cat.accountId !== null &&
+                            String(cat.accountId) === String(account.id)
+                        );
 
-                    // 3. Calculate how much is already available in those categories
-                    const categoryAvailableTotal = accountCategories.reduce((sum, cat) => {
-                        return sum + Math.max(0, cat.available || 0);
-                    }, 0);
+                        // 3. Calculate how much is already available in those categories
+                        const categoryAvailableTotal = accountCategories.reduce((sum, cat) => {
+                            return sum + Math.max(0, cat.available || 0);
+                        }, 0);
 
-                    // 4. Calculate account's available to allocate amount
-                    const accountAvailable = workingBalance - categoryAvailableTotal;
+                        // 4. Calculate account's available to allocate amount
+                        const accountAvailable = workingBalance - categoryAvailableTotal;
 
-                    // Add to total
-                    totalAvailable += accountAvailable;
-                });
+                        // Add to total
+                        totalAvailable += accountAvailable;
+                    });
 
-                // Add transactions with "to-be-allocated" category to available funds
-                const toBeAllocatedAmount = (transactions || []).filter(t => t.categoryId === 'to-be-allocated')
-                    .reduce((sum, t) => sum + (t.amount || 0), 0);
+                    // Add transactions with "to-be-allocated" category to available funds
+                    const toBeAllocatedAmount = (transactions || []).filter(t => t.categoryId === 'to-be-allocated')
+                        .reduce((sum, t) => sum + (t.amount || 0), 0);
 
-                const availableToAllocate = totalAvailable + toBeAllocatedAmount;
+                    const availableToAllocate = totalAvailable + toBeAllocatedAmount;
 
-                // Debug logging
-                console.log('🔍 Quick Allocate Debug:');
-                console.log('📊 Accounts:', accounts);
-                console.log('💰 Total Available from Accounts:', totalAvailable);
-                console.log('📋 Categories data:', data);
-                console.log('🎯 To-be-allocated amount:', toBeAllocatedAmount);
-                console.log('✨ Available to Allocate:', availableToAllocate);
-                console.log('👀 Should show Quick Allocate?', availableToAllocate > 0);
+                    // Debug logging
+                    console.log('🔍 Quick Allocate Debug:');
+                    console.log('📊 Accounts:', accounts);
+                    console.log('💰 Total Available from Accounts:', totalAvailable);
+                    console.log('📋 Categories data:', data);
+                    console.log('🎯 To-be-allocated amount:', toBeAllocatedAmount);
+                    console.log('✨ Available to Allocate:', availableToAllocate);
+                    console.log('👀 Should show Quick Allocate?', availableToAllocate > 0);
 
-                if (availableToAllocate > 0) {
-                    return (
-                        <div className="mb-4 bg-gradient-primary-secondary rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
-                            <div className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <BanknoteArrowDown className="w-14 h-14 rounded-full flex items-center justify-center text-primary" />
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-success-dark">
-                                                Available to Allocate
-                                            </h3>
-                                            <p className="text-sm text-success">
-                                                Choose how to allocate your money
-                                            </p>
+                    if (availableToAllocate > 0) {
+                        return (
+                            <div className="mb-4 bg-gradient-primary-secondary rounded-lg border border-base-300 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+                                <div className="p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <BanknoteArrowDown className="w-14 h-14 rounded-full flex items-center justify-center text-primary" />
+                                            <div>
+                                                <h3 className="text-lg font-semibold text-success-dark">
+                                                    Available to Allocate
+                                                </h3>
+                                                <p className="text-sm text-success">
+                                                    Choose how to allocate your money
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-2xl font-bold text-success-dark">
+                                                {formatCurrency(availableToAllocate)}
+                                            </div>
+                                            <div className="text-sm text-success">
+                                                Ready to allocate
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-2xl font-bold text-success-dark">
-                                            {formatCurrency(availableToAllocate)}
-                                        </div>
-                                        <div className="text-sm text-success">
-                                            Ready to allocate
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Action Buttons */}
-                                <div className="flex items-center gap-3 mt-4">
-                                    <button
-                                        onClick={() => setQuickAllocateModal({ isOpen: true })}
-                                        className="btn btn-primary btn-outline flex items-center gap-2 hover:scale-105 transition-all duration-200"
-                                    >
-                                        <span>⚡</span>
-                                        Quick Allocate
-                                    </button>
-                                    <button
-                                        onClick={() => setTransferModal({
-                                            isOpen: true,
-                                            targetCategory: {
-                                                id: 'to-be-allocated',
-                                                name: 'Available to Allocate',
-                                                available: availableToAllocate
-                                            },
-                                            mode: 'allocate-from'
-                                        })}
-                                        className="btn btn-primary flex items-center gap-2 hover:scale-105 transition-all duration-200"
-                                    >
-                                        <span>🎯</span>
-                                        Single Category
-                                    </button>
+                                    {/* Action Buttons */}
+                                    <div className="flex items-center gap-3 mt-4">
+                                        <button
+                                            onClick={() => setQuickAllocateModal({ isOpen: true })}
+                                            className="btn btn-primary btn-outline flex items-center gap-2 hover:scale-105 transition-all duration-200"
+                                        >
+                                            <span>⚡</span>
+                                            Quick Allocate
+                                        </button>
+                                        <button
+                                            onClick={() => setTransferModal({
+                                                isOpen: true,
+                                                targetCategory: {
+                                                    id: 'to-be-allocated',
+                                                    name: 'Available to Allocate',
+                                                    available: availableToAllocate
+                                                },
+                                                mode: 'allocate-from'
+                                            })}
+                                            className="btn btn-primary flex items-center gap-2 hover:scale-105 transition-all duration-200"
+                                        >
+                                            <span>🎯</span>
+                                            Single Category
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    );
-                }
-                return null;
-            })()}
+                        );
+                    }
+                    return null;
+                })()
+            }
 
             {/* Table */}
             <DndContext
@@ -2053,7 +2308,7 @@ const BudgetCategoriesTable = ({
                     }}
                 />
             </DndContext>
-        </div>
+        </div >
     );
 };
 

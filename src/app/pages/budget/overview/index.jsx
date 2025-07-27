@@ -793,12 +793,22 @@ export default function BudgetOverview() {
         }
     }, [addGroup]);
 
-    const handleEditGroup = useCallback((groupId) => {
-        const group = groups.find(g => g.id === groupId);
-        if (group) {
-            const newName = prompt('Enter new group name:', group.name);
-            if (newName && newName !== group.name) {
-                updateGroup(groupId, { name: newName });
+    const handleEditGroup = useCallback((groupId, updatedGroupData) => {
+        console.log('🔄 PARENT handleEditGroup called with:', { groupId, updatedGroupData });
+
+        if (updatedGroupData) {
+            // New implementation: handle data from Tailux popover
+            console.log('✅ Updating group with new data:', updatedGroupData);
+            updateGroup(groupId, updatedGroupData);
+        } else {
+            // Fallback: old prompt-based implementation (should not be used anymore)
+            console.warn('⚠️ Using fallback prompt-based group editing');
+            const group = groups.find(g => g.id === groupId);
+            if (group) {
+                const newName = prompt('Enter new group name:', group.name);
+                if (newName && newName !== group.name) {
+                    updateGroup(groupId, { name: newName });
+                }
             }
         }
     }, [groups, updateGroup]);
