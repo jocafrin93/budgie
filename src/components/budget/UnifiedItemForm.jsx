@@ -237,6 +237,7 @@ const UnifiedItemForm = ({
         categoryId: item?.categoryId || resolvedCategoryId || '',
         accountId: item?.accountId || (accounts[0]?.id || ''),
         priorityState: item?.priorityState || 'active',
+        isActive: item?.isActive !== false, // Default to true unless explicitly false
         isRecurring: item?.isRecurring || false,
         priority: item?.priority || 'medium',
 
@@ -443,6 +444,7 @@ const UnifiedItemForm = ({
                 frequency: form.values.frequency,
                 dueDate: form.values.dueDate,
                 payee: form.values.payee,
+                isActive: form.values.isActive, // Include isActive field
                 isRecurring: form.values.isRecurring,
                 priority: form.values.priority,
                 // Scheduled transaction fields
@@ -459,6 +461,7 @@ const UnifiedItemForm = ({
                 targetDate: form.values.targetDate,
                 monthlyContribution: form.values.monthlyContribution || 0,
                 alreadySaved: form.values.alreadySaved || 0,
+                isActive: form.values.isActive, // Include isActive field
             };
         }
 
@@ -664,6 +667,41 @@ const UnifiedItemForm = ({
                                 data={accountOptions}
                                 className="border-base-300 bg-base-100 text-base-content"
                             />
+                        </div>
+
+                        {/* Active/Inactive Toggle */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-base-content">
+                                Item Status
+                            </label>
+                            <div className="flex items-center space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => form.setFieldValue('isActive', !form.values.isActive)}
+                                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all duration-200 ${form.values.isActive
+                                        ? 'bg-success/10 border-success text-success'
+                                        : 'bg-base-200 border-base-300 text-base-content/60'
+                                        }`}
+                                >
+                                    {form.values.isActive ? (
+                                        <>
+                                            <span className="text-lg">✅</span>
+                                            <span className="font-medium">Active</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="text-lg">⏸️</span>
+                                            <span className="font-medium">Inactive</span>
+                                        </>
+                                    )}
+                                </button>
+                                <div className="text-sm text-base-content/60">
+                                    {form.values.isActive
+                                        ? 'This item will be included in budget calculations'
+                                        : 'This item is for planning only and won\'t affect budget totals'
+                                    }
+                                </div>
+                            </div>
                         </div>
 
                         {form.values.type === 'expense' ? (
