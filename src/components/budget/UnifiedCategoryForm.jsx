@@ -586,7 +586,7 @@ const UnifiedCategoryForm = ({
 
         // Account and status
         accountId: category?.accountId || (accounts[0]?.id || ''),
-        groupId: category?.groupId || (groups.length > 0 ? groups[0]?.id : ''), // Default to first group or empty
+        groupId: category?.groupId || '', // Don't default to first group, let user choose
         status: category?.status || 'active',
         priority: category?.priority || 'medium',
 

@@ -13,6 +13,8 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
+    DragOverlay,
+    useDroppable,
 } from '@dnd-kit/core';
 import {
     arrayMove,
@@ -847,45 +849,62 @@ const BudgetCategoriesTable = ({
                             </div>
                         );
                     } else if (item.isGroup) {
-                        // Group header row
-                        return (
-                            <div className="flex items-center justify-between group">
-                                <div className="flex items-center gap-3">
-                                    <div
-                                        className="w-4 h-4 rounded-full border-2"
-                                        style={{ backgroundColor: item.group.color, borderColor: item.group.color }}
-                                    ></div>
-                                    <div className="font-bold text-lg text-base-content">{item.name}</div>
-                                    <div className="text-sm text-base-content/60">
-                                        ({item.totals ? Object.keys(getCategoriesByGroup()[item.group.id]?.categories || {}).length : 0} categories)
+                        // Group header row with droppable functionality
+                        const DroppableGroup = () => {
+                            const { isOver, setNodeRef } = useDroppable({
+                                id: `group-${item.group.id}`,
+                            });
+
+                            return (
+                                <div
+                                    ref={setNodeRef}
+                                    className={`flex items-center justify-between group p-2 rounded transition-all duration-200 ${isOver ? 'bg-primary/20 border-2 border-primary border-dashed' : ''
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div
+                                            className="w-4 h-4 rounded-full border-2"
+                                            style={{ backgroundColor: item.group.color, borderColor: item.group.color }}
+                                        ></div>
+                                        <div className="font-bold text-lg text-base-content">{item.name}</div>
+                                        <div className="text-sm text-base-content/60">
+                                            ({item.totals ? Object.keys(getCategoriesByGroup()[item.group.id]?.categories || {}).length : 0} categories)
+                                        </div>
+                                        {isOver && (
+                                            <div className="text-sm text-primary font-medium animate-pulse">
+                                                Drop here to assign to group
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Group actions */}
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onEditGroup && onEditGroup(item.group.id);
+                                            }}
+                                            className="p-1 hover:bg-base-200 rounded transition-colors pointer-events-auto"
+                                            title="Edit Group"
+                                        >
+                                            <Edit className="w-4 h-4 text-base-content/60" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onDeleteGroup && onDeleteGroup(item.group.id);
+                                            }}
+                                            className="p-1 hover:bg-base-200 rounded transition-colors pointer-events-auto"
+                                            title="Delete Group"
+                                        >
+                                            <Trash2 className="w-4 h-4 text-base-content/60" />
+                                        </button>
                                     </div>
                                 </div>
+                            );
+                        };
 
-                                {/* Group actions */}
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none group-hover:pointer-events-auto">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onEditGroup && onEditGroup(item.group.id);
-                                        }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors pointer-events-auto"
-                                        title="Edit Group"
-                                    >
-                                        <Edit className="w-4 h-4 text-base-content/60" />
-                                    </button>
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onDeleteGroup && onDeleteGroup(item.group.id);
-                                        }}
-                                        className="p-1 hover:bg-base-200 rounded transition-colors pointer-events-auto"
-                                        title="Delete Group"
-                                    >
-                                        <Trash2 className="w-4 h-4 text-base-content/60" />
-                                    </button>
-                                </div>
-                            </div>
-                        );
+                        return <DroppableGroup />;
                     } else if (item.isParent) {
                         return (
                             <div className="flex items-center justify-between group">
