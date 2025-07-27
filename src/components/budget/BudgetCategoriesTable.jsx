@@ -971,8 +971,11 @@ const BudgetCategoriesTable = ({
                                                 e.stopPropagation();
                                                 // Ensure itemId is passed as the correct type (number)
                                                 const itemId = parseInt(item.id, 10);
-                                                // Simple toggle: if currently false, make true; otherwise make false
-                                                const newActiveState = item.isActive === false ? true : false;
+                                                // Toggle the current state: if currently active (true or undefined), make inactive (false)
+                                                // If currently inactive (false), make active (true)
+                                                const currentlyActive = item.isActive !== false;
+                                                const newActiveState = !currentlyActive;
+                                                console.log(`🔄 Toggling item ${item.name}: ${currentlyActive} → ${newActiveState}`);
                                                 onToggleItemActive && onToggleItemActive(itemId, newActiveState);
                                             }}
                                             className="w-6 h-4 rounded transition-all duration-200 flex items-center justify-center bg-transparent hover:bg-base-200/50"

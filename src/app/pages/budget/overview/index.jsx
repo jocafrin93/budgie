@@ -331,7 +331,10 @@ export default function BudgetOverview() {
                 // Calculate totals for the category from planning items (only active items)
                 monthlyNeed = categoryItems.reduce((sum, item) => {
                     // Only include active items in calculations
-                    if (item.isActive === false) return sum;
+                    if (item.isActive === false) {
+                        console.log(`⚠️ Excluding inactive item "${item.name}" from monthly calculations`);
+                        return sum;
+                    }
 
                     if (item.type === 'savings-goal') {
                         return sum + (item.monthlyContribution || 0);
@@ -362,7 +365,12 @@ export default function BudgetOverview() {
                     let perPaycheck;
                     const paycheckInfo = getConservativePaycheckInfo('bi-weekly');
 
-                    if (item.type === 'savings-goal') {
+                    // For inactive items, set amounts to 0 but preserve the item structure
+                    if (item.isActive === false) {
+                        monthlyNeed = 0;
+                        perPaycheck = 0;
+                        console.log(`⚠️ Setting amounts to 0 for inactive item "${item.name}"`);
+                    } else if (item.type === 'savings-goal') {
                         monthlyNeed = item.monthlyContribution || 0;
                         perPaycheck = monthlyNeed / paycheckInfo.conservative;
                     } else {
