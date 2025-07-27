@@ -554,6 +554,35 @@ body {
     opacity: 0.7;
 }
 
+/* Ensure input elements never get affected by opacity rules */
+[data-theme*="abyss"] input.text-base-content,
+[data-theme*="abyss"] .form-input.text-base-content,
+[data-theme*="abyss"] input.text-base-content\/60,
+[data-theme*="abyss"] .form-input.text-base-content\/60,
+[data-theme*="abyss"] input.text-base-content\/70,
+[data-theme*="abyss"] .form-input.text-base-content\/70,
+[data-theme*="vscode-dark"] input.text-base-content,
+[data-theme*="vscode-dark"] .form-input.text-base-content,
+[data-theme*="vscode-dark"] input.text-base-content\/60,
+[data-theme*="vscode-dark"] .form-input.text-base-content\/60,
+[data-theme*="vscode-dark"] input.text-base-content\/70,
+[data-theme*="vscode-dark"] .form-input.text-base-content\/70,
+[data-theme*="silk"] input.text-base-content,
+[data-theme*="silk"] .form-input.text-base-content,
+[data-theme*="silk"] input.text-base-content\/60,
+[data-theme*="silk"] .form-input.text-base-content\/60,
+[data-theme*="silk"] input.text-base-content\/70,
+[data-theme*="silk"] .form-input.text-base-content\/70,
+[data-theme*="aurora"] input.text-base-content,
+[data-theme*="aurora"] .form-input.text-base-content,
+[data-theme*="aurora"] input.text-base-content\/60,
+[data-theme*="aurora"] .form-input.text-base-content\/60,
+[data-theme*="aurora"] input.text-base-content\/70,
+[data-theme*="aurora"] .form-input.text-base-content\/70 {
+    color: var(--color-base-content) !important;
+    opacity: 1 !important;
+}
+
 [data-theme*="abyss"] .border-base-300,
 [data-theme*="vscode-dark"] .border-base-300,
 [data-theme*="silk"] .border-base-300,
