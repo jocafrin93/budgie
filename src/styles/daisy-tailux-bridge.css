@@ -793,6 +793,28 @@ body {
     border-color: var(--color-primary) !important;
 }
 
+/* Ultra-specific overrides for elements with both border-primary/20 and border-base-300 classes */
+[data-theme*="abyss"] .border-primary\/20.border-base-300,
+[data-theme*="vscode-dark"] .border-primary\/20.border-base-300,
+[data-theme*="silk"] .border-primary\/20.border-base-300,
+[data-theme*="aurora"] .border-primary\/20.border-base-300 {
+    border-color: color-mix(in oklch, var(--color-primary) 20%, transparent) !important;
+}
+
+[data-theme*="abyss"] .border-primary\/30.border-base-300,
+[data-theme*="vscode-dark"] .border-primary\/30.border-base-300,
+[data-theme*="silk"] .border-primary\/30.border-base-300,
+[data-theme*="aurora"] .border-primary\/30.border-base-300 {
+    border-color: color-mix(in oklch, var(--color-primary) 30%, transparent) !important;
+}
+
+[data-theme*="abyss"] .border-primary.border-base-300,
+[data-theme*="vscode-dark"] .border-primary.border-base-300,
+[data-theme*="silk"] .border-primary.border-base-300,
+[data-theme*="aurora"] .border-primary.border-base-300 {
+    border-color: var(--color-primary) !important;
+}
+
 [data-theme*="abyss"] .bg-base-100\/50,
 [data-theme*="vscode-dark"] .bg-base-100\/50,
 [data-theme*="silk"] .bg-base-100\/50,
@@ -864,7 +886,7 @@ input.form-input.border-primary:focus,
     border-color: rgb(var(--color-primary)) !important;
 }
 
-/* OKLCH input-specific overrides - Fix text color only, preserve border opacity */
+/* OKLCH input-specific overrides - Fix text color only, preserve existing border rules */
 [data-theme*="abyss"] input.border-primary\/20,
 [data-theme*="abyss"] .form-input.border-primary\/20,
 [data-theme*="abyss"] .form-select.border-primary\/20,
@@ -882,7 +904,6 @@ input.form-input.border-primary:focus,
 [data-theme*="aurora"] .form-select.border-primary\/20,
 [data-theme*="aurora"] .form-textarea.border-primary\/20 {
     color: var(--color-base-content) !important;
-    border-color: color-mix(in oklch, var(--color-primary) 20%, transparent) !important;
 }
 
 [data-theme*="abyss"] input.border-primary\/30,
@@ -902,7 +923,6 @@ input.form-input.border-primary:focus,
 [data-theme*="aurora"] .form-select.border-primary\/30,
 [data-theme*="aurora"] .form-textarea.border-primary\/30 {
     color: var(--color-base-content) !important;
-    border-color: color-mix(in oklch, var(--color-primary) 30%, transparent) !important;
 }
 
 [data-theme*="abyss"] input.border-primary,
@@ -922,7 +942,6 @@ input.form-input.border-primary:focus,
 [data-theme*="aurora"] .form-select.border-primary,
 [data-theme*="aurora"] .form-textarea.border-primary {
     color: var(--color-base-content) !important;
-    border-color: var(--color-primary) !important;
 }
 
 /* Additional overrides for Input component's specific class combinations */

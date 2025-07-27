@@ -80,6 +80,7 @@ const CurrencyField = forwardRef(({
 
     const baseClasses = `
         form-input
+        border-primary/20 bg-transparent hover:border-primary/30 focus:border-primary focus:bg-base-100/50
         ${className}
     `.trim();
 
