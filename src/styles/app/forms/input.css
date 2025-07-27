@@ -19,6 +19,30 @@
   color: rgb(var(--color-base-content) / 0.6);
 }
 
+/* OKLCH theme overrides for proper input text color */
+[data-theme*="abyss"] .form-input,
+[data-theme*="abyss"] .form-textarea,
+[data-theme*="vscode-dark"] .form-input,
+[data-theme*="vscode-dark"] .form-textarea,
+[data-theme*="silk"] .form-input,
+[data-theme*="silk"] .form-textarea,
+[data-theme*="aurora"] .form-input,
+[data-theme*="aurora"] .form-textarea {
+  color: var(--color-base-content) !important;
+}
+
+[data-theme*="abyss"] .form-input::placeholder,
+[data-theme*="abyss"] .form-textarea::placeholder,
+[data-theme*="vscode-dark"] .form-input::placeholder,
+[data-theme*="vscode-dark"] .form-textarea::placeholder,
+[data-theme*="silk"] .form-input::placeholder,
+[data-theme*="silk"] .form-textarea::placeholder,
+[data-theme*="aurora"] .form-input::placeholder,
+[data-theme*="aurora"] .form-textarea::placeholder {
+  color: var(--color-base-content) !important;
+  opacity: 0.6;
+}
+
 .form-textarea {
   @apply resize-none;
 }
