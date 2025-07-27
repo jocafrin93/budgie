@@ -668,13 +668,8 @@ const BudgetCategoriesTable = ({
                     if (!row.original.isParent || row.original.isAddRow) return null;
 
                     return (
-                        <div className="flex items-center justify-center">
-                            <button
-                                className={`p-1 hover:bg-base-200 rounded transition-colors cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-50' : ''}`}
-                                title="Drag to reorder"
-                            >
-                                <GripVertical className="w-4 h-4 text-base-content/60" />
-                            </button>
+                        <div className="flex items-center justify-center drag-handle">
+                            <GripVertical className="w-4 h-4 text-base-content/60 cursor-grab active:cursor-grabbing" />
                         </div>
                     );
                 },

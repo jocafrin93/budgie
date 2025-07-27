@@ -809,7 +809,7 @@ const UnifiedCategoryForm = ({
             type: form.values.type,
             account: selectedAccount,
             accountId: accountId, // Use the converted numeric accountId
-            groupId: form.values.groupId && form.values.groupId !== '' ? form.values.groupId : null, // Include groupId properly
+            groupId: form.values.groupId || null, // Include groupId - allow empty string to be saved as null
             status: form.values.status,
             priority: form.values.priority,
             color: form.values.color,
