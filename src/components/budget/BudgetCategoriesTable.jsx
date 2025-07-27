@@ -111,12 +111,13 @@ const SortableRow = ({ row, children }) => {
                 }`}
         >
             {childrenArray.map((child, index) => {
-                // Add drag listeners to the first cell (drag handle column)
+                // Add drag listeners to the drag handle cell
                 if (index === 0 && row.original.isParent && !row.original.isAddRow) {
                     return React.cloneElement(child, {
                         ...child.props,
                         ...listeners,
-                        key: child.key || index
+                        key: child.key || index,
+                        style: { ...child.props.style, cursor: 'grab' }
                     });
                 }
                 return child;

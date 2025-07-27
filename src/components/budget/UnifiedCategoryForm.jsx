@@ -586,7 +586,7 @@ const UnifiedCategoryForm = ({
 
         // Account and status
         accountId: category?.accountId || (accounts[0]?.id || ''),
-        groupId: category?.groupId || '', // Don't default to first group, let user choose
+        groupId: category?.groupId || (groups.length > 0 ? groups[0]?.id : ''), // Default to first group if available
         status: category?.status || 'active',
         priority: category?.priority || 'medium',
 
@@ -809,7 +809,7 @@ const UnifiedCategoryForm = ({
             type: form.values.type,
             account: selectedAccount,
             accountId: accountId, // Use the converted numeric accountId
-            groupId: form.values.groupId || null, // Include groupId
+            groupId: form.values.groupId && form.values.groupId !== '' ? form.values.groupId : null, // Include groupId properly
             status: form.values.status,
             priority: form.values.priority,
             color: form.values.color,
