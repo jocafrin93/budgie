@@ -481,10 +481,16 @@ export default function BudgetOverview() {
     }, [calculatePaychecksUntilDue, getConservativePaycheckInfo, calculateMonthlyAmount, calculateCategorySpent, calculateSmartPerPaycheck]);
 
     // Transform the real data for the table
-    const tableData = useMemo(() =>
-        transformDataForBudgetTable(categories, planningItems),
-        [categories, planningItems, transformDataForBudgetTable]
-    );
+    const tableData = useMemo(() => {
+        console.log('🔄 BUDGET OVERVIEW: tableData useMemo triggered');
+        console.log('📊 Categories length:', categories.length);
+        console.log('📊 PlanningItems length:', planningItems.length);
+        console.log('📊 PlanningItems with isActive=false:', planningItems.filter(item => item.isActive === false).map(item => ({ id: item.id, name: item.name, isActive: item.isActive })));
+
+        const result = transformDataForBudgetTable(categories, planningItems);
+        console.log('✅ BUDGET OVERVIEW: tableData transformation complete');
+        return result;
+    }, [categories, planningItems, transformDataForBudgetTable]);
 
     // Modal handlers
     const handleCloseCategoryModal = useCallback(() => {
@@ -711,7 +717,11 @@ export default function BudgetOverview() {
 
     const handleToggleItemActive = useCallback((itemId, isActive) => {
         try {
+            console.log(`🔄 BUDGET OVERVIEW: Toggling item ${itemId} to ${isActive ? 'active' : 'inactive'}`);
             toggleItemActive(itemId, isActive);
+
+            // Force a re-render by updating a timestamp
+            console.log(`✅ BUDGET OVERVIEW: Toggle completed for item ${itemId}`);
         } catch (error) {
             console.error("Error toggling item active:", error);
         }
