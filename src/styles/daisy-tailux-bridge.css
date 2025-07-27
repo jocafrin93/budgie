@@ -837,6 +837,7 @@ input.form-input.border-primary:focus,
 [data-theme*="aurora"] input.border-primary\/20,
 [data-theme*="aurora"] .form-input.border-primary\/20 {
     border-color: var(--color-primary) !important;
+    color: var(--color-base-content) !important;
     opacity: 0.2;
 }
 
@@ -849,6 +850,7 @@ input.form-input.border-primary:focus,
 [data-theme*="aurora"] input.border-primary\/30,
 [data-theme*="aurora"] .form-input.border-primary\/30 {
     border-color: var(--color-primary) !important;
+    color: var(--color-base-content) !important;
     opacity: 0.3;
 }
 
@@ -861,6 +863,7 @@ input.form-input.border-primary:focus,
 [data-theme*="aurora"] input.border-primary,
 [data-theme*="aurora"] .form-input.border-primary {
     border-color: var(--color-primary) !important;
+    color: var(--color-base-content) !important;
 }
 
 /* OKLCH DaisyUI button class overrides */

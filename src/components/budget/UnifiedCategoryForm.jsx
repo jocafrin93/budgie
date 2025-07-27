@@ -123,7 +123,7 @@ const PayeeAutocompleteinfo = ({ value, onChange, payees, onAddPayee, placeholde
                     onFocus={() => setIsOpen(true)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
-                    className="w-full px-3 py-2 pr-10 border border-info bg-base-100 text-base-content rounded-lg focus:outline-none focus:border-primary transition-colors"
+                    className="form-input w-full pr-10 border-info focus:border-primary"
                 />
 
                 <button
