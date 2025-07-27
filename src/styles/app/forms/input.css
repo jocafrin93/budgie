@@ -29,6 +29,8 @@
 [data-theme*="aurora"] .form-input,
 [data-theme*="aurora"] .form-textarea {
   color: var(--color-base-content) !important;
+  background-color: var(--color-base-100) !important;
+  border-color: var(--color-base-300) !important;
 }
 
 [data-theme*="abyss"] .form-input::placeholder,
@@ -41,6 +43,37 @@
 [data-theme*="aurora"] .form-textarea::placeholder {
   color: var(--color-base-content) !important;
   opacity: 0.6;
+}
+
+/* Ultra-specific OKLCH overrides for all form field states */
+[data-theme*="abyss"] input.form-input,
+[data-theme*="abyss"] textarea.form-textarea,
+[data-theme*="abyss"] select.form-select,
+[data-theme*="vscode-dark"] input.form-input,
+[data-theme*="vscode-dark"] textarea.form-textarea,
+[data-theme*="vscode-dark"] select.form-select,
+[data-theme*="silk"] input.form-input,
+[data-theme*="silk"] textarea.form-textarea,
+[data-theme*="silk"] select.form-select,
+[data-theme*="aurora"] input.form-input,
+[data-theme*="aurora"] textarea.form-textarea,
+[data-theme*="aurora"] select.form-select {
+  color: var(--color-base-content) !important;
+  background-color: var(--color-base-100) !important;
+  border-color: var(--color-base-300) !important;
+}
+
+/* Override any conflicting classes for OKLCH themes */
+[data-theme*="abyss"] input.form-input.bg-transparent,
+[data-theme*="abyss"] textarea.form-textarea.bg-transparent,
+[data-theme*="vscode-dark"] input.form-input.bg-transparent,
+[data-theme*="vscode-dark"] textarea.form-textarea.bg-transparent,
+[data-theme*="silk"] input.form-input.bg-transparent,
+[data-theme*="silk"] textarea.form-textarea.bg-transparent,
+[data-theme*="aurora"] input.form-input.bg-transparent,
+[data-theme*="aurora"] textarea.form-textarea.bg-transparent {
+  color: var(--color-base-content) !important;
+  background-color: transparent !important;
 }
 
 .form-textarea {

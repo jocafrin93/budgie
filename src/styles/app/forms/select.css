@@ -42,6 +42,33 @@
   opacity: 0.6;
 }
 
+/* Ultra-specific OKLCH overrides for select elements */
+[data-theme*="abyss"] select.form-select,
+[data-theme*="abyss"] select.form-multiselect,
+[data-theme*="vscode-dark"] select.form-select,
+[data-theme*="vscode-dark"] select.form-multiselect,
+[data-theme*="silk"] select.form-select,
+[data-theme*="silk"] select.form-multiselect,
+[data-theme*="aurora"] select.form-select,
+[data-theme*="aurora"] select.form-multiselect {
+  color: var(--color-base-content) !important;
+  background-color: var(--color-base-100) !important;
+  border-color: var(--color-base-300) !important;
+}
+
+/* Override any conflicting classes for OKLCH select themes */
+[data-theme*="abyss"] select.form-select.bg-transparent,
+[data-theme*="abyss"] select.form-multiselect.bg-transparent,
+[data-theme*="vscode-dark"] select.form-select.bg-transparent,
+[data-theme*="vscode-dark"] select.form-multiselect.bg-transparent,
+[data-theme*="silk"] select.form-select.bg-transparent,
+[data-theme*="silk"] select.form-multiselect.bg-transparent,
+[data-theme*="aurora"] select.form-select.bg-transparent,
+[data-theme*="aurora"] select.form-multiselect.bg-transparent {
+  color: var(--color-base-content) !important;
+  background-color: transparent !important;
+}
+
 .form-multiselect {
   background-image: initial;
   background-position: initial;

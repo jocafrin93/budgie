@@ -812,21 +812,27 @@ body {
 input.peer.border-primary\/20,
 input.form-input.border-primary\/20,
 .form-input.peer.border-primary\/20,
-.form-input.border-primary\/20 {
+.form-input.border-primary\/20,
+.form-select.border-primary\/20,
+.form-textarea.border-primary\/20 {
     border-color: rgb(var(--color-primary) / 0.2) !important;
 }
 
 input.peer.border-primary\/30,
 input.form-input.border-primary\/30,
 .form-input.peer.border-primary\/30,
-.form-input.border-primary\/30 {
+.form-input.border-primary\/30,
+.form-select.border-primary\/30,
+.form-textarea.border-primary\/30 {
     border-color: rgb(var(--color-primary) / 0.3) !important;
 }
 
 input.peer.border-primary,
 input.form-input.border-primary,
 .form-input.peer.border-primary,
-.form-input.border-primary {
+.form-input.border-primary,
+.form-select.border-primary,
+.form-textarea.border-primary {
     border-color: rgb(var(--color-primary)) !important;
 }
 
@@ -834,56 +840,89 @@ input.form-input.border-primary,
 input.peer.border-primary\/20:hover,
 input.form-input.border-primary\/20:hover,
 .form-input.peer.border-primary\/20:hover,
-.form-input.border-primary\/20:hover {
+.form-input.border-primary\/20:hover,
+.form-select.border-primary\/20:hover,
+.form-textarea.border-primary\/20:hover {
     border-color: rgb(var(--color-primary) / 0.3) !important;
 }
 
 input.peer.border-primary\/30:focus,
 input.form-input.border-primary\/30:focus,
 .form-input.peer.border-primary\/30:focus,
-.form-input.border-primary\/30:focus {
+.form-input.border-primary\/30:focus,
+.form-select.border-primary\/30:focus,
+.form-textarea.border-primary\/30:focus {
     border-color: rgb(var(--color-primary)) !important;
 }
 
 input.peer.border-primary:focus,
 input.form-input.border-primary:focus,
 .form-input.peer.border-primary:focus,
-.form-input.border-primary:focus {
+.form-input.border-primary:focus,
+.form-select.border-primary:focus,
+.form-textarea.border-primary:focus {
     border-color: rgb(var(--color-primary)) !important;
 }
 
-/* OKLCH input-specific overrides - Remove problematic opacity */
+/* OKLCH input-specific overrides - Fix text color only, preserve border opacity */
 [data-theme*="abyss"] input.border-primary\/20,
 [data-theme*="abyss"] .form-input.border-primary\/20,
+[data-theme*="abyss"] .form-select.border-primary\/20,
+[data-theme*="abyss"] .form-textarea.border-primary\/20,
 [data-theme*="vscode-dark"] input.border-primary\/20,
 [data-theme*="vscode-dark"] .form-input.border-primary\/20,
+[data-theme*="vscode-dark"] .form-select.border-primary\/20,
+[data-theme*="vscode-dark"] .form-textarea.border-primary\/20,
 [data-theme*="silk"] input.border-primary\/20,
 [data-theme*="silk"] .form-input.border-primary\/20,
+[data-theme*="silk"] .form-select.border-primary\/20,
+[data-theme*="silk"] .form-textarea.border-primary\/20,
 [data-theme*="aurora"] input.border-primary\/20,
-[data-theme*="aurora"] .form-input.border-primary\/20 {
+[data-theme*="aurora"] .form-input.border-primary\/20,
+[data-theme*="aurora"] .form-select.border-primary\/20,
+[data-theme*="aurora"] .form-textarea.border-primary\/20 {
     color: var(--color-base-content) !important;
+    border-color: color-mix(in oklch, var(--color-primary) 20%, transparent) !important;
 }
 
 [data-theme*="abyss"] input.border-primary\/30,
 [data-theme*="abyss"] .form-input.border-primary\/30,
+[data-theme*="abyss"] .form-select.border-primary\/30,
+[data-theme*="abyss"] .form-textarea.border-primary\/30,
 [data-theme*="vscode-dark"] input.border-primary\/30,
 [data-theme*="vscode-dark"] .form-input.border-primary\/30,
+[data-theme*="vscode-dark"] .form-select.border-primary\/30,
+[data-theme*="vscode-dark"] .form-textarea.border-primary\/30,
 [data-theme*="silk"] input.border-primary\/30,
 [data-theme*="silk"] .form-input.border-primary\/30,
+[data-theme*="silk"] .form-select.border-primary\/30,
+[data-theme*="silk"] .form-textarea.border-primary\/30,
 [data-theme*="aurora"] input.border-primary\/30,
-[data-theme*="aurora"] .form-input.border-primary\/30 {
+[data-theme*="aurora"] .form-input.border-primary\/30,
+[data-theme*="aurora"] .form-select.border-primary\/30,
+[data-theme*="aurora"] .form-textarea.border-primary\/30 {
     color: var(--color-base-content) !important;
+    border-color: color-mix(in oklch, var(--color-primary) 30%, transparent) !important;
 }
 
 [data-theme*="abyss"] input.border-primary,
 [data-theme*="abyss"] .form-input.border-primary,
+[data-theme*="abyss"] .form-select.border-primary,
+[data-theme*="abyss"] .form-textarea.border-primary,
 [data-theme*="vscode-dark"] input.border-primary,
 [data-theme*="vscode-dark"] .form-input.border-primary,
+[data-theme*="vscode-dark"] .form-select.border-primary,
+[data-theme*="vscode-dark"] .form-textarea.border-primary,
 [data-theme*="silk"] input.border-primary,
 [data-theme*="silk"] .form-input.border-primary,
+[data-theme*="silk"] .form-select.border-primary,
+[data-theme*="silk"] .form-textarea.border-primary,
 [data-theme*="aurora"] input.border-primary,
-[data-theme*="aurora"] .form-input.border-primary {
+[data-theme*="aurora"] .form-input.border-primary,
+[data-theme*="aurora"] .form-select.border-primary,
+[data-theme*="aurora"] .form-textarea.border-primary {
     color: var(--color-base-content) !important;
+    border-color: var(--color-primary) !important;
 }
 
 /* Additional overrides for Input component's specific class combinations */
@@ -920,6 +959,58 @@ input.form-input.border-primary:focus,
 [data-theme*="aurora"] .form-input.border-primary\/20.bg-transparent:focus {
     color: var(--color-base-content) !important;
     background-color: var(--color-base-100) !important;
+}
+
+/* Ultra-specific overrides for Select component's exact class combination */
+[data-theme*="abyss"] select.form-select-base.form-select.peer.border-primary\/20.bg-transparent.border-base-300.bg-base-100.text-base-content,
+[data-theme*="abyss"] .form-select-base.form-select.peer.border-primary\/20.bg-transparent.border-base-300.bg-base-100.text-base-content,
+[data-theme*="vscode-dark"] select.form-select-base.form-select.peer.border-primary\/20.bg-transparent.border-base-300.bg-base-100.text-base-content,
+[data-theme*="vscode-dark"] .form-select-base.form-select.peer.border-primary\/20.bg-transparent.border-base-300.bg-base-100.text-base-content,
+[data-theme*="silk"] select.form-select-base.form-select.peer.border-primary\/20.bg-transparent.border-base-300.bg-base-100.text-base-content,
+[data-theme*="silk"] .form-select-base.form-select.peer.border-primary\/20.bg-transparent.border-base-300.bg-base-100.text-base-content,
+[data-theme*="aurora"] select.form-select-base.form-select.peer.border-primary\/20.bg-transparent.border-base-300.bg-base-100.text-base-content,
+[data-theme*="aurora"] .form-select-base.form-select.peer.border-primary\/20.bg-transparent.border-base-300.bg-base-100.text-base-content {
+    color: var(--color-base-content) !important;
+    opacity: 1 !important;
+}
+
+/* Fallback with even higher specificity for selects */
+[data-theme*="abyss"] select.form-select.text-base-content,
+[data-theme*="abyss"] .form-select.text-base-content,
+[data-theme*="vscode-dark"] select.form-select.text-base-content,
+[data-theme*="vscode-dark"] .form-select.text-base-content,
+[data-theme*="silk"] select.form-select.text-base-content,
+[data-theme*="silk"] .form-select.text-base-content,
+[data-theme*="aurora"] select.form-select.text-base-content,
+[data-theme*="aurora"] .form-select.text-base-content {
+    color: var(--color-base-content) !important;
+    opacity: 1 !important;
+}
+
+/* Ultra-specific overrides for Textarea component's exact class combination */
+[data-theme*="abyss"] textarea.form-textarea-base.form-textarea.peer.border.border-primary\/20.border-base-300.bg-base-100.text-base-content,
+[data-theme*="abyss"] .form-textarea-base.form-textarea.peer.border.border-primary\/20.border-base-300.bg-base-100.text-base-content,
+[data-theme*="vscode-dark"] textarea.form-textarea-base.form-textarea.peer.border.border-primary\/20.border-base-300.bg-base-100.text-base-content,
+[data-theme*="vscode-dark"] .form-textarea-base.form-textarea.peer.border.border-primary\/20.border-base-300.bg-base-100.text-base-content,
+[data-theme*="silk"] textarea.form-textarea-base.form-textarea.peer.border.border-primary\/20.border-base-300.bg-base-100.text-base-content,
+[data-theme*="silk"] .form-textarea-base.form-textarea.peer.border.border-primary\/20.border-base-300.bg-base-100.text-base-content,
+[data-theme*="aurora"] textarea.form-textarea-base.form-textarea.peer.border.border-primary\/20.border-base-300.bg-base-100.text-base-content,
+[data-theme*="aurora"] .form-textarea-base.form-textarea.peer.border.border-primary\/20.border-base-300.bg-base-100.text-base-content {
+    color: var(--color-base-content) !important;
+    opacity: 1 !important;
+}
+
+/* Fallback with even higher specificity for textareas */
+[data-theme*="abyss"] textarea.form-textarea.text-base-content,
+[data-theme*="abyss"] .form-textarea.text-base-content,
+[data-theme*="vscode-dark"] textarea.form-textarea.text-base-content,
+[data-theme*="vscode-dark"] .form-textarea.text-base-content,
+[data-theme*="silk"] textarea.form-textarea.text-base-content,
+[data-theme*="silk"] .form-textarea.text-base-content,
+[data-theme*="aurora"] textarea.form-textarea.text-base-content,
+[data-theme*="aurora"] .form-textarea.text-base-content {
+    color: var(--color-base-content) !important;
+    opacity: 1 !important;
 }
 
 
