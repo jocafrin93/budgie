@@ -13,7 +13,6 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    DragOverlay,
     useDroppable,
 } from '@dnd-kit/core';
 import {
@@ -374,49 +373,51 @@ const BudgetCategoriesTable = ({
     }, []);
 
     // Calculate earliest due date and count for multi-item categories (with recurring logic)
-    const getCategoryDateInfo = useCallback((category) => {
-        if (!category.subItems || category.subItems.length === 0) {
-            // Single category - use its own due date with recurring calculation
-            if (category.dueDate) {
-                const nextOccurrence = getNextOccurrence(category.dueDate, category.frequency);
+    const getCategoryDateInfo = useMemo(() => {
+        return (category) => {
+            if (!category.subItems || category.subItems.length === 0) {
+                // Single category - use its own due date with recurring calculation
+                if (category.dueDate) {
+                    const nextOccurrence = getNextOccurrence(category.dueDate, category.frequency);
+                    return {
+                        earliestDate: nextOccurrence,
+                        additionalCount: 0,
+                        sortValue: new Date(nextOccurrence)
+                    };
+                }
                 return {
-                    earliestDate: nextOccurrence,
+                    earliestDate: null,
                     additionalCount: 0,
-                    sortValue: new Date(nextOccurrence)
+                    sortValue: new Date('9999-12-31')
                 };
             }
-            return {
-                earliestDate: null,
-                additionalCount: 0,
-                sortValue: new Date('9999-12-31')
-            };
-        }
 
-        // Multi-item category - find earliest date among sub-items (with recurring logic)
-        const itemsWithDates = category.subItems
-            .filter(item => item.dueDate)
-            .map(item => {
-                const nextOccurrence = getNextOccurrence(item.dueDate, item.frequency);
+            // Multi-item category - find earliest date among sub-items (with recurring logic)
+            const itemsWithDates = category.subItems
+                .filter(item => item.dueDate)
+                .map(item => {
+                    const nextOccurrence = getNextOccurrence(item.dueDate, item.frequency);
+                    return {
+                        date: nextOccurrence,
+                        dateObj: new Date(nextOccurrence)
+                    };
+                })
+                .sort((a, b) => a.dateObj - b.dateObj);
+
+            if (itemsWithDates.length === 0) {
+                // No items have due dates
                 return {
-                    date: nextOccurrence,
-                    dateObj: new Date(nextOccurrence)
+                    earliestDate: null,
+                    additionalCount: 0,
+                    sortValue: new Date('9999-12-31') // Sort to bottom
                 };
-            })
-            .sort((a, b) => a.dateObj - b.dateObj);
+            }
 
-        if (itemsWithDates.length === 0) {
-            // No items have due dates
             return {
-                earliestDate: null,
-                additionalCount: 0,
-                sortValue: new Date('9999-12-31') // Sort to bottom
+                earliestDate: itemsWithDates[0].date,
+                additionalCount: itemsWithDates.length - 1,
+                sortValue: itemsWithDates[0].dateObj
             };
-        }
-
-        return {
-            earliestDate: itemsWithDates[0].date,
-            additionalCount: itemsWithDates.length - 1,
-            sortValue: itemsWithDates[0].dateObj
         };
     }, [getNextOccurrence]);
 
@@ -628,7 +629,7 @@ const BudgetCategoriesTable = ({
         }
 
         return result;
-    }, [data, expanded, groups, getCategoriesByGroup]);
+    }, [data, expanded, groups, getCategoriesByGroup, upcomingPaychecks]);
 
     // Custom header component with sorting
     const SortableHeader = ({ column, children }) => {
