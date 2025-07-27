@@ -866,6 +866,42 @@ input.form-input.border-primary:focus,
     color: var(--color-base-content) !important;
 }
 
+/* Additional overrides for Input component's specific class combinations */
+[data-theme*="abyss"] .form-input.peer.border-primary\/20.bg-transparent,
+[data-theme*="abyss"] .form-input.border-primary\/20.bg-transparent,
+[data-theme*="vscode-dark"] .form-input.peer.border-primary\/20.bg-transparent,
+[data-theme*="vscode-dark"] .form-input.border-primary\/20.bg-transparent,
+[data-theme*="silk"] .form-input.peer.border-primary\/20.bg-transparent,
+[data-theme*="silk"] .form-input.border-primary\/20.bg-transparent,
+[data-theme*="aurora"] .form-input.peer.border-primary\/20.bg-transparent,
+[data-theme*="aurora"] .form-input.border-primary\/20.bg-transparent {
+    color: var(--color-base-content) !important;
+    background-color: transparent !important;
+}
+
+[data-theme*="abyss"] .form-input.peer.border-primary\/20.bg-transparent:hover,
+[data-theme*="abyss"] .form-input.border-primary\/20.bg-transparent:hover,
+[data-theme*="vscode-dark"] .form-input.peer.border-primary\/20.bg-transparent:hover,
+[data-theme*="vscode-dark"] .form-input.border-primary\/20.bg-transparent:hover,
+[data-theme*="silk"] .form-input.peer.border-primary\/20.bg-transparent:hover,
+[data-theme*="silk"] .form-input.border-primary\/20.bg-transparent:hover,
+[data-theme*="aurora"] .form-input.peer.border-primary\/20.bg-transparent:hover,
+[data-theme*="aurora"] .form-input.border-primary\/20.bg-transparent:hover {
+    color: var(--color-base-content) !important;
+}
+
+[data-theme*="abyss"] .form-input.peer.border-primary\/20.bg-transparent:focus,
+[data-theme*="abyss"] .form-input.border-primary\/20.bg-transparent:focus,
+[data-theme*="vscode-dark"] .form-input.peer.border-primary\/20.bg-transparent:focus,
+[data-theme*="vscode-dark"] .form-input.border-primary\/20.bg-transparent:focus,
+[data-theme*="silk"] .form-input.peer.border-primary\/20.bg-transparent:focus,
+[data-theme*="silk"] .form-input.border-primary\/20.bg-transparent:focus,
+[data-theme*="aurora"] .form-input.peer.border-primary\/20.bg-transparent:focus,
+[data-theme*="aurora"] .form-input.border-primary\/20.bg-transparent:focus {
+    color: var(--color-base-content) !important;
+    background-color: var(--color-base-100) !important;
+}
+
 /* OKLCH DaisyUI button class overrides */
 [data-theme*="abyss"] .btn-primary,
 [data-theme*="vscode-dark"] .btn-primary,
